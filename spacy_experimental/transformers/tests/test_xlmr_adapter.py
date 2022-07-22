@@ -3,11 +3,10 @@ import numpy.testing
 from pathlib import Path
 import pytest
 import spacy
-from thinc.api import Ragged
+from thinc.api import Ragged, chain
 
-from spacy_experimental.transformers.sentencepiece_encoder import (
-    build_sentencepiece_encoder,
-)
+from ..sentencepiece_encoder import build_sentencepiece_encoder
+from ..sentencepiece_adapters import build_xlmr_adapter
 
 
 @pytest.fixture(scope="module")
@@ -24,16 +23,21 @@ def toy_model(test_dir):
 def toy_encoder(toy_model):
     encoder = build_sentencepiece_encoder()
     encoder.attrs["sentencepiece_processor"] = toy_model
-    return encoder
+    return chain(encoder, build_xlmr_adapter())
+
+
+@pytest.fixture
+def empty_encoder():
+    return chain(build_sentencepiece_encoder(), build_xlmr_adapter())
 
 
 def test_sentencepiece_encoder(toy_encoder):
     _test_encoder(toy_encoder)
 
 
-def test_serialize(toy_encoder):
+def test_serialize(toy_encoder, empty_encoder):
     encoder_bytes = toy_encoder.to_bytes()
-    encoder2 = build_sentencepiece_encoder()
+    encoder2 = empty_encoder
     encoder2.from_bytes(encoder_bytes)
     _test_encoder(encoder2)
 
@@ -51,11 +55,11 @@ def _test_encoder(encoder):
     assert isinstance(encoding[0], Ragged)
     numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 6, 2])
     numpy.testing.assert_equal(
-        encoding[0].dataXd, [8, 465, 10, 947, 41, 10, 170, 168, 110, 28, 20, 143, 7, 4]
+        encoding[0].dataXd, [9, 466, 11, 948, 42, 11, 171, 169, 111, 29, 21, 144, 8, 5]
     )
 
     assert isinstance(encoding[1], Ragged)
     numpy.testing.assert_equal(encoding[1].lengths, [2, 1, 1, 1, 4, 3, 2])
     numpy.testing.assert_equal(
-        encoding[1].dataXd, [483, 546, 112, 171, 567, 62, 20, 45, 0, 84, 115, 27, 7, 4]
+        encoding[1].dataXd, [484, 547, 113, 172, 568, 63, 21, 46, 3, 85, 116, 28, 8, 5]
     )

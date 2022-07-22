@@ -31,14 +31,19 @@ def sentencepiece_encoder_forward(model: Model, X: List[Doc], is_train: bool):
 
     pieces = []
     for doc in X:
-        doc_pieces = []
-        lens = []
+        # TODO: check whether as single bos/eos per doc is what we want.
+        #   The issue is that we probably do not have sentence
+        #   boundaries yet, since they are predicted by a pipe.
+        doc_pieces = [spp.bos_id()]
+        lens = [1]
 
         for token in doc:
             piece_ids = spp.encode_as_ids(token.text)
             doc_pieces.extend(piece_ids)
             lens.append(len(piece_ids))
 
+        doc_pieces.append(spp.eos_id())
+        lens.append(1)
         pieces.append(
             Ragged(
                 model.ops.asarray1i(doc_pieces),

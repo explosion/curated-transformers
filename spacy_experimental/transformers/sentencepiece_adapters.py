@@ -2,14 +2,22 @@ from typing import List
 from thinc.api import Model, Ragged
 
 _FAIRSEQ_OFFSET = 1
+_FAIRSEQ_BOS = 0
+_FAIRSEQ_EOS = 2
 _FAIRSEQ_UNK = 3
+
+_SPP_BOS = 1
+_SPP_EOS = 2
 _SPP_UNK = 0
 
 
 def _update_to_fairseq(piece_id):
-    # TODO: add bos/eos pieces.
     if piece_id == _SPP_UNK:
         return _FAIRSEQ_UNK
+    elif piece_id == _SPP_BOS:
+        return _FAIRSEQ_BOS
+    elif piece_id == _SPP_EOS:
+        return _FAIRSEQ_EOS
     else:
         return piece_id + _FAIRSEQ_OFFSET
 

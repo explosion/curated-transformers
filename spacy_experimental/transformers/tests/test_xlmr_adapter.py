@@ -53,13 +53,15 @@ def _test_encoder(encoder):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 6, 2])
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
     numpy.testing.assert_equal(
-        encoding[0].dataXd, [9, 466, 11, 948, 42, 11, 171, 169, 111, 29, 21, 144, 8, 5]
+        encoding[0].dataXd,
+        [0, 9, 466, 11, 948, 42, 11, 171, 169, 111, 29, 21, 144, 8, 5, 2],
     )
 
     assert isinstance(encoding[1], Ragged)
-    numpy.testing.assert_equal(encoding[1].lengths, [2, 1, 1, 1, 4, 3, 2])
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
     numpy.testing.assert_equal(
-        encoding[1].dataXd, [484, 547, 113, 172, 568, 63, 21, 46, 3, 85, 116, 28, 8, 5]
+        encoding[1].dataXd,
+        [0, 484, 547, 113, 172, 568, 63, 21, 46, 3, 85, 116, 28, 8, 5, 2],
     )

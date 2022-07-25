@@ -5,8 +5,8 @@ import pytest
 import spacy
 from thinc.api import Ragged, chain
 
-from ..sentencepiece_encoder import build_sentencepiece_encoder
-from ..sentencepiece_adapters import build_xlmr_adapter
+from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
+from spacy_experimental.transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter
 
 
 @pytest.fixture(scope="module")

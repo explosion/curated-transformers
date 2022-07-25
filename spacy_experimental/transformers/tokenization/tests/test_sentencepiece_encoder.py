@@ -5,7 +5,7 @@ import pytest
 import spacy
 from thinc.api import Ragged
 
-from spacy_experimental.transformers.sentencepiece_encoder import (
+from spacy_experimental.transformers.tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder,
 )
 

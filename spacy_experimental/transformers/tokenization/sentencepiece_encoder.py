@@ -1,7 +1,10 @@
-from typing import List
+from typing import List, TypeVar
 from cysp import SentencePieceProcessor
-from spacy.tokens import Doc
+from spacy.tokens import Doc, Span
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
+
+
+InT = TypeVar("InT", List[Doc], List[Span])
 
 
 @serialize_attr.register(SentencePieceProcessor)
@@ -26,7 +29,7 @@ def build_sentencepiece_encoder() -> Model[List[Doc], List[Ragged]]:
     )
 
 
-def sentencepiece_encoder_forward(model: Model, X: List[Doc], is_train: bool):
+def sentencepiece_encoder_forward(model: Model, X: InT, is_train: bool):
     spp: SentencePieceProcessor = model.attrs["sentencepiece_processor"]
 
     pieces = []

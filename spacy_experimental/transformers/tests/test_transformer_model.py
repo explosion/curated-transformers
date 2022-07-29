@@ -47,19 +47,15 @@ def test_xlmr_model(example_docs, toy_model, stride, window):
     Y, backprop = model(example_docs, is_train=False)
     assert isinstance(Y, list)
     assert len(Y) == 2
-    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
-    assert Y[0].dataXd.shape == (16, 768)
-    numpy.testing.assert_equal(Y[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
-    assert Y[1].dataXd.shape == (16, 768)
+    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 6, 2])
+    assert Y[0].dataXd.shape == (14, 768)
+    numpy.testing.assert_equal(Y[1].lengths, [2, 1, 1, 1, 4, 3, 2])
+    assert Y[1].dataXd.shape == (14, 768)
 
     # Backprop zeros to verify that backprop doesn't fail.
     ops = NumpyOps()
     dY = [
-        Ragged(
-            ops.alloc2f(16, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
-        ),
-        Ragged(
-            ops.alloc2f(16, 768), lengths=ops.asarray1i([1, 2, 1, 1, 1, 4, 3, 2, 1])
-        ),
+        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 6, 2])),
+        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([2, 1, 1, 1, 4, 3, 2])),
     ]
     assert backprop(dY) == []

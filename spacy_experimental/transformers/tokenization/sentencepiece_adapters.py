@@ -46,3 +46,32 @@ def xlmr_adapter_forward(model: Model, X: List[Ragged], is_train: bool):
         )
 
     return X_xlmr, lambda dY: []
+
+
+def remove_bos_eos() -> Model[List[Ragged], List[Ragged]]:
+    return Model("remote_bos_eos", remove_bos_eos_forward)
+
+
+def remove_bos_eos_forward(model: Model, X: List[Ragged], is_train: bool):
+    X_removed = [Ragged(Xr.data[1:-1], lengths=Xr.lengths[1:-1]) for Xr in X]
+
+    def backprop(dY: List[Ragged]):
+        # Pass-through dY, but add zero gradient for the special bos/eos
+        # tokens.
+        dX = []
+        for dYr in dY:
+            dim0 = dYr.dataXd.shape[0] + 2
+
+            data = model.ops.alloc_f((dim0,) + dYr.dataXd.shape[1:])
+            data[[0, -1]] = 0.0
+            data[1:-1] = dYr.dataXd
+
+            lengths = model.ops.alloc1i(dYr.lengths.shape[0] + 2)
+            lengths[[0, 1]] = 1
+            lengths[1:-1] = dYr.lengths
+
+            dX.append(Ragged(data, lengths=lengths))
+
+        return dX
+
+    return X_removed, backprop

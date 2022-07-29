@@ -5,7 +5,7 @@ from thinc.layers import chain, Embed, with_array
 from thinc.model import Model
 from thinc.types import Ragged, ArrayXd
 
-from ..tokenization.sentencepiece_adapters import build_xlmr_adapter
+from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 
 
@@ -27,11 +27,14 @@ def build_transformer_model_v1(
     piece_adapter: Model[List[Ragged], List[Ragged]],
     transformer: Model[List[Ragged], List[Ragged]],
 ):
-    layers = [chain(piece_encoder, piece_adapter), transformer]
+    # FIXME: do we want to make `remove_bos_eos` configurable as well or
+    #        is it always the same post-processing?
+    layers = [chain(piece_encoder, piece_adapter), transformer, remove_bos_eos()]
     refs = {
         "piece_encoder": piece_encoder,
         "tokenizer": layers[0],
         "transformer": with_spans(transformer),
+        "remove_bos_eos": layers[-1],
     }
     return Model(
         "transformer_model",
@@ -44,14 +47,22 @@ def build_transformer_model_v1(
 
 def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
     transformer = model.get_ref("transformer")
+    remove_bos_eos = model.get_ref("remove_bos_eos")
 
     piece_encoder: Model = model.get_ref("tokenizer")
     pieces = piece_encoder.predict(docs)
-    Y, _ = transformer(pieces, is_train=is_train)
+    Y, backprop_transformer = transformer(pieces, is_train=is_train)
+    Y, backprop_remove_bos_eos = remove_bos_eos(Y, is_train=is_train)
 
-    # Return empty list for backprop, since we cannot backprop into piece
-    # identifiers.
-    return Y, lambda dY: []
+    def backprop(dY):
+        dX = backprop_remove_bos_eos(dY)
+        backprop_transformer(dX)
+
+        # Return empty list for backprop, since we cannot backprop into piece
+        # identifiers.
+        return []
+
+    return Y, backprop
 
 
 def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):

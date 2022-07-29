@@ -4,15 +4,17 @@ import numpy
 import pytest
 import spacy
 from cysp import SentencePieceProcessor
+from thinc.api import CupyOps, NumpyOps, Ragged
+from thinc.compat import has_cupy
 
-from spacy_experimental.transformers.models.spans import (
-    with_strided_spans,
-    build_with_strided_spans,
-)
+from spacy_experimental.transformers.models.spans import build_with_strided_spans
 from spacy_experimental.transformers.models.transformer_model import (
     build_xlmr_transformer_model_v1,
 )
-from spacy_experimental.transformers.span_getters import configure_strided_spans
+
+OPS = [NumpyOps()]
+if has_cupy:
+    OPS.append(CupyOps())
 
 
 @pytest.fixture(scope="module")
@@ -49,3 +51,15 @@ def test_xlmr_model(example_docs, toy_model, stride, window):
     assert Y[0].dataXd.shape == (16, 768)
     numpy.testing.assert_equal(Y[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
     assert Y[1].dataXd.shape == (16, 768)
+
+    # Backprop zeros to verify that backprop doesn't fail.
+    ops = NumpyOps()
+    dY = [
+        Ragged(
+            ops.alloc2f(16, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
+        ),
+        Ragged(
+            ops.alloc2f(16, 768), lengths=ops.asarray1i([1, 2, 1, 1, 1, 4, 3, 2, 1])
+        ),
+    ]
+    assert backprop(dY) == []

@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Tuple
 from functools import partial
 from thinc.model import Model
-from thinc.types import Ragged
+from thinc.types import Ragged, Floats2d, Ints1d
 
 
 def build_with_strided_spans(stride=96, window=128):
@@ -45,27 +45,57 @@ def with_strided_spans_forward(
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 
+    spans, doc_lens = _ragged_to_strided_arrays(Xlr=X, stride=stride, window=window)
+
+    Y_layer, backprop_layer = model.layers[0](spans, is_train=is_train)
+
+    def backprop(dY):
+        dY_spans, dY_lengths = _ragged_to_strided_arrays(
+            dY, stride=stride, window=window
+        )
+        dXlf = backprop_layer(dY_spans)
+        return _strided_arrays_to_ragged(
+            model, dXlf, dY_lengths, stride=stride, window=window
+        )
+
+    Y_docs = _strided_arrays_to_ragged(
+        model, Y_layer, doc_lens, stride=stride, window=window
+    )
+
+    return Y_docs, backprop
+
+
+def _ragged_to_strided_arrays(
+    Xlr: List[Ragged], *, stride: int, window: int
+) -> Tuple[List[Floats2d], List[int]]:
     spans = []
+    lens = []
     doc_lens = []
-    for doc in X:
+    for Xr in Xlr:
         doc_len = 0
-        data = doc.dataXd
+        data = Xr.dataXd
+        lens.append(Xr.lengths)
         while data.shape[0] != 0:
             doc_len += 1
             spans.append(data[:window])
             data = data[stride:]
         doc_lens.append(doc_len)
 
-    Y_layer, backprop_layer = model.layers[0](spans, is_train=is_train)
+    return spans, lens
 
-    def backprop(dY):
-        raise RuntimeError("backprop is not yet implemented")
 
+def _strided_arrays_to_ragged(
+    model: Model, Xlf: List[Floats2d], lens: List[Ints1d], *, stride: int, window: int
+) -> List[Ragged]:
     # Todo: mean of previous window and current stride (overlapping part)?
-    Y_docs = []
-    for doc, doc_len in zip(X, doc_lens):
-        Y_doc = [y[:stride] for y in Y_layer[:doc_len]]
-        Y_docs.append(Ragged(model.ops.flatten(Y_doc), lengths=doc.lengths))
-        Y_layer = Y_layer[doc_len:]
+    Xlr = []
+    for Xr_lens in lens:
+        doc_len = int(Xr_lens.sum())
+        arrs = []
+        while doc_len != 0:
+            arr = Xlf[0][:stride]
+            arrs.append(arr)
+            doc_len -= arr.shape[0]
+        Xlr.append(Ragged(model.ops.flatten(arrs), lengths=Xr_lens))
 
-    return Y_docs, backprop
+    return Xlr

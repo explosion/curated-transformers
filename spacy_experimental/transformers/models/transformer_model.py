@@ -1,4 +1,4 @@
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 
 from spacy.tokens import Span, Doc
 from thinc.layers import chain, Embed, with_array
@@ -47,9 +47,11 @@ def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
 
     piece_encoder: Model = model.get_ref("tokenizer")
     pieces = piece_encoder.predict(docs)
-    Y, backprop = transformer(pieces, is_train=is_train)
+    Y, _ = transformer(pieces, is_train=is_train)
 
-    return Y, backprop
+    # Return empty list for backprop, since we cannot backprop into piece
+    # identifiers.
+    return Y, lambda dY: []
 
 
 def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):

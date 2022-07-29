@@ -28,15 +28,17 @@ def with_strided_spans_init(model: Model, X, Y):
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 
-    spans = []
-    for doc in X:
-        data = doc.dataXd
-        while data.shape[0] != 0:
-            spans.append(data[:window])
-            data = data[stride:]
-
-    if X:
-        model.layers[0].initialize(X=spans)
+    X_spans = (
+        _ragged_to_strided_arrays(X, stride=stride, window=window)[0]
+        if X is not None
+        else None
+    )
+    Y_spans = (
+        _ragged_to_strided_arrays(Y, stride=stride, window=window)[0]
+        if Y is not None
+        else None
+    )
+    model.layers[0].initialize(X=X_spans, Y=Y_spans)
 
 
 def with_strided_spans_forward(
@@ -93,9 +95,10 @@ def _strided_arrays_to_ragged(
         doc_len = int(Xr_lens.sum())
         arrs = []
         while doc_len != 0:
-            arr = Xlf[0][:stride]
+            arr = Xlf[0][: min(stride, doc_len)]
             arrs.append(arr)
             doc_len -= arr.shape[0]
+            Xlf = Xlf[1:]
         Xlr.append(Ragged(model.ops.flatten(arrs), lengths=Xr_lens))
 
     return Xlr

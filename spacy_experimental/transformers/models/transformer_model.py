@@ -29,7 +29,9 @@ def build_transformer_model_v1(
 ):
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?
-    layers = [chain(piece_encoder, piece_adapter), transformer, remove_bos_eos()]
+    layers = [
+        chain(piece_encoder, piece_adapter, with_spans(transformer), remove_bos_eos())
+    ]
     refs = {
         "piece_encoder": piece_encoder,
         "tokenizer": layers[0],
@@ -46,17 +48,10 @@ def build_transformer_model_v1(
 
 
 def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
-    transformer = model.get_ref("transformer")
-    remove_bos_eos = model.get_ref("remove_bos_eos")
-
-    piece_encoder: Model = model.get_ref("tokenizer")
-    pieces = piece_encoder.predict(docs)
-    Y, backprop_transformer = transformer(pieces, is_train=is_train)
-    Y, backprop_remove_bos_eos = remove_bos_eos(Y, is_train=is_train)
+    Y, backprop_layer = model.layers[0](docs, is_train=is_train)
 
     def backprop(dY):
-        dX = backprop_remove_bos_eos(dY)
-        backprop_transformer(dX)
+        backprop_layer(dY)
 
         # Return empty list for backprop, since we cannot backprop into piece
         # identifiers.
@@ -66,18 +61,12 @@ def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
 
 
 def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):
-    transformer = model.get_ref("transformer")
-
-    piece_encoder: Model = model.get_ref("tokenizer")
-
-    if X is not None:
-        pieces = piece_encoder.predict(X)
-        transformer.initialize(pieces)
+    model.layers[0].initialize(X, Y)
+    return model
 
 
 # Not a real transformer, just a stub.
 def _stubformer(nO, nV):
-    # return _with_array_from_list_ragged(Embed(nO, nV))
     return Embed(nO, nV)
 
 
@@ -87,6 +76,8 @@ def _with_array_from_list_ragged(layer: Model):
         if X:
             Xlf = layer.ops.flatten([r.dataXd for r in X])
             layer.initialize(Xlf, Y)
+
+        return model
 
     def forward(model, Xlr, is_train):
         Xla, lens = _raggeds_to_arrays(Xlr)

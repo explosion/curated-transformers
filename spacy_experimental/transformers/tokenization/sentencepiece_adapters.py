@@ -62,7 +62,7 @@ def remove_bos_eos_forward(model: Model, X: List[Ragged], is_train: bool):
         for dYr in dY:
             dim0 = dYr.dataXd.shape[0] + 2
 
-            data = model.ops.alloc_f((dim0,) + dYr.dataXd.shape[1:])
+            data = model.ops.xp.empty((dim0,) + dYr.dataXd.shape[1:], dtype="f")
             data[[0, -1]] = 0.0
             data[1:-1] = dYr.dataXd
 

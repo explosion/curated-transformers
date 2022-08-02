@@ -1,16 +1,20 @@
 import pytest
 
 from spacy_experimental.transformers.models import TransformerEncoder
-from spacy_experimental.transformers.models.util import convert_hf_pretrained_model_parameters
+from spacy_experimental.transformers.models.util import (
+    convert_hf_pretrained_model_parameters,
+)
+
 
 @pytest.mark.slow
-def test_hf_load_roberta_weights():
-    from transformers import RobertaModel, RobertaConfig
-    
-    hf_model = RobertaModel.from_pretrained("roberta-base")
+@pytest.mark.parametrize("model_name", ["roberta-base", "xlm-roberta-base"])
+def test_hf_load_roberta_weights(model_name):
+    from transformers import AutoModel, AutoConfig
+
+    hf_model = AutoModel.from_pretrained(model_name)
     params = convert_hf_pretrained_model_parameters(hf_model)
 
-    config: RobertaConfig = hf_model.config
+    config: AutoConfig = hf_model.config
     encoder = TransformerEncoder(
         hidden_size=config.hidden_size,
         intermediate_size=config.intermediate_size,

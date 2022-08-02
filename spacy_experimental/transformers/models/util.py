@@ -14,7 +14,7 @@ def convert_hf_pretrained_model_parameters(
     Returns the state_dict that can be directly loaded by our Transformer module.
     """
     model_name = hf_model.config.name_or_path
-    if model_name == "roberta-base":
+    if model_name == "roberta-base" or model_name == "xlm-roberta-base":
         return _convert_roberta_base_state(hf_model)
     else:
         raise ValueError(f"unsupported HF model {model_name}")
@@ -23,7 +23,11 @@ def convert_hf_pretrained_model_parameters(
 def _convert_roberta_base_state(hf_model: PreTrainedModel) -> Dict[str, torch.Tensor]:
     out = {}
 
-    state_dict = hf_model.state_dict()
+    # Strip the `roberta` prefix from XLM-Roberta model parameters.
+    state_dict = {
+        re.sub(r"^roberta\.", "", k): v for k, v in hf_model.state_dict().items()
+    }
+
     for name, parameter in state_dict.items():
         if "encoder.layer." not in name:
             continue

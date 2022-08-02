@@ -1,12 +1,10 @@
-import math
 from typing import Optional
 
 import torch
 from torch.nn import Module
 from torch import Tensor
 
-from .layers import EncoderLayer
-from .embedding import SinusoidalPositionalEmbedding
+from .components import EncoderLayer, SinusoidalPositionalEmbedding
 
 
 class TransformerEncoder(Module):
@@ -33,9 +31,9 @@ class TransformerEncoder(Module):
         )
         self.padding_idx = padding_idx
         if learnable_pos_embeddings:
-            self.pos_embeddings = torch.nn.Embedding(num_embeddings=max_pos_embeddings, embedding_dim=hidden_size) # type: ignore
+            self.pos_embeddings = torch.nn.Embedding(num_embeddings=max_pos_embeddings, embedding_dim=hidden_size)  # type: ignore
         else:
-            self.pos_embeddings = SinusoidalPositionalEmbedding(hidden_size, max_pos_embeddings) # type: ignore
+            self.pos_embeddings = SinusoidalPositionalEmbedding(hidden_size, max_pos_embeddings)  # type: ignore
 
         self.emb_dropout = torch.nn.Dropout(p=hidden_dropout)
         self.layers = torch.nn.ModuleList(

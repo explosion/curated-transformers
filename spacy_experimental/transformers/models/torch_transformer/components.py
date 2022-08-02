@@ -5,6 +5,34 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
+
+# https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+class SinusoidalPositionalEmbedding(Module):
+    def __init__(self, dim: int, max_len: int, *, normalize=True):
+        super().__init__()
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, dim, 2) * (-math.log(10000.0) / dim))
+
+        pe = torch.zeros(max_len, dim)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+
+        if normalize == True:
+            l2 = torch.norm(pe, dim=-1)
+            pe /= l2.unsqueeze(-1)
+
+        self.pe = pe
+        self.pe.requires_grad = False
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Shapes:
+            x - (batch, seq_len)
+        """
+        return self.pe[x.size(1), :]
+
+
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
     def __init__(self, *, dropout: float = 0.1):
@@ -112,3 +140,85 @@ class MultiHeadAttention(Module):
         out = self.output(attn)
 
         return out
+
+
+class PointwiseFeedForwardLayer(Module):
+    def __init__(
+        self,
+        hidden_dim: int,
+        model_dim: int,
+        *,
+        activation: str = "relu",
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+
+        self.intermediate = torch.nn.Linear(model_dim, hidden_dim)
+        self.output = torch.nn.Linear(hidden_dim, model_dim)
+        if activation == "relu":
+            self.activation = torch.nn.ReLU()  # type: ignore
+        elif activation == "gelu":
+            self.activation = torch.nn.GELU()  # type: ignore
+        else:
+            raise ValueError(f"unsupported activation function '{activation}")
+
+        self.dropout = torch.nn.Dropout(p=dropout)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Shapes:
+            x - (batch, seq_len, model_dim)
+        """
+        out = self.intermediate(x)
+        out = self.activation(out)
+        out = self.output(out)
+        out = self.dropout(out)
+        return out
+
+
+class EncoderLayer(Module):
+    def __init__(
+        self,
+        model_dim: int,
+        ffn_dim: int,
+        num_attn_heads: int,
+        *,
+        activation: str = "relu",
+        attn_dropout: float = 0.1,
+        hidden_dropout: float = 0.1,
+        layer_norm_eps: float = 1e-5,
+    ):
+        super().__init__()
+
+        self.mha = MultiHeadAttention(
+            model_dim, n_heads=num_attn_heads, dropout=attn_dropout
+        )
+        self.attn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
+        self.attn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
+
+        self.ffn = PointwiseFeedForwardLayer(
+            hidden_dim=ffn_dim,
+            model_dim=model_dim,
+            activation=activation,
+            dropout=hidden_dropout,
+        )
+        self.ffn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
+        self.ffn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
+
+    def forward(self, x: Tensor, mask: Optional[Tensor] = None) -> Tensor:
+        """
+        Shapes:
+            x - (batch, seq_len, model_dim)
+            mask - (batch, seq_len)
+
+        `mask` indicates elements to be masked with values of `1`
+        """
+        attn_out = self.mha(x, x, x, mask)
+        attn_out = self.attn_output_layernorm(x + attn_out)
+        attn_out = self.attn_output_dropout(attn_out)
+
+        ffn_out = self.ffn(attn_out)
+        ffn_out = self.ffn_output_layernorm(attn_out + ffn_out)
+        ffn_out = self.ffn_output_dropout(ffn_out)
+
+        return ffn_out

@@ -1,7 +1,7 @@
 import pytest
 
 # fmt: off
-from spacy_experimental.transformers.models import TransformerEncoder
+from spacy_experimental.transformers.models.torch_transformer import TransformerEncoder
 from spacy_experimental.transformers.models.util import convert_hf_pretrained_model_parameters
 from spacy_experimental.transformers.models.util import has_hf_transformers, transformers
 # fmt: on

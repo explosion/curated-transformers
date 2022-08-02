@@ -1,1 +1,1 @@
-from .transformer import TransformerEncoder
+from .torch_transformer import TransformerEncoder

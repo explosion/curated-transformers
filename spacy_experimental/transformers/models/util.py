@@ -1,12 +1,19 @@
 import re
-
 import torch
-from transformers import PreTrainedModel
+
+try:
+    import transformers
+
+    has_hf_transformers = True
+except ImportError:
+    transformers = None
+    has_hf_transformers = False
+
 from typing import Dict
 
 
 def convert_hf_pretrained_model_parameters(
-    hf_model: PreTrainedModel,
+    hf_model: transformers.PreTrainedModel,
 ) -> Dict[str, torch.Tensor]:
     """Converts HF model parameters to parameters that can be consumed by
     our implementation of the Transformer.
@@ -20,7 +27,9 @@ def convert_hf_pretrained_model_parameters(
         raise ValueError(f"unsupported HF model {model_name}")
 
 
-def _convert_roberta_base_state(hf_model: PreTrainedModel) -> Dict[str, torch.Tensor]:
+def _convert_roberta_base_state(
+    hf_model: transformers.PreTrainedModel,
+) -> Dict[str, torch.Tensor]:
     out = {}
 
     # Strip the `roberta` prefix from XLM-Roberta model parameters.

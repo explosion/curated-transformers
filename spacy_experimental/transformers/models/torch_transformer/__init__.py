@@ -1,1 +1,1 @@
-from .wrapper import TransformerEncoder
+from .encoder import TransformerEncoder

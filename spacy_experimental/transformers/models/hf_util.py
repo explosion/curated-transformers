@@ -1,5 +1,6 @@
-import re
+from typing import Dict
 import torch
+import re
 
 try:
     import transformers
@@ -9,7 +10,13 @@ except ImportError:
     transformers = None
     has_hf_transformers = False
 
-from typing import Dict
+
+SUPPORTED_HF_MODELS = ["roberta-base", "xlm-roberta-base"]
+
+
+def _check_supported_hf_models(model_name: str):
+    if model_name not in SUPPORTED_HF_MODELS:
+        raise ValueError(f"unsupported HF model {model_name}")
 
 
 def convert_hf_pretrained_model_parameters(
@@ -21,10 +28,14 @@ def convert_hf_pretrained_model_parameters(
     Returns the state_dict that can be directly loaded by our Transformer module.
     """
     model_name = hf_model.config.name_or_path
-    if model_name == "roberta-base" or model_name == "xlm-roberta-base":
-        return _convert_roberta_base_state(hf_model)
-    else:
-        raise ValueError(f"unsupported HF model {model_name}")
+    _check_supported_hf_models(model_name)
+
+    converters = {
+        "roberta-base": _convert_roberta_base_state,
+        "xlm-roberta-base": _convert_roberta_base_state,
+    }
+
+    return converters[model_name](hf_model)
 
 
 def _convert_roberta_base_state(

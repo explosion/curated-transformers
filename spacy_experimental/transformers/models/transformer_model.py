@@ -1,22 +1,29 @@
 from typing import List, Tuple
 
 from spacy.tokens import Span, Doc
-from thinc.layers import chain, Embed, with_array
+from thinc.layers import chain, Embed, with_array, with_padded
 from thinc.model import Model
 from thinc.types import Ragged, ArrayXd
 
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
+from .hf_wrapper import build_hf_transformer_encoder_v1
 
 
-def build_xlmr_transformer_model_v1(*, with_spans):
+def build_xlmr_transformer_model_v1(*, with_spans, hf_model_name=None):
     piece_encoder = build_sentencepiece_encoder()
     piece_adapter = build_xlmr_adapter()
+
+    if not hf_model_name:
+        transformer = with_array(_stubformer(768, 1000))
+    else:
+        transformer = build_hf_transformer_encoder_v1(hf_model_name)
+
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
         piece_adapter=piece_adapter,
-        transformer=with_array(_stubformer(768, 1000)),
+        transformer=transformer,
     )
 
 

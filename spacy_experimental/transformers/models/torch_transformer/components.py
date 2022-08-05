@@ -50,12 +50,12 @@ class ScaledDotProductAttention(Module):
         """
 
         model_dim = k.shape[-1]
-        qk = torch.mm(q, k.transpose(-2, -1))
+        qk = q @ k.transpose(-2, -1)
         attn_scores = qk / math.sqrt(model_dim)
 
         # Replace masked-out elements with a large negative value
         # to zero them out during softmax normalization.
-        if attn_mask:
+        if attn_mask is not None:
             attn_scores = attn_scores.masked_fill(attn_mask, 1e-10)
 
         attn_weights = attn_scores.softmax(dim=-1)
@@ -127,7 +127,7 @@ class MultiHeadAttention(Module):
         q = self._split_heads(q)
         v = self._split_heads(v)
 
-        if attn_mask:
+        if attn_mask is not None:
             if attn_mask.dim() != 2:
                 raise ValueError(
                     f"attention mask dim mismatch, expected '2' but received {attn_mask.dim()}"

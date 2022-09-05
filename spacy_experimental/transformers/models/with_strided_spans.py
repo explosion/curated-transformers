@@ -4,7 +4,7 @@ from thinc.model import Model
 from thinc.types import Ragged, Floats2d, Ints1d
 
 
-def build_with_strided_spans(stride=96, window=128):
+def build_with_strided_spans_v1(stride=96, window=128):
     return partial(with_strided_spans, stride=stride, window=window)
 
 

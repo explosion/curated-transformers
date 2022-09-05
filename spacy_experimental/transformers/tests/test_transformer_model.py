@@ -9,7 +9,7 @@ from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 
 from spacy_experimental.transformers.models.with_strided_spans import (
-    build_with_strided_spans,
+    build_with_strided_spans_v1,
 )
 from spacy_experimental.transformers.models.transformer_model import (
     build_xlmr_transformer_model_v1,
@@ -44,7 +44,7 @@ def example_docs():
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model_name", [None] + SUPPORTED_HF_MODELS)
 def test_xlmr_model(example_docs, toy_model, stride, window, hf_model_name):
-    with_spans = build_with_strided_spans(stride=stride, window=window)
+    with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
         with_spans=with_spans, hf_model_name=hf_model_name
     )

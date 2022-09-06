@@ -2,7 +2,8 @@ import pytest
 
 # fmt: off
 from spacy_experimental.transformers.models.hf_wrapper import encoder_from_pretrained_hf_model
-from spacy_experimental.transformers.models.hf_util import has_hf_transformers, SUPPORTED_HF_MODELS
+from spacy_experimental.transformers._compat import has_hf_transformers
+from spacy_experimental.transformers.models.hf_util import SUPPORTED_HF_MODELS
 # fmt: on
 
 

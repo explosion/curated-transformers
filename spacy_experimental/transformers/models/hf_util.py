@@ -2,14 +2,7 @@ from typing import Dict
 import torch
 import re
 
-try:
-    import transformers
-
-    has_hf_transformers = True
-except ImportError:
-    transformers = None
-    has_hf_transformers = False
-
+from .._compat import transformers
 
 SUPPORTED_HF_MODELS = ["roberta-base", "xlm-roberta-base"]
 

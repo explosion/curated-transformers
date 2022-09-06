@@ -2,6 +2,9 @@ from typing import List, TypeVar
 from cysp import SentencePieceProcessor
 from spacy.tokens import Doc, Span
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
+from transformers import XLMRobertaTokenizerFast
+
+from .._compat import has_hf_transformers, transformers
 
 
 InT = TypeVar("InT", List[Doc], List[Span])
@@ -27,6 +30,24 @@ def build_sentencepiece_encoder() -> Model[List[Doc], List[Ragged]]:
         forward=sentencepiece_encoder_forward,
         attrs={"sentencepiece_processor": SentencePieceProcessor()},
     )
+
+
+def build_hf_sentencepiece_encoder(
+    hf_model_name=None,
+) -> Model[List[Doc], List[Ragged]]:
+    if not has_hf_transformers:
+        raise ValueError("requires 🤗 transformers")
+
+    tokenizer = transformers.AutoTokenizer.from_pretrained(hf_model_name)
+    if not isinstance(tokenizer, XLMRobertaTokenizerFast):
+        raise ValueError("Loading from this 🤗 tokenizer is not supported")
+
+    encoder = build_sentencepiece_encoder()
+    encoder.attrs["sentencepiece_processor"] = SentencePieceProcessor.from_file(
+        tokenizer.vocab_file
+    )
+
+    return encoder
 
 
 def sentencepiece_encoder_forward(model: Model, X: InT, is_train: bool):

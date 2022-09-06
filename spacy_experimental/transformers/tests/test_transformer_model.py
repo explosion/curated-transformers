@@ -8,13 +8,13 @@ from cysp import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 
-from spacy_experimental.transformers.models.with_strided_spans import (
-    build_with_strided_spans_v1,
-)
-from spacy_experimental.transformers.models.transformer_model import (
-    build_xlmr_transformer_model_v1,
-)
+# fmt: off
+from spacy_experimental.transformers.models.with_strided_spans import build_with_strided_spans_v1
+from spacy_experimental.transformers.models.transformer_model import build_xlmr_transformer_model_v1
+# fmt: on
+
 from spacy_experimental.transformers.models.hf_util import SUPPORTED_HF_MODELS
+from spacy_experimental.transformers._compat import has_hf_transformers
 
 OPS = [NumpyOps()]
 if has_cupy:
@@ -41,6 +41,7 @@ def example_docs():
     return [doc1, doc2]
 
 
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model_name", [None] + SUPPORTED_HF_MODELS)
 def test_xlmr_model(example_docs, toy_model, stride, window, hf_model_name):

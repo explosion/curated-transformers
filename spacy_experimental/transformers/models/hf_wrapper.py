@@ -10,11 +10,8 @@ from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Floats3d, Ints1d
 
 from .torch_transformer import TransformerEncoder
-from .hf_util import (
-    has_hf_transformers,
-    transformers,
-    convert_hf_pretrained_model_parameters,
-)
+from .._compat import transformers, has_hf_transformers
+from .hf_util import convert_hf_pretrained_model_parameters
 
 
 def build_hf_transformer_encoder_v1(

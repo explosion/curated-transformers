@@ -13,7 +13,6 @@ from spacy_experimental.transformers.models.with_strided_spans import build_with
 from spacy_experimental.transformers.models.transformer_model import build_xlmr_transformer_model_v1
 # fmt: on
 
-from spacy_experimental.transformers.models.hf_util import SUPPORTED_HF_MODELS
 from spacy_experimental.transformers._compat import has_hf_transformers
 
 OPS = [NumpyOps()]
@@ -43,8 +42,11 @@ def example_docs():
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
-@pytest.mark.parametrize("hf_model_name", [None] + SUPPORTED_HF_MODELS)
-def test_xlmr_model(example_docs, toy_model, stride, window, hf_model_name):
+@pytest.mark.parametrize(
+    "hf_model", [(None, 768), ("xlm-roberta-base", 768), ("xlm-roberta-large", 1024)]
+)
+def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
+    hf_model_name, hidden_size = hf_model
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
         with_spans=with_spans, hf_model_name=hf_model_name
@@ -56,9 +58,9 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model_name):
     assert isinstance(Y, list)
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 6, 2])
-    assert Y[0].dataXd.shape == (14, 768)
+    assert Y[0].dataXd.shape == (14, hidden_size)
     numpy.testing.assert_equal(Y[1].lengths, [2, 1, 1, 1, 4, 3, 2])
-    assert Y[1].dataXd.shape == (14, 768)
+    assert Y[1].dataXd.shape == (14, hidden_size)
 
     # Backprop zeros to verify that backprop doesn't fail.
     ops = NumpyOps()

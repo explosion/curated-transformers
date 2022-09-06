@@ -4,7 +4,7 @@ import re
 
 from .._compat import transformers
 
-SUPPORTED_HF_MODELS = ["roberta-base", "xlm-roberta-base"]
+SUPPORTED_HF_MODELS = ["roberta-base", "xlm-roberta-base", "xlm-roberta-large"]
 
 
 def _check_supported_hf_models(model_name: str):

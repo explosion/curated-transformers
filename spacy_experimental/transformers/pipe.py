@@ -7,7 +7,10 @@ from spacy.pipeline import TrainablePipe
 from spacy.training import Example, validate_examples, validate_get_examples
 from thinc.api import Optimizer, set_dropout_rate
 from thinc.model import Model
-from thinc.types import Ragged
+from thinc.types import Floats2d, Ragged
+
+
+DOC_EXT_ATTR = "trf_data"
 
 
 DEFAULT_TRANSFORMER_MODEL = """
@@ -22,15 +25,19 @@ DEFAULT_TRANSFORMER_MODEL = """
 
 @Language.factory(
     "experimental_transformer",
-    assigns=["doc.tensor"],
+    assigns=["doc._.trf_data"],
     default_config={"model": DEFAULT_TRANSFORMER_MODEL},
 )
 def make_transformer(nlp: Language, name: str, model: Model) -> "Transformer":
     return Transformer(nlp.vocab, model, name)
 
 
-def last_transformer_layer_listener_v1(width: int, upstream: str = "*"):
-    tok2vec = LastTransformerLayerListener(upstream_name=upstream, width=width)
+def last_transformer_layer_listener_v1(
+    width: int, pooling: Model[Ragged, Floats2d], upstream: str = "*"
+):
+    tok2vec = LastTransformerLayerListener(
+        upstream_name=upstream, pooling=pooling, width=width
+    )
     return tok2vec
 
 
@@ -42,11 +49,35 @@ class TransformerListener(Model):
         """
         return sum(sum(token.orth for token in doc) for doc in inputs)
 
+    def receive(self, batch_id: int, outputs, backprop) -> None:
+        """Store a batch of training predictions and a backprop callback. The
+        predictions and callback are produced by the upstream Tok2Vec component,
+        and later will be used when the listener's component's model is called.
+        """
+        self._batch_id = batch_id
+        self._outputs = outputs
+        self._backprop = backprop
+
+    def verify_inputs(self, inputs) -> bool:
+        """Check that the batch of Doc objects matches the ones we have a
+        prediction for.
+        """
+        if self._batch_id is None and self._outputs is None:
+            raise ValueError(Errors.E954)
+        else:
+            batch_id = self.get_batch_id(inputs)
+            if batch_id != self._batch_id:
+                raise ValueError(Errors.E953.format(id1=batch_id, id2=self._batch_id))
+            else:
+                return True
+
 
 class LastTransformerLayerListener(TransformerListener):
     name = "last_transformer_layer_listener"
 
-    def __init__(self, upstream_name: str, width: int) -> None:
+    def __init__(
+        self, upstream_name: str, pooling: Model[Ragged, Floats2d], width: int
+    ) -> None:
         """
         upstream_name (str): A string to identify the 'upstream' Tok2Vec component
             to communicate with. The upstream name should either be the wildcard
@@ -56,21 +87,48 @@ class LastTransformerLayerListener(TransformerListener):
         width (int):
             The width of the vectors produced by the upstream tok2vec component.
         """
-        Model.__init__(self, name=self.name, forward=None, dims={"nO": width})
+        Model.__init__(
+            self, name=self.name, forward=forward, dims={"nO": width}, layers=[pooling]
+        )
         self.upstream_name = upstream_name
         self._batch_id: Optional[int] = None
         self._outputs = None
         self._backprop = None
 
 
+def forward(model: LastTransformerLayerListener, docs, is_train: bool):
+    """Supply the outputs from the upstream Tok2Vec component."""
+    pooling: Model[Ragged, Floats2d] = model.layers[0]
+
+    outputs = []
+    if is_train:
+        model.verify_inputs(docs)
+        backprops = []
+        for output in model._outputs:
+            output, pooling_backprop = pooling(output, is_train)
+            outputs.append(output)
+            backprops.append(pooling_backprop)
+        return outputs, lambda dX: []
+    else:
+        width = model.get_dim("nO")
+        for doc in docs:
+            if doc._.trf_data is None:
+                outputs.append(model.ops.alloc2f(len(doc), width))
+            else:
+                output, _ = pooling(doc._.trf_data, is_train)
+                outputs.append(output)
+
+        return outputs, lambda dX: []
+
+
 class Transformer(TrainablePipe):
-    """Apply a "token-to-vector" model and set its outputs in the doc.tensor
+    """Apply a "token-to-vector" model and set its outputs in the doc._.trf_data
     attribute. This is mostly useful to share a single subnetwork between multiple
     components, e.g. to have one embedding and CNN network shared between a
     parser, tagger and NER.
     In order to use the `Tok2Vec` predictions, subsequent components should use
     the `TransformerListener` layer as the tok2vec subnetwork of their model. This
-    layer will read data from the `doc.tensor` attribute during prediction.
+    layer will read data from the `doc._.trf_data` attribute during prediction.
     During training, the `Tok2Vec` component will save its prediction and backprop
     callback for each batch, so that the subsequent components can backpropagate
     to the shared weights. This implementation is used because it allows us to
@@ -92,6 +150,7 @@ class Transformer(TrainablePipe):
         self.name = name
         self.listener_map: Dict[str, List["TransformerListener"]] = {}
         self.cfg: Dict[str, Any] = {}
+        install_extensions()
 
     @property
     def listeners(self) -> List["TransformerListener"]:
@@ -152,15 +211,15 @@ class Transformer(TrainablePipe):
         RETURNS: Vector representations for each token in the documents.
         DOCS: https://spacy.io/api/tok2vec#predict
         """
+        install_extensions()
         if not any(len(doc) for doc in docs):
             # Handle cases where there are no tokens in any docs.
             width = self.model.get_dim("nO")
-            return [self.model.ops.alloc((0, width)) for doc in docs]
-        tokvecs = self.model.predict(docs)
-        batch_id = TransformerListener.get_batch_id(docs)
-        for listener in self.listeners:
-            listener.receive(batch_id, tokvecs, _empty_backprop)
-        return tokvecs
+            return [
+                Ragged(self.model.ops.alloc((0, width), self.model.ops.alloc1i(0)))
+                for doc in docs
+            ]
+        return self.model.predict(docs)
 
     def set_annotations(self, docs: Sequence[Doc], tokvecses) -> None:
         """Modify a batch of documents, using pre-computed scores.
@@ -170,7 +229,7 @@ class Transformer(TrainablePipe):
         """
         for doc, tokvecs in zip(docs, tokvecses):
             assert tokvecs.shape[0] == len(doc)
-            doc.tensor = tokvecs
+            doc._.trf_data = tokvecs
 
     def update(
         self,
@@ -192,7 +251,7 @@ class Transformer(TrainablePipe):
         """
         if losses is None:
             losses = {}
-        validate_examples(examples, "Tok2Vec.update")
+        validate_examples(examples, "Transformer.update")
         docs = [eg.predicted for eg in examples]
         set_dropout_rate(self.model, drop)
         tokvecs, bp_tokvecs = self.model.begin_update(docs)
@@ -243,7 +302,7 @@ class Transformer(TrainablePipe):
         nlp (Language): The current nlp object the component is part of.
         DOCS: https://spacy.io/api/tok2vec#initialize
         """
-        validate_get_examples(get_examples, "Tok2Vec.initialize")
+        validate_get_examples(get_examples, "Transformer.initialize")
         doc_sample = []
         for example in islice(get_examples(), 10):
             doc_sample.append(example.x)
@@ -252,3 +311,8 @@ class Transformer(TrainablePipe):
 
     def add_label(self, label):
         raise NotImplementedError
+
+
+def install_extensions() -> None:
+    if not Doc.has_extension(DOC_EXT_ATTR):
+        Doc.set_extension(DOC_EXT_ATTR, default=None)

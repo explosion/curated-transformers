@@ -19,6 +19,7 @@ cfg_string = """
     [components.tagger.model.tok2vec]
     @architectures = "spacy-experimental.LastTransformerLayerListener.v1"
     width = 768
+    pooling = {"@layers":"reduce_mean.v1"}
 
     [components.tok2vec]
     factory = "experimental_transformer"

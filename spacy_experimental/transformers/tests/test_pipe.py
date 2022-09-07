@@ -1,5 +1,7 @@
+from numpy.testing import assert_array_equal
 from spacy import Config, util
 from spacy.training import Example
+from thinc.backends import get_current_ops
 
 
 cfg_string = """
@@ -60,3 +62,7 @@ def test_tagger():
     for i in range(5):
         losses = {}
         nlp.update(train_examples, sgd=optimizer, losses=losses)
+
+    docs = list(nlp.pipe(["Eat blue ham", "I like green eggs"]))
+    assert [t.tag_ for t in docs[0]] == ["V", "J", "N"]
+    assert [t.tag_ for t in docs[1]] == ["N", "V", "J", "N"]

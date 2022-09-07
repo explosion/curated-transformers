@@ -108,7 +108,12 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
             output, pooling_backprop = pooling(output, is_train)
             outputs.append(output)
             backprops.append(pooling_backprop)
-        return outputs, lambda dX: []
+
+        def backprop(dYs):
+            dX_pooling = [bp_pool(dY) for dY, bp_pool in zip(dYs, backprops)]
+            model._backprop(dX_pooling)
+
+        return outputs, backprop
     else:
         width = model.get_dim("nO")
         for doc in docs:
@@ -228,7 +233,6 @@ class Transformer(TrainablePipe):
         DOCS: https://spacy.io/api/tok2vec#set_annotations
         """
         for doc, tokvecs in zip(docs, tokvecses):
-            assert tokvecs.shape[0] == len(doc)
             doc._.trf_data = tokvecs
 
     def update(
@@ -267,9 +271,9 @@ class Transformer(TrainablePipe):
             """
             nonlocal d_tokvecs
             for i in range(len(one_d_tokvecs)):
-                d_tokvecs[i] += one_d_tokvecs[i]
-                losses[self.name] += float((one_d_tokvecs[i] ** 2).sum())
-            return [self.model.ops.alloc2f(*t2v.shape) for t2v in tokvecs]
+                d_tokvecs[i].data += one_d_tokvecs[i].data
+                losses[self.name] += float((one_d_tokvecs[i].dataXd ** 2).sum())
+            # return [self.model.ops.alloc2f(*t2v.shape) for t2v in tokvecs]
 
         def backprop(one_d_tokvecs):
             """Callback to actually do the backprop. Passed to last listener."""

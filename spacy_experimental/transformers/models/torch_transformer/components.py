@@ -56,7 +56,7 @@ class ScaledDotProductAttention(Module):
         # Replace masked-out elements with a large negative value
         # to zero them out during softmax normalization.
         if attn_mask is not None:
-            attn_scores = attn_scores.masked_fill(attn_mask, 1e-10)
+            attn_scores = attn_scores.masked_fill(attn_mask.to(torch.bool), 1e-10)
 
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ v)

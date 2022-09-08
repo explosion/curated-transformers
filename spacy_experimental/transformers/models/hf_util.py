@@ -69,5 +69,7 @@ def _convert_roberta_base_state(
     out["token_type_embeddings.weight"] = state_dict[
         "embeddings.token_type_embeddings.weight"
     ]
+    out["emb_layer_norm.weight"] = state_dict["embeddings.LayerNorm.weight"]
+    out["emb_layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
 
     return out

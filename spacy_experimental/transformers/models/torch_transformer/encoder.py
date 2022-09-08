@@ -114,7 +114,9 @@ class TransformerEncoder(Module):
         pos = self._get_pos_embeddings(input)
 
         embedding_sum = emb + pos
-        layer_output = self.emb_dropout(embedding_sum)
+        embedding_sum = self.emb_layer_norm(embedding_sum)
+        embedding_sum = self.emb_dropout(embedding_sum)
+        layer_output = embedding_sum
 
         layer_outputs = []
         for layer in self.layers:

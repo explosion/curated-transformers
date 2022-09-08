@@ -26,6 +26,7 @@ def convert_hf_pretrained_model_parameters(
     converters = {
         "roberta-base": _convert_roberta_base_state,
         "xlm-roberta-base": _convert_roberta_base_state,
+        "xlm-roberta-large": _convert_roberta_base_state,
     }
 
     return converters[model_name](hf_model)

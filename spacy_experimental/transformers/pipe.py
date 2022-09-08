@@ -275,7 +275,7 @@ class Transformer(TrainablePipe):
             nonlocal d_tokvecs
             for i in range(len(one_d_tokvecs)):
                 d_tokvecs[i].data += one_d_tokvecs[i].data
-                losses[self.name] += float((one_d_tokvecs[i].dataXd ** 2).sum())
+                losses[self.name] += float((one_d_tokvecs[i].data ** 2).sum())
             # return [self.model.ops.alloc2f(*t2v.shape) for t2v in tokvecs]
 
         def backprop(one_d_tokvecs):

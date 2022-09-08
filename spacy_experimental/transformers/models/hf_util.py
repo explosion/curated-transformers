@@ -46,7 +46,7 @@ def _convert_roberta_base_state(
         if "encoder.layer." not in name:
             continue
 
-        # TODO: Make these substituations less ugly.
+        # TODO: Make these substitutions less ugly.
 
         # Remove the prefix and rename the internal 'layers' variable.
         name = re.sub(r"^encoder\.", "", name)

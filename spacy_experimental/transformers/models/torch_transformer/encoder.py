@@ -55,6 +55,8 @@ class TransformerEncoder(Module):
             self.token_type_embeddings = torch.nn.Embedding(num_embeddings=type_vocab_size, embedding_dim=hidden_size)  # type: ignore
         else:
             self.token_type_embeddings = None
+
+        self.emb_layer_norm = torch.nn.LayerNorm(hidden_size, eps=layer_norm_eps)
         self.emb_dropout = torch.nn.Dropout(p=hidden_dropout)
         self.layers = torch.nn.ModuleList(
             [

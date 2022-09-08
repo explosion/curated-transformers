@@ -114,6 +114,7 @@ def encoder_from_pretrained_hf_model(model_name: str) -> TransformerEncoder:
         max_seq_len=model_tokenizer.model_max_length,
         learnable_pos_embeddings=True,
         padding_idx=config.pad_token_id,
+        type_vocab_size=config.type_vocab_size,
     )
 
     encoder.load_state_dict(params)

@@ -35,6 +35,7 @@ class TransformerEncoder(Module):
         learnable_pos_embeddings=False,
         layer_norm_eps: float = 1e-5,
         padding_idx: int = 0,
+        type_vocab_size: int = 0,
     ):
         super().__init__()
 
@@ -50,6 +51,10 @@ class TransformerEncoder(Module):
         else:
             self.pos_embeddings = SinusoidalPositionalEmbedding(hidden_size, max_pos_embeddings)  # type: ignore
 
+        if type_vocab_size > 0:
+            self.token_type_embeddings = torch.nn.Embedding(num_embeddings=type_vocab_size, embedding_dim=hidden_size)  # type: ignore
+        else:
+            self.token_type_embeddings = None
         self.emb_dropout = torch.nn.Dropout(p=hidden_dropout)
         self.layers = torch.nn.ModuleList(
             [
@@ -83,6 +88,7 @@ class TransformerEncoder(Module):
 
     def forward(
         self, input: Tensor, mask: Optional[Tensor] = None
+        token_type_ids: Optional[Tensor] = None,
     ) -> TransformerEncoderOutput:
         """
         Shapes:
@@ -97,6 +103,14 @@ class TransformerEncoder(Module):
             mask = self._create_mask(input)
 
         emb = self.input_embeddings(input)
+
+        if self.token_type_embeddings is not None:
+            if token_type_ids is None:
+                token_type_ids = torch.zeros(
+                    input.shape, dtype=torch.long, device=input.device
+                )
+            emb += self.token_type_embeddings(token_type_ids)
+
         pos = self._get_pos_embeddings(input)
 
         embedding_sum = emb + pos

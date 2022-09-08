@@ -79,8 +79,8 @@ def _convert_outputs(model, inputs_outputs, is_train):
     last_layer_output = model_outputs.last_hidden_output
 
     X_lens = [x.shape[0] for x in X]
-    Y = [torch2xp(last_layer_output[i, :len, :]) for i, len in enumerate(X_lens)]
     Yt = [last_layer_output[i, :len, :] for i, len in enumerate(X_lens)]
+    Y = [torch2xp(yt) for yt in Yt]
 
     def convert_for_torch_backward(dY: List[Floats2d]):
         dYt = [xp2torch(y) for y in dY]

@@ -71,8 +71,8 @@ class TransformerEncoder(Module):
             ]
         )
 
-    def _create_mask(self, x: Tensor) -> Tensor:
-        return x.eq(self.padding_idx).int()
+    def _create_attention_mask(self, x: Tensor) -> Tensor:
+        return x.ne(self.padding_idx).int()
 
     def _get_pos_embeddings(self, x: Tensor) -> Tensor:
         if self.learnable_pos_embeddings:
@@ -87,20 +87,22 @@ class TransformerEncoder(Module):
             return self.pos_embeddings(x)
 
     def forward(
-        self, input: Tensor, mask: Optional[Tensor] = None
+        self,
+        input: Tensor,
+        attention_mask: Optional[Tensor] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> TransformerEncoderOutput:
         """
         Shapes:
-            input - (batch, seq_len)
+            input, token_type_ids - (batch, seq_len)
 
-        `attn_mask` indicates elements to be masked with values of `1`
+        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
 
         Returns a tuple of consisting of a list of tensors from each Transformer
         layer and the sum of the input and positional embeddings.
         """
-        if not mask:
-            mask = self._create_mask(input)
+        if attention_mask is None:
+            attention_mask = self._create_attention_mask(input)
 
         emb = self.input_embeddings(input)
 
@@ -120,7 +122,7 @@ class TransformerEncoder(Module):
 
         layer_outputs = []
         for layer in self.layers:
-            layer_output = layer(layer_output, mask)
+            layer_output = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
         return TransformerEncoderOutput(

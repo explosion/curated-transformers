@@ -46,17 +46,17 @@ class ScaledDotProductAttention(Module):
         Shapes:
             k, q, v, attn_mask - (batch, heads, seq, model_dim)
 
-        `attn_mask` indicates elements to be masked with values of `1`
+        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
         """
 
         model_dim = k.shape[-1]
-        qk = q @ k.transpose(-2, -1)
-        attn_scores = qk / math.sqrt(model_dim)
+        attn_scores = q @ k.transpose(-2, -1)
+        attn_scores /= math.sqrt(model_dim)
 
-        # Replace masked-out elements with a large negative value
-        # to zero them out during softmax normalization.
+        # Replace tokens that we don't want to attend to with a large
+        # negative value to zero them out during softmax normalization.
         if attn_mask is not None:
-            attn_scores = attn_scores.masked_fill(attn_mask.to(torch.bool), 1e-10)
+            attn_scores += (1.0 - attn_mask) * torch.finfo(attn_scores.dtype).min
 
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ v)

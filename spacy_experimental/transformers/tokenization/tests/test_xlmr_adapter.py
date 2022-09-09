@@ -3,8 +3,9 @@ import numpy.testing
 from pathlib import Path
 import pytest
 import spacy
-from thinc.api import Ragged, chain
+from thinc.api import NumpyOps, Ragged, chain
 
+from spacy_experimental.transformers._compat import has_hf_transformers, transformers
 from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from spacy_experimental.transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter
 
@@ -40,6 +41,38 @@ def test_serialize(toy_encoder, empty_encoder):
     encoder2 = empty_encoder
     encoder2.from_bytes(encoder_bytes)
     _test_encoder(encoder2)
+
+
+def _compare_model_hf_output(ops, Y, Y_hf):
+    # Get inputs, removing BOS/EOS from every token.
+    Y_hf = [e[1:-1] for e in Y_hf["input_ids"]]
+
+    # Remove BOS/EOS
+    Y = Y[1:-1]
+
+    numpy.testing.assert_equal(ops.unflatten(Y.dataXd, Y.lengths), Y_hf)
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_encoder_against_hf():
+    ops = NumpyOps()
+
+    nlp = spacy.blank("en")
+    doc1 = nlp.make_doc("I saw a girl with a telescope.")
+    doc2 = nlp.make_doc("Today we will eat poké bowl.")
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
+    spp = SentencePieceProcessor.from_file(hf_tokenizer.vocab_file)
+    encoder = build_sentencepiece_encoder()
+    encoder.attrs["sentencepiece_processor"] = spp
+    model = chain(encoder, build_xlmr_adapter())
+
+    encoding = model.predict([doc1, doc2])
+    hf_encoding = hf_tokenizer([token.text for token in doc1])
+    _compare_model_hf_output(ops, encoding[0], hf_encoding)
+
+    hf_encoding = hf_tokenizer([token.text for token in doc2])
+    _compare_model_hf_output(ops, encoding[1], hf_encoding)
 
 
 def _test_encoder(encoder):

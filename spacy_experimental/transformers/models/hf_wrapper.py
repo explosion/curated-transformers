@@ -31,6 +31,7 @@ def build_hf_transformer_encoder_v1(
         encoder,
         convert_inputs=partial(
             _convert_inputs,
+            max_model_seq_len=encoder.max_seq_len,
             padding_idx=encoder.padding_idx,
         ),
         convert_outputs=_convert_outputs,
@@ -44,20 +45,22 @@ def _convert_inputs(
     model: Model,
     X: List[Ints1d],
     is_train: bool = False,
+    max_model_seq_len = 512,
     padding_idx: int = 1,
 ):
     ops = get_current_ops()
 
-    # Transform the list of strided spans to a padded array.
     max_seq_len = max(x.size for x in X)
+    if max_seq_len > max_model_seq_len:
+        raise ValueError(
+            f"span window size of '{max_seq_len}' exceeds maximum allowed sequence length of '{max_model_seq_len}'"
+        )
+
+    # Transform the list of strided spans to a padded array.
     Xt = ops.xp.full((len(X), max_seq_len), padding_idx)
     for i in range(len(X)):
         span = X[i]
         span_len = span.shape[0]
-        if span_len > max_seq_len:
-            raise ValueError(
-                f"span window size of '{span_len}' exceeds maximum allowed sequence length of '{max_seq_len}'"
-            )
         Xt[i, :span_len] = span
     Xt = xp2torch(Xt)
 

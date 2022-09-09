@@ -7,7 +7,7 @@ from thinc.api import NumpyOps, Ragged, chain
 
 from spacy_experimental.transformers._compat import has_hf_transformers, transformers
 from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from spacy_experimental.transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter
+from spacy_experimental.transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 
 
 @pytest.fixture(scope="module")
@@ -46,10 +46,6 @@ def test_serialize(toy_encoder, empty_encoder):
 def _compare_model_hf_output(ops, Y, Y_hf):
     # Get inputs, removing BOS/EOS from every token.
     Y_hf = [e[1:-1] for e in Y_hf["input_ids"]]
-
-    # Remove BOS/EOS
-    Y = Y[1:-1]
-
     numpy.testing.assert_equal(ops.unflatten(Y.dataXd, Y.lengths), Y_hf)
 
 
@@ -65,7 +61,7 @@ def test_encoder_against_hf():
     spp = SentencePieceProcessor.from_file(hf_tokenizer.vocab_file)
     encoder = build_sentencepiece_encoder()
     encoder.attrs["sentencepiece_processor"] = spp
-    model = chain(encoder, build_xlmr_adapter())
+    model = chain(encoder, build_xlmr_adapter(), remove_bos_eos())
 
     encoding = model.predict([doc1, doc2])
     hf_encoding = hf_tokenizer([token.text for token in doc1])

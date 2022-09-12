@@ -49,7 +49,7 @@ def xlmr_adapter_forward(model: Model, X: List[Ragged], is_train: bool):
 
 
 def remove_bos_eos() -> Model[List[Ragged], List[Ragged]]:
-    return Model("remote_bos_eos", remove_bos_eos_forward)
+    return Model("remove_bos_eos", remove_bos_eos_forward)
 
 
 def remove_bos_eos_forward(model: Model, X: List[Ragged], is_train: bool):

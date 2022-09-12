@@ -106,21 +106,18 @@ class TransformerEncoder(Module):
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input)
 
-        emb = self.input_embeddings(input)
+        embeddings = self.input_embeddings(input)
 
         if self.token_type_embeddings is not None:
             if token_type_ids is None:
-                token_type_ids = torch.zeros(
-                    input.shape, dtype=torch.long, device=input.device
-                )
-            emb += self.token_type_embeddings(token_type_ids)
+                token_type_ids = torch.zeros_like(input)
+            embeddings += self.token_type_embeddings(token_type_ids)
 
-        pos = self._get_pos_embeddings(input)
+        embeddings += self._get_pos_embeddings(input)
 
-        embedding_sum = emb + pos
-        embedding_sum = self.emb_layer_norm(embedding_sum)
-        embedding_sum = self.emb_dropout(embedding_sum)
-        layer_output = embedding_sum
+        embeddings = self.emb_layer_norm(embeddings)
+        embeddings = self.emb_dropout(embeddings)
+        layer_output = embeddings
 
         layer_outputs = []
         for layer in self.layers:
@@ -128,5 +125,5 @@ class TransformerEncoder(Module):
             layer_outputs.append(layer_output)
 
         return TransformerEncoderOutput(
-            layer_outputs=layer_outputs, embedding_sum=embedding_sum
+            layer_outputs=layer_outputs, embedding_sum=embeddings
         )

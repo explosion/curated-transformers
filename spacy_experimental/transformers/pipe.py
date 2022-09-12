@@ -111,10 +111,11 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
 
         def backprop(dYs):
             dX_pooling = [bp_pool(dY) for dY, bp_pool in zip(dYs, backprops)]
-            model._backprop(dX_pooling)
+            dX = model._backprop(dX_pooling)
             model._batch_id = None
             model._outputs = None
             model._backprop = None
+            return dX
 
         return outputs, backprop
     else:

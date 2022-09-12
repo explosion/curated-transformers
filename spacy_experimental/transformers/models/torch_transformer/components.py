@@ -214,11 +214,11 @@ class EncoderLayer(Module):
         `mask` indicates elements to be masked with values of `1`
         """
         attn_out = self.mha(x, x, x, mask)
-        attn_out = self.attn_output_layernorm(x + attn_out)
         attn_out = self.attn_output_dropout(attn_out)
+        attn_out = self.attn_output_layernorm(x + attn_out)
 
         ffn_out = self.ffn(attn_out)
-        ffn_out = self.ffn_output_layernorm(attn_out + ffn_out)
         ffn_out = self.ffn_output_dropout(ffn_out)
+        ffn_out = self.ffn_output_layernorm(attn_out + ffn_out)
 
         return ffn_out

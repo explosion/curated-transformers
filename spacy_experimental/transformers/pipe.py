@@ -281,6 +281,7 @@ class Transformer(TrainablePipe):
 
         def backprop(one_d_tokvecs):
             """Callback to actually do the backprop. Passed to last listener."""
+            nonlocal d_tokvecs
             accumulate_gradient(one_d_tokvecs)
             d_docs = bp_tokvecs(d_tokvecs)
             if sgd is not None:

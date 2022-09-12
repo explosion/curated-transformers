@@ -196,7 +196,6 @@ class EncoderLayer(Module):
             hidden_dim=ffn_dim,
             model_dim=model_dim,
             activation=activation,
-            dropout=hidden_dropout,
         )
         self.ffn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
         self.ffn_output_dropout = torch.nn.Dropout(p=hidden_dropout)

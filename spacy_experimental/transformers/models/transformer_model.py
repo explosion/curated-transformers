@@ -77,38 +77,3 @@ def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):
 # Not a real transformer, just a stub.
 def _stubformer(nO, nV):
     return Embed(nO, nV)
-
-
-# Only needed for wrapping the stubformer.
-def _with_array_from_list_ragged(layer: Model):
-    def init(model, X, Y):
-        if X:
-            Xlf = layer.ops.flatten([r.dataXd for r in X])
-            layer.initialize(Xlf, Y)
-
-        return model
-
-    def forward(model, Xlr, is_train):
-        Xla, lens = _raggeds_to_arrays(Xlr)
-        Xf = layer.ops.flatten(Xla)
-        Yf, backprop_layer = layer(Xf, is_train=is_train)
-
-        def backprop(dY):
-            dYla, lens = _raggeds_to_arrays(dY)
-            dYf = layer.ops.flatten(dYla)
-            dXf = backprop_layer(dYf)
-            dXla = layer.ops.unflatten(dXf, lengths=lens)
-            return [Ragged(grads, xr.lengths) for grads, xr in zip(dXla, Xlr)]
-
-        Y_arr = layer.ops.unflatten(Yf, lengths=lens)
-        Ylr = [Ragged(ya, xr.lengths) for ya, xr in zip(Y_arr, Xlr)]
-
-        return Ylr, backprop
-
-    return Model("with_array_from_list_ragged", forward, init=init)
-
-
-def _raggeds_to_arrays(X: List[Ragged]) -> Tuple[ArrayXd, List[int]]:
-    Xa = [xr.dataXd for xr in X]
-    lens = [a.shape[0] for a in Xa]
-    return Xa, lens

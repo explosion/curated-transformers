@@ -110,7 +110,7 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
             backprops.append(pooling_backprop)
 
         def backprop(dYs):
-            dX_pooling = [bp_pool(dY) for dY, bp_pool in zip(dYs, backprops)]
+            dX_pooling = [bp_pool(dY) for bp_pool, dY in zip(backprops, dYs)]
             dX = model._backprop(dX_pooling)
             model._batch_id = None
             model._outputs = None

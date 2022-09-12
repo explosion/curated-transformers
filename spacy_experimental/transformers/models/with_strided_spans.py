@@ -69,19 +69,15 @@ def with_strided_spans_forward(
 
 def _ragged_to_strided_arrays(
     Xlr: List[Ragged], *, stride: int, window: int
-) -> Tuple[List[Floats2d], List[int]]:
+) -> Tuple[List[Floats2d], List[List[int]]]:
     spans = []
     lens = []
-    doc_lens = []
     for Xr in Xlr:
-        doc_len = 0
         data = Xr.dataXd
         lens.append(Xr.lengths)
         while data.shape[0] != 0:
-            doc_len += 1
             spans.append(data[:window])
             data = data[stride:]
-        doc_lens.append(doc_len)
 
     return spans, lens
 

@@ -149,7 +149,6 @@ class PointwiseFeedForwardLayer(Module):
         model_dim: int,
         *,
         activation: str = "relu",
-        dropout: float = 0.1,
     ):
         super().__init__()
 
@@ -162,8 +161,6 @@ class PointwiseFeedForwardLayer(Module):
         else:
             raise ValueError(f"unsupported activation function '{activation}")
 
-        self.dropout = torch.nn.Dropout(p=dropout)
-
     def forward(self, x: Tensor) -> Tensor:
         """
         Shapes:
@@ -172,7 +169,6 @@ class PointwiseFeedForwardLayer(Module):
         out = self.intermediate(x)
         out = self.activation(out)
         out = self.output(out)
-        out = self.dropout(out)
         return out
 
 

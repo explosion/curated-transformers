@@ -13,7 +13,7 @@ def _check_supported_hf_models(model_name: str):
 
 
 def convert_hf_pretrained_model_parameters(
-    hf_model: transformers.PreTrainedModel,
+    hf_model: "transformers.PreTrainedModel",
 ) -> Dict[str, torch.Tensor]:
     """Converts HF model parameters to parameters that can be consumed by
     our implementation of the Transformer.
@@ -33,7 +33,7 @@ def convert_hf_pretrained_model_parameters(
 
 
 def _convert_roberta_base_state(
-    hf_model: transformers.PreTrainedModel,
+    hf_model: "transformers.PreTrainedModel",
 ) -> Dict[str, torch.Tensor]:
     out = {}
 

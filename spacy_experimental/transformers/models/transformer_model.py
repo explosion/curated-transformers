@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from spacy.tokens import Span, Doc
 from thinc.layers import chain, Embed, with_array, with_padded
@@ -11,7 +11,9 @@ from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from .hf_wrapper import build_hf_transformer_encoder_v1
 
 
-def build_xlmr_transformer_model_v1(*, with_spans, hf_model_name=None):
+def build_xlmr_transformer_model_v1(
+    *, with_spans, hf_model_name: Optional[str] = None, hf_model_revision: str = "main"
+):
     piece_adapter = build_xlmr_adapter()
 
     if not hf_model_name:

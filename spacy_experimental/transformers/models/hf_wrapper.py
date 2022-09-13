@@ -16,13 +16,14 @@ from .hf_util import convert_hf_pretrained_model_parameters
 
 def build_hf_transformer_encoder_v1(
     hf_model_name: str,
+    hf_model_revision: str = "main",
     mixed_precision: bool = False,
     grad_scaler_config: dict = {},
 ) -> Model[List[Ints1d], List[Floats2d]]:
     if not has_hf_transformers:
         raise ValueError("requires 🤗 transformers")
 
-    encoder = encoder_from_pretrained_hf_model(hf_model_name)
+    encoder = encoder_from_pretrained_hf_model(hf_model_name, hf_model_revision)
 
     if "enabled" not in grad_scaler_config:
         grad_scaler_config["enabled"] = mixed_precision
@@ -45,7 +46,7 @@ def _convert_inputs(
     model: Model,
     X: List[Ints1d],
     is_train: bool = False,
-    max_model_seq_len = 512,
+    max_model_seq_len=512,
     padding_idx: int = 1,
 ):
     ops = get_current_ops()
@@ -94,11 +95,13 @@ def _convert_outputs(model, inputs_outputs, is_train):
     return Y, convert_for_torch_backward
 
 
-def encoder_from_pretrained_hf_model(model_name: str) -> TransformerEncoder:
+def encoder_from_pretrained_hf_model(
+    model_name: str, model_revision: str
+) -> TransformerEncoder:
     from transformers import AutoModel, AutoTokenizer
 
-    hf_model = AutoModel.from_pretrained(model_name)
-    model_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    hf_model = AutoModel.from_pretrained(model_name, revision=model_revision)
+    model_tokenizer = AutoTokenizer.from_pretrained(model_name, revision=model_revision)
 
     params = convert_hf_pretrained_model_parameters(hf_model)
 

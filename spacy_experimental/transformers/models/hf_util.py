@@ -65,12 +65,19 @@ def _convert_roberta_base_state(
 
         out[name] = parameter
 
-    out["input_embeddings.weight"] = state_dict["embeddings.word_embeddings.weight"]
-    out["pos_embeddings.weight"] = state_dict["embeddings.position_embeddings.weight"]
-    out["token_type_embeddings.weight"] = state_dict[
+    # Rename and move embedding parameters to the inner BertEmbeddings module.
+    out["embeddings.inner.word_embeddings.weight"] = state_dict[
+        "embeddings.word_embeddings.weight"
+    ]
+    out["embeddings.inner.token_type_embeddings.weight"] = state_dict[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["emb_layer_norm.weight"] = state_dict["embeddings.LayerNorm.weight"]
-    out["emb_layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
+    out["embeddings.inner.position_embeddings.weight"] = state_dict[
+        "embeddings.position_embeddings.weight"
+    ]
+    out["embeddings.inner.layer_norm.weight"] = state_dict[
+        "embeddings.LayerNorm.weight"
+    ]
+    out["embeddings.inner.layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
 
     return out

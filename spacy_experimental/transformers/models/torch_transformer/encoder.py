@@ -5,7 +5,8 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
-from .components import EncoderLayer, SinusoidalPositionalEmbedding
+from .components import EncoderLayer
+from .embedding import RobertaEmbeddings
 
 
 @dataclass
@@ -32,32 +33,23 @@ class TransformerEncoder(Module):
         vocab_size: int,
         max_seq_len: int,
         *,
-        learnable_pos_embeddings=False,
         layer_norm_eps: float = 1e-5,
         padding_idx: int = 0,
         type_vocab_size: int = 0,
     ):
         super().__init__()
 
-        self.input_embeddings = torch.nn.Embedding(
-            vocab_size, hidden_size, padding_idx=padding_idx
+        self.embeddings = RobertaEmbeddings(
+            embedding_dim=hidden_size,
+            word_vocab_size=vocab_size,
+            type_vocab_size=type_vocab_size,
+            max_pos_embeddings=max_pos_embeddings,
+            padding_idx=padding_idx,
+            layer_norm_eps=layer_norm_eps,
+            dropout=hidden_dropout,
         )
         self.padding_idx = padding_idx
         self.max_seq_len = max_seq_len
-        self.learnable_pos_embeddings = learnable_pos_embeddings
-
-        if learnable_pos_embeddings:
-            self.pos_embeddings = torch.nn.Embedding(num_embeddings=max_pos_embeddings, embedding_dim=hidden_size)  # type: ignore
-        else:
-            self.pos_embeddings = SinusoidalPositionalEmbedding(hidden_size, max_pos_embeddings)  # type: ignore
-
-        if type_vocab_size > 0:
-            self.token_type_embeddings = torch.nn.Embedding(num_embeddings=type_vocab_size, embedding_dim=hidden_size)  # type: ignore
-        else:
-            self.token_type_embeddings = None
-
-        self.emb_layer_norm = torch.nn.LayerNorm(hidden_size, eps=layer_norm_eps)
-        self.emb_dropout = torch.nn.Dropout(p=hidden_dropout)
         self.layers = torch.nn.ModuleList(
             [
                 EncoderLayer(
@@ -76,27 +68,15 @@ class TransformerEncoder(Module):
     def _create_attention_mask(self, x: Tensor) -> Tensor:
         return x.ne(self.padding_idx).int()
 
-    def _get_pos_embeddings(self, x: Tensor) -> Tensor:
-        if self.learnable_pos_embeddings:
-            # We need to generate the position IDs from the
-            # input tensor to pass to the embedding layer and
-            # handle padding, c.f https://github.com/huggingface/transformers/blob/330247ede2d8265aae9ab0b7a0d1a811c344960d/src/transformers/models/roberta/modeling_roberta.py#L1566
-
-            mask = x.ne(self.padding_idx).int()
-            pos_ids = (mask.cumsum(dim=1) * mask) + self.padding_idx
-            return self.pos_embeddings(pos_ids)
-        else:
-            return self.pos_embeddings(x)
-
     def forward(
         self,
-        input: Tensor,
+        input_ids: Tensor,
         attention_mask: Optional[Tensor] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> TransformerEncoderOutput:
         """
         Shapes:
-            input, token_type_ids - (batch, seq_len)
+            input_ids, token_type_ids - (batch, seq_len)
 
         `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
 
@@ -104,19 +84,9 @@ class TransformerEncoder(Module):
         layer and the sum of the input and positional embeddings.
         """
         if attention_mask is None:
-            attention_mask = self._create_attention_mask(input)
+            attention_mask = self._create_attention_mask(input_ids)
 
-        embeddings = self.input_embeddings(input)
-
-        if self.token_type_embeddings is not None:
-            if token_type_ids is None:
-                token_type_ids = torch.zeros_like(input)
-            embeddings += self.token_type_embeddings(token_type_ids)
-
-        embeddings += self._get_pos_embeddings(input)
-
-        embeddings = self.emb_layer_norm(embeddings)
-        embeddings = self.emb_dropout(embeddings)
+        embeddings = self.embeddings(input_ids, token_type_ids, None)
         layer_output = embeddings
 
         layer_outputs = []

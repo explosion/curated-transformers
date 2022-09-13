@@ -1,5 +1,5 @@
 from typing import List, TypeVar
-from cysp import SentencePieceProcessor
+from cutlery import SentencePieceProcessor
 from spacy.tokens import Doc, Span
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
 from transformers import XLMRobertaTokenizerFast

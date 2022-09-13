@@ -4,7 +4,7 @@ from re import S
 import numpy
 import pytest
 import spacy
-from cysp import SentencePieceProcessor
+from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 

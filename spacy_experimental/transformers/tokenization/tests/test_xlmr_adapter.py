@@ -1,4 +1,4 @@
-from cysp import SentencePieceProcessor
+from cutlery import SentencePieceProcessor
 import numpy.testing
 from pathlib import Path
 import pytest

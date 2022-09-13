@@ -28,7 +28,7 @@ def test_dir(request):
 @pytest.fixture
 def toy_model(test_dir):
     return SentencePieceProcessor.from_file(
-        (str(test_dir / ".." / "tokenization" / "tests" / "toy.model"))
+        (str(test_dir / ".." / "tokenization" / "toy.model"))
     )
 
 

@@ -4,7 +4,7 @@ from re import S
 import numpy
 import pytest
 import spacy
-from cysp import SentencePieceProcessor
+from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 
@@ -28,7 +28,7 @@ def test_dir(request):
 @pytest.fixture
 def toy_model(test_dir):
     return SentencePieceProcessor.from_file(
-        (str(test_dir / ".." / "tokenization" / "tests" / "toy.model"))
+        (str(test_dir / ".." / "tokenization" / "toy.model"))
     )
 
 

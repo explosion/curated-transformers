@@ -9,7 +9,7 @@ from thinc.api import xp2torch, PyTorchWrapper_v2
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Floats3d, Ints1d
 
-from .roberta import RobertaEncoder
+from .roberta import RobertaEncoder, RobertaConfig
 from .._compat import transformers, has_hf_transformers
 from .hf_util import convert_hf_pretrained_model_parameters
 
@@ -98,28 +98,29 @@ def _convert_outputs(model, inputs_outputs, is_train):
 def encoder_from_pretrained_hf_model(
     model_name: str, model_revision: str = "main"
 ) -> RobertaEncoder:
+    global transformers
     from transformers import AutoModel, AutoTokenizer
 
     hf_model = AutoModel.from_pretrained(model_name, revision=model_revision)
+    hf_config = hf_model.config
     model_tokenizer = AutoTokenizer.from_pretrained(model_name, revision=model_revision)
 
+    config = RobertaConfig()
+    config.hidden_size = hf_config.hidden_size
+    config.intermediate_size = hf_config.intermediate_size
+    config.num_attention_heads = hf_config.num_attention_heads
+    config.num_hidden_layers = hf_config.num_hidden_layers
+    config.attention_probs_dropout_prob = hf_config.attention_probs_dropout_prob
+    config.hidden_dropout_prob = hf_config.hidden_dropout_prob
+    config.hidden_act = hf_config.hidden_act
+    config.vocab_size = hf_config.vocab_size
+    config.type_vocab_size = hf_config.type_vocab_size
+    config.max_position_embeddings = hf_config.max_position_embeddings
+    config.model_max_length = model_tokenizer.model_max_length
+    config.layer_norm_eps = hf_config.layer_norm_eps
+    config.padding_idx = hf_config.pad_token_id
+    encoder = RobertaEncoder(config)
+
     params = convert_hf_pretrained_model_parameters(hf_model)
-
-    config = hf_model.config
-    encoder = RobertaEncoder(
-        hidden_size=config.hidden_size,
-        intermediate_size=config.intermediate_size,
-        n_heads=config.num_attention_heads,
-        n_layers=config.num_hidden_layers,
-        attn_dropout=config.attention_probs_dropout_prob,
-        hidden_dropout=config.hidden_dropout_prob,
-        hidden_activation=config.hidden_act,
-        max_pos_embeddings=config.max_position_embeddings,
-        vocab_size=config.vocab_size,
-        max_seq_len=model_tokenizer.model_max_length,
-        padding_idx=config.pad_token_id,
-        type_vocab_size=config.type_vocab_size,
-    )
-
     encoder.load_state_dict(params)
     return encoder

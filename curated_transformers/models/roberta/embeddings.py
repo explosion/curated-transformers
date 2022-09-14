@@ -3,30 +3,18 @@ from torch.nn import Module
 from torch import Tensor
 
 from ..bert import BertEmbeddings
+from .config import RobertaConfig
 
 
 class RobertaEmbeddings(Module):
     def __init__(
         self,
-        embedding_dim: int,
-        word_vocab_size: int,
-        type_vocab_size: int,
-        max_pos_embeddings: int,
-        padding_idx: int,
-        layer_norm_eps: float = 1e-5,
-        dropout: float = 0.1,
+        config: RobertaConfig,
     ) -> None:
         super().__init__()
 
-        self.inner = BertEmbeddings(
-            embedding_dim=embedding_dim,
-            word_vocab_size=word_vocab_size,
-            type_vocab_size=type_vocab_size,
-            max_pos_embeddings=max_pos_embeddings,
-            layer_norm_eps=layer_norm_eps,
-            dropout=dropout,
-        )
-        self.padding_idx = padding_idx
+        self.inner = BertEmbeddings(config)
+        self.padding_idx = config.padding_idx
 
     def _get_position_ids(self, x: Tensor) -> Tensor:
         # We need to generate the position IDs from the

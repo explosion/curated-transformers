@@ -6,27 +6,29 @@ from torch.nn import Module
 from torch import Tensor
 
 from ..attention import ScaledDotProductAttention
+from .config import BertConfig
+
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
 class BertSelfAttention(Module):
-    def __init__(self, model_dim: int, n_heads: int, *, dropout: float = 0.1):
+    def __init__(self, config: BertConfig):
         super().__init__()
 
-        if model_dim % n_heads != 0:
+        self.model_dim = config.hidden_size
+        self.num_heads = config.num_attention_heads
+        if self.model_dim % self.num_heads != 0:
             raise ValueError(
-                f"model dimension '{model_dim}' not divisible by number of heads '{n_heads}'"
+                f"model dimension '{self.model_dim}' not divisible by number of heads '{self.num_heads}'"
             )
 
-        self.model_dim = model_dim
-        self.num_heads = n_heads
-        self.dims_per_head = model_dim // n_heads
-        self.attention = ScaledDotProductAttention(dropout=dropout)
-
-        self.query = torch.nn.Linear(model_dim, model_dim)
-        self.key = torch.nn.Linear(model_dim, model_dim)
-        self.value = torch.nn.Linear(model_dim, model_dim)
-
-        self.output = torch.nn.Linear(model_dim, model_dim)
+        self.dims_per_head = self.model_dim // self.num_heads
+        self.attention = ScaledDotProductAttention(
+            dropout_prob=config.attention_probs_dropout_prob
+        )
+        self.query = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.key = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.value = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.output = torch.nn.Linear(self.model_dim, self.model_dim)
 
     def _split_heads(self, x: Tensor) -> Tensor:
         """
@@ -58,7 +60,7 @@ class BertSelfAttention(Module):
             k, q, v - (batch, seq_len, model_dim)
             attn_mask - (batch, seq_len)
 
-        `attn_mask` indicates elements to be masked with values of `1`
+        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
         """
 
         k = self.key(k)
@@ -86,23 +88,19 @@ class BertSelfAttention(Module):
 
 
 class BertFeedForward(Module):
-    def __init__(
-        self,
-        hidden_dim: int,
-        model_dim: int,
-        *,
-        activation: str = "relu",
-    ):
+    def __init__(self, config: BertConfig):
         super().__init__()
 
-        self.intermediate = torch.nn.Linear(model_dim, hidden_dim)
-        self.output = torch.nn.Linear(hidden_dim, model_dim)
-        if activation == "relu":
+        self.intermediate = torch.nn.Linear(
+            config.hidden_size, config.intermediate_size
+        )
+        self.output = torch.nn.Linear(config.intermediate_size, config.hidden_size)
+        if config.hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
-        elif activation == "gelu":
+        elif config.hidden_act == "gelu":
             self.activation = torch.nn.GELU()  # type: ignore
         else:
-            raise ValueError(f"unsupported activation function '{activation}")
+            raise ValueError(f"unsupported activation function '{config.hidden_act}")
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -116,32 +114,19 @@ class BertFeedForward(Module):
 
 
 class BertEncoderLayer(Module):
-    def __init__(
-        self,
-        model_dim: int,
-        ffn_dim: int,
-        num_attn_heads: int,
-        *,
-        activation: str = "relu",
-        attn_dropout: float = 0.1,
-        hidden_dropout: float = 0.1,
-        layer_norm_eps: float = 1e-5,
-    ):
+    def __init__(self, config: BertConfig):
         super().__init__()
 
-        self.mha = BertSelfAttention(
-            model_dim, n_heads=num_attn_heads, dropout=attn_dropout
+        self.mha = BertSelfAttention(config)
+        self.attn_output_layernorm = torch.nn.LayerNorm(
+            config.hidden_size, eps=config.layer_norm_eps
         )
-        self.attn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
-        self.attn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
-
-        self.ffn = BertFeedForward(
-            hidden_dim=ffn_dim,
-            model_dim=model_dim,
-            activation=activation,
+        self.attn_output_dropout = torch.nn.Dropout(p=config.hidden_dropout_prob)
+        self.ffn = BertFeedForward(config)
+        self.ffn_output_layernorm = torch.nn.LayerNorm(
+            config.hidden_size, eps=config.layer_norm_eps
         )
-        self.ffn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
-        self.ffn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
+        self.ffn_output_dropout = torch.nn.Dropout(p=config.hidden_dropout_prob)
 
     def forward(self, x: Tensor, mask: Optional[Tensor] = None) -> Tensor:
         """

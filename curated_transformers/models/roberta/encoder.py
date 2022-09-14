@@ -8,52 +8,18 @@ from torch import Tensor
 from ..bert.layer import BertEncoderLayer
 from ..output import TransformerEncoderOutput
 from .embeddings import RobertaEmbeddings
+from .config import RobertaConfig
 
 
 class RobertaEncoder(Module):
-    def __init__(
-        self,
-        hidden_size: int,
-        intermediate_size: int,
-        n_heads: int,
-        n_layers: int,
-        attn_dropout: float,
-        hidden_dropout: float,
-        hidden_activation: str,
-        max_pos_embeddings: int,
-        vocab_size: int,
-        max_seq_len: int,
-        *,
-        layer_norm_eps: float = 1e-5,
-        padding_idx: int = 0,
-        type_vocab_size: int = 0,
-    ):
+    def __init__(self, config: RobertaConfig):
         super().__init__()
 
-        self.embeddings = RobertaEmbeddings(
-            embedding_dim=hidden_size,
-            word_vocab_size=vocab_size,
-            type_vocab_size=type_vocab_size,
-            max_pos_embeddings=max_pos_embeddings,
-            padding_idx=padding_idx,
-            layer_norm_eps=layer_norm_eps,
-            dropout=hidden_dropout,
-        )
-        self.padding_idx = padding_idx
-        self.max_seq_len = max_seq_len
+        self.embeddings = RobertaEmbeddings(config)
+        self.padding_idx = config.padding_idx
+        self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
-            [
-                BertEncoderLayer(
-                    hidden_size,
-                    intermediate_size,
-                    n_heads,
-                    activation=hidden_activation,
-                    attn_dropout=attn_dropout,
-                    hidden_dropout=hidden_dropout,
-                    layer_norm_eps=layer_norm_eps,
-                )
-                for _ in range(n_layers)
-            ]
+            [BertEncoderLayer(config) for _ in range(config.num_hidden_layers)]
         )
 
     def _create_attention_mask(self, x: Tensor) -> Tensor:

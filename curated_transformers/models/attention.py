@@ -6,9 +6,9 @@ from torch.nn import Module
 
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
-    def __init__(self, *, dropout: float = 0.1):
+    def __init__(self, *, dropout_prob: float = 0.1):
         super().__init__()
-        self.dropout = torch.nn.Dropout(p=dropout)
+        self.dropout = torch.nn.Dropout(p=dropout_prob)
 
     def forward(
         self, k: Tensor, q: Tensor, v: Tensor, attn_mask: Optional[Tensor] = None

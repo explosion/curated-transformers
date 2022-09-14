@@ -15,11 +15,11 @@ DOC_EXT_ATTR = "trf_data"
 
 DEFAULT_TRANSFORMER_MODEL = """
     [model]
-    @architectures = "spacy-experimental.XLMRTransformer.v1"
+    @architectures = "curated-transformers.XLMRTransformer.v1"
     hf_model_name = "xlm-roberta-base"
 
     [model.with_spans]
-    @architectures = "spacy-experimental.WithStridedSpans.v1"
+    @architectures = "curated-transformers.WithStridedSpans.v1"
 """
 
 

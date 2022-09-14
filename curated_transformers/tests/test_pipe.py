@@ -7,10 +7,14 @@ from thinc.api import NumpyOps
 from thinc.backends import get_current_ops
 import torch
 
-from spacy_experimental.transformers.models.transformer_model import build_xlmr_transformer_model_v1
-from spacy_experimental.transformers.models.with_strided_spans import build_with_strided_spans_v1
-from spacy_experimental.transformers.pipe import make_transformer
-from spacy_experimental.transformers._compat import has_hf_transformers, transformers
+from curated_transformers.models.transformer_model import (
+    build_xlmr_transformer_model_v1,
+)
+from curated_transformers.models.with_strided_spans import (
+    build_with_strided_spans_v1,
+)
+from curated_transformers.pipe import make_transformer
+from curated_transformers._compat import has_hf_transformers, transformers
 
 
 cfg_string = """
@@ -28,7 +32,7 @@ cfg_string = """
     nO = null
 
     [components.tagger.model.tok2vec]
-    @architectures = "spacy-experimental.LastTransformerLayerListener.v1"
+    @architectures = "curated-transformers.LastTransformerLayerListener.v1"
     width = 768
     pooling = {"@layers":"reduce_mean.v1"}
 
@@ -36,11 +40,11 @@ cfg_string = """
     factory = "experimental_transformer"
 
     [components.tok2vec.model]
-    @architectures = "spacy-experimental.XLMRTransformer.v1"
+    @architectures = "curated-transformers.XLMRTransformer.v1"
     hf_model_name = "xlm-roberta-base"
 
     [components.tok2vec.model.with_spans]
-    @architectures = "spacy-experimental.WithStridedSpans.v1"
+    @architectures = "curated-transformers.WithStridedSpans.v1"
 """
 
 TRAIN_DATA = [

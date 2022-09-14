@@ -5,9 +5,13 @@ import pytest
 import spacy
 from thinc.api import Ragged
 
-from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder
-from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from spacy_experimental.transformers._compat import has_hf_transformers
+from curated_transformers.tokenization.sentencepiece_encoder import (
+    build_hf_sentencepiece_encoder,
+)
+from curated_transformers.tokenization.sentencepiece_encoder import (
+    build_sentencepiece_encoder,
+)
+from curated_transformers._compat import has_hf_transformers
 
 
 @pytest.fixture(scope="module")

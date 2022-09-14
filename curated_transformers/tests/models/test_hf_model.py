@@ -2,9 +2,9 @@ import pytest
 import torch
 
 # fmt: off
-from spacy_experimental.transformers.models.hf_wrapper import encoder_from_pretrained_hf_model
-from spacy_experimental.transformers._compat import has_hf_transformers, transformers
-from spacy_experimental.transformers.models.hf_util import SUPPORTED_HF_MODELS
+from curated_transformers.models.hf_wrapper import encoder_from_pretrained_hf_model
+from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers.models.hf_util import SUPPORTED_HF_MODELS
 # fmt: on
 
 

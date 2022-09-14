@@ -9,11 +9,11 @@ from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 
 # fmt: off
-from spacy_experimental.transformers.models.with_strided_spans import build_with_strided_spans_v1
-from spacy_experimental.transformers.models.transformer_model import build_xlmr_transformer_model_v1
+from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
+from curated_transformers.models.transformer_model import build_xlmr_transformer_model_v1
 # fmt: on
 
-from spacy_experimental.transformers._compat import has_hf_transformers
+from curated_transformers._compat import has_hf_transformers
 
 OPS = [NumpyOps()]
 if has_cupy:

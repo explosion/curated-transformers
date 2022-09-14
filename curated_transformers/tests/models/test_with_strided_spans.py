@@ -1,7 +1,7 @@
 from thinc.api import Model, NumpyOps, Ragged, with_array
 from thinc.types import Floats2d
 
-from spacy_experimental.transformers.models.with_strided_spans import with_strided_spans
+from curated_transformers.models.with_strided_spans import with_strided_spans
 
 
 def relu_activation() -> Model[Floats2d, Floats2d]:

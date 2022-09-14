@@ -5,9 +5,14 @@ import pytest
 import spacy
 from thinc.api import NumpyOps, Ragged, chain
 
-from spacy_experimental.transformers._compat import has_hf_transformers, transformers
-from spacy_experimental.transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from spacy_experimental.transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
+from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers.tokenization.sentencepiece_encoder import (
+    build_sentencepiece_encoder,
+)
+from curated_transformers.tokenization.sentencepiece_adapters import (
+    build_xlmr_adapter,
+    remove_bos_eos,
+)
 
 
 @pytest.fixture(scope="module")

@@ -9,7 +9,7 @@ from thinc.api import xp2torch, PyTorchWrapper_v2
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Floats3d, Ints1d
 
-from .torch_transformer import TransformerEncoder
+from .roberta import RobertaEncoder
 from .._compat import transformers, has_hf_transformers
 from .hf_util import convert_hf_pretrained_model_parameters
 
@@ -96,8 +96,8 @@ def _convert_outputs(model, inputs_outputs, is_train):
 
 
 def encoder_from_pretrained_hf_model(
-    model_name: str, model_revision: str
-) -> TransformerEncoder:
+    model_name: str, model_revision: str = "main"
+) -> RobertaEncoder:
     from transformers import AutoModel, AutoTokenizer
 
     hf_model = AutoModel.from_pretrained(model_name, revision=model_revision)
@@ -106,7 +106,7 @@ def encoder_from_pretrained_hf_model(
     params = convert_hf_pretrained_model_parameters(hf_model)
 
     config = hf_model.config
-    encoder = TransformerEncoder(
+    encoder = RobertaEncoder(
         hidden_size=config.hidden_size,
         intermediate_size=config.intermediate_size,
         n_heads=config.num_attention_heads,
@@ -117,7 +117,6 @@ def encoder_from_pretrained_hf_model(
         max_pos_embeddings=config.max_position_embeddings,
         vocab_size=config.vocab_size,
         max_seq_len=model_tokenizer.model_max_length,
-        learnable_pos_embeddings=True,
         padding_idx=config.pad_token_id,
         type_vocab_size=config.type_vocab_size,
     )

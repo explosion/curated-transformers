@@ -5,67 +5,10 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
-
-# https://pytorch.org/tutorials/beginner/transformer_tutorial.html
-class SinusoidalPositionalEmbedding(Module):
-    def __init__(self, dim: int, max_len: int, *, normalize=True):
-        super().__init__()
-
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2) * (-math.log(10000.0) / dim))
-
-        pe = torch.zeros(max_len, dim)
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-
-        if normalize == True:
-            l2 = torch.norm(pe, dim=-1)
-            pe /= l2.unsqueeze(-1)
-
-        self.pe = pe
-        self.pe.requires_grad = False
-
-    def forward(self, x: Tensor) -> Tensor:
-        """
-        Shapes:
-            x - (batch, seq_len)
-        """
-        return self.pe[x.size(1), :]
-
-
-# https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
-class ScaledDotProductAttention(Module):
-    def __init__(self, *, dropout: float = 0.1):
-        super().__init__()
-        self.dropout = torch.nn.Dropout(p=dropout)
-
-    def forward(
-        self, k: Tensor, q: Tensor, v: Tensor, attn_mask: Optional[Tensor] = None
-    ) -> Tensor:
-        """
-        Shapes:
-            k, q, v, attn_mask - (batch, heads, seq, model_dim)
-
-        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
-        """
-
-        model_dim = k.shape[-1]
-        attn_scores = q @ k.transpose(-2, -1)
-        attn_scores /= math.sqrt(model_dim)
-
-        # Replace tokens that we don't want to attend to with a large
-        # negative value to zero them out during softmax normalization.
-        if attn_mask is not None:
-            attn_scores += (1.0 - attn_mask) * torch.finfo(attn_scores.dtype).min
-
-        attn_weights = attn_scores.softmax(dim=-1)
-        attn_values = self.dropout(attn_weights @ v)
-
-        return attn_values
-
+from ..attention import ScaledDotProductAttention
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
-class MultiHeadAttention(Module):
+class BertSelfAttention(Module):
     def __init__(self, model_dim: int, n_heads: int, *, dropout: float = 0.1):
         super().__init__()
 
@@ -142,7 +85,7 @@ class MultiHeadAttention(Module):
         return out
 
 
-class PointwiseFeedForwardLayer(Module):
+class BertFeedForward(Module):
     def __init__(
         self,
         hidden_dim: int,
@@ -172,7 +115,7 @@ class PointwiseFeedForwardLayer(Module):
         return out
 
 
-class EncoderLayer(Module):
+class BertEncoderLayer(Module):
     def __init__(
         self,
         model_dim: int,
@@ -186,13 +129,13 @@ class EncoderLayer(Module):
     ):
         super().__init__()
 
-        self.mha = MultiHeadAttention(
+        self.mha = BertSelfAttention(
             model_dim, n_heads=num_attn_heads, dropout=attn_dropout
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(model_dim, eps=layer_norm_eps)
         self.attn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
 
-        self.ffn = PointwiseFeedForwardLayer(
+        self.ffn = BertFeedForward(
             hidden_dim=ffn_dim,
             model_dim=model_dim,
             activation=activation,

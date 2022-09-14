@@ -1,25 +1,16 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, List
+from typing import Optional, List
 
 import torch
 from torch.nn import Module
 from torch import Tensor
 
-from .components import EncoderLayer
-from .embedding import RobertaEmbeddings
+from ..bert.layer import BertEncoderLayer
+from ..output import TransformerEncoderOutput
+from .embeddings import RobertaEmbeddings
 
 
-@dataclass
-class TransformerEncoderOutput:
-    layer_outputs: List[Tensor]  # [batch, seq, model_hidden]
-    embedding_sum: Tensor  # [batch, seq, emb_dim]
-
-    @property
-    def last_hidden_output(self) -> Tensor:
-        return self.layer_outputs[len(self.layer_outputs) - 1]
-
-
-class TransformerEncoder(Module):
+class RobertaEncoder(Module):
     def __init__(
         self,
         hidden_size: int,
@@ -52,7 +43,7 @@ class TransformerEncoder(Module):
         self.max_seq_len = max_seq_len
         self.layers = torch.nn.ModuleList(
             [
-                EncoderLayer(
+                BertEncoderLayer(
                     hidden_size,
                     intermediate_size,
                     n_heads,

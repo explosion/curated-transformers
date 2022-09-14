@@ -24,7 +24,7 @@ DEFAULT_TRANSFORMER_MODEL = """
 
 
 @Language.factory(
-    "experimental_transformer",
+    "curated_transformer",
     assigns=["doc._.trf_data"],
     default_config={"model": DEFAULT_TRANSFORMER_MODEL},
 )

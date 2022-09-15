@@ -15,11 +15,16 @@ class RobertaEncoder(Module):
     def __init__(self, config: RobertaConfig):
         super().__init__()
 
-        self.embeddings = RobertaEmbeddings(config)
+        self.embeddings = RobertaEmbeddings(
+            config.embedding, padding_idx=config.padding_idx
+        )
         self.padding_idx = config.padding_idx
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
-            [BertEncoderLayer(config) for _ in range(config.num_hidden_layers)]
+            [
+                BertEncoderLayer(config.layer, config.attention)
+                for _ in range(config.layer.num_hidden_layers)
+            ]
         )
 
     def _create_attention_mask(self, x: Tensor) -> Tensor:

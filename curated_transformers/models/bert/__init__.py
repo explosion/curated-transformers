@@ -1,2 +1,7 @@
 from .embeddings import BertEmbeddings
-from .config import BertConfig
+from .config import (
+    BertAttentionConfig,
+    BertEmbeddingConfig,
+    BertLayerConfig,
+    BertConfig,
+)

@@ -105,20 +105,21 @@ def encoder_from_pretrained_hf_model(
     hf_config = hf_model.config
     model_tokenizer = AutoTokenizer.from_pretrained(model_name, revision=model_revision)
 
-    config = RobertaConfig()
-    config.hidden_size = hf_config.hidden_size
-    config.intermediate_size = hf_config.intermediate_size
-    config.num_attention_heads = hf_config.num_attention_heads
-    config.num_hidden_layers = hf_config.num_hidden_layers
-    config.attention_probs_dropout_prob = hf_config.attention_probs_dropout_prob
-    config.hidden_dropout_prob = hf_config.hidden_dropout_prob
-    config.hidden_act = hf_config.hidden_act
-    config.vocab_size = hf_config.vocab_size
-    config.type_vocab_size = hf_config.type_vocab_size
-    config.max_position_embeddings = hf_config.max_position_embeddings
-    config.model_max_length = model_tokenizer.model_max_length
-    config.layer_norm_eps = hf_config.layer_norm_eps
-    config.padding_idx = hf_config.pad_token_id
+    config = RobertaConfig(
+        hidden_size=hf_config.hidden_size,
+        intermediate_size=hf_config.intermediate_size,
+        num_attention_heads=hf_config.num_attention_heads,
+        num_hidden_layers=hf_config.num_hidden_layers,
+        attention_probs_dropout_prob=hf_config.attention_probs_dropout_prob,
+        hidden_dropout_prob=hf_config.hidden_dropout_prob,
+        hidden_act=hf_config.hidden_act,
+        vocab_size=hf_config.vocab_size,
+        type_vocab_size=hf_config.type_vocab_size,
+        max_position_embeddings=hf_config.max_position_embeddings,
+        model_max_length=model_tokenizer.model_max_length,
+        layer_norm_eps=hf_config.layer_norm_eps,
+        padding_idx=hf_config.pad_token_id,
+    )
     encoder = RobertaEncoder(config)
 
     params = convert_hf_pretrained_model_parameters(hf_model)

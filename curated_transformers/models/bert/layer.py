@@ -6,12 +6,12 @@ from torch.nn import Module
 from torch import Tensor
 
 from ..attention import ScaledDotProductAttention
-from .config import BertConfig
+from .config import BertAttentionConfig, BertLayerConfig
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
 class BertSelfAttention(Module):
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: BertAttentionConfig):
         super().__init__()
 
         self.model_dim = config.hidden_size
@@ -22,9 +22,7 @@ class BertSelfAttention(Module):
             )
 
         self.dims_per_head = self.model_dim // self.num_heads
-        self.attention = ScaledDotProductAttention(
-            dropout_prob=config.attention_probs_dropout_prob
-        )
+        self.attention = ScaledDotProductAttention(dropout_prob=config.dropout_prob)
         self.query = torch.nn.Linear(self.model_dim, self.model_dim)
         self.key = torch.nn.Linear(self.model_dim, self.model_dim)
         self.value = torch.nn.Linear(self.model_dim, self.model_dim)
@@ -88,7 +86,7 @@ class BertSelfAttention(Module):
 
 
 class BertFeedForward(Module):
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: BertLayerConfig):
         super().__init__()
 
         self.intermediate = torch.nn.Linear(
@@ -114,19 +112,21 @@ class BertFeedForward(Module):
 
 
 class BertEncoderLayer(Module):
-    def __init__(self, config: BertConfig):
+    def __init__(
+        self, layer_config: BertLayerConfig, attention_config: BertAttentionConfig
+    ):
         super().__init__()
 
-        self.mha = BertSelfAttention(config)
+        self.mha = BertSelfAttention(attention_config)
         self.attn_output_layernorm = torch.nn.LayerNorm(
-            config.hidden_size, eps=config.layer_norm_eps
+            layer_config.hidden_size, eps=layer_config.layer_norm_eps
         )
-        self.attn_output_dropout = torch.nn.Dropout(p=config.hidden_dropout_prob)
-        self.ffn = BertFeedForward(config)
+        self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
+        self.ffn = BertFeedForward(layer_config)
         self.ffn_output_layernorm = torch.nn.LayerNorm(
-            config.hidden_size, eps=config.layer_norm_eps
+            layer_config.hidden_size, eps=layer_config.layer_norm_eps
         )
-        self.ffn_output_dropout = torch.nn.Dropout(p=config.hidden_dropout_prob)
+        self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
     def forward(self, x: Tensor, mask: Optional[Tensor] = None) -> Tensor:
         """

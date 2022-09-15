@@ -7,5 +7,5 @@ from ..bert import BertConfig
 class RobertaConfig(BertConfig):
     # Same as BertConfig
 
-    def __init__(self):
-        super(RobertaConfig, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(RobertaConfig, self).__init__(*args, **kwargs)

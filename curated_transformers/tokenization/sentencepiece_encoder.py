@@ -2,7 +2,6 @@ from typing import List, Optional, TypeVar
 from cutlery import SentencePieceProcessor
 from spacy.tokens import Doc, Span
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
-from transformers import XLMRobertaTokenizerFast
 
 from .._compat import has_hf_transformers, transformers
 
@@ -41,7 +40,7 @@ def build_hf_sentencepiece_encoder(
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         hf_model_name, revision=hf_model_revision
     )
-    if not isinstance(tokenizer, XLMRobertaTokenizerFast):
+    if not isinstance(tokenizer, transformers.XLMRobertaTokenizerFast):
         raise ValueError("Loading from this 🤗 tokenizer is not supported")
 
     encoder = build_sentencepiece_encoder()

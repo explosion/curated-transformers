@@ -8,7 +8,35 @@ from thinc.types import Ragged, ArrayXd
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 from ..tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from .hf_wrapper import build_hf_transformer_encoder_v1
+from ..tokenization.wordpiece_encoder import build_hf_wordpiece_encoder
+from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
+from .hf_wrapper import (
+    build_hf_transformer_encoder_v1,
+    bert_encoder_from_pretrained_hf_model,
+)
+from .hf_wrapper import roberta_encoder_from_pretrained_hf_model
+
+
+def build_bert_transformer_model_v1(
+    *, with_spans, hf_model_name: Optional[str] = None, hf_model_revision: str = "main"
+):
+    if not hf_model_name:
+        piece_encoder = build_wordpiece_encoder()
+        transformer = with_array(_stubformer(768, 1000))
+    else:
+        piece_encoder = build_hf_wordpiece_encoder(
+            hf_model_name=hf_model_name, hf_model_revision=hf_model_revision
+        )
+        encoder = bert_encoder_from_pretrained_hf_model(
+            model_name=hf_model_name, model_revision=hf_model_revision
+        )
+        transformer = build_hf_transformer_encoder_v1(encoder)
+
+    return build_transformer_model_v1(
+        with_spans=with_spans,
+        piece_encoder=piece_encoder,
+        transformer=transformer,
+    )
 
 
 def build_xlmr_transformer_model_v1(
@@ -21,7 +49,10 @@ def build_xlmr_transformer_model_v1(
         transformer = with_array(_stubformer(768, 1000))
     else:
         piece_encoder = build_hf_sentencepiece_encoder(hf_model_name)
-        transformer = build_hf_transformer_encoder_v1(hf_model_name)
+        encoder = roberta_encoder_from_pretrained_hf_model(
+            model_name=hf_model_name, model_revision=hf_model_revision
+        )
+        transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -35,14 +66,19 @@ def build_transformer_model_v1(
     *,
     with_spans,
     piece_encoder: Model[List[Span], List[Ragged]],
-    piece_adapter: Model[List[Ragged], List[Ragged]],
+    piece_adapter: Model[List[Ragged], List[Ragged]] = None,
     transformer: Model[List[Ragged], List[Ragged]],
 ):
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?
-    layers = [
-        chain(piece_encoder, piece_adapter, with_spans(transformer), remove_bos_eos())
-    ]
+    if piece_adapter:
+        layers = [
+            chain(
+                piece_encoder, piece_adapter, with_spans(transformer), remove_bos_eos()
+            )
+        ]
+    else:
+        layers = [chain(piece_encoder, with_spans(transformer), remove_bos_eos())]
     refs = {
         "piece_encoder": piece_encoder,
         "transformer": transformer,

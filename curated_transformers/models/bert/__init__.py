@@ -5,3 +5,4 @@ from .config import (
     BertLayerConfig,
     BertConfig,
 )
+from .encoder import BertEncoder

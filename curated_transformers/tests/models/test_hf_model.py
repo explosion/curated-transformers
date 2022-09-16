@@ -35,8 +35,8 @@ def test_model_against_hf_transformers(model_name):
     # Test with the tokenizer's attention mask
     Y_encoder = encoder(X, attention_mask=attention_mask)
     Y_hf_encoder = hf_encoder(X, attention_mask=attention_mask)
-    assert torch.allclose(Y_encoder.last_hidden_output, Y_hf_encoder.last_hidden_state)
+    assert torch.allclose(Y_encoder.last_hidden_state, Y_hf_encoder.last_hidden_state)
 
     # Try to infer the attention mask from padding.
     Y_encoder = encoder(X)
-    assert torch.allclose(Y_encoder.last_hidden_output, Y_hf_encoder.last_hidden_state)
+    assert torch.allclose(Y_encoder.last_hidden_state, Y_hf_encoder.last_hidden_state)

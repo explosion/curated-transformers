@@ -79,7 +79,7 @@ def _convert_outputs(model, inputs_outputs, is_train):
 
     # Strip the outputs for the padding timesteps
     # and return the outputs from the last Transformer layer.
-    last_layer_output = model_outputs.last_hidden_output
+    last_layer_output = model_outputs.last_hidden_state
 
     X_lens = [x.shape[0] for x in X]
     Yt = [last_layer_output[i, :len, :] for i, len in enumerate(X_lens)]

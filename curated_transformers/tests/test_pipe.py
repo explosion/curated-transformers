@@ -37,7 +37,7 @@ cfg_string = """
     pooling = {"@layers":"reduce_mean.v1"}
 
     [components.tok2vec]
-    factory = "experimental_transformer"
+    factory = "curated_transformer"
 
     [components.tok2vec.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"

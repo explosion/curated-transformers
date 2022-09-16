@@ -3,32 +3,29 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from .config import BertEmbeddingConfig
+
 
 class BertEmbeddings(Module):
-    def __init__(
-        self,
-        embedding_dim: int,
-        word_vocab_size: int,
-        type_vocab_size: int,
-        max_pos_embeddings: int,
-        layer_norm_eps: float = 1e-5,
-        dropout: float = 0.1,
-    ) -> None:
+    def __init__(self, config: BertEmbeddingConfig) -> None:
         super().__init__()
 
         self.word_embeddings = torch.nn.Embedding(
-            num_embeddings=word_vocab_size,
-            embedding_dim=embedding_dim,
+            num_embeddings=config.vocab_size,
+            embedding_dim=config.embedding_dim,
         )
         self.token_type_embeddings = torch.nn.Embedding(
-            num_embeddings=type_vocab_size, embedding_dim=embedding_dim
+            num_embeddings=config.type_vocab_size, embedding_dim=config.embedding_dim
         )
         self.position_embeddings = torch.nn.Embedding(
-            num_embeddings=max_pos_embeddings, embedding_dim=embedding_dim
+            num_embeddings=config.max_position_embeddings,
+            embedding_dim=config.embedding_dim,
         )
 
-        self.layer_norm = torch.nn.LayerNorm(embedding_dim, eps=layer_norm_eps)
-        self.dropout = torch.nn.Dropout(p=dropout)
+        self.layer_norm = torch.nn.LayerNorm(
+            config.embedding_dim, eps=config.layer_norm_eps
+        )
+        self.dropout = torch.nn.Dropout(p=config.dropout_prob)
 
     def _get_position_ids(self, x: Tensor) -> Tensor:
         return torch.arange(x.shape[1]).unsqueeze(0).expand(x.shape)

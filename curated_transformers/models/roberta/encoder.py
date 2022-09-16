@@ -57,5 +57,5 @@ class RobertaEncoder(Module):
             layer_outputs.append(layer_output)
 
         return TransformerEncoderOutput(
-            layer_outputs=layer_outputs, embedding_sum=embeddings
+            embedding_output=embeddings, layer_hidden_states=layer_outputs
         )

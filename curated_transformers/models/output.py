@@ -6,7 +6,7 @@ from torch import Tensor
 @dataclass
 class TransformerEncoderOutput:
     # The first element is the output of the embedding layer with shape [batch, seq, emb_dim].
-    # The rest of the elements are the hidden states of each encoder layer respectively [batch, seq, model_hidden].
+    # The rest of the elements are the hidden states of each encoder layer respectively with shape [batch, seq, model_hidden].
     all_outputs: List[Tensor]
 
     def __init__(

@@ -45,9 +45,7 @@ def build_transformer_model_v1(
     ]
     refs = {
         "piece_encoder": piece_encoder,
-        "tokenizer": layers[0],
-        "transformer": with_spans(transformer),
-        "remove_bos_eos": layers[-1],
+        "transformer": transformer,
     }
     return Model(
         "transformer_model",

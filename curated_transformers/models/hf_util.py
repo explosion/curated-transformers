@@ -4,9 +4,6 @@ import re
 
 from .._compat import transformers
 
-SUPPORTED_BERT_MODELS = ["bert-base-cased"]
-
-SUPPORTED_ROBERTA_MODELS = ["roberta-base", "xlm-roberta-base", "xlm-roberta-large"]
 
 SUPPORTED_MODEL_TYPES = ["bert", "roberta", "xlm-roberta"]
 

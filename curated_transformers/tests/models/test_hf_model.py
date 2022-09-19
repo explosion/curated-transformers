@@ -5,13 +5,16 @@ import torch
 from curated_transformers.models.hf_wrapper import roberta_encoder_from_pretrained_hf_model
 from curated_transformers.models.hf_wrapper import bert_encoder_from_pretrained_hf_model
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.models.hf_util import SUPPORTED_BERT_MODELS, SUPPORTED_ROBERTA_MODELS
 # fmt: on
+
+
+BERT_TEST_MODELS = ["bert-base-cased"]
+ROBERTA_TEST_MODELS = ["roberta-base", "xlm-roberta-base"]
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-@pytest.mark.parametrize("model_name", SUPPORTED_ROBERTA_MODELS)
+@pytest.mark.parametrize("model_name", ROBERTA_TEST_MODELS)
 def test_hf_load_roberta_weights(model_name):
     encoder = roberta_encoder_from_pretrained_hf_model(model_name)
     assert encoder
@@ -19,7 +22,7 @@ def test_hf_load_roberta_weights(model_name):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-@pytest.mark.parametrize("model_name", SUPPORTED_BERT_MODELS)
+@pytest.mark.parametrize("model_name", BERT_TEST_MODELS)
 def test_hf_load_bert_weights(model_name):
     encoder = bert_encoder_from_pretrained_hf_model(model_name)
     assert encoder
@@ -27,7 +30,7 @@ def test_hf_load_bert_weights(model_name):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-@pytest.mark.parametrize("model_name", SUPPORTED_BERT_MODELS)
+@pytest.mark.parametrize("model_name", BERT_TEST_MODELS)
 def test_bert_model_against_hf_transformers(model_name):
     encoder = bert_encoder_from_pretrained_hf_model(model_name)
     encoder.eval()
@@ -54,7 +57,7 @@ def test_bert_model_against_hf_transformers(model_name):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-@pytest.mark.parametrize("model_name", SUPPORTED_ROBERTA_MODELS)
+@pytest.mark.parametrize("model_name", ROBERTA_TEST_MODELS)
 def test_roberta_model_against_hf_transformers(model_name):
     encoder = roberta_encoder_from_pretrained_hf_model(model_name)
     encoder.eval()

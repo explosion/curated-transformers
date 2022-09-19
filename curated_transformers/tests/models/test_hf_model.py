@@ -5,8 +5,7 @@ import torch
 from curated_transformers.models.hf_wrapper import roberta_encoder_from_pretrained_hf_model
 from curated_transformers.models.hf_wrapper import bert_encoder_from_pretrained_hf_model
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.models.hf_util import SUPPORTED_HF_MODELS, SUPPORTED_ROBERTA_MODELS
-from curated_transformers.models.hf_util import SUPPORTED_BERT_MODELS
+from curated_transformers.models.hf_util import SUPPORTED_BERT_MODELS, SUPPORTED_ROBERTA_MODELS
 # fmt: on
 
 

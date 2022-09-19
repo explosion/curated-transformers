@@ -8,18 +8,12 @@ SUPPORTED_BERT_MODELS = ["bert-base-cased"]
 
 SUPPORTED_ROBERTA_MODELS = ["roberta-base", "xlm-roberta-base", "xlm-roberta-large"]
 
-SUPPORTED_HF_MODELS = [
-    "bert-base-cased",
-    "bert-base-german-cased",
-    "roberta-base",
-    "xlm-roberta-base",
-    "xlm-roberta-large",
-]
+SUPPORTED_MODEL_TYPES = ["bert", "roberta", "xlm-roberta"]
 
 
-def _check_supported_hf_models(model_name: str):
-    if model_name not in SUPPORTED_HF_MODELS:
-        raise ValueError(f"unsupported HF model {model_name}")
+def _check_supported_hf_models(model_type: str):
+    if model_type not in SUPPORTED_MODEL_TYPES:
+        raise ValueError(f"unsupported HF model type: {model_type}")
 
 
 def convert_hf_pretrained_model_parameters(
@@ -31,17 +25,15 @@ def convert_hf_pretrained_model_parameters(
     Returns the state_dict that can be directly loaded by our Transformer module.
     """
     model_name = hf_model.config.name_or_path
-    _check_supported_hf_models(model_name)
+    _check_supported_hf_models(hf_model.config.model_type)
 
     converters = {
-        "bert-base-cased": _convert_bert_base_state,
-        "bert-base-german-cased": _convert_bert_base_state,
-        "roberta-base": _convert_roberta_base_state,
-        "xlm-roberta-base": _convert_roberta_base_state,
-        "xlm-roberta-large": _convert_roberta_base_state,
+        "bert": _convert_bert_base_state,
+        "roberta": _convert_roberta_base_state,
+        "xlm-roberta": _convert_roberta_base_state,
     }
 
-    return converters[model_name](hf_model)
+    return converters[hf_model.config.model_type](hf_model)
 
 
 def _convert_bert_base_state(

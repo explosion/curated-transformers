@@ -33,10 +33,13 @@ def make_transformer(nlp: Language, name: str, model: Model) -> "Transformer":
 
 
 def last_transformer_layer_listener_v1(
-    width: int, pooling: Model[Ragged, Floats2d], upstream: str = "*"
+    width: int,
+    pooling: Model[Ragged, Floats2d],
+    upstream: str = "*",
+    grad_factor: float = 1.0,
 ):
     tok2vec = LastTransformerLayerListener(
-        upstream_name=upstream, pooling=pooling, width=width
+        upstream_name=upstream, pooling=pooling, width=width, grad_factor=grad_factor
     )
     return tok2vec
 
@@ -76,7 +79,11 @@ class LastTransformerLayerListener(TransformerListener):
     name = "last_transformer_layer_listener"
 
     def __init__(
-        self, upstream_name: str, pooling: Model[Ragged, Floats2d], width: int
+        self,
+        upstream_name: str,
+        pooling: Model[Ragged, Floats2d],
+        width: int,
+        grad_factor: float,
     ) -> None:
         """
         upstream_name (str): A string to identify the 'upstream' Tok2Vec component
@@ -86,9 +93,16 @@ class LastTransformerLayerListener(TransformerListener):
             string will almost always be fine.
         width (int):
             The width of the vectors produced by the upstream tok2vec component.
+        grad_factor (float):
+            Factor to multiply gradients with.
         """
         Model.__init__(
-            self, name=self.name, forward=forward, dims={"nO": width}, layers=[pooling]
+            self,
+            name=self.name,
+            forward=forward,
+            dims={"nO": width},
+            layers=[pooling],
+            attrs={"grad_factor": grad_factor},
         )
         self.upstream_name = upstream_name
         self._batch_id: Optional[int] = None
@@ -99,6 +113,7 @@ class LastTransformerLayerListener(TransformerListener):
 def forward(model: LastTransformerLayerListener, docs, is_train: bool):
     """Supply the outputs from the upstream Tok2Vec component."""
     pooling: Model[Ragged, Floats2d] = model.layers[0]
+    grad_factor: float = model.attrs["grad_factor"]
 
     outputs = []
     if is_train:
@@ -111,6 +126,9 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
 
         def backprop(dYs):
             dX_pooling = [bp_pool(dY) for bp_pool, dY in zip(backprops, dYs)]
+            if grad_factor != 1.0:
+                for dx in dX_pooling:
+                    dx.data *= grad_factor
             dX = model._backprop(dX_pooling)
             model._batch_id = None
             model._outputs = None

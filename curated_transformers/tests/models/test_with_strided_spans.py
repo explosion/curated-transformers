@@ -1,3 +1,4 @@
+import pytest
 from thinc.api import Model, NumpyOps, Ragged, with_array
 from thinc.types import Floats2d
 
@@ -14,6 +15,16 @@ def relu_activation() -> Model[Floats2d, Floats2d]:
         return Y, backprop
 
     return Model("relu_activation", forward)
+
+
+def _add_range() -> Model[Floats2d, Floats2d]:
+    """Add range [0, X.size)."""
+
+    def forward(model: Model, X: Floats2d, is_train: bool):
+        adds = model.ops.xp.arange(X.size).reshape(X.shape)
+        return X + adds, lambda _: []
+
+    return Model("add_range", forward)
 
 
 def test_with_strided_spans():
@@ -50,3 +61,30 @@ def test_with_strided_spans():
     ops.xp.testing.assert_array_equal(dX[1].data, zeros)
     ops.xp.testing.assert_array_equal(dX[0].lengths, lengths1)
     ops.xp.testing.assert_array_equal(dX[1].lengths, lengths2)
+
+
+def test_with_strided_spans_averaging():
+    ops = NumpyOps()
+    stateful = with_array(_add_range())
+    model = with_strided_spans(stateful, stride=2, window=4)
+
+    data = ops.xp.zeros((6, 2))
+    lengths = ops.asarray1i([3, 3])
+    X = [Ragged(data, lengths=lengths)]
+
+    model.initialize(X)
+
+    Y, _ = model(X, is_train=False)
+
+    ops.xp.testing.assert_equal(
+        Y[0].dataXd,
+        [[0.0, 1.0], [2.0, 3.0], [6.0, 7.0], [8.0, 9.0], [14.0, 15.0], [16.0, 17.0]],
+    )
+
+
+def test_incorrect_strides_are_rejected():
+    relu = with_array(relu_activation())
+    with pytest.raises(ValueError):
+        with_strided_spans(relu, stride=2, window=6)
+    with pytest.raises(ValueError):
+        with_strided_spans(relu, stride=4, window=3)

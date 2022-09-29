@@ -1,5 +1,7 @@
 from pathlib import Path
 from re import S
+from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
+from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder_loader
 
 import numpy
 import pytest
@@ -42,30 +44,30 @@ def example_docs():
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
-@pytest.mark.parametrize(
-    "hf_model", [(None, 768), ("xlm-roberta-base", 768), ("xlm-roberta-large", 1024)]
-)
+@pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
 def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
-    hf_model_name, hidden_size = hf_model
+    hf_model_name, hidden_size, vocab_size = hf_model
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
-        with_spans=with_spans, hf_model_name=hf_model_name
+        with_spans=with_spans,
+        vocab_size=vocab_size,
+        hidden_size=hidden_size,
+        encoder_loader=build_hf_encoder_loader(name=hf_model_name),
+        piecer_loader=build_hf_sentencepiece_encoder_loader(name=hf_model_name),
     )
-    piece_encoder = model.get_ref("piece_encoder")
-    piece_encoder.attrs["sentencepiece_processor"] = toy_model
     model.initialize(X=example_docs)
     Y, backprop = model(example_docs, is_train=False)
     assert isinstance(Y, list)
     assert len(Y) == 2
-    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 6, 2])
-    assert Y[0].dataXd.shape == (14, hidden_size)
-    numpy.testing.assert_equal(Y[1].lengths, [2, 1, 1, 1, 4, 3, 2])
-    assert Y[1].dataXd.shape == (14, hidden_size)
+    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
+    assert Y[0].dataXd.shape == (10, hidden_size)
+    numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 2, 1, 2])
+    assert Y[1].dataXd.shape == (9, hidden_size)
 
     # Backprop zeros to verify that backprop doesn't fail.
     ops = NumpyOps()
     dY = [
-        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 6, 2])),
-        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([2, 1, 1, 1, 4, 3, 2])),
+        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 2, 2])),
+        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 2, 1, 2])),
     ]
     assert backprop(dY) == []

@@ -1,36 +1,59 @@
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
+from functools import partial
 
 from spacy.tokens import Span, Doc
 from thinc.layers import chain, Embed, with_array, with_padded
-from thinc.model import Model
+from thinc.model import Model, empty_init
 from thinc.types import Ragged, ArrayXd
 
+from ..models.bert import BertConfig, BertEncoder
+from ..models.roberta import RobertaConfig, RobertaEncoder
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
-from ..tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from ..tokenization.wordpiece_encoder import build_hf_wordpiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
 from .hf_wrapper import (
     build_hf_transformer_encoder_v1,
-    bert_encoder_from_pretrained_hf_model,
 )
-from .hf_wrapper import roberta_encoder_from_pretrained_hf_model
 
 
 def build_bert_transformer_model_v1(
-    *, with_spans, hf_model_name: Optional[str] = None, hf_model_revision: str = "main"
+    *,
+    vocab_size,
+    with_spans,
+    attention_probs_dropout_prob: float = 0.1,
+    hidden_act: str = "gelu",
+    hidden_dropout_prob: float = 0.1,
+    hidden_size: int = 768,
+    intermediate_size: int = 3072,
+    layer_norm_eps: float = 1e-12,
+    max_position_embeddings: int = 512,
+    model_max_length: int = 512,
+    num_attention_heads: int = 12,
+    num_hidden_layers: int = 12,
+    padding_idx: int = 0,
+    type_vocab_size: int = 2,
+    encoder_loader: Callable = empty_init,
+    piecer_loader: Callable = empty_init,
 ):
-    if not hf_model_name:
-        piece_encoder = build_wordpiece_encoder()
-        transformer = with_array(_stubformer(768, 1000))
-    else:
-        piece_encoder = build_hf_wordpiece_encoder(
-            hf_model_name=hf_model_name, hf_model_revision=hf_model_revision
-        )
-        encoder = bert_encoder_from_pretrained_hf_model(
-            model_name=hf_model_name, model_revision=hf_model_revision
-        )
-        transformer = build_hf_transformer_encoder_v1(encoder)
+    config = BertConfig(
+        hidden_size=hidden_size,
+        intermediate_size=intermediate_size,
+        num_attention_heads=num_attention_heads,
+        num_hidden_layers=num_hidden_layers,
+        attention_probs_dropout_prob=attention_probs_dropout_prob,
+        hidden_dropout_prob=hidden_dropout_prob,
+        hidden_act=hidden_act,
+        vocab_size=vocab_size,
+        type_vocab_size=type_vocab_size,
+        max_position_embeddings=max_position_embeddings,
+        model_max_length=model_max_length,
+        layer_norm_eps=layer_norm_eps,
+        padding_idx=padding_idx,
+    )
+    encoder = BertEncoder(config)
+
+    piece_encoder = build_wordpiece_encoder(init=piecer_loader)
+    transformer = build_hf_transformer_encoder_v1(encoder, init=encoder_loader)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -40,19 +63,45 @@ def build_bert_transformer_model_v1(
 
 
 def build_xlmr_transformer_model_v1(
-    *, with_spans, hf_model_name: Optional[str] = None, hf_model_revision: str = "main"
+    *,
+    vocab_size,
+    with_spans,
+    attention_probs_dropout_prob: float = 0.1,
+    hidden_act: str = "gelu",
+    hidden_dropout_prob: float = 0.1,
+    hidden_size: int = 768,
+    intermediate_size: int = 3072,
+    layer_norm_eps: float = 1e-5,
+    max_position_embeddings: int = 514,
+    model_max_length: int = 512,
+    num_attention_heads: int = 12,
+    num_hidden_layers: int = 12,
+    padding_idx: int = 1,
+    type_vocab_size: int = 1,
+    encoder_loader: Callable = empty_init,
+    piecer_loader: Callable = empty_init,
 ):
     piece_adapter = build_xlmr_adapter()
 
-    if not hf_model_name:
-        piece_encoder = build_sentencepiece_encoder()
-        transformer = with_array(_stubformer(768, 1000))
-    else:
-        piece_encoder = build_hf_sentencepiece_encoder(hf_model_name)
-        encoder = roberta_encoder_from_pretrained_hf_model(
-            model_name=hf_model_name, model_revision=hf_model_revision
-        )
-        transformer = build_hf_transformer_encoder_v1(encoder)
+    config = RobertaConfig(
+        hidden_size=hidden_size,
+        intermediate_size=intermediate_size,
+        num_attention_heads=num_attention_heads,
+        num_hidden_layers=num_hidden_layers,
+        attention_probs_dropout_prob=attention_probs_dropout_prob,
+        hidden_dropout_prob=hidden_dropout_prob,
+        hidden_act=hidden_act,
+        vocab_size=vocab_size,
+        type_vocab_size=type_vocab_size,
+        max_position_embeddings=max_position_embeddings,
+        model_max_length=model_max_length,
+        layer_norm_eps=layer_norm_eps,
+        padding_idx=padding_idx,
+    )
+    encoder = RobertaEncoder(config)
+
+    piece_encoder = build_sentencepiece_encoder(init=piecer_loader)
+    transformer = build_hf_transformer_encoder_v1(encoder, init=encoder_loader)
 
     return build_transformer_model_v1(
         with_spans=with_spans,

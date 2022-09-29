@@ -1,16 +1,13 @@
 from cutlery import SentencePieceProcessor
+from functools import partial
 import numpy.testing
 from pathlib import Path
 import pytest
 import spacy
 from thinc.api import Ragged
 
-from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_hf_sentencepiece_encoder,
-)
-from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_sentencepiece_encoder,
-)
+from curated_transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
+from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder_loader
 from curated_transformers._compat import has_hf_transformers
 
 
@@ -39,7 +36,10 @@ def test_sentencepiece_encoder(toy_encoder):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_sentencepiece_encoder_hf_model():
     nlp = spacy.blank("en")
-    encoder = build_hf_sentencepiece_encoder("xlm-roberta-base")
+    encoder = build_sentencepiece_encoder(
+        init=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
+    )
+    encoder.initialize()
 
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
@@ -64,8 +64,11 @@ def test_sentencepiece_encoder_hf_model():
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_sentencepiece_encoder_unsupported_hf_model():
+    encoder = build_sentencepiece_encoder(
+        init=build_hf_sentencepiece_encoder_loader(name="roberta-base")
+    )
     with pytest.raises(ValueError, match=r"not supported"):
-        build_hf_sentencepiece_encoder("roberta-base")
+        encoder.initialize()
 
 
 def test_serialize(toy_encoder):

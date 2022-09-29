@@ -1,4 +1,5 @@
-from cutlery import SentencePieceProcessor, WordPieceProcessor
+from functools import partial
+from cutlery import SentencePieceProcessor
 import numpy.testing
 from pathlib import Path
 import pytest
@@ -6,10 +7,10 @@ import spacy
 from thinc.api import NumpyOps, Ragged, chain
 
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder
-from curated_transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder
+from curated_transformers.tokenization.sentencepiece_encoder import build_sentencepiece_encoder, build_hf_sentencepiece_encoder_loader
 from curated_transformers.tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
-from curated_transformers.tokenization.wordpiece_encoder import build_hf_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import build_hf_wordpiece_encoder_loader
 
 
 @pytest.fixture(scope="module")
@@ -60,7 +61,10 @@ def test_sentencepiece_encoder_against_hf():
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
-    encoder = build_hf_sentencepiece_encoder("xlm-roberta-base")
+    encoder = build_sentencepiece_encoder(
+        init=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
+    )
+    encoder.initialize()
     model = chain(encoder, build_xlmr_adapter(), remove_bos_eos())
 
     encoding = model.predict([doc1, doc2])
@@ -79,7 +83,10 @@ def test_wordpiece_encoder_against_hf():
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
-    encoder = build_hf_wordpiece_encoder("bert-base-cased")
+    encoder = build_wordpiece_encoder(
+        init=build_hf_wordpiece_encoder_loader(name="bert-base-cased")
+    )
+    encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     model = chain(encoder, remove_bos_eos())
 

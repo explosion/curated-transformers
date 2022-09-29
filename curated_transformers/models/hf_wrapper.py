@@ -1,29 +1,27 @@
-import re
-import torch
-
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Callable
 from functools import partial
 
 from spacy.tokens import Doc
 from thinc.api import Model, torch2xp, get_current_ops
 from thinc.api import xp2torch, PyTorchWrapper_v2
+from thinc.model import empty_init
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
 
 from .bert import BertEncoder, BertConfig
 from .roberta import RobertaEncoder, RobertaConfig
 from .._compat import transformers, has_hf_transformers
+from ..util import registry
 from .hf_util import convert_hf_pretrained_model_parameters
 
 
 def build_hf_transformer_encoder_v1(
     encoder: Model[List[Doc], List[Ragged]],
+    *,
     mixed_precision: bool = False,
     grad_scaler_config: dict = {},
+    init: Callable = empty_init,
 ) -> Model[List[Ints1d], List[Floats2d]]:
-    if not has_hf_transformers:
-        raise ValueError("requires 🤗 transformers")
-
     if "enabled" not in grad_scaler_config:
         grad_scaler_config["enabled"] = mixed_precision
 
@@ -38,6 +36,9 @@ def build_hf_transformer_encoder_v1(
         mixed_precision=mixed_precision,
         grad_scaler=PyTorchGradScaler(**grad_scaler_config),
     )
+
+    model.init = init
+
     return model
 
 
@@ -94,67 +95,25 @@ def _convert_outputs(model, inputs_outputs, is_train):
     return Y, convert_for_torch_backward
 
 
-def bert_encoder_from_pretrained_hf_model(
-    model_name: str, model_revision: str = "main"
-) -> BertEncoder:
-    global transformers
-    from transformers import AutoModel, AutoTokenizer
+@registry.model_loaders("curated-transformers.HFEncoderLoader.v1")
+def build_hf_encoder_loader(
+    *,
+    name: str,
+    revision: str = "main",
+):
+    def load(model: Model, X: List[Doc] = None, Y=None):
+        if not has_hf_transformers:
+            raise ValueError("requires 🤗 transformers")
 
-    hf_model = AutoModel.from_pretrained(model_name, revision=model_revision)
-    hf_config = hf_model.config
-    model_tokenizer = AutoTokenizer.from_pretrained(model_name, revision=model_revision)
+        global transformers
+        from transformers import AutoModel
 
-    config = BertConfig(
-        hidden_size=hf_config.hidden_size,
-        intermediate_size=hf_config.intermediate_size,
-        num_attention_heads=hf_config.num_attention_heads,
-        num_hidden_layers=hf_config.num_hidden_layers,
-        attention_probs_dropout_prob=hf_config.attention_probs_dropout_prob,
-        hidden_dropout_prob=hf_config.hidden_dropout_prob,
-        hidden_act=hf_config.hidden_act,
-        vocab_size=hf_config.vocab_size,
-        type_vocab_size=hf_config.type_vocab_size,
-        max_position_embeddings=hf_config.max_position_embeddings,
-        model_max_length=model_tokenizer.model_max_length,
-        layer_norm_eps=hf_config.layer_norm_eps,
-        padding_idx=hf_config.pad_token_id,
-    )
+        encoder = model.shims[0]._model
 
-    encoder = BertEncoder(config)
+        hf_model = AutoModel.from_pretrained(name, revision=revision)
+        params = convert_hf_pretrained_model_parameters(hf_model)
+        encoder.load_state_dict(params)
 
-    params = convert_hf_pretrained_model_parameters(hf_model)
-    encoder.load_state_dict(params)
+        return model
 
-    return encoder
-
-
-def roberta_encoder_from_pretrained_hf_model(
-    model_name: str, model_revision: str = "main"
-) -> RobertaEncoder:
-    global transformers
-    from transformers import AutoModel, AutoTokenizer
-
-    hf_model = AutoModel.from_pretrained(model_name, revision=model_revision)
-    hf_config = hf_model.config
-    model_tokenizer = AutoTokenizer.from_pretrained(model_name, revision=model_revision)
-
-    config = RobertaConfig(
-        hidden_size=hf_config.hidden_size,
-        intermediate_size=hf_config.intermediate_size,
-        num_attention_heads=hf_config.num_attention_heads,
-        num_hidden_layers=hf_config.num_hidden_layers,
-        attention_probs_dropout_prob=hf_config.attention_probs_dropout_prob,
-        hidden_dropout_prob=hf_config.hidden_dropout_prob,
-        hidden_act=hf_config.hidden_act,
-        vocab_size=hf_config.vocab_size,
-        type_vocab_size=hf_config.type_vocab_size,
-        max_position_embeddings=hf_config.max_position_embeddings,
-        model_max_length=model_tokenizer.model_max_length,
-        layer_norm_eps=hf_config.layer_norm_eps,
-        padding_idx=hf_config.pad_token_id,
-    )
-    encoder = RobertaEncoder(config)
-
-    params = convert_hf_pretrained_model_parameters(hf_model)
-    encoder.load_state_dict(params)
-    return encoder
+    return load

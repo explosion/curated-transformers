@@ -1,3 +1,6 @@
+from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
+from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder_loader
+from curated_transformers.tokenization.wordpiece_encoder import build_hf_wordpiece_encoder_loader
 from numpy.testing import assert_array_equal
 import pytest
 import spacy
@@ -44,7 +47,15 @@ cfg_string = """
 
     [components.tok2vec.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"
-    hf_model_name = "xlm-roberta-base"
+    vocab_size = 250002
+
+    [components.tok2vec.model.encoder_loader]
+    @model_loaders = "curated-transformers.HFEncoderLoader.v1"
+    name = "xlm-roberta-base"
+
+    [components.tok2vec.model.piecer_loader]
+    @model_loaders = "curated-transformers.HFSentencepieceLoader.v1"
+    name = "xlm-roberta-base"
 
     [components.tok2vec.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
@@ -119,8 +130,12 @@ def _hf_tokenize_per_token(tokenizer, docs):
 def test_bert_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_bert_transformer_model_v1(
-        with_spans=build_with_strided_spans_v1(), hf_model_name="bert-base-cased"
+        with_spans=build_with_strided_spans_v1(),
+        vocab_size=28996,
+        encoder_loader=build_hf_encoder_loader(name="bert-base-cased"),
+        piecer_loader=build_hf_wordpiece_encoder_loader(name="bert-base-cased"),
     )
+    model.initialize()
     pipe = make_transformer(nlp, "transformer", model)
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
@@ -148,8 +163,12 @@ def test_bert_transformer_pipe_against_hf():
 def test_roberta_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_xlmr_transformer_model_v1(
-        with_spans=build_with_strided_spans_v1(), hf_model_name="xlm-roberta-base"
+        with_spans=build_with_strided_spans_v1(),
+        vocab_size=250002,
+        encoder_loader=build_hf_encoder_loader(name="xlm-roberta-base"),
+        piecer_loader=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base"),
     )
+    model.initialize()
     pipe = make_transformer(nlp, "transformer", model)
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")

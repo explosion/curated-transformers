@@ -157,8 +157,3 @@ def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
 def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):
     model.layers[0].initialize(X, Y)
     return model
-
-
-# Not a real transformer, just a stub.
-def _stubformer(nO, nV):
-    return Embed(nO, nV)

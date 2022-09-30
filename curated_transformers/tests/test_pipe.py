@@ -26,7 +26,7 @@ from curated_transformers._compat import has_hf_transformers, transformers
 cfg_string = """
     [nlp]
     lang = "en"
-    pipeline = ["tok2vec","tagger"]
+    pipeline = ["transformer","tagger"]
 
     [components]
 
@@ -42,23 +42,29 @@ cfg_string = """
     width = 768
     pooling = {"@layers":"reduce_mean.v1"}
 
-    [components.tok2vec]
+    [components.transformer]
     factory = "curated_transformer"
 
-    [components.tok2vec.model]
+    [components.transformer.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"
     vocab_size = 250002
 
-    [components.tok2vec.model.encoder_loader]
+    [components.transformer.model.with_spans]
+    @architectures = "curated-transformers.WithStridedSpans.v1"
+
+    [initialize]
+
+    [initialize.components]
+
+    [initialize.components.transformer]
+
+    [initialize.components.transformer.encoder_loader]
     @model_loaders = "curated-transformers.HFEncoderLoader.v1"
     name = "xlm-roberta-base"
 
-    [components.tok2vec.model.piecer_loader]
+    [initialize.components.transformer.piecer_loader]
     @model_loaders = "curated-transformers.HFSentencepieceLoader.v1"
     name = "xlm-roberta-base"
-
-    [components.tok2vec.model.with_spans]
-    @architectures = "curated-transformers.WithStridedSpans.v1"
 """
 
 TRAIN_DATA = [
@@ -73,6 +79,7 @@ TRAIN_DATA = [
 ]
 
 
+@pytest.mark.slow
 def test_tagger():
     config = Config().from_str(cfg_string)
     nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
@@ -132,8 +139,10 @@ def test_bert_transformer_pipe_against_hf():
     model = build_bert_transformer_model_v1(
         with_spans=build_with_strided_spans_v1(),
         vocab_size=28996,
-        encoder_loader=build_hf_encoder_loader(name="bert-base-cased"),
-        piecer_loader=build_hf_wordpiece_encoder_loader(name="bert-base-cased"),
+    )
+    model.get_ref("transformer").init = build_hf_encoder_loader(name="bert-base-cased")
+    model.get_ref("piece_encoder").init = build_hf_wordpiece_encoder_loader(
+        name="bert-base-cased"
     )
     model.initialize()
     pipe = make_transformer(nlp, "transformer", model)
@@ -165,8 +174,10 @@ def test_roberta_transformer_pipe_against_hf():
     model = build_xlmr_transformer_model_v1(
         with_spans=build_with_strided_spans_v1(),
         vocab_size=250002,
-        encoder_loader=build_hf_encoder_loader(name="xlm-roberta-base"),
-        piecer_loader=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base"),
+    )
+    model.get_ref("transformer").init = build_hf_encoder_loader(name="xlm-roberta-base")
+    model.get_ref("piece_encoder").init = build_hf_sentencepiece_encoder_loader(
+        name="xlm-roberta-base"
     )
     model.initialize()
     pipe = make_transformer(nlp, "transformer", model)

@@ -61,9 +61,8 @@ def test_sentencepiece_encoder_against_hf():
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
-    encoder = build_sentencepiece_encoder(
-        init=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
-    )
+    encoder = build_sentencepiece_encoder()
+    encoder.init = build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
     encoder.initialize()
     model = chain(encoder, build_xlmr_adapter(), remove_bos_eos())
 
@@ -83,9 +82,8 @@ def test_wordpiece_encoder_against_hf():
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
-    encoder = build_wordpiece_encoder(
-        init=build_hf_wordpiece_encoder_loader(name="bert-base-cased")
-    )
+    encoder = build_wordpiece_encoder()
+    encoder.init = build_hf_wordpiece_encoder_loader(name="bert-base-cased")
     encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     model = chain(encoder, remove_bos_eos())

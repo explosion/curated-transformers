@@ -36,9 +36,8 @@ def test_sentencepiece_encoder(toy_encoder):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_sentencepiece_encoder_hf_model():
     nlp = spacy.blank("en")
-    encoder = build_sentencepiece_encoder(
-        init=build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
-    )
+    encoder = build_sentencepiece_encoder()
+    encoder.init = build_hf_sentencepiece_encoder_loader(name="xlm-roberta-base")
     encoder.initialize()
 
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
@@ -64,9 +63,8 @@ def test_sentencepiece_encoder_hf_model():
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_sentencepiece_encoder_unsupported_hf_model():
-    encoder = build_sentencepiece_encoder(
-        init=build_hf_sentencepiece_encoder_loader(name="roberta-base")
-    )
+    encoder = build_sentencepiece_encoder()
+    encoder.init = build_hf_sentencepiece_encoder_loader(name="roberta-base")
     with pytest.raises(ValueError, match=r"not supported"):
         encoder.initialize()
 

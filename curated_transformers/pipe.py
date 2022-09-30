@@ -321,6 +321,8 @@ class Transformer(TrainablePipe):
         get_examples: Callable[[], Iterable[Example]],
         *,
         nlp: Optional[Language] = None,
+        encoder_loader: Optional[Callable] = None,
+        piecer_loader: Optional[Callable] = None,
     ):
         """Initialize the pipe for training, using a representative set
         of data examples.
@@ -330,6 +332,12 @@ class Transformer(TrainablePipe):
         DOCS: https://spacy.io/api/tok2vec#initialize
         """
         validate_get_examples(get_examples, "Transformer.initialize")
+
+        if encoder_loader:
+            self.model.get_ref("transformer").init = encoder_loader
+        if piecer_loader:
+            self.model.get_ref("piece_encoder").init = piecer_loader
+
         doc_sample = []
         for example in islice(get_examples(), 10):
             doc_sample.append(example.x)

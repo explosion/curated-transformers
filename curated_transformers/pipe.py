@@ -28,8 +28,10 @@ DEFAULT_TRANSFORMER_MODEL = """
     assigns=["doc._.trf_data"],
     default_config={"model": DEFAULT_TRANSFORMER_MODEL},
 )
-def make_transformer(nlp: Language, name: str, model: Model) -> "Transformer":
-    return Transformer(nlp.vocab, model, name)
+def make_transformer(
+    nlp: Language, name: str, model: Model, *, frozen: bool = False
+) -> "Transformer":
+    return Transformer(nlp.vocab, model, name=name, frozen=frozen)
 
 
 def last_transformer_layer_listener_v1(
@@ -163,20 +165,28 @@ class Transformer(TrainablePipe):
     sharing.
     """
 
-    def __init__(self, vocab: Vocab, model: Model, name: str = "transformer") -> None:
+    def __init__(
+        self,
+        vocab: Vocab,
+        model: Model,
+        *,
+        name: str = "transformer",
+        frozen: bool = False,
+    ) -> None:
         """Initialize a tok2vec component.
         vocab (Vocab): The shared vocabulary.
         model (thinc.api.Model[List[Doc], List[Floats2d]]):
             The Thinc Model powering the pipeline component. It should take
             a list of Doc objects as input, and output a list of 2d float arrays.
         name (str): The component instance name.
+        frozen (bool): Model weights are frozen and no backpropagation is performed.
         DOCS: https://spacy.io/api/tok2vec#init
         """
         self.vocab = vocab
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List["TransformerListener"]] = {}
-        self.cfg: Dict[str, Any] = {}
+        self.cfg: Dict[str, Any] = {"frozen": frozen}
         install_extensions()
 
     @property
@@ -280,12 +290,19 @@ class Transformer(TrainablePipe):
         validate_examples(examples, "Transformer.update")
         docs = [eg.predicted for eg in examples]
         set_dropout_rate(self.model, drop)
-        tokvecs, bp_tokvecs = self.model.begin_update(docs)
-        d_tokvecs = [
-            Ragged(self.model.ops.alloc_f(t2v.dataXd.shape), t2v.lengths)
-            for t2v in tokvecs
-        ]
         losses.setdefault(self.name, 0.0)
+
+        if self.frozen:
+            # Ensures that the inner torch model is executed in a `no_grad` context.
+            tokvecs = self.model.predict(docs)
+            bp_tokvecs = None
+            d_tokvecs = None
+        else:
+            tokvecs, bp_tokvecs = self.model.begin_update(docs)
+            d_tokvecs = [
+                Ragged(self.model.ops.alloc_f(t2v.dataXd.shape), t2v.lengths)
+                for t2v in tokvecs
+            ]
 
         def accumulate_gradient(one_d_tokvecs):
             """Accumulate tok2vec loss and gradient. This is passed as a callback
@@ -297,6 +314,10 @@ class Transformer(TrainablePipe):
                 losses[self.name] += float((one_d_tokvecs[i].data ** 2).sum())
             # return [self.model.ops.alloc2f(*t2v.shape) for t2v in tokvecs]
 
+        def accumulate_gradient_noop(one_d_tokvecs):
+            for i in range(len(one_d_tokvecs)):
+                losses[self.name] += float((one_d_tokvecs[i].data ** 2).sum())
+
         def backprop(one_d_tokvecs):
             """Callback to actually do the backprop. Passed to last listener."""
             nonlocal d_tokvecs
@@ -306,11 +327,24 @@ class Transformer(TrainablePipe):
                 self.finish_update(sgd)
             return d_docs
 
+        def backprop_noop(one_d_tokvecs):
+            accumulate_gradient_noop(one_d_tokvecs)
+            if sgd is not None:
+                self.finish_update(sgd)
+            return []
+
+        if self.frozen:
+            accum_func = accumulate_gradient_noop
+            backprop_func = backprop_noop
+        else:
+            accum_func = accumulate_gradient
+            backprop_func = backprop
+
         batch_id = TransformerListener.get_batch_id(docs)
         for listener in self.listeners[:-1]:
-            listener.receive(batch_id, tokvecs, accumulate_gradient)
+            listener.receive(batch_id, tokvecs, accum_func)
         if self.listeners:
-            self.listeners[-1].receive(batch_id, tokvecs, backprop)
+            self.listeners[-1].receive(batch_id, tokvecs, backprop_func)
         return losses
 
     def get_loss(self, examples, scores) -> None:
@@ -346,6 +380,14 @@ class Transformer(TrainablePipe):
 
     def add_label(self, label):
         raise NotImplementedError
+
+    @property
+    def frozen(self) -> bool:
+        return self.cfg["frozen"]
+
+    @frozen.setter
+    def frozen(self, new_value: bool):
+        self.cfg["frozen"] = new_value
 
 
 def install_extensions() -> None:

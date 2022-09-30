@@ -1,6 +1,10 @@
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
-from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder_loader
-from curated_transformers.tokenization.wordpiece_encoder import build_hf_wordpiece_encoder_loader
+from curated_transformers.tokenization.sentencepiece_encoder import (
+    build_hf_sentencepiece_encoder_loader,
+)
+from curated_transformers.tokenization.wordpiece_encoder import (
+    build_hf_wordpiece_encoder_loader,
+)
 from numpy.testing import assert_array_equal
 import pytest
 import spacy
@@ -200,3 +204,40 @@ def test_roberta_transformer_pipe_against_hf():
         torch.testing.assert_allclose(
             hf_doc_encoding[:encoding_len][1:-1], doc._.trf_data.dataXd
         )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_frozen_transformer_pipe():
+    config = Config().from_str(cfg_string)
+    nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
+    tagger = nlp.get_pipe("tagger")
+    transformer = nlp.get_pipe("transformer")
+    transformer.frozen = True
+
+    train_examples = []
+    for t in TRAIN_DATA:
+        train_examples.append(Example.from_dict(nlp.make_doc(t[0]), t[1]))
+        for tag in t[1]["tags"]:
+            tagger.add_label(tag)
+
+    optimizer = nlp.initialize(lambda: train_examples)
+
+    def get_transformer_params_sorted():
+        params = transformer.model.get_ref("transformer").shims[0]._model.state_dict()
+        return list(sorted(params.items()))
+
+    transformer_init_params = [
+        (k, v.clone()) for k, v in get_transformer_params_sorted()
+    ]
+
+    for i in range(5):
+        losses = {}
+        nlp.update(train_examples, sgd=optimizer, losses=losses)
+
+    transformer_trained_params = get_transformer_params_sorted()
+    for ((old_param, old_vec), (new_param, new_vec)) in zip(
+        transformer_init_params, transformer_trained_params
+    ):
+        assert old_param == new_param
+        torch.testing.assert_allclose(old_vec, new_vec)

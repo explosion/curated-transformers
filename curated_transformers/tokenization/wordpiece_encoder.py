@@ -25,11 +25,10 @@ def deserialize_my_custom_class(
     return WordPieceProcessor(value.decode("utf8").split("\n"))
 
 
-def build_wordpiece_encoder(init=empty_init) -> Model[List[Doc], List[Ragged]]:
+def build_wordpiece_encoder() -> Model[List[Doc], List[Ragged]]:
     return Model(
         "wordpiece_encoder",
         forward=wordpiece_encoder_forward,
-        init=init,
         attrs={
             "wordpiece_processor": WordPieceProcessor([]),
             "unk_piece": "[UNK]",

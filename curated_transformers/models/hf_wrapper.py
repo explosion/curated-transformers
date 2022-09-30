@@ -20,7 +20,6 @@ def build_hf_transformer_encoder_v1(
     *,
     mixed_precision: bool = False,
     grad_scaler_config: dict = {},
-    init: Callable = empty_init,
 ) -> Model[List[Ints1d], List[Floats2d]]:
     if "enabled" not in grad_scaler_config:
         grad_scaler_config["enabled"] = mixed_precision
@@ -36,8 +35,6 @@ def build_hf_transformer_encoder_v1(
         mixed_precision=mixed_precision,
         grad_scaler=PyTorchGradScaler(**grad_scaler_config),
     )
-
-    model.init = init
 
     return model
 

@@ -32,8 +32,6 @@ def build_bert_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 0,
     type_vocab_size: int = 2,
-    encoder_loader: Callable = empty_init,
-    piecer_loader: Callable = empty_init,
 ):
     config = BertConfig(
         hidden_size=hidden_size,
@@ -52,8 +50,8 @@ def build_bert_transformer_model_v1(
     )
     encoder = BertEncoder(config)
 
-    piece_encoder = build_wordpiece_encoder(init=piecer_loader)
-    transformer = build_hf_transformer_encoder_v1(encoder, init=encoder_loader)
+    piece_encoder = build_wordpiece_encoder()
+    transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -78,8 +76,6 @@ def build_xlmr_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 1,
     type_vocab_size: int = 1,
-    encoder_loader: Callable = empty_init,
-    piecer_loader: Callable = empty_init,
 ):
     piece_adapter = build_xlmr_adapter()
 
@@ -100,8 +96,8 @@ def build_xlmr_transformer_model_v1(
     )
     encoder = RobertaEncoder(config)
 
-    piece_encoder = build_sentencepiece_encoder(init=piecer_loader)
-    transformer = build_hf_transformer_encoder_v1(encoder, init=encoder_loader)
+    piece_encoder = build_sentencepiece_encoder()
+    transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,

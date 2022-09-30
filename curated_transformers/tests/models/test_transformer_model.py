@@ -52,8 +52,10 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
         with_spans=with_spans,
         vocab_size=vocab_size,
         hidden_size=hidden_size,
-        encoder_loader=build_hf_encoder_loader(name=hf_model_name),
-        piecer_loader=build_hf_sentencepiece_encoder_loader(name=hf_model_name),
+    )
+    model.get_ref("transformer").init = build_hf_encoder_loader(name=hf_model_name)
+    model.get_ref("piece_encoder").init = build_hf_sentencepiece_encoder_loader(
+        name=hf_model_name
     )
     model.initialize(X=example_docs)
     Y, backprop = model(example_docs, is_train=False)

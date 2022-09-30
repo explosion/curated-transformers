@@ -25,11 +25,10 @@ def deserialize_my_custom_class(
     return SentencePieceProcessor.from_protobuf(value)
 
 
-def build_sentencepiece_encoder(init=empty_init) -> Model[List[Doc], List[Ragged]]:
+def build_sentencepiece_encoder() -> Model[List[Doc], List[Ragged]]:
     return Model(
         "sentencepiece_encoder",
         forward=sentencepiece_encoder_forward,
-        init=init,
         attrs={"sentencepiece_processor": SentencePieceProcessor()},
     )
 

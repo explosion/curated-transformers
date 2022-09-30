@@ -30,9 +30,9 @@ TEST_MODELS = [
 
 def encoder_from_config(config: ModelConfig):
     encoder = config.encoder(config.config)
-    return build_hf_transformer_encoder_v1(
-        encoder, init=build_hf_encoder_loader(name=config.hf_model_name)
-    )
+    model = build_hf_transformer_encoder_v1(encoder)
+    model.init = build_hf_encoder_loader(name=config.hf_model_name)
+    return model
 
 
 @pytest.mark.slow

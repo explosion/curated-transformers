@@ -20,9 +20,8 @@ def test_dir(request):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_wordpiece_encoder_hf_model():
     nlp = spacy.blank("en")
-    encoder = build_wordpiece_encoder(
-        init=build_hf_wordpiece_encoder_loader(name="bert-base-cased")
-    )
+    encoder = build_wordpiece_encoder()
+    encoder.init = build_hf_wordpiece_encoder_loader(name="bert-base-cased")
     encoder.initialize()
 
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
@@ -49,9 +48,8 @@ def test_wordpiece_encoder_hf_model():
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_sentencepiece_encoder_unsupported_hf_model():
-    encoder = build_wordpiece_encoder(
-        init=build_hf_wordpiece_encoder_loader(name="roberta-base")
-    )
+    encoder = build_wordpiece_encoder()
+    encoder.init = build_hf_wordpiece_encoder_loader(name="roberta-base")
     with pytest.raises(ValueError, match=r"not supported"):
         encoder.initialize()
 
@@ -72,9 +70,8 @@ def test_serialize():
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_serialize_hf_model():
-    encoder = build_wordpiece_encoder(
-        init=build_hf_wordpiece_encoder_loader(name="bert-base-cased")
-    )
+    encoder = build_wordpiece_encoder()
+    encoder.init = build_hf_wordpiece_encoder_loader(name="bert-base-cased")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_wordpiece_encoder()

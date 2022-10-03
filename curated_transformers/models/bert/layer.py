@@ -1,10 +1,10 @@
-import math
 from typing import Optional
 
 import torch
 from torch.nn import Module
 from torch import Tensor
 
+from .. import GeluNew
 from ..attention import ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
 
@@ -97,6 +97,12 @@ class BertFeedForward(Module):
             self.activation = torch.nn.ReLU()  # type: ignore
         elif config.hidden_act == "gelu":
             self.activation = torch.nn.GELU()  # type: ignore
+        elif config.hidden_act == "gelu_new":
+            # Ideally, we would use torch.nn.GELU(approximate="tanh"). However,
+            # the differences between that and the manual Torch implementation
+            # are large enough to fail tests comparing output to HF
+            # transformers.
+            self.activation = GeluNew()  # type: ignore
         else:
             raise ValueError(f"unsupported activation function '{config.hidden_act}")
 

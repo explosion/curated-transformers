@@ -6,6 +6,7 @@ from thinc.layers import chain, Embed, with_array, with_padded
 from thinc.model import Model, empty_init
 from thinc.types import Ragged, ArrayXd
 
+from ..models.albert import AlbertConfig, AlbertEncoder
 from ..models.bert import BertConfig, BertEncoder
 from ..models.roberta import RobertaConfig, RobertaEncoder
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
@@ -14,6 +15,54 @@ from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
 from .hf_wrapper import (
     build_hf_transformer_encoder_v1,
 )
+
+
+def build_albert_transformer_model_v1(
+    *,
+    vocab_size,
+    with_spans,
+    attention_probs_dropout_prob: float = 0.0,
+    embedding_size=128,
+    hidden_act: str = "gelu_new",
+    hidden_dropout_prob: float = 0.0,
+    hidden_size: int = 768,
+    intermediate_size: int = 3072,
+    layer_norm_eps: float = 1e-12,
+    max_position_embeddings: int = 512,
+    model_max_length: int = 512,
+    num_attention_heads: int = 12,
+    num_hidden_groups: int = 1,
+    num_hidden_layers: int = 12,
+    padding_idx: int = 0,
+    type_vocab_size: int = 2,
+):
+    config = AlbertConfig(
+        embedding_size=embedding_size,
+        hidden_size=hidden_size,
+        intermediate_size=intermediate_size,
+        num_attention_heads=num_attention_heads,
+        num_hidden_groups=num_hidden_groups,
+        num_hidden_layers=num_hidden_layers,
+        attention_probs_dropout_prob=attention_probs_dropout_prob,
+        hidden_dropout_prob=hidden_dropout_prob,
+        hidden_act=hidden_act,
+        vocab_size=vocab_size,
+        type_vocab_size=type_vocab_size,
+        max_position_embeddings=max_position_embeddings,
+        model_max_length=model_max_length,
+        layer_norm_eps=layer_norm_eps,
+        padding_idx=padding_idx,
+    )
+    encoder = AlbertEncoder(config)
+
+    piece_encoder = build_sentencepiece_encoder()
+    transformer = build_hf_transformer_encoder_v1(encoder)
+
+    return build_transformer_model_v1(
+        with_spans=with_spans,
+        piece_encoder=piece_encoder,
+        transformer=transformer,
+    )
 
 
 def build_bert_transformer_model_v1(

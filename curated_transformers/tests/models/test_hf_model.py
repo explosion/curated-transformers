@@ -1,6 +1,8 @@
 from typing import Callable
 from dataclasses import dataclass
 from functools import partial
+from curated_transformers.models.albert import AlbertEncoder
+from curated_transformers.models.albert.config import AlbertConfig
 from curated_transformers.models.bert import BertConfig, BertEncoder
 from curated_transformers.models.roberta.config import RobertaConfig
 from curated_transformers.models.roberta.encoder import RobertaEncoder
@@ -22,6 +24,7 @@ class ModelConfig:
 
 
 TEST_MODELS = [
+    ModelConfig(AlbertConfig(vocab_size=30000), AlbertEncoder, "albert-base-v2"),
     ModelConfig(BertConfig(vocab_size=28996), BertEncoder, "bert-base-cased"),
     ModelConfig(RobertaConfig(), RobertaEncoder, "roberta-base"),
     ModelConfig(RobertaConfig(vocab_size=250002), RobertaEncoder, "xlm-roberta-base"),

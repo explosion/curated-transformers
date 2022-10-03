@@ -1,0 +1,78 @@
+from typing import Optional
+import torch
+from torch.nn import Linear, Module
+from torch import Tensor
+
+from ..bert.embeddings import BertEmbeddings
+from ..output import TransformerEncoderOutput
+from .config import AlbertConfig
+from .layer_group import AlbertLayerGroup
+
+
+class AlbertEncoder(Module):
+    def __init__(
+        self,
+        config: AlbertConfig,
+    ):
+        super().__init__()
+
+        self.padding_idx = config.padding_idx
+        self.max_seq_len = config.model_max_length
+        self.num_hidden_layers = config.layer.num_hidden_layers
+        num_hidden_groups = config.layer.num_hidden_groups
+
+        if self.num_hidden_layers % num_hidden_groups != 0:
+            raise ValueError(
+                f"Number of hidden layers ({self.num_hidden_layers}) must be divisable by number of hidden groups ({num_hidden_groups})"
+            )
+
+        self.embeddings = BertEmbeddings(config.embedding)
+        self.projection = Linear(
+            config.embedding.embedding_dim, config.layer.hidden_size
+        )
+
+        # Parameters are shared by groups of layers.
+        self.groups = torch.nn.ModuleList(
+            [
+                AlbertLayerGroup(config.layer, config.attention)
+                for _ in range(num_hidden_groups)
+            ]
+        )
+
+    def _create_attention_mask(self, x: Tensor) -> Tensor:
+        return x.ne(self.padding_idx).int()
+
+    def forward(
+        self,
+        input_ids: Tensor,
+        attention_mask: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
+    ) -> TransformerEncoderOutput:
+        """
+        Shapes:
+            input_ids, token_type_ids - (batch, seq_len)
+
+        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
+
+        Returns a tuple of consisting of a list of tensors from each Transformer
+        layer and the sum of the input and positional embeddings.
+        """
+        if attention_mask is None:
+            attention_mask = self._create_attention_mask(input_ids)
+
+        embeddings = self.embeddings(input_ids, token_type_ids, None)
+        embeddings = self.projection(embeddings)
+        layer_output = embeddings
+
+        layers_per_group = self.num_hidden_layers // len(self.groups)
+
+        layer_outputs = []
+        for i in range(self.num_hidden_layers):
+            layer_output = self.groups[i // layers_per_group](
+                layer_output, mask=attention_mask
+            )
+            layer_outputs.append(layer_output)
+
+        return TransformerEncoderOutput(
+            embedding_output=embeddings, layer_hidden_states=layer_outputs
+        )

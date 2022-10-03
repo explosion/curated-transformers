@@ -5,7 +5,7 @@ import re
 from .._compat import transformers
 
 
-SUPPORTED_MODEL_TYPES = ["bert", "roberta", "xlm-roberta"]
+SUPPORTED_MODEL_TYPES = ["albert", "bert", "roberta", "xlm-roberta"]
 
 
 def _check_supported_hf_models(model_type: str):
@@ -25,12 +25,79 @@ def convert_hf_pretrained_model_parameters(
     _check_supported_hf_models(hf_model.config.model_type)
 
     converters = {
+        "albert": _convert_albert_base_state,
         "bert": _convert_bert_base_state,
         "roberta": _convert_roberta_base_state,
         "xlm-roberta": _convert_roberta_base_state,
     }
 
     return converters[hf_model.config.model_type](hf_model)
+
+
+def _convert_albert_base_state(
+    hf_model: "transformers.PreTrainedModel",
+) -> Dict[str, torch.Tensor]:
+    out = {}
+
+    state_dict = dict(hf_model.state_dict().items())
+
+    # The ALBERT encoder parameters have the following form:
+    #
+    # encoder.albert_layer_groups.{hidden_group}.albert_layers.{inner_layer}.{param_name}
+    #
+    # hidden_group is in [0, num_hidden_group)
+    # inner_layer is in [0, inner_group_num)
+
+    for name, parameter in state_dict.items():
+        print(name)
+        if "encoder.albert_layer" not in name:
+            continue
+
+        # TODO: Make these substitutions less ugly.
+
+        # Remove the prefix and rename.
+        name = re.sub(r"^encoder\.", "", name)
+
+        # Layer groups
+        name = re.sub(r"^albert_layer_groups\.", "groups.", name)
+
+        # Inner layers.
+        name = re.sub(r"\.albert_layers\.", ".group_layers.", name)
+
+        # Attention blocks.
+        name = re.sub(r"\.attention\.", ".mha.", name)
+        name = re.sub(r"\.mha\.LayerNorm", r".attn_output_layernorm", name)
+        name = re.sub(r"\.mha\.dense\.", r".mha.output.", name)
+
+        # Pointwise feed-forward layers.
+        name = re.sub(r"\.ffn\.", r".ffn.intermediate.", name)
+        name = re.sub(r"\.ffn_output\.", r".ffn.output.", name)
+        name = re.sub(
+            r"\.full_layer_layer_norm\.",
+            r".ffn_output_layernorm.",
+            name,
+        )
+
+        out[name] = parameter
+
+    # Rename and move embedding parameters to the inner BertEmbeddings module.
+    out["embeddings.word_embeddings.weight"] = state_dict[
+        "embeddings.word_embeddings.weight"
+    ]
+    out["embeddings.token_type_embeddings.weight"] = state_dict[
+        "embeddings.token_type_embeddings.weight"
+    ]
+    out["embeddings.position_embeddings.weight"] = state_dict[
+        "embeddings.position_embeddings.weight"
+    ]
+    out["embeddings.layer_norm.weight"] = state_dict["embeddings.LayerNorm.weight"]
+    out["embeddings.layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
+
+    # Embedding projection
+    out["projection.weight"] = state_dict["encoder.embedding_hidden_mapping_in.weight"]
+    out["projection.bias"] = state_dict["encoder.embedding_hidden_mapping_in.bias"]
+
+    return out
 
 
 def _convert_bert_base_state(

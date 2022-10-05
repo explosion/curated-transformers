@@ -4,6 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+
+
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
     def __init__(self, *, dropout_prob: float = 0.1):
@@ -27,7 +29,9 @@ class ScaledDotProductAttention(Module):
         # Replace tokens that we don't want to attend to with a large
         # negative value to zero them out during softmax normalization.
         if attn_mask is not None:
-            attn_scores += (1.0 - attn_mask) * torch.finfo(attn_scores.dtype).min
+            # The value is `torch.finfo(attn_scores.dype).min`. Unfortunately,
+            # we cannot use `torch.finfo` in TorchScript.
+            attn_scores += (1.0 - attn_mask) * -3.4028234663852886e38
 
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ v)

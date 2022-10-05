@@ -1,9 +1,10 @@
 from typing import List
 from dataclasses import dataclass
+import torch
 from torch import Tensor
 
 
-@dataclass
+@torch.jit.script
 class TransformerEncoderOutput:
     # The first element is the output of the embedding layer with shape [batch, seq, emb_dim].
     # The rest of the elements are the hidden states of each encoder layer respectively with shape [batch, seq, model_hidden].
@@ -30,4 +31,4 @@ class TransformerEncoderOutput:
 
     @property
     def last_hidden_state(self) -> Tensor:
-        return self.all_outputs[len(self.all_outputs) - 1]
+        return self.all_outputs[-1]

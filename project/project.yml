@@ -22,6 +22,7 @@ workflows:
     - preprocess
     - create-config
     - train
+    - quantize
     - evaluate
 
 commands:
@@ -51,7 +52,7 @@ commands:
       - 'cp configs/base-config.cfg configs/${vars.treebank}/config.cfg'
 
   - name: "train"
-    help: "Train the parser"
+    help: "Train the pipeline"
     script:
       - "python -m spacy train configs/${vars.treebank}/config.cfg --output training/${vars.treebank} --gpu-id ${vars.gpu} --nlp.lang=${vars.lang} --paths.train corpus/${vars.treebank}/train.spacy --paths.dev corpus/${vars.treebank}/dev.spacy"
     deps:
@@ -61,18 +62,31 @@ commands:
     outputs:
       - "training/${vars.treebank}/model-best"
 
-  - name: "evaluate"
-    help: "Evaluate the parser model on the test corpus."
+  - name: "quantize"
+    help: "Quantize the pipeline"
     script:
-      - "python -m spacy evaluate --gpu-id ${vars.gpu} training/${vars.treebank}/model-best corpus/${vars.treebank}/test.spacy"
+      - "python -m spacy quantize-transformer training/${vars.treebank}/model-best training/${vars.treebank}/model-best-quantized"
     deps:
       - "training/${vars.treebank}/model-best"
+    outputs:
+      - "training/${vars.treebank}/model-best-quantized"
+
+  - name: "evaluate"
+    help: "Evaluate the pipeline on the test corpus."
+    script:
+      - "python -m spacy evaluate --gpu-id ${vars.gpu} training/${vars.treebank}/model-best corpus/${vars.treebank}/test.spacy"
+      - "python -m spacy evaluate training/${vars.treebank}/model-best-quantized corpus/${vars.treebank}/test.spacy"
+    deps:
+      - "training/${vars.treebank}/model-best"
+      - "training/${vars.treebank}/model-best-quantized"
       - "corpus/${vars.treebank}/test.spacy"
 
   - name: "evaluate-dev"
-    help: "Evaluate the parser model on the test corpus."
+    help: "Evaluate the pipeline on the dev corpus."
     script:
       - "python -m spacy evaluate --gpu-id ${vars.gpu} training/${vars.treebank}/model-best corpus/${vars.treebank}/dev.spacy"
+      - "python -m spacy evaluate training/${vars.treebank}/model-best-quantized corpus/${vars.treebank}/dev.spacy"
     deps:
       - "training/${vars.treebank}/model-best"
+      - "training/${vars.treebank}/model-best-quantized"
       - "corpus/${vars.treebank}/dev.spacy"

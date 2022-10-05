@@ -2,17 +2,20 @@ from typing import Callable, List, Optional, Tuple
 from functools import partial
 
 from spacy.tokens import Span, Doc
-from thinc.layers import chain, Embed, with_array, with_padded
-from thinc.model import Model, empty_init
-from thinc.types import Ragged, ArrayXd
+from thinc.layers import chain
+from thinc.model import Model
+from thinc.types import Ragged
 
 from ..models.albert import AlbertConfig, AlbertEncoder
 from ..models.bert import BertConfig, BertEncoder
 from ..models.roberta import RobertaConfig, RobertaEncoder
+from ..models.torchscript_wrapper import TorchScriptWrapper_v1
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
 from .hf_wrapper import (
+    _convert_inputs,
+    _convert_outputs,
     build_hf_transformer_encoder_v1,
 )
 
@@ -35,6 +38,7 @@ def build_albert_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 0,
     type_vocab_size: int = 2,
+    torchscript=False,
 ):
     config = AlbertConfig(
         embedding_size=embedding_size,
@@ -53,10 +57,16 @@ def build_albert_transformer_model_v1(
         layer_norm_eps=layer_norm_eps,
         padding_idx=padding_idx,
     )
-    encoder = AlbertEncoder(config)
+
+    if torchscript:
+        transformer = _torchscript_encoder(
+            model_max_length=model_max_length, padding_idx=padding_idx
+        )
+    else:
+        encoder = AlbertEncoder(config)
+        transformer = build_hf_transformer_encoder_v1(encoder)
 
     piece_encoder = build_sentencepiece_encoder()
-    transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -81,6 +91,7 @@ def build_bert_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 0,
     type_vocab_size: int = 2,
+    torchscript=False,
 ):
     config = BertConfig(
         hidden_size=hidden_size,
@@ -97,10 +108,16 @@ def build_bert_transformer_model_v1(
         layer_norm_eps=layer_norm_eps,
         padding_idx=padding_idx,
     )
-    encoder = BertEncoder(config)
+
+    if torchscript:
+        transformer = _torchscript_encoder(
+            model_max_length=model_max_length, padding_idx=padding_idx
+        )
+    else:
+        encoder = BertEncoder(config)
+        transformer = build_hf_transformer_encoder_v1(encoder)
 
     piece_encoder = build_wordpiece_encoder()
-    transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -125,6 +142,7 @@ def build_xlmr_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 1,
     type_vocab_size: int = 1,
+    torchscript=False,
 ):
     piece_adapter = build_xlmr_adapter()
 
@@ -143,10 +161,16 @@ def build_xlmr_transformer_model_v1(
         layer_norm_eps=layer_norm_eps,
         padding_idx=padding_idx,
     )
-    encoder = RobertaEncoder(config)
+
+    if torchscript:
+        transformer = _torchscript_encoder(
+            model_max_length=model_max_length, padding_idx=padding_idx
+        )
+    else:
+        encoder = RobertaEncoder(config)
+        transformer = build_hf_transformer_encoder_v1(encoder)
 
     piece_encoder = build_sentencepiece_encoder()
-    transformer = build_hf_transformer_encoder_v1(encoder)
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -202,3 +226,14 @@ def transformer_model_forward(model: Model, docs: List[Doc], is_train: bool):
 def transformer_model_init(model: Model, X: List[Doc] = None, Y=None):
     model.layers[0].initialize(X, Y)
     return model
+
+
+def _torchscript_encoder(*, model_max_length: int, padding_idx: int):
+    return TorchScriptWrapper_v1(
+        convert_inputs=partial(
+            _convert_inputs,
+            max_model_seq_len=model_max_length,
+            padding_idx=padding_idx,
+        ),
+        convert_outputs=_convert_outputs,
+    )

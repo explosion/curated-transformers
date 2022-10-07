@@ -7,6 +7,7 @@ from thinc.api import xp2torch, PyTorchWrapper_v2
 from thinc.model import empty_init
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
+import torch
 
 from .bert import BertEncoder, BertConfig
 from .roberta import RobertaEncoder, RobertaConfig
@@ -110,7 +111,42 @@ def build_hf_encoder_loader(
         hf_model = AutoModel.from_pretrained(name, revision=revision)
         params = convert_hf_pretrained_model_parameters(hf_model)
         encoder.load_state_dict(params)
+        if encoder.layers[0].qconfig:
+            torch.quantization.prepare_qat(encoder, inplace=True)
 
         return model
 
     return load
+
+
+
+
+def validate_keys(invalid_keys, encoder):
+    unexpected_keys = invalid_keys.unexpected_keys
+    missing_keys = invalid_keys.missing_keys
+    error_msgs = []
+
+    # We are ok if quantizer nodes cannot be loaded.
+    missing_keys = list(filter(lambda s: not is_quant_key(s), missing_keys))
+
+    if len(unexpected_keys) > 0:
+        error_msgs.append(
+            'Unexpected key(s) in state_dict: {}. '.format(
+                ', '.join('"{}"'.format(k) for k in unexpected_keys)))
+    if len(missing_keys) > 0:
+        error_msgs.insert(
+            0, 'Missing key(s) in state_dict: {}. '.format(
+                ', '.join('"{}"'.format(k) for k in missing_keys)))
+
+    if len(error_msgs) > 0:
+        raise RuntimeError('Error(s) in loading state_dict for {}:\n\t{}'.format(
+                            encoder.__class__.__name__, "\n\t".join(error_msgs)))
+
+
+def is_quant_key(key):
+    if "activation_post_process" in key:
+        return True
+    if "fake_quant" in key:
+        return True
+    
+    return False

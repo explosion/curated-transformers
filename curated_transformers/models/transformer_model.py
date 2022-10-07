@@ -1,5 +1,6 @@
 from typing import Callable, List, Optional, Tuple
 from functools import partial
+import torch
 
 from spacy.tokens import Span, Doc
 from thinc.layers import chain
@@ -8,7 +9,7 @@ from thinc.types import Ragged
 
 from ..models.albert import AlbertConfig, AlbertEncoder
 from ..models.bert import BertConfig, BertEncoder
-from ..models.roberta import RobertaConfig, RobertaEncoder
+from ..models.roberta import RobertaConfig, RobertaEncoder, QuantizedRobertaEncoder
 from ..models.torchscript_wrapper import TorchScriptWrapper_v1
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
@@ -143,6 +144,7 @@ def build_xlmr_transformer_model_v1(
     padding_idx: int = 1,
     type_vocab_size: int = 1,
     torchscript=False,
+    qat=False,
 ):
     piece_adapter = build_xlmr_adapter()
 
@@ -167,7 +169,11 @@ def build_xlmr_transformer_model_v1(
             model_max_length=model_max_length, padding_idx=padding_idx
         )
     else:
-        encoder = RobertaEncoder(config)
+        if qat:
+            encoder = QuantizedRobertaEncoder(config)
+            #encoder = torch.quantization.prepare_qat(encoder)
+        else:
+            encoder = RobertaEncoder(config)
         transformer = build_hf_transformer_encoder_v1(encoder)
 
     piece_encoder = build_sentencepiece_encoder()

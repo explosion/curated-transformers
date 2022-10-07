@@ -6,6 +6,13 @@ vars:
   train_name: "nl_alpino-ud-train"
   dev_name: "nl_alpino-ud-dev"
   test_name: "nl_alpino-ud-test"
+  # Quantization inevitably leads to a loss. If the loss is too large,
+  # this leads to a model with an unacceptably low accuracy. This option
+  # allows you to skip quantization of layers where the quantization
+  # leads to a larger mean squared error than specified through this
+  # option. The ideal value must be tuned per dataset and the acceptable
+  # loss of accuracy.
+  max_mse_qloss: 3e-6
   gpu: 0
 
 directories: ["configs", "assets", "corpus", "training"]
@@ -65,7 +72,7 @@ commands:
   - name: "quantize"
     help: "Quantize the pipeline"
     script:
-      - "python -m spacy quantize-transformer training/${vars.treebank}/model-best training/${vars.treebank}/model-best-quantized"
+      - "python -m spacy quantize-transformer --max-mse-loss ${vars.max_mse_qloss} training/${vars.treebank}/model-best training/${vars.treebank}/model-best-quantized"
     deps:
       - "training/${vars.treebank}/model-best"
     outputs:

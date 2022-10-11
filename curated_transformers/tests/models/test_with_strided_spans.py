@@ -22,7 +22,7 @@ def _add_range() -> Model[Floats2d, Floats2d]:
 
     def forward(model: Model, X: Floats2d, is_train: bool):
         adds = model.ops.xp.arange(X.size).reshape(X.shape)
-        return X + adds, lambda _: []
+        return X + adds, lambda x: x
 
     return Model("add_range", forward)
 
@@ -30,7 +30,7 @@ def _add_range() -> Model[Floats2d, Floats2d]:
 def test_with_strided_spans():
     ops = NumpyOps()
     relu = with_array(relu_activation())
-    model = with_strided_spans(relu, stride=2, window=4)
+    model = with_strided_spans(relu, stride=4, window=4)
 
     zeros = ops.alloc2f(15, 5)
     ones = ops.alloc2f(15, 5) + 1
@@ -40,7 +40,7 @@ def test_with_strided_spans():
     lengths2 = ops.asarray1i([5, 4, 3, 2, 1])
 
     X = [
-        Ragged(fives, lengths=lengths1),
+        Ragged(fives.copy(), lengths=lengths1),
         Ragged(-fives, lengths=lengths2),
     ]
     model.initialize(X)
@@ -53,8 +53,8 @@ def test_with_strided_spans():
 
     dX = backprop(
         [
-            Ragged(ones, lengths=lengths1),
-            Ragged(ones, lengths=lengths2),
+            Ragged(ones.copy(), lengths=lengths1),
+            Ragged(ones.copy(), lengths=lengths2),
         ]
     )
     ops.xp.testing.assert_array_equal(dX[0].data, ones)
@@ -74,12 +74,31 @@ def test_with_strided_spans_averaging():
 
     model.initialize(X)
 
-    Y, _ = model(X, is_train=False)
+    Y, backprop = model(X, is_train=False)
 
     ops.xp.testing.assert_equal(
         Y[0].dataXd,
         [[0.0, 1.0], [2.0, 3.0], [6.0, 7.0], [8.0, 9.0], [14.0, 15.0], [16.0, 17.0]],
     )
+
+    ones = data + 1
+    dX = backprop(
+        [
+            Ragged(ones.copy(), lengths=lengths),
+        ]
+    )
+    ops.xp.testing.assert_array_equal(
+        dX[0].dataXd,
+        [
+            [1.0, 1.0],
+            [1.0, 1.0],
+            [0.25, 0.25],
+            [0.25, 0.25],
+            [0.25, 0.25],
+            [0.25, 0.25],
+        ],
+    )
+    ops.xp.testing.assert_array_equal(dX[0].lengths, lengths)
 
 
 def test_incorrect_strides_are_rejected():

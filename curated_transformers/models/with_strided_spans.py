@@ -81,8 +81,8 @@ def with_strided_spans_forward(
         # Both overlaps will have dY. However, the proper gradient is 0.5 * dY
         # since we averaged the overlaps in the forward pass.
         _apply_to_overlaps(
-            Y_layer,
-            doc_lens,
+            dY_spans,
+            dY_lengths,
             stride=stride,
             window=window,
             func=_normalize_gradients,
@@ -106,6 +106,9 @@ def _apply_to_overlaps(
 ):
     """Average representations of overlapping windows. This function
     modifies the arrays in Xlf in-place."""
+    if window - stride == 0:
+        # Nothing to do if there is no overlap.
+        return
 
     for Xr_lens in lens:
         doc_len = int(Xr_lens.sum())

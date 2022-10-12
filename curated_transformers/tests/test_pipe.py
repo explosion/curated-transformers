@@ -160,7 +160,8 @@ def test_bert_transformer_pipe_against_hf():
         docs, hf_encoding.last_hidden_state, lens
     ):
         torch.testing.assert_allclose(
-            hf_doc_encoding[:encoding_len][1:-1], doc._.trf_data.dataXd
+            hf_doc_encoding[:encoding_len][1:-1],
+            doc._.trf_data.last_hidden_state.dataXd,
         )
 
 
@@ -195,7 +196,8 @@ def test_roberta_transformer_pipe_against_hf():
         docs, hf_encoding.last_hidden_state, lens
     ):
         torch.testing.assert_allclose(
-            hf_doc_encoding[:encoding_len][1:-1], doc._.trf_data.dataXd
+            hf_doc_encoding[:encoding_len][1:-1],
+            doc._.trf_data.last_hidden_state.dataXd,
         )
 
 
@@ -232,7 +234,8 @@ def test_roberta_transformer_pipe_against_hf():
         docs, hf_encoding.last_hidden_state, lens
     ):
         torch.testing.assert_allclose(
-            hf_doc_encoding[:encoding_len][1:-1], doc._.trf_data.dataXd
+            hf_doc_encoding[:encoding_len][1:-1],
+            doc._.trf_data.last_hidden_state.dataXd,
         )
 
 
@@ -271,3 +274,34 @@ def test_frozen_transformer_pipe():
     ):
         assert old_param == new_param
         torch.testing.assert_allclose(old_vec, new_vec)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_transformer_pipe_outputs():
+    nlp = spacy.blank("en")
+    model = build_xlmr_transformer_model_v1(
+        with_spans=build_with_strided_spans_v1(),
+        vocab_size=250002,
+    )
+    model.get_ref("transformer").init = build_hf_encoder_loader_v1(
+        name="xlm-roberta-base"
+    )
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
+        name="xlm-roberta-base"
+    )
+    model.initialize()
+    pipe = make_transformer(nlp, "transformer", model, all_layer_outputs=False)
+
+    docs = [
+        nlp.make_doc("I saw a girl with a telescope."),
+        nlp.make_doc("Today we will eat poké bowl."),
+    ]
+    docs = list(pipe.pipe(docs))
+    assert all([doc._.trf_data.last_layer_only for doc in docs]) == True
+    assert all([len(doc._.trf_data.layer_outputs) == 1 for doc in docs]) == True
+
+    pipe = make_transformer(nlp, "transformer", model, all_layer_outputs=True)
+    docs = list(pipe.pipe(docs))
+    assert all([not doc._.trf_data.last_layer_only for doc in docs]) == True
+    assert all([len(doc._.trf_data.layer_outputs) == 12 + 1 for doc in docs]) == True

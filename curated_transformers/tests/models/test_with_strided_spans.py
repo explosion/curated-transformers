@@ -1,5 +1,7 @@
+from typing import List
+from curated_transformers.models.output import TransformerModelOutput
 import pytest
-from thinc.api import Model, NumpyOps, Ragged, with_array
+from thinc.api import Model, NumpyOps, Ragged, with_array, chain
 from thinc.types import Floats2d
 
 from curated_transformers.models.with_strided_spans import with_strided_spans
@@ -27,10 +29,17 @@ def _add_range() -> Model[Floats2d, Floats2d]:
     return Model("add_range", forward)
 
 
+def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
+    def forward(model: Model, X: List[Floats2d], is_train: bool):
+        return TransformerModelOutput(outputs=[[x] for x in X]), lambda x: x
+
+    return Model("mock_transformer", forward)
+
+
 def test_with_strided_spans():
     ops = NumpyOps()
-    relu = with_array(relu_activation())
-    model = with_strided_spans(relu, stride=4, window=4)
+    trf = chain(with_array(relu_activation()), _mock_transformer())
+    model = with_strided_spans(trf, stride=4, window=4)
 
     zeros = ops.alloc2f(15, 5)
     ones = ops.alloc2f(15, 5) + 1
@@ -46,10 +55,11 @@ def test_with_strided_spans():
     model.initialize(X)
 
     Y, backprop = model(X, is_train=True)
-    ops.xp.testing.assert_array_equal(Y[0].data, fives)
-    ops.xp.testing.assert_array_equal(Y[1].data, zeros)
-    ops.xp.testing.assert_array_equal(Y[0].lengths, lengths1)
-    ops.xp.testing.assert_array_equal(Y[1].lengths, lengths2)
+    Y = Y.all_outputs
+    ops.xp.testing.assert_array_equal(Y[0][0].data, fives)
+    ops.xp.testing.assert_array_equal(Y[1][0].data, zeros)
+    ops.xp.testing.assert_array_equal(Y[0][0].lengths, lengths1)
+    ops.xp.testing.assert_array_equal(Y[1][0].lengths, lengths2)
 
     dX = backprop(
         [
@@ -65,7 +75,7 @@ def test_with_strided_spans():
 
 def test_with_strided_spans_averaging():
     ops = NumpyOps()
-    stateful = with_array(_add_range())
+    stateful = chain(with_array(_add_range()), _mock_transformer())
     model = with_strided_spans(stateful, stride=2, window=4)
 
     data = ops.xp.zeros((6, 2))
@@ -77,7 +87,7 @@ def test_with_strided_spans_averaging():
     Y, backprop = model(X, is_train=False)
 
     ops.xp.testing.assert_equal(
-        Y[0].dataXd,
+        Y.all_outputs[0][0].dataXd,
         [[0.0, 1.0], [2.0, 3.0], [6.0, 7.0], [8.0, 9.0], [14.0, 15.0], [16.0, 17.0]],
     )
 

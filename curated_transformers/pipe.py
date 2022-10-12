@@ -1,5 +1,5 @@
 from itertools import islice
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from spacy import Errors, Language, Vocab
 from spacy.tokens import Doc
@@ -7,7 +7,9 @@ from spacy.pipeline import TrainablePipe
 from spacy.training import Example, validate_examples, validate_get_examples
 from thinc.api import Optimizer, set_dropout_rate
 from thinc.model import Model
-from thinc.types import Floats2d, Ragged
+from thinc.types import Ragged, Floats2d
+
+from .models.output import DocTransformerOutput, TransformerModelOutput
 
 
 DOC_EXT_ATTR = "trf_data"
@@ -29,9 +31,16 @@ DEFAULT_TRANSFORMER_MODEL = """
     default_config={"model": DEFAULT_TRANSFORMER_MODEL},
 )
 def make_transformer(
-    nlp: Language, name: str, model: Model, *, frozen: bool = False
+    nlp: Language,
+    name: str,
+    model: Model,
+    *,
+    frozen: bool = False,
+    all_layer_outputs: bool = True,
 ) -> "Transformer":
-    return Transformer(nlp.vocab, model, name=name, frozen=frozen)
+    return Transformer(
+        nlp.vocab, model, name=name, frozen=frozen, all_layer_outputs=all_layer_outputs
+    )
 
 
 def last_transformer_layer_listener_v1(
@@ -101,7 +110,7 @@ class LastTransformerLayerListener(TransformerListener):
         Model.__init__(
             self,
             name=self.name,
-            forward=forward,
+            forward=last_transformer_layer_listener_forward,
             dims={"nO": width},
             layers=[pooling],
             attrs={"grad_factor": grad_factor},
@@ -112,7 +121,9 @@ class LastTransformerLayerListener(TransformerListener):
         self._backprop = None
 
 
-def forward(model: LastTransformerLayerListener, docs, is_train: bool):
+def last_transformer_layer_listener_forward(
+    model: LastTransformerLayerListener, docs, is_train: bool
+):
     """Supply the outputs from the upstream Tok2Vec component."""
     pooling: Model[Ragged, Floats2d] = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
@@ -121,17 +132,17 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
     if is_train:
         model.verify_inputs(docs)
         backprops = []
-        for output in model._outputs:
+        for output in model._outputs.last_hidden_states:
             output, pooling_backprop = pooling(output, is_train)
             outputs.append(output)
             backprops.append(pooling_backprop)
 
         def backprop(dYs):
-            dX_pooling = [bp_pool(dY) for bp_pool, dY in zip(backprops, dYs)]
+            dX_pooling = [[bp_pool(dY)] for bp_pool, dY in zip(backprops, dYs)]
             if grad_factor != 1.0:
                 for dx in dX_pooling:
                     dx.data *= grad_factor
-            dX = model._backprop(dX_pooling)
+            dX = model._backprop(dX_pooling, outputs_to_backprop=(-1,))
             model._batch_id = None
             model._outputs = None
             model._backprop = None
@@ -144,7 +155,7 @@ def forward(model: LastTransformerLayerListener, docs, is_train: bool):
             if doc._.trf_data is None:
                 outputs.append(model.ops.alloc2f(len(doc), width))
             else:
-                output, _ = pooling(doc._.trf_data, is_train)
+                output, _ = pooling(doc._.trf_data.last_hidden_state, is_train)
                 outputs.append(output)
 
         return outputs, lambda dX: []
@@ -172,6 +183,7 @@ class Transformer(TrainablePipe):
         *,
         name: str = "transformer",
         frozen: bool = False,
+        all_layer_outputs: bool = True,
     ) -> None:
         """Initialize a tok2vec component.
         vocab (Vocab): The shared vocabulary.
@@ -180,14 +192,19 @@ class Transformer(TrainablePipe):
             a list of Doc objects as input, and output a list of 2d float arrays.
         name (str): The component instance name.
         frozen (bool): Model weights are frozen and no backpropagation is performed.
+        all_layer_outputs (bool): Downstream listeners can use the outputs of all transformer layers.
         DOCS: https://spacy.io/api/tok2vec#init
         """
         self.vocab = vocab
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List["TransformerListener"]] = {}
-        self.cfg: Dict[str, Any] = {"frozen": frozen}
+        self.cfg: Dict[str, Any] = {}
+
         install_extensions()
+        self.frozen = frozen
+        self.all_layer_outputs = all_layer_outputs
+        self._set_model_all_layer_outputs(all_layer_outputs)
 
     @property
     def listeners(self) -> List["TransformerListener"]:
@@ -256,16 +273,22 @@ class Transformer(TrainablePipe):
                 Ragged(self.model.ops.alloc((0, width), self.model.ops.alloc1i(0)))
                 for doc in docs
             ]
+
+        # To ensure that the model's internal state is always consistent with the pipe's.
+        self._set_model_all_layer_outputs(self.all_layer_outputs)
         return self.model.predict(docs)
 
-    def set_annotations(self, docs: Sequence[Doc], tokvecses) -> None:
+    def set_annotations(
+        self, docs: Sequence[Doc], trf_output: TransformerModelOutput
+    ) -> None:
         """Modify a batch of documents, using pre-computed scores.
         docs (Iterable[Doc]): The documents to modify.
         tokvecses: The tensors to set, produced by Tok2Vec.predict.
         DOCS: https://spacy.io/api/tok2vec#set_annotations
         """
-        for doc, tokvecs in zip(docs, tokvecses):
-            doc._.trf_data = tokvecs
+        for doc, tokvecs in zip(docs, trf_output.all_outputs):
+            doc._.trf_data = DocTransformerOutput(layer_outputs=tokvecs)
+            doc._.trf_data.last_layer_only = trf_output.last_layer_only
 
     def update(
         self,
@@ -292,43 +315,55 @@ class Transformer(TrainablePipe):
         set_dropout_rate(self.model, drop)
         losses.setdefault(self.name, 0.0)
 
+        # To ensure that the model's internal state is always consistent with the pipe's.
+        self._set_model_all_layer_outputs(self.all_layer_outputs)
+
         if self.frozen:
             # Ensures that the inner torch model is executed in a `no_grad` context.
-            tokvecs = self.model.predict(docs)
-            bp_tokvecs = None
-            d_tokvecs = None
+            outputs = self.model.predict(docs)
+            bp_outputs = None
+            d_outputs = None
         else:
-            tokvecs, bp_tokvecs = self.model.begin_update(docs)
-            d_tokvecs = [
-                Ragged(self.model.ops.alloc_f(t2v.dataXd.shape), t2v.lengths)
-                for t2v in tokvecs
+            outputs, bp_outputs = self.model.begin_update(docs)
+            d_outputs = [
+                [
+                    Ragged(self.model.ops.alloc_f(t2v.dataXd.shape), t2v.lengths)
+                    for t2v in doc_layers
+                ]
+                for doc_layers in outputs.all_outputs
             ]
 
-        def accumulate_gradient(one_d_tokvecs):
+        def accumulate_gradient(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
             """Accumulate tok2vec loss and gradient. This is passed as a callback
             to all but the last listener. Only the last one does the backprop.
+
+            `outputs_to_backprop` is a tuple of indices indicating to which layers/outputs
+            the gradients are to be propagated.
             """
-            nonlocal d_tokvecs
-            for i in range(len(one_d_tokvecs)):
-                d_tokvecs[i].data += one_d_tokvecs[i].data
-                losses[self.name] += float((one_d_tokvecs[i].data ** 2).sum())
-            # return [self.model.ops.alloc2f(*t2v.shape) for t2v in tokvecs]
+            nonlocal d_outputs
+            for i in range(len(one_d_outputs)):
+                for j in outputs_to_backprop:
+                    d_outputs[i][j].data += one_d_outputs[i][j].data
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
 
-        def accumulate_gradient_noop(one_d_tokvecs):
-            for i in range(len(one_d_tokvecs)):
-                losses[self.name] += float((one_d_tokvecs[i].data ** 2).sum())
+        def accumulate_gradient_noop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+            for i in range(len(one_d_outputs)):
+                for j in outputs_to_backprop:
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
 
-        def backprop(one_d_tokvecs):
+        def backprop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
             """Callback to actually do the backprop. Passed to last listener."""
-            nonlocal d_tokvecs
-            accumulate_gradient(one_d_tokvecs)
-            d_docs = bp_tokvecs(d_tokvecs)
+            nonlocal d_outputs
+            accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
+            d_docs = bp_outputs(d_outputs)
             if sgd is not None:
                 self.finish_update(sgd)
             return d_docs
 
-        def backprop_noop(one_d_tokvecs):
-            accumulate_gradient_noop(one_d_tokvecs)
+        def backprop_noop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+            accumulate_gradient_noop(
+                one_d_outputs, outputs_to_backprop=outputs_to_backprop
+            )
             if sgd is not None:
                 self.finish_update(sgd)
             return []
@@ -342,9 +377,9 @@ class Transformer(TrainablePipe):
 
         batch_id = TransformerListener.get_batch_id(docs)
         for listener in self.listeners[:-1]:
-            listener.receive(batch_id, tokvecs, accum_func)
+            listener.receive(batch_id, outputs, accum_func)
         if self.listeners:
-            self.listeners[-1].receive(batch_id, tokvecs, backprop_func)
+            self.listeners[-1].receive(batch_id, outputs, backprop_func)
         return losses
 
     def get_loss(self, examples, scores) -> None:
@@ -381,13 +416,8 @@ class Transformer(TrainablePipe):
     def add_label(self, label):
         raise NotImplementedError
 
-    @property
-    def frozen(self) -> bool:
-        return self.cfg["frozen"]
-
-    @frozen.setter
-    def frozen(self, new_value: bool):
-        self.cfg["frozen"] = new_value
+    def _set_model_all_layer_outputs(self, new_value: bool):
+        self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
 
 def install_extensions() -> None:

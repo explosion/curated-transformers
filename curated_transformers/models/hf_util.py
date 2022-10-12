@@ -1,9 +1,13 @@
-from typing import Dict
+from typing import Dict, Union
 import torch
 import re
 
 from .._compat import transformers
+from .albert import AlbertEncoder
+from .bert import BertEncoder
+from .roberta import RobertaEncoder
 
+SupportedHfTransformersT = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "roberta", "xlm-roberta"]
 

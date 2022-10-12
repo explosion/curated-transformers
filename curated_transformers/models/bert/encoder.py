@@ -7,7 +7,7 @@ from torch import Tensor
 from .config import BertConfig
 from .embeddings import BertEmbeddings
 from .layer import BertEncoderLayer
-from ..output import TransformerEncoderOutput
+from ..output import PyTorchTransformerOutput
 
 
 class BertEncoder(Module):
@@ -35,7 +35,7 @@ class BertEncoder(Module):
         input_ids: Tensor,
         attention_mask: Optional[Tensor] = None,
         token_type_ids: Optional[Tensor] = None,
-    ) -> TransformerEncoderOutput:
+    ) -> PyTorchTransformerOutput:
         """
         Shapes:
             input_ids, token_type_ids - (batch, seq_len)
@@ -56,6 +56,6 @@ class BertEncoder(Module):
             layer_output = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
-        return TransformerEncoderOutput(
+        return PyTorchTransformerOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )

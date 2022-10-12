@@ -1,9 +1,12 @@
 from cutlery import SentencePieceProcessor
 import numpy.testing
 from pathlib import Path
+from typing import List
+
+import numpy.testing
 import pytest
 import spacy
-from thinc.api import NumpyOps, Ragged, chain
+from thinc.api import NumpyOps, Ragged, chain, Model
 
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization.sentencepiece_encoder import (
@@ -15,6 +18,7 @@ from curated_transformers.tokenization.sentencepiece_adapters import (
 )
 from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
+from curated_transformers.models.output import TransformerModelOutput
 
 
 @pytest.fixture(scope="module")
@@ -37,6 +41,13 @@ def toy_encoder(toy_model):
 @pytest.fixture
 def empty_encoder():
     return chain(build_sentencepiece_encoder(), build_xlmr_adapter())
+
+
+def _mock_transformer() -> Model[List[Ragged], TransformerModelOutput]:
+    def forward(model: Model, X: List[Ragged], is_train: bool):
+        return TransformerModelOutput(outputs=[[x] for x in X]), lambda x: x
+
+    return Model("mock_transformer", forward)
 
 
 def test_sentencepiece_encoder(toy_encoder):
@@ -68,14 +79,14 @@ def test_sentencepiece_encoder_against_hf():
     encoder = build_sentencepiece_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")
     encoder.initialize()
-    model = chain(encoder, build_xlmr_adapter(), remove_bos_eos())
+    model = chain(encoder, build_xlmr_adapter(), _mock_transformer(), remove_bos_eos())
 
     encoding = model.predict([doc1, doc2])
     hf_encoding = hf_tokenizer([token.text for token in doc1])
-    _compare_model_hf_output(ops, encoding[0], hf_encoding)
+    _compare_model_hf_output(ops, encoding.all_outputs[0][0], hf_encoding)
 
     hf_encoding = hf_tokenizer([token.text for token in doc2])
-    _compare_model_hf_output(ops, encoding[1], hf_encoding)
+    _compare_model_hf_output(ops, encoding.all_outputs[1][0], hf_encoding)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
@@ -90,14 +101,14 @@ def test_wordpiece_encoder_against_hf():
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
-    model = chain(encoder, remove_bos_eos())
+    model = chain(encoder, _mock_transformer(), remove_bos_eos())
 
     encoding = model.predict([doc1, doc2])
     hf_encoding = hf_tokenizer([token.text for token in doc1])
-    _compare_model_hf_output(ops, encoding[0], hf_encoding)
+    _compare_model_hf_output(ops, encoding.all_outputs[0][0], hf_encoding)
 
     hf_encoding = hf_tokenizer([token.text for token in doc2])
-    _compare_model_hf_output(ops, encoding[1], hf_encoding)
+    _compare_model_hf_output(ops, encoding.all_outputs[1][0], hf_encoding)
 
 
 def _test_encoder(encoder):

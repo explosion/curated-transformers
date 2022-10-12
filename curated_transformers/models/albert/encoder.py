@@ -4,7 +4,7 @@ from torch.nn import Linear, Module
 from torch import Tensor
 
 from ..bert.embeddings import BertEmbeddings
-from ..output import TransformerEncoderOutput
+from ..output import PyTorchTransformerOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
 
@@ -47,7 +47,7 @@ class AlbertEncoder(Module):
         input_ids: Tensor,
         attention_mask: Optional[Tensor] = None,
         token_type_ids: Optional[Tensor] = None,
-    ) -> TransformerEncoderOutput:
+    ) -> PyTorchTransformerOutput:
         """
         Shapes:
             input_ids, token_type_ids - (batch, seq_len)
@@ -73,6 +73,6 @@ class AlbertEncoder(Module):
             )
             layer_outputs.append(layer_output)
 
-        return TransformerEncoderOutput(
+        return PyTorchTransformerOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )

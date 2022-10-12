@@ -1,5 +1,4 @@
 from pathlib import Path
-from re import S
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 
@@ -10,12 +9,13 @@ from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged
 from thinc.compat import has_cupy
 
-# fmt: off
+from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
-from curated_transformers.models.transformer_model import build_xlmr_transformer_model_v1
-# fmt: on
-
+from curated_transformers.models.transformer_model import (
+    build_xlmr_transformer_model_v1,
+)
 from curated_transformers._compat import has_hf_transformers
+
 
 OPS = [NumpyOps()]
 if has_cupy:
@@ -60,7 +60,9 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
     )
     model.initialize(X=example_docs)
     Y, backprop = model(example_docs, is_train=False)
-    assert isinstance(Y, list)
+    assert isinstance(Y, TransformerModelOutput)
+    num_ouputs = Y.num_outputs
+    Y = Y.last_hidden_states
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
     assert Y[0].dataXd.shape == (10, hidden_size)
@@ -70,7 +72,15 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
     # Backprop zeros to verify that backprop doesn't fail.
     ops = NumpyOps()
     dY = [
-        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 2, 2])),
-        Ragged(ops.alloc2f(14, 768), lengths=ops.asarray1i([1, 1, 1, 1, 2, 1, 2])),
+        [
+            Ragged(
+                ops.alloc2f(10, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 2, 2])
+            )
+            for _ in range(num_ouputs)
+        ],
+        [
+            Ragged(ops.alloc2f(9, 768), lengths=ops.asarray1i([1, 1, 1, 1, 2, 1, 2]))
+            for _ in range(num_ouputs)
+        ],
     ]
     assert backprop(dY) == []

@@ -33,7 +33,7 @@ def build_wordpiece_encoder() -> Model[List[Doc], List[Ragged]]:
             "wordpiece_processor": WordPieceProcessor([]),
             "unk_piece": "[UNK]",
             "bos_piece": "[CLS]",
-            "eos_piece": "[SEP] ",
+            "eos_piece": "[SEP]",
         },
     )
 

@@ -4,12 +4,9 @@ from functools import partial
 from spacy.tokens import Doc
 from thinc.api import Model, torch2xp, get_current_ops
 from thinc.api import xp2torch, PyTorchWrapper_v2
-from thinc.model import empty_init
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
 
-from .bert import BertEncoder, BertConfig
-from .roberta import RobertaEncoder, RobertaConfig
 from .._compat import transformers, has_hf_transformers
 from ..util import registry
 from .hf_util import convert_hf_pretrained_model_parameters

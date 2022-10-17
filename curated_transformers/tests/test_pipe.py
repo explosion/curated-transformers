@@ -1,4 +1,7 @@
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
+from curated_transformers.tokenization.bbpe_encoder import (
+    build_hf_byte_bpe_encoder_loader,
+)
 from curated_transformers.tokenization.sentencepiece_encoder import (
     build_hf_sentencepiece_encoder_loader,
 )
@@ -16,9 +19,8 @@ import torch
 
 from curated_transformers.models.transformer_model import (
     build_xlmr_transformer_model_v1,
-)
-from curated_transformers.models.transformer_model import (
     build_bert_transformer_model_v1,
+    build_roberta_transformer_model_v1,
 )
 from curated_transformers.models.with_strided_spans import (
     build_with_strided_spans_v1,
@@ -153,6 +155,41 @@ def test_bert_transformer_pipe_against_hf():
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     hf_model = transformers.AutoModel.from_pretrained("bert-base-cased")
+
+    docs = [
+        nlp.make_doc("I saw a girl with a telescope."),
+        nlp.make_doc("Today we will eat poké bowl."),
+    ]
+
+    hf_ids, attention_mask, lens = _hf_tokenize_per_token(hf_tokenizer, docs)
+    hf_encoding = hf_model(hf_ids, attention_mask=attention_mask)
+    docs = list(pipe.pipe(docs))
+
+    for doc, hf_doc_encoding, encoding_len in zip(
+        docs, hf_encoding.last_hidden_state, lens
+    ):
+        torch.testing.assert_allclose(
+            hf_doc_encoding[:encoding_len][1:-1], doc._.trf_data.dataXd
+        )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_roberta_transformer_pipe_against_hf():
+    nlp = spacy.blank("en")
+    model = build_roberta_transformer_model_v1(
+        with_spans=build_with_strided_spans_v1(),
+        vocab_size=50265,
+    )
+    model.get_ref("transformer").init = build_hf_encoder_loader(name="roberta-base")
+    model.get_ref("piece_encoder").init = build_hf_byte_bpe_encoder_loader(
+        name="roberta-base"
+    )
+    model.initialize()
+    pipe = make_transformer(nlp, "transformer", model)
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("roberta-base")
+    hf_model = transformers.AutoModel.from_pretrained("roberta-base")
 
     docs = [
         nlp.make_doc("I saw a girl with a telescope."),

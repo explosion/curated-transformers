@@ -1,7 +1,9 @@
 from pathlib import Path
 from re import S
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
-from curated_transformers.tokenization.sentencepiece_encoder import build_hf_sentencepiece_encoder_loader
+from curated_transformers.tokenization.sentencepiece_encoder import (
+    build_hf_sentencepiece_encoder_loader,
+)
 
 import numpy
 import pytest
@@ -42,6 +44,7 @@ def example_docs():
     return [doc1, doc2]
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])

@@ -1,4 +1,4 @@
-cutlery<0.1.0
+cutlery>=0.0.3,<0.1.0
 spacy>=3.4.0,<3.5.0
 srsly
 torch>=1.12.0

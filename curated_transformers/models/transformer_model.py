@@ -421,8 +421,7 @@ def _convert_inputs(
     max_model_seq_len=512,
     padding_idx: int = 1,
 ):
-    ops = get_current_ops()
-
+    ops = model.ops
     max_seq_len = max(x.size for x in X)
     if max_seq_len > max_model_seq_len:
         raise ValueError(
@@ -447,7 +446,7 @@ def _convert_inputs(
 
 def _convert_outputs(model, inputs_outputs, is_train):
     model_inputs, model_outputs = inputs_outputs
-    ops = get_current_ops()
+    ops = model.ops
     all_layer_outputs: bool = model.attrs["_all_layer_outputs"]
 
     # Strip the outputs for the padding timesteps
@@ -465,8 +464,7 @@ def _convert_outputs(model, inputs_outputs, is_train):
         ]
 
     Y = [[torch2xp(layer, ops=ops) for layer in output] for output in Yt]
-    output = TransformerModelOutput(outputs=Y)
-    output.last_layer_only = not all_layer_outputs
+    output = TransformerModelOutput(outputs=Y, last_layer_only=not all_layer_outputs)
 
     def convert_for_torch_backward(dY: List[List[Floats2d]]):
         Yt_flat = [y for inner in Yt for y in inner]

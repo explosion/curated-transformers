@@ -18,8 +18,12 @@ from curated_transformers.models.with_strided_spans import (
 from curated_transformers.pipe import make_transformer
 from curated_transformers._compat import has_hf_transformers, transformers
 
+from .util import make_tempdir
 
-cfg_string = """
+
+cfg_string_last_layer_listener = """
+    # LastTransformerLayerListener
+
     [nlp]
     lang = "en"
     pipeline = ["transformer","tagger"]
@@ -35,8 +39,56 @@ cfg_string = """
 
     [components.tagger.model.tok2vec]
     @architectures = "curated-transformers.LastTransformerLayerListener.v1"
-    width = 60
+    width = ${components.transformer.model.hidden_size}
     pooling = {"@layers":"reduce_mean.v1"}
+
+    [components.transformer]
+    factory = "curated_transformer"
+
+    [components.transformer.model]
+    @architectures = "curated-transformers.BertTransformer.v1"
+    vocab_size = 28996
+    num_hidden_layers = 1
+    hidden_size = 60
+
+    [components.transformer.model.with_spans]
+    @architectures = "curated-transformers.WithStridedSpans.v1"
+
+    [initialize]
+
+    [initialize.components]
+
+    [initialize.components.transformer]
+
+    [initialize.components.transformer.piecer_loader]
+    @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
+    name = "bert-base-cased"
+"""
+
+cfg_string_scalar_weighting_layer_listener = """
+    # ScalarWeightingListener
+
+    [nlp]
+    lang = "en"
+    pipeline = ["transformer","tagger"]
+
+    [components]
+
+    [components.tagger]
+    factory = "tagger"
+
+    [components.tagger.model]
+    @architectures = "spacy.Tagger.v2"
+    nO = null
+
+    [components.tagger.model.tok2vec]
+    @architectures = "curated-transformers.ScalarWeightingListener.v1"
+    width = ${components.transformer.model.hidden_size}
+    pooling = {"@layers":"reduce_mean.v1"}
+
+    [components.tagger.model.tok2vec.weighting]
+    @architectures = "curated-transformers.ScalarWeight.v1"
+    num_layers = ${components.transformer.model.num_hidden_layers}
 
     [components.transformer]
     factory = "curated_transformer"
@@ -73,8 +125,7 @@ TRAIN_DATA = [
 ]
 
 
-@pytest.mark.slow
-def test_tagger():
+def create_and_train_tagger(cfg_string):
     config = Config().from_str(cfg_string)
     nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
     tagger = nlp.get_pipe("tagger")
@@ -87,13 +138,28 @@ def test_tagger():
 
     optimizer = nlp.initialize(lambda: train_examples)
 
-    for i in range(5):
+    for _ in range(10):
         losses = {}
         nlp.update(train_examples, sgd=optimizer, losses=losses)
 
-    docs = list(nlp.pipe(["Eat blue ham", "I like green eggs"]))
+    return nlp
+
+
+def evaluate_tagger_on_train_data(model):
+    docs = list(model.pipe(["Eat blue ham", "I like green eggs"]))
     assert [t.tag_ for t in docs[0]] == ["V", "J", "N"]
     assert [t.tag_ for t in docs[1]] == ["N", "V", "J", "N"]
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.parametrize(
+    "cfg_string",
+    [cfg_string_last_layer_listener, cfg_string_scalar_weighting_layer_listener],
+)
+def test_tagger(cfg_string):
+    model = create_and_train_tagger(cfg_string)
+    evaluate_tagger_on_train_data(model)
 
 
 def _hf_tokenize_per_token(tokenizer, docs, *, roberta=False):
@@ -171,7 +237,7 @@ def test_bert_transformer_pipe_against_hf():
     ):
         torch.testing.assert_allclose(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_state.dataXd,
+            doc._.trf_data.last_hidden_layer_state.dataXd,
         )
 
 
@@ -247,7 +313,7 @@ def test_roberta_transformer_pipe_against_hf():
     ):
         torch.testing.assert_allclose(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_state.dataXd,
+            doc._.trf_data.last_hidden_layer_state.dataXd,
         )
 
 
@@ -285,14 +351,14 @@ def test_xlmr_transformer_pipe_against_hf():
     ):
         torch.testing.assert_allclose(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_state.dataXd,
+            doc._.trf_data.last_hidden_layer_state.dataXd,
         )
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_frozen_transformer_pipe():
-    config = Config().from_str(cfg_string)
+    config = Config().from_str(cfg_string_scalar_weighting_layer_listener)
     nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
     tagger = nlp.get_pipe("tagger")
     transformer = nlp.get_pipe("transformer")
@@ -349,9 +415,9 @@ def test_transformer_pipe_outputs():
     ]
     docs = list(pipe.pipe(docs))
     assert all([doc._.trf_data.last_layer_only for doc in docs]) == True
-    assert all([len(doc._.trf_data.layer_outputs) == 1 for doc in docs]) == True
+    assert all([len(doc._.trf_data.all_outputs) == 1 for doc in docs]) == True
 
     pipe = make_transformer(nlp, "transformer", model, all_layer_outputs=True)
     docs = list(pipe.pipe(docs))
     assert all([not doc._.trf_data.last_layer_only for doc in docs]) == True
-    assert all([len(doc._.trf_data.layer_outputs) == 12 + 1 for doc in docs]) == True
+    assert all([len(doc._.trf_data.all_outputs) == 12 + 1 for doc in docs]) == True

@@ -75,6 +75,23 @@ def last_transformer_layer_listener_v1(
     return tok2vec
 
 
+def scalar_weighting_listener_v1(
+    width: int,
+    weighting: Model[List[List[Ragged]], List[Ragged]],
+    pooling: Model[Ragged, Floats2d],
+    upstream: str = "*",
+    grad_factor: float = 1.0,
+):
+    tok2vec = ScalarWeightingListener(
+        upstream_name=upstream,
+        weighting=weighting,
+        pooling=pooling,
+        width=width,
+        grad_factor=grad_factor,
+    )
+    return tok2vec
+
+
 class TransformerListener(Model):
     @classmethod
     def get_batch_id(cls, inputs: Iterable[Doc]) -> int:
@@ -152,7 +169,7 @@ def last_transformer_layer_listener_forward(
     if is_train:
         model.verify_inputs(docs)
         backprops = []
-        for output in model._outputs.last_hidden_states:
+        for output in model._outputs.last_hidden_layer_states:
             output, pooling_backprop = pooling(output, is_train)
             outputs.append(output)
             backprops.append(pooling_backprop)
@@ -175,7 +192,108 @@ def last_transformer_layer_listener_forward(
             if doc._.trf_data is None:
                 outputs.append(model.ops.alloc2f(len(doc), width))
             else:
-                output, _ = pooling(doc._.trf_data.last_hidden_state, is_train)
+                output, _ = pooling(doc._.trf_data.last_hidden_layer_state, is_train)
+                outputs.append(output)
+
+        return outputs, lambda dX: []
+
+
+class ScalarWeightingListener(TransformerListener):
+    name = "scalar_weighting_listener"
+
+    def __init__(
+        self,
+        upstream_name: str,
+        weighting: Model[List[List[Ragged]], List[Ragged]],
+        pooling: Model[Ragged, Floats2d],
+        width: int,
+        grad_factor: float,
+    ) -> None:
+        """
+        upstream_name (str): A string to identify the 'upstream' Tok2Vec component
+            to communicate with. The upstream name should either be the wildcard
+            string '*', or the name of the `Tok2Vec` component. You'll almost
+            never have multiple upstream Tok2Vec components, so the wildcard
+            string will almost always be fine.`
+        width (int):
+            The width of the vectors produced by the upstream tok2vec component.
+        grad_factor (float):
+            Factor to multiply gradients with.
+        """
+        Model.__init__(
+            self,
+            name=self.name,
+            forward=scalar_weighting_listener_forward,
+            dims={"nO": width},
+            layers=[weighting, pooling],
+            attrs={
+                "grad_factor": grad_factor,
+            },
+        )
+        self.upstream_name = upstream_name
+        self._batch_id: Optional[int] = None
+        self._outputs = None
+        self._backprop = None
+
+
+def scalar_weighting_listener_forward(
+    model: ScalarWeightingListener, docs, is_train: bool
+):
+    """Supply the outputs from the upstream Tok2Vec component."""
+    weighting: Model[List[Ragged], Ragged] = model.layers[0]
+    pooling: Model[Ragged, Floats2d] = model.layers[1]
+    grad_factor: float = model.attrs["grad_factor"]
+
+    invalid_outputs_err_msg = (
+        "Scalar layer weighting requires all transformer layer outputs to function"
+    )
+
+    outputs = []
+    if is_train:
+        if model._outputs.last_layer_only:
+            raise ValueError(invalid_outputs_err_msg)
+
+        model.verify_inputs(docs)
+        weighting_inputs = model._outputs.all_outputs
+
+        backprops = []
+        outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
+        for input in weighting_inputs:
+            weighted_output, weighting_backprop = weighting(input, is_train)
+            output, pooling_backprop = pooling(weighted_output, is_train)
+            outputs.append(output)
+            backprops.append((weighting_backprop, pooling_backprop))
+
+        def backprop(dYs):
+            dX_weighting = []
+            for (bp_weighting, bp_pool), dY in zip(backprops, dYs):
+                dX_pooling = bp_pool(dY)
+                dX_weighting.append(bp_weighting(dX_pooling))
+
+            if grad_factor != 1.0:
+                for dx_inner in dX_weighting:
+                    for dx in dx_inner:
+                        dx.data *= grad_factor
+
+            dX = model._backprop(dX_weighting, outputs_to_backprop=outputs_to_backprop)
+            model._batch_id = None
+            model._outputs = None
+            model._backprop = None
+            return dX
+
+        return outputs, backprop
+    else:
+        width = model.get_dim("nO")
+        for doc in docs:
+            if doc._.trf_data is None:
+                outputs.append(model.ops.alloc2f(len(doc), width))
+            else:
+                if doc._.trf_data.last_layer_only:
+                    raise ValueError(invalid_outputs_err_msg)
+
+                weighting_inputs = doc._.trf_data.all_outputs
+                output, _ = weighting(weighting_inputs, is_train)
+                output, _ = pooling(output, is_train)
                 outputs.append(output)
 
         return outputs, lambda dX: []
@@ -325,8 +443,9 @@ class Transformer(TrainablePipe):
         DOCS: https://spacy.io/api/tok2vec#set_annotations
         """
         for doc, tokvecs in zip(docs, trf_output.all_outputs):
-            doc._.trf_data = DocTransformerOutput(layer_outputs=tokvecs)
-            doc._.trf_data.last_layer_only = trf_output.last_layer_only
+            doc._.trf_data = DocTransformerOutput(
+                all_outputs=tokvecs, last_layer_only=trf_output.last_layer_only
+            )
 
     def update(
         self,

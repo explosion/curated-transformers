@@ -39,7 +39,10 @@ def empty_encoder():
 
 def _mock_transformer() -> Model[List[Ragged], TransformerModelOutput]:
     def forward(model: Model, X: List[Ragged], is_train: bool):
-        return TransformerModelOutput(outputs=[[x] for x in X]), lambda x: x
+        return (
+            TransformerModelOutput(outputs=[[x] for x in X], last_layer_only=True),
+            lambda x: x,
+        )
 
     return Model("mock_transformer", forward)
 

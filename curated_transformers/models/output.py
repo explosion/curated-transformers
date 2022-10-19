@@ -1,4 +1,4 @@
-from typing import List, TypeVar
+from typing import List, Optional, TypeVar
 from dataclasses import dataclass
 import torch
 from torch import Tensor
@@ -14,7 +14,7 @@ class PyTorchTransformerOutput:
     """Output of the PyTorch Transformer Encoders"""
 
     # The first element is the output of the embedding layer with shape [batch, seq, emb_dim].
-    # The rest of the elements are the hidden states of each encoder layer respectively with shape [batch, seq, model_hidden].
+    # The rest of the elements are the states of each encoder hidden layer respectively with shape [batch, seq, model_hidden].
     all_outputs: List[Tensor]
 
     def __init__(
@@ -24,10 +24,10 @@ class PyTorchTransformerOutput:
         self.all_outputs.extend(layer_hidden_states)
 
     @property
-    def embedding_output(self) -> Tensor:
+    def embedding_layer(self) -> Tensor:
         return self.all_outputs[0]
 
-    def layer_hidden_state(self, idx: int) -> Tensor:
+    def hidden_layer_states(self, idx: int) -> Tensor:
         """'idx' must be in the range [0, num_hidden_layers)"""
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
@@ -37,11 +37,11 @@ class PyTorchTransformerOutput:
             )
 
     @property
-    def last_hidden_state(self) -> Tensor:
+    def last_hidden_layer_states(self) -> Tensor:
         return self.all_outputs[-1]
 
     @property
-    def all_layer_hidden_states(self) -> List[Tensor]:
+    def all_hidden_layer_states(self) -> List[Tensor]:
         return self.all_outputs[1:]
 
 
@@ -52,29 +52,35 @@ class TransformerModelOutput:
 
     # Non-padded, un-stacked versions of the outputs.
     # The outer list tracks Docs/spans and the inner
-    # list tracks the embedding + layer outputs of each Doc/span.
+    # list tracks the embedding + hidden layer outputs of each Doc/span.
     #
     # The inner-most element is a Floats2d when returned by
     # the PyTorchWrapper transformer model, which are subsequently
     # converted to Ragged by the models that follow.
     all_outputs: List[List[TrfOutputT]]
 
-    # Set to True if only the last layer's outputs are preserved.
+    # Set to True if only the last hidden layer's outputs are preserved.
     last_layer_only: bool
 
-    def __init__(self, *, outputs: List[List[TrfOutputT]]) -> None:
+    def __init__(
+        self, *, outputs: List[List[TrfOutputT]], last_layer_only: bool
+    ) -> None:
         self.all_outputs = outputs
+        self.last_layer_only = last_layer_only
 
     @property
-    def embedding_outputs(self) -> List[TrfOutputT]:
-        return [y[0] for y in self.all_outputs]
+    def embedding_layers(self) -> List[TrfOutputT]:
+        if self.last_layer_only:
+            return []
+        else:
+            return [y[0] for y in self.all_outputs]
 
     @property
-    def last_hidden_states(self) -> List[TrfOutputT]:
+    def last_hidden_layer_states(self) -> List[TrfOutputT]:
         return [y[-1] for y in self.all_outputs]
 
     @property
-    def all_layer_hidden_states(self) -> List[List[TrfOutputT]]:
+    def all_hidden_layer_states(self) -> List[List[TrfOutputT]]:
         return [y[1:] for y in self.all_outputs]
 
     @property
@@ -87,14 +93,30 @@ class DocTransformerOutput:
     """Stored on Doc instances. Each Ragged element corresponds to a layer in
     original TransformerModelOutput, containing piece identifiers."""
 
-    layer_outputs: List[Ragged]
+    all_outputs: List[Ragged]
 
-    # Set to True if only the last layer's outputs are preserved.
+    # Set to True if only the last hidden layer's outputs are preserved.
     last_layer_only: bool
 
-    def __init__(self, *, layer_outputs: List[Ragged]) -> None:
-        self.layer_outputs = layer_outputs
+    def __init__(self, *, all_outputs: List[Ragged], last_layer_only: bool) -> None:
+        self.all_outputs = all_outputs
+        self.last_layer_only = last_layer_only
 
     @property
-    def last_hidden_state(self) -> Ragged:
-        return self.layer_outputs[-1]
+    def embedding_layer(self) -> Optional[Ragged]:
+        if self.last_layer_only:
+            return None
+        else:
+            return self.all_outputs[0]
+
+    @property
+    def last_hidden_layer_state(self) -> Ragged:
+        return self.all_outputs[-1]
+
+    @property
+    def all_hidden_layer_states(self) -> List[Ragged]:
+        return self.all_outputs[1:]
+
+    @property
+    def num_outputs(self) -> int:
+        return len(self.all_outputs)

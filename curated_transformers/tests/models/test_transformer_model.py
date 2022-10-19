@@ -54,7 +54,7 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
     Y, backprop = model(sample_docs, is_train=False)
     assert isinstance(Y, TransformerModelOutput)
     num_ouputs = Y.num_outputs
-    Y = Y.last_hidden_states
+    Y = Y.last_hidden_layer_states
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
     assert Y[0].dataXd.shape == (10, hidden_size)
@@ -101,7 +101,7 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
     Y, backprop = model(sample_docs_with_spaces, is_train=False)
     assert isinstance(Y, TransformerModelOutput)
     num_ouputs = Y.num_outputs
-    Y = Y.last_hidden_states
+    Y = Y.last_hidden_layer_states
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2])
     assert Y[0].dataXd.shape == (11, hidden_size)

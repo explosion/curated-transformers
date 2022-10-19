@@ -31,7 +31,10 @@ def _add_range() -> Model[Floats2d, Floats2d]:
 
 def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
     def forward(model: Model, X: List[Floats2d], is_train: bool):
-        return TransformerModelOutput(outputs=[[x] for x in X]), lambda x: x
+        return (
+            TransformerModelOutput(outputs=[[x] for x in X], last_layer_only=True),
+            lambda x: x,
+        )
 
     return Model("mock_transformer", forward)
 

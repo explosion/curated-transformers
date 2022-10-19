@@ -1,4 +1,5 @@
 from typing import List, Set
+import itertools
 import thinc
 
 thinc.registry.create("model_loaders", entry_points=True)
@@ -35,3 +36,10 @@ def batch_by_length(seqs, max_words: int) -> List[List[int]]:
     batches = [list(sorted(batch)) for batch in batches]
     batches.reverse()
     return batches
+
+
+def all_equal(iterable):
+    """Return True if all the elements are equal to each other
+    (or if the input is an empty sequence), False otherwise."""
+    g = itertools.groupby(iterable)
+    return next(g, True) and not next(g, False)

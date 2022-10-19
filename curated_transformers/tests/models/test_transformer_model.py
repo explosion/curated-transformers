@@ -1,9 +1,7 @@
 from pathlib import Path
 from re import S
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
-from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_hf_sentencepiece_encoder_loader,
-)
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
 
 import numpy
 import pytest
@@ -57,7 +55,7 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
         hidden_size=hidden_size,
     )
     model.get_ref("transformer").init = build_hf_encoder_loader(name=hf_model_name)
-    model.get_ref("piece_encoder").init = build_hf_sentencepiece_encoder_loader(
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader(
         name=hf_model_name
     )
     model.initialize(X=example_docs)

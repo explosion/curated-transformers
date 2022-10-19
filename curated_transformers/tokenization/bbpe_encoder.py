@@ -36,30 +36,6 @@ def build_byte_bpe_encoder() -> Model[List[Doc], List[Ragged]]:
     )
 
 
-@registry.model_loaders("curated-transformers.HFByteBPELoader.v1")
-def build_hf_byte_bpe_encoder_loader(*, name, revision: str = "main"):
-    def load(model: Model, X: Optional[List[Doc]] = None, Y=None):
-        if not has_hf_transformers:
-            raise ValueError("requires 🤗 transformers")
-
-        # Use non-fast tokenizer, so that we can access the merges.
-        tokenizer = transformers.AutoTokenizer.from_pretrained(
-            name, revision=revision, use_fast=False
-        )
-        if not isinstance(tokenizer, transformers.RobertaTokenizer):
-            raise ValueError("Loading from this 🤗 tokenizer is not supported")
-
-        # Seems like we cannot get the vocab file name for a RoBERTa vocabulary? So,
-        # instead, copy the vocabulary.
-        merges = list(tokenizer.bpe_ranks.keys())
-        model.attrs["byte_bpe_processor"] = ByteBPEProcessor(tokenizer.encoder, merges)
-        model.attrs["bos_piece"] = tokenizer.bos_token
-        model.attrs["eos_piece"] = tokenizer.eos_token
-        model.attrs["unk_piece"] = tokenizer.unk_token
-
-    return load
-
-
 def byte_bpe_encoder_forward(model: Model, X: List[Doc], is_train: bool):
     bbp: ByteBPEProcessor = model.attrs["byte_bpe_processor"]
     bos_piece: str = model.attrs["bos_piece"]

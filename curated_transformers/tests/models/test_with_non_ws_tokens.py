@@ -26,7 +26,8 @@ def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
                         )
                     ]
                     for x in X
-                ]
+                ],
+                last_layer_only=False,
             ),
             backprop,
         )

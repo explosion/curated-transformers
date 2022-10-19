@@ -1,20 +1,9 @@
 from curated_transformers.models.hf_wrapper import build_hf_encoder_loader
-from curated_transformers.tokenization.bbpe_encoder import (
-    build_hf_byte_bpe_encoder_loader,
-)
-from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_hf_sentencepiece_encoder_loader,
-)
-from curated_transformers.tokenization.wordpiece_encoder import (
-    build_hf_wordpiece_encoder_loader,
-)
-from numpy.testing import assert_array_equal
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
 import pytest
 import spacy
 from spacy import Config, util
 from spacy.training import Example
-from thinc.api import NumpyOps
-from thinc.backends import get_current_ops
 import torch
 
 from curated_transformers.models.transformer_model import (
@@ -69,7 +58,7 @@ cfg_string = """
     name = "xlm-roberta-base"
 
     [initialize.components.transformer.piecer_loader]
-    @model_loaders = "curated-transformers.HFSentencepieceLoader.v1"
+    @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
     name = "xlm-roberta-base"
 """
 
@@ -147,7 +136,7 @@ def test_bert_transformer_pipe_against_hf():
         vocab_size=28996,
     )
     model.get_ref("transformer").init = build_hf_encoder_loader(name="bert-base-cased")
-    model.get_ref("piece_encoder").init = build_hf_wordpiece_encoder_loader(
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader(
         name="bert-base-cased"
     )
     model.initialize()
@@ -182,7 +171,7 @@ def test_roberta_transformer_pipe_against_hf():
         vocab_size=50265,
     )
     model.get_ref("transformer").init = build_hf_encoder_loader(name="roberta-base")
-    model.get_ref("piece_encoder").init = build_hf_byte_bpe_encoder_loader(
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader(
         name="roberta-base"
     )
     model.initialize()
@@ -217,7 +206,7 @@ def test_roberta_transformer_pipe_against_hf():
         vocab_size=250002,
     )
     model.get_ref("transformer").init = build_hf_encoder_loader(name="xlm-roberta-base")
-    model.get_ref("piece_encoder").init = build_hf_sentencepiece_encoder_loader(
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader(
         name="xlm-roberta-base"
     )
     model.initialize()

@@ -6,14 +6,8 @@ import pytest
 import spacy
 from thinc.api import Ragged
 
-from curated_transformers.tokenization.wordpiece_encoder import (
-    build_hf_wordpiece_encoder_loader,
-)
-from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
-from curated_transformers.tokenization.bbpe_encoder import (
-    build_hf_byte_bpe_encoder_loader,
-)
 from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
 from curated_transformers._compat import has_hf_transformers
 
 
@@ -26,18 +20,9 @@ def test_dir(request):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_bbpe_encoder_hf_model():
     encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_byte_bpe_encoder_loader(name="roberta-base")
+    encoder.init = build_hf_piece_encoder_loader(name="roberta-base")
     encoder.initialize()
     _check_roberta_base_encoder(encoder)
-
-
-@pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_byte_bpe_encoder_unsupported_hf_model():
-    encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_byte_bpe_encoder_loader(name="bert-base-cased")
-    with pytest.raises(ValueError, match=r"not supported"):
-        encoder.initialize()
 
 
 def test_serialize():
@@ -61,7 +46,7 @@ def test_serialize():
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_serialize_hf_model():
     encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_byte_bpe_encoder_loader(name="roberta-base")
+    encoder.init = build_hf_piece_encoder_loader(name="roberta-base")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_byte_bpe_encoder()

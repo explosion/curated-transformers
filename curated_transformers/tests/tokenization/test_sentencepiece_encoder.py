@@ -1,9 +1,8 @@
-from cutlery import SentencePieceProcessor
 import numpy.testing
 from pathlib import Path
 import pytest
 import spacy
-from thinc.api import Ragged
+from thinc.api import Ragged, registry
 
 from curated_transformers.tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder,
@@ -12,25 +11,23 @@ from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_l
 from curated_transformers._compat import has_hf_transformers
 
 
-@pytest.fixture(scope="module")
-def test_dir(request):
-    return Path(request.fspath).parent
+@pytest.fixture
+def toy_model_path(test_dir):
+    return test_dir / "toy.model"
 
 
 @pytest.fixture
-def toy_model(test_dir):
-    return SentencePieceProcessor.from_file(str(test_dir / "toy.model"))
-
-
-@pytest.fixture
-def toy_encoder(toy_model):
+def toy_encoder(toy_model_path):
     encoder = build_sentencepiece_encoder()
-    encoder.attrs["sentencepiece_processor"] = toy_model
+    encoder.init = registry.model_loaders.get(
+        "curated-transformers.SentencepieceLoader.v1"
+    )(path=toy_model_path)
+    encoder.initialize()
     return encoder
 
 
 def test_sentencepiece_encoder(toy_encoder):
-    _test_encoder(toy_encoder)
+    test_toy_encoder(toy_encoder)
 
 
 @pytest.mark.slow
@@ -65,15 +62,15 @@ def test_serialize(toy_encoder):
     encoder_bytes = toy_encoder.to_bytes()
     encoder2 = build_sentencepiece_encoder()
     encoder2.from_bytes(encoder_bytes)
-    _test_encoder(encoder2)
+    test_toy_encoder(encoder2)
 
 
-def _test_encoder(encoder):
+def test_toy_encoder(toy_encoder):
     nlp = spacy.blank("en")
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
-    encoding = encoder.predict([doc1, doc2])
+    encoding = toy_encoder.predict([doc1, doc2])
 
     assert isinstance(encoding, list)
     assert len(encoding) == 2

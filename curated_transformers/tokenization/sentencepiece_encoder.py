@@ -1,4 +1,5 @@
 from typing import List, Optional, TypeVar
+from pathlib import Path
 from cutlery import SentencePieceProcessor
 from spacy.tokens import Doc, Span
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
@@ -55,3 +56,15 @@ def sentencepiece_encoder_forward(model: Model, X: InT, is_train: bool):
         )
 
     return pieces, lambda dY: []
+
+
+def build_sentencepiece_encoder_loader_v1(*, path: Path):
+    def load(
+        model: Model[List[Doc], List[Ragged]], X: Optional[List[Doc]] = None, Y=None
+    ) -> Model[List[Doc], List[Ragged]]:
+        model.attrs["sentencepiece_processor"] = SentencePieceProcessor.from_file(
+            str(path)
+        )
+        return model
+
+    return load

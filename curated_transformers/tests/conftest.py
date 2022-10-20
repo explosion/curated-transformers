@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 
 
@@ -26,3 +27,6 @@ def pytest_runtest_setup(item):
             pytest.skip(f"need --{opt} option to run")
 
 
+@pytest.fixture(scope="package")
+def test_dir(request):
+    return Path(request.fspath).parent

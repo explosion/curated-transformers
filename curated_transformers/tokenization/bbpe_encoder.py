@@ -1,12 +1,10 @@
 from typing import List, Optional
+from pathlib import Path
 
 from cutlery import ByteBPEProcessor
 from spacy.tokens import Doc
 import srsly
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
-
-from .._compat import has_hf_transformers, transformers
-from ..util import registry
 
 
 @serialize_attr.register(ByteBPEProcessor)
@@ -81,3 +79,15 @@ def byte_bpe_encoder_forward(model: Model, X: List[Doc], is_train: bool):
         )
 
     return pieces, lambda dY: []
+
+
+def build_byte_bpe_encoder_loader_v1(*, vocab_path: Path, merges_path: Path):
+    def load(
+        model: Model[List[Doc], List[Ragged]], X: Optional[List[Doc]] = None, Y=None
+    ) -> Model[List[Doc], List[Ragged]]:
+        model.attrs["byte_bpe_processor"] = ByteBPEProcessor.load_from_files(
+            vocab=vocab_path, merges=merges_path
+        )
+        return model
+
+    return load

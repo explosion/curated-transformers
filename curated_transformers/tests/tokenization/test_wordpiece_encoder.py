@@ -6,7 +6,7 @@ import pytest
 import spacy
 from thinc.api import Ragged
 
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
 from curated_transformers._compat import has_hf_transformers
 
@@ -21,7 +21,7 @@ def test_dir(request):
 def test_wordpiece_encoder_hf_model():
     nlp = spacy.blank("en")
     encoder = build_wordpiece_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="bert-base-cased")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
 
     doc1 = nlp.make_doc("I saw a girl with a telescope.")
@@ -62,7 +62,7 @@ def test_serialize():
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_serialize_hf_model():
     encoder = build_wordpiece_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="bert-base-cased")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_wordpiece_encoder()

@@ -8,7 +8,7 @@ from thinc.api import Ragged
 from curated_transformers.tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder,
 )
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers
 
 
@@ -38,7 +38,7 @@ def test_sentencepiece_encoder(toy_encoder):
 def test_sentencepiece_encoder_hf_model():
     nlp = spacy.blank("en")
     encoder = build_sentencepiece_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="xlm-roberta-base")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")
     encoder.initialize()
 
     doc1 = nlp.make_doc("I saw a girl with a telescope.")

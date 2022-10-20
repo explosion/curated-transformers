@@ -14,7 +14,7 @@ from curated_transformers.tokenization.sentencepiece_adapters import (
     remove_bos_eos,
 )
 from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 
 
 @pytest.fixture(scope="module")
@@ -66,7 +66,7 @@ def test_sentencepiece_encoder_against_hf():
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
     encoder = build_sentencepiece_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="xlm-roberta-base")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")
     encoder.initialize()
     model = chain(encoder, build_xlmr_adapter(), remove_bos_eos())
 
@@ -87,7 +87,7 @@ def test_wordpiece_encoder_against_hf():
     doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
     encoder = build_wordpiece_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="bert-base-cased")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     model = chain(encoder, remove_bos_eos())

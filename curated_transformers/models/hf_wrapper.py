@@ -89,8 +89,7 @@ def _convert_outputs(model, inputs_outputs, is_train):
     return Y, convert_for_torch_backward
 
 
-@registry.model_loaders("curated-transformers.HFEncoderLoader.v1")
-def build_hf_encoder_loader(
+def build_hf_encoder_loader_v1(
     *,
     name: str,
     revision: str = "main",

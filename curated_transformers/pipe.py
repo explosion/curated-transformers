@@ -9,10 +9,6 @@ from thinc.api import Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Floats2d, Ragged
 
-# Ensure that loader entry points get set up. This is a workaround
-# util we decide how to handle model loaders.
-from .tokenization import hf_loader
-
 
 DOC_EXT_ATTR = "trf_data"
 

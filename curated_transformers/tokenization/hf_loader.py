@@ -10,8 +10,7 @@ from .sentencepiece_encoder import SentencePieceProcessor
 from .wordpiece_encoder import WordPieceProcessor
 
 
-@registry.model_loaders("curated-transformers.HFPieceEncoderLoader.v1")
-def build_hf_piece_encoder_loader(*, name, revision: str = "main"):
+def build_hf_piece_encoder_loader_v1(*, name, revision: str = "main"):
     def load(model: Model, X: List[Doc] = None, Y=None) -> Model:
         if not has_hf_transformers:
             raise ValueError("requires transformers package")

@@ -7,7 +7,7 @@ import spacy
 from thinc.api import Ragged
 
 from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers
 
 
@@ -20,7 +20,7 @@ def test_dir(request):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_bbpe_encoder_hf_model():
     encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="roberta-base")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     _check_roberta_base_encoder(encoder)
 
@@ -46,7 +46,7 @@ def test_serialize():
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_serialize_hf_model():
     encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_piece_encoder_loader(name="roberta-base")
+    encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_byte_bpe_encoder()

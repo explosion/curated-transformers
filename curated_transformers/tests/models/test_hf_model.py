@@ -11,7 +11,7 @@ import torch
 from torch.nn import Module
 
 # fmt: off
-from curated_transformers.models.hf_wrapper import build_hf_transformer_encoder_v1, build_hf_encoder_loader
+from curated_transformers.models.hf_wrapper import build_hf_transformer_encoder_v1, build_hf_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers, transformers
 # fmt: on
 
@@ -34,7 +34,7 @@ TEST_MODELS = [
 def encoder_from_config(config: ModelConfig):
     encoder = config.encoder(config.config)
     model = build_hf_transformer_encoder_v1(encoder)
-    model.init = build_hf_encoder_loader(name=config.hf_model_name)
+    model.init = build_hf_encoder_loader_v1(name=config.hf_model_name)
     return model
 
 

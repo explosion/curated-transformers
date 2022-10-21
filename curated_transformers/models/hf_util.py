@@ -7,8 +7,6 @@ from .albert import AlbertEncoder
 from .bert import BertEncoder
 from .roberta import RobertaEncoder
 
-SupportedHfTransformersT = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
-
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "roberta", "xlm-roberta"]
 
 

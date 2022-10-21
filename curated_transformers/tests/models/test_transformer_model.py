@@ -1,20 +1,25 @@
 from pathlib import Path
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
-
 import numpy
 import pytest
 import spacy
 from cutlery import SentencePieceProcessor
-from thinc.api import CupyOps, NumpyOps, Ragged
+from thinc.api import CupyOps, NumpyOps, Ragged, registry
 from thinc.compat import has_cupy
 
+from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
 from curated_transformers.models.transformer_model import (
+    build_albert_transformer_model_v1,
+    build_bert_transformer_model_v1,
+    build_roberta_transformer_model_v1,
     build_xlmr_transformer_model_v1,
 )
-from curated_transformers._compat import has_hf_transformers
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
+from curated_transformers._compat import (
+    has_hf_transformers,
+    has_huggingface_hub,
+)
 
 
 OPS = [NumpyOps()]
@@ -84,3 +89,31 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
         ],
     ]
     assert backprop(dY) == []
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_huggingface_hub, reason="requires 🤗 hub")
+@pytest.mark.parametrize(
+    "test_config",
+    [
+        ("albert-base-v2", build_albert_transformer_model_v1, 30000),
+        (
+            "bert-base-cased",
+            build_bert_transformer_model_v1,
+            28996,
+        ),
+        ("roberta-base", build_roberta_transformer_model_v1, 50265),
+    ],
+)
+def test_pytorch_checkpoint_loader(test_config):
+    from huggingface_hub import hf_hub_download
+
+    model_name, model_factory, vocab_size = test_config
+
+    checkpoint_path = hf_hub_download(repo_id=model_name, filename="pytorch_model.bin")
+    with_spans = build_with_strided_spans_v1(stride=96, window=128)
+    model = model_factory(vocab_size=vocab_size, with_spans=with_spans)
+    model.get_ref("transformer").init = registry.model_loaders.get(
+        "curated-transformers.PyTorchCheckpointLoader.v1"
+    )(path=checkpoint_path)
+    model.initialize()

@@ -1,14 +1,16 @@
-from typing import List, Union
+from typing import List
+from pathlib import Path
 from functools import partial
-
 from spacy.tokens import Span, Doc
 from thinc.api import Model, PyTorchWrapper_v2, get_current_ops, xp2torch, torch2xp
 from thinc.layers import chain
 from thinc.model import Model
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
 from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
+import torch
 
 
+from .hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
 from ..models.albert import AlbertConfig, AlbertEncoder
 from ..models.bert import BertConfig, BertEncoder
 from ..models.output import TransformerModelOutput
@@ -19,8 +21,6 @@ from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
-
-SupportedEncoders = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
 
 
 def build_albert_transformer_model_v1(
@@ -385,3 +385,13 @@ def _convert_outputs(model, inputs_outputs, is_train):
         )
 
     return output, convert_for_torch_backward
+
+
+def build_pytorch_checkpoint_loader_v1(*, path: Path):
+    def load(model: Model, X: List[Doc] = None, Y=None):
+        encoder = model.shims[0]._model
+        params = torch.load(path)
+        params = convert_pretrained_model_for_encoder(encoder, params)
+        encoder.load_state_dict(params)
+
+    return load

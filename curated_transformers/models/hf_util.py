@@ -1,18 +1,35 @@
-from typing import Dict, Union
+from typing import Dict, OrderedDict, Union
 import torch
 import re
 
+from .albert.encoder import AlbertEncoder
+from .bert.encoder import BertEncoder
+from .roberta.encoder import RobertaEncoder
 from .._compat import transformers
-from .albert import AlbertEncoder
-from .bert import BertEncoder
-from .roberta import RobertaEncoder
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "roberta", "xlm-roberta"]
+
+SupportedEncoders = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
 
 
 def _check_supported_hf_models(model_type: str):
     if model_type not in SUPPORTED_MODEL_TYPES:
         raise ValueError(f"unsupported HF model type: {model_type}")
+
+
+def convert_pretrained_model_for_encoder(
+    encoder: SupportedEncoders, params: OrderedDict[str, torch.Tensor]
+):
+    params = _rename_old_hf_names(params)
+
+    if isinstance(encoder, AlbertEncoder):
+        return _convert_albert_base_state(params)
+    elif isinstance(encoder, BertEncoder):
+        return _convert_bert_base_state(params)
+    elif isinstance(encoder, RobertaEncoder):
+        return _convert_roberta_base_state(params)
+    else:
+        raise ValueError(f"Unsupported encoder type: {type(encoder)}")
 
 
 def convert_hf_pretrained_model_parameters(
@@ -23,7 +40,6 @@ def convert_hf_pretrained_model_parameters(
 
     Returns the state_dict that can be directly loaded by our Transformer module.
     """
-    model_name = hf_model.config.name_or_path
     _check_supported_hf_models(hf_model.config.model_type)
 
     converters = {
@@ -33,15 +49,25 @@ def convert_hf_pretrained_model_parameters(
         "xlm-roberta": _convert_roberta_base_state,
     }
 
-    return converters[hf_model.config.model_type](hf_model)
+    return converters[hf_model.config.model_type](hf_model.state_dict())
+
+
+def _rename_old_hf_names(
+    params: OrderedDict[str, torch.Tensor],
+) -> OrderedDict[str, torch.Tensor]:
+    out = OrderedDict()
+    for name, parameter in params.items():
+        name = re.sub(r"\.gamma$", ".weight", name)
+        name = re.sub(r"\.beta$", ".bias", name)
+        out[name] = parameter
+    return out
 
 
 def _convert_albert_base_state(
-    hf_model: "transformers.PreTrainedModel",
+    params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
-    out = {}
-
-    state_dict = dict(hf_model.state_dict().items())
+    # Strip the `albert` prefix from ALBERT model parameters.
+    params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
 
     # The ALBERT encoder parameters have the following form:
     #
@@ -50,8 +76,8 @@ def _convert_albert_base_state(
     # hidden_group is in [0, num_hidden_group)
     # inner_layer is in [0, inner_group_num)
 
-    for name, parameter in state_dict.items():
-        print(name)
+    out = {}
+    for name, parameter in params.items():
         if "encoder.albert_layer" not in name:
             continue
 
@@ -83,33 +109,34 @@ def _convert_albert_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = state_dict[
+    out["embeddings.word_embeddings.weight"] = params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = state_dict[
+    out["embeddings.token_type_embeddings.weight"] = params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.position_embeddings.weight"] = state_dict[
+    out["embeddings.position_embeddings.weight"] = params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.layer_norm.weight"] = state_dict["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
+    out["embeddings.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
+    out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
 
     # Embedding projection
-    out["projection.weight"] = state_dict["encoder.embedding_hidden_mapping_in.weight"]
-    out["projection.bias"] = state_dict["encoder.embedding_hidden_mapping_in.bias"]
+    out["projection.weight"] = params["encoder.embedding_hidden_mapping_in.weight"]
+    out["projection.bias"] = params["encoder.embedding_hidden_mapping_in.bias"]
 
     return out
 
 
 def _convert_bert_base_state(
-    hf_model: "transformers.PreTrainedModel",
+    params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
     out = {}
 
-    state_dict = dict(hf_model.state_dict().items())
+    # Strip the `bert` prefix from BERT model parameters.
+    params = {re.sub(r"^bert\.", "", k): v for k, v in params.items()}
 
-    for name, parameter in state_dict.items():
+    for name, parameter in params.items():
         if "encoder.layer." not in name:
             continue
 
@@ -133,32 +160,30 @@ def _convert_bert_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = state_dict[
+    out["embeddings.word_embeddings.weight"] = params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = state_dict[
+    out["embeddings.token_type_embeddings.weight"] = params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.position_embeddings.weight"] = state_dict[
+    out["embeddings.position_embeddings.weight"] = params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.layer_norm.weight"] = state_dict["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
+    out["embeddings.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
+    out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
 
     return out
 
 
 def _convert_roberta_base_state(
-    hf_model: "transformers.PreTrainedModel",
+    params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
     out = {}
 
     # Strip the `roberta` prefix from XLM-Roberta model parameters.
-    state_dict = {
-        re.sub(r"^roberta\.", "", k): v for k, v in hf_model.state_dict().items()
-    }
+    params = {re.sub(r"^roberta\.", "", k): v for k, v in params.items()}
 
-    for name, parameter in state_dict.items():
+    for name, parameter in params.items():
         if "encoder.layer." not in name:
             continue
 
@@ -182,18 +207,16 @@ def _convert_roberta_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.inner.word_embeddings.weight"] = state_dict[
+    out["embeddings.inner.word_embeddings.weight"] = params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.inner.token_type_embeddings.weight"] = state_dict[
+    out["embeddings.inner.token_type_embeddings.weight"] = params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.inner.position_embeddings.weight"] = state_dict[
+    out["embeddings.inner.position_embeddings.weight"] = params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.inner.layer_norm.weight"] = state_dict[
-        "embeddings.LayerNorm.weight"
-    ]
-    out["embeddings.inner.layer_norm.bias"] = state_dict["embeddings.LayerNorm.bias"]
+    out["embeddings.inner.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
+    out["embeddings.inner.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
 
     return out

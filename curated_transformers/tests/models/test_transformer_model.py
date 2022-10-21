@@ -1,5 +1,5 @@
 from pathlib import Path
-from curated_transformers.models.hf_wrapper import build_hf_encoder_loader_v1
+from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 
 import numpy

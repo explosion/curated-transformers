@@ -1,7 +1,7 @@
 from .activations import GeluNew
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
-from .hf_wrapper import build_hf_encoder_loader_v1
+from .hf_loader import build_hf_encoder_loader_v1
 from .roberta.encoder import RobertaEncoder
 from .transformer_model import (
     build_bert_transformer_model_v1,

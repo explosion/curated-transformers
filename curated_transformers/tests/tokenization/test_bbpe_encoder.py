@@ -1,66 +1,83 @@
-from cutlery import ByteBPEProcessor, WordPieceProcessor
-from functools import partial
 import numpy.testing
-from pathlib import Path
 import pytest
-import spacy
-from thinc.api import Ragged
+from thinc.api import Ragged, registry
 
 from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers
 
 
-@pytest.fixture(scope="module")
-def test_dir(request):
-    return Path(request.fspath).parent
-
-
-@pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_bbpe_encoder_hf_model():
+@pytest.fixture
+def toy_encoder(test_dir):
     encoder = build_byte_bpe_encoder()
-    encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
-    encoder.initialize()
-    _check_roberta_base_encoder(encoder)
-
-
-def test_serialize():
-    processor = ByteBPEProcessor(
-        {"<s>": 0, "<pad>": 1, "</s>": 2, "<unk>": 3, "aa": 4, "b": 5}, [("a", "a")]
+    encoder.init = registry.model_loaders.get("curated-transformers.ByteBPELoader.v1")(
+        vocab_path=test_dir / "toy-vocab.json", merges_path=test_dir / "toy-merges.txt"
     )
-    encoder = build_byte_bpe_encoder()
-    encoder.attrs["byte_bpe_processor"] = processor
-    encoder_bytes = encoder.to_bytes()
-    encoder2 = build_byte_bpe_encoder()
-    encoder2.from_bytes(encoder_bytes)
-
-    nlp = spacy.blank("en")
-    doc = nlp.make_doc("aab")
-    encoding = encoder.predict([doc])
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 2, 1])
-    numpy.testing.assert_equal(encoding[0].dataXd, [0, 4, 5, 2])
+    encoder.initialize()
+    return encoder
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_serialize_hf_model():
+def test_bbpe_encoder_hf_model(sample_docs):
+    encoder = build_byte_bpe_encoder()
+    encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
+    encoder.initialize()
+    encoding = encoder.predict(sample_docs)
+    _check_roberta_base_encoder(encoding)
+
+
+def test_bbpe_encoder(toy_encoder, sample_docs):
+    encoding = toy_encoder.predict(sample_docs)
+    _check_toy_encoder(encoding)
+
+
+def test_serialize(toy_encoder):
+    encoder_bytes = toy_encoder.to_bytes()
+    toy_encoder2 = build_byte_bpe_encoder()
+    toy_encoder2.from_bytes(encoder_bytes)
+    assert (
+        toy_encoder.attrs["byte_bpe_processor"].vocab
+        == toy_encoder2.attrs["byte_bpe_processor"].vocab
+    )
+    assert (
+        toy_encoder.attrs["byte_bpe_processor"].merges
+        == toy_encoder2.attrs["byte_bpe_processor"].merges
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_serialize_hf_model(sample_docs):
     encoder = build_byte_bpe_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_byte_bpe_encoder()
     encoder2.from_bytes(encoder_bytes)
-    _check_roberta_base_encoder(encoder)
+    encoding = encoder2.predict(sample_docs)
+    _check_roberta_base_encoder(encoding)
 
 
-def _check_roberta_base_encoder(encoder):
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
+def _check_toy_encoder(encoding):
+    assert isinstance(encoding, list)
+    assert len(encoding) == 2
 
-    encoding = encoder.predict([doc1, doc2])
+    assert isinstance(encoding[0], Ragged)
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 3, 1, 1, 6, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[0].dataXd,
+        [0, 44, 997, 262, 305, 334, 79, 342, 262, 388, 79, 302, 70, 472, 72, 17, 2],
+    )
 
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 3, 1, 1, 2, 4, 3, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[1].dataXd,
+        [0, 55, 841, 321, 362, 579, 324, 294, 291, 494, 131, 106, 270, 307, 79, 17, 2],
+    )
+
+
+def _check_roberta_base_encoder(encoding):
     assert isinstance(encoding, list)
     assert len(encoding) == 2
 

@@ -12,6 +12,7 @@ from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
 from ..models.albert import AlbertConfig, AlbertEncoder
 from ..models.bert import BertConfig, BertEncoder
 from ..models.output import TransformerModelOutput
+from ..models.remove_eos_bos import remove_bos_eos
 from ..models.roberta import RobertaConfig, RobertaEncoder
 from ..models.torchscript_wrapper import TorchScriptWrapper_v1
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder

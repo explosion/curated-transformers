@@ -1,7 +1,7 @@
+from typing import List
 from cutlery import SentencePieceProcessor
 import numpy.testing
 from pathlib import Path
-from typing import List
 
 import numpy.testing
 import pytest
@@ -14,11 +14,11 @@ from curated_transformers.tokenization.sentencepiece_encoder import (
 )
 from curated_transformers.tokenization.sentencepiece_adapters import (
     build_xlmr_adapter,
-    remove_bos_eos,
 )
 from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
+from curated_transformers.models.remove_eos_bos import remove_bos_eos
 
 
 @pytest.fixture(scope="module")

@@ -15,7 +15,7 @@ from ..models.output import TransformerModelOutput
 from ..models.roberta import RobertaConfig, RobertaEncoder
 from ..models.torchscript_wrapper import TorchScriptWrapper_v1
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
-from ..tokenization.sentencepiece_adapters import build_xlmr_adapter, remove_bos_eos
+from ..tokenization.sentencepiece_adapters import build_xlmr_adapter
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
 

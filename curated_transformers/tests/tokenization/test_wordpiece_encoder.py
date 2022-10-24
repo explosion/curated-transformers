@@ -1,8 +1,5 @@
-from functools import partial
 import numpy.testing
-from pathlib import Path
 import pytest
-import spacy
 from thinc.api import Ragged, registry
 
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
@@ -25,22 +22,19 @@ def toy_encoder(toy_model_path):
     return encoder
 
 
-def test_wordpiece_encoder_local_model(toy_encoder):
-    _test_toy_encoder(toy_encoder)
+def test_wordpiece_encoder_local_model(toy_encoder, sample_docs):
+    encoding = toy_encoder.predict(sample_docs)
+    _check_toy_encoder(encoding)
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_wordpiece_encoder_hf_model():
-    nlp = spacy.blank("en")
+def test_wordpiece_encoder_hf_model(sample_docs):
     encoder = build_wordpiece_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
 
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
-    encoding = encoder.predict([doc1, doc2])
+    encoding = encoder.predict(sample_docs)
 
     assert isinstance(encoding, list)
     assert len(encoding) == 2
@@ -83,13 +77,7 @@ def test_serialize_hf_model():
     )
 
 
-def _test_toy_encoder(encoder):
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
-    encoding = encoder.predict([doc1, doc2])
-
+def _check_toy_encoder(encoding):
     assert isinstance(encoding, list)
     assert len(encoding) == 2
 

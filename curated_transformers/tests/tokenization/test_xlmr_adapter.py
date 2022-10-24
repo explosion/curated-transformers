@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy.testing
 import pytest
-import spacy
 from thinc.api import NumpyOps, Ragged, chain, Model
 
 from curated_transformers._compat import has_hf_transformers, transformers
@@ -50,15 +49,17 @@ def _mock_transformer() -> Model[List[Ragged], TransformerModelOutput]:
     return Model("mock_transformer", forward)
 
 
-def test_sentencepiece_encoder(toy_encoder):
-    _test_encoder(toy_encoder)
+def test_sentencepiece_encoder(toy_encoder, sample_docs):
+    encoding = toy_encoder.predict(sample_docs)
+    _check_encoder(encoding)
 
 
-def test_serialize(toy_encoder, empty_encoder):
+def test_serialize(toy_encoder, empty_encoder, sample_docs):
     encoder_bytes = toy_encoder.to_bytes()
     encoder2 = empty_encoder
     encoder2.from_bytes(encoder_bytes)
-    _test_encoder(encoder2)
+    encoding = encoder2.predict(sample_docs)
+    _check_encoder(encoding)
 
 
 def _compare_model_hf_output(ops, Y, Y_hf):
@@ -69,12 +70,8 @@ def _compare_model_hf_output(ops, Y, Y_hf):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_sentencepiece_encoder_against_hf():
+def test_sentencepiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
-
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
     encoder = build_sentencepiece_encoder()
@@ -82,44 +79,33 @@ def test_sentencepiece_encoder_against_hf():
     encoder.initialize()
     model = chain(encoder, build_xlmr_adapter(), _mock_transformer(), remove_bos_eos())
 
-    encoding = model.predict([doc1, doc2])
-    hf_encoding = hf_tokenizer([token.text for token in doc1])
+    encoding = model.predict(sample_docs)
+    hf_encoding = hf_tokenizer([token.text for token in sample_docs[0]])
     _compare_model_hf_output(ops, encoding.all_outputs[0][0], hf_encoding)
 
-    hf_encoding = hf_tokenizer([token.text for token in doc2])
+    hf_encoding = hf_tokenizer([token.text for token in sample_docs[1]])
     _compare_model_hf_output(ops, encoding.all_outputs[1][0], hf_encoding)
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_wordpiece_encoder_against_hf():
+def test_wordpiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
-
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
     encoder = build_wordpiece_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     model = chain(encoder, _mock_transformer(), remove_bos_eos())
 
-    encoding = model.predict([doc1, doc2])
-    hf_encoding = hf_tokenizer([token.text for token in doc1])
+    encoding = model.predict(sample_docs)
+    hf_encoding = hf_tokenizer([token.text for token in sample_docs[0]])
     _compare_model_hf_output(ops, encoding.all_outputs[0][0], hf_encoding)
 
-    hf_encoding = hf_tokenizer([token.text for token in doc2])
+    hf_encoding = hf_tokenizer([token.text for token in sample_docs[1]])
     _compare_model_hf_output(ops, encoding.all_outputs[1][0], hf_encoding)
 
 
-def _test_encoder(encoder):
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
-    encoding = encoder.predict([doc1, doc2])
-
+def _check_encoder(encoding):
     assert isinstance(encoding, list)
     assert len(encoding) == 2
 

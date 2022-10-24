@@ -1,6 +1,5 @@
 import numpy.testing
 import pytest
-import spacy
 from thinc.api import Ragged, registry
 
 from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder
@@ -20,15 +19,17 @@ def toy_encoder(test_dir):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_bbpe_encoder_hf_model():
+def test_bbpe_encoder_hf_model(sample_docs):
     encoder = build_byte_bpe_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
-    _check_roberta_base_encoder(encoder)
+    encoding = encoder.predict(sample_docs)
+    _check_roberta_base_encoder(encoding)
 
 
-def test_bbpe_encoder(toy_encoder):
-    _check_toy_encoder(toy_encoder)
+def test_bbpe_encoder(toy_encoder, sample_docs):
+    encoding = toy_encoder.predict(sample_docs)
+    _check_toy_encoder(encoding)
 
 
 def test_serialize(toy_encoder):
@@ -47,23 +48,18 @@ def test_serialize(toy_encoder):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_serialize_hf_model():
+def test_serialize_hf_model(sample_docs):
     encoder = build_byte_bpe_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
     encoder2 = build_byte_bpe_encoder()
     encoder2.from_bytes(encoder_bytes)
-    _check_roberta_base_encoder(encoder)
+    encoding = encoder2.predict(sample_docs)
+    _check_roberta_base_encoder(encoding)
 
 
-def _check_toy_encoder(encoder):
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
-    encoding = encoder.predict([doc1, doc2])
-
+def _check_toy_encoder(encoding):
     assert isinstance(encoding, list)
     assert len(encoding) == 2
 
@@ -81,13 +77,7 @@ def _check_toy_encoder(encoder):
     )
 
 
-def _check_roberta_base_encoder(encoder):
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-
-    encoding = encoder.predict([doc1, doc2])
-
+def _check_roberta_base_encoder(encoding):
     assert isinstance(encoding, list)
     assert len(encoding) == 2
 

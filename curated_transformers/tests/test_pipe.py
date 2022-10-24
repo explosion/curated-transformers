@@ -97,8 +97,19 @@ def test_tagger():
     assert [t.tag_ for t in docs[1]] == ["N", "V", "J", "N"]
 
 
-def _hf_tokenize_per_token(tokenizer, docs):
-    hf_encoding = [tokenizer([token.text for token in doc]) for doc in docs]
+def _hf_tokenize_per_token(tokenizer, docs, *, roberta=False):
+    if roberta:
+        hf_encoding = [
+            tokenizer(
+                [
+                    doc[idx - 1].whitespace_ + token.text if idx > 0 else token.text
+                    for idx, token in enumerate(doc)
+                ]
+            )
+            for doc in docs
+        ]
+    else:
+        hf_encoding = [tokenizer([token.text for token in doc]) for doc in docs]
     ids = []
     lens = []
     bos_id = (
@@ -188,7 +199,9 @@ def test_roberta_transformer_pipe_against_hf():
         nlp.make_doc("Today we will eat poké bowl."),
     ]
 
-    hf_ids, attention_mask, lens = _hf_tokenize_per_token(hf_tokenizer, docs)
+    hf_ids, attention_mask, lens = _hf_tokenize_per_token(
+        hf_tokenizer, docs, roberta=True
+    )
     hf_encoding = hf_model(hf_ids, attention_mask=attention_mask)
     docs = list(pipe.pipe(docs))
 
@@ -203,7 +216,7 @@ def test_roberta_transformer_pipe_against_hf():
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
-def test_roberta_transformer_pipe_against_hf():
+def test_xlmr_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_xlmr_transformer_model_v1(
         with_spans=build_with_strided_spans_v1(),

@@ -34,15 +34,17 @@ cfg_string = """
 
     [components.tagger.model.tok2vec]
     @architectures = "curated-transformers.LastTransformerLayerListener.v1"
-    width = 768
+    width = 60
     pooling = {"@layers":"reduce_mean.v1"}
 
     [components.transformer]
     factory = "curated_transformer"
 
     [components.transformer.model]
-    @architectures = "curated-transformers.XLMRTransformer.v1"
-    vocab_size = 250002
+    @architectures = "curated-transformers.BertTransformer.v1"
+    vocab_size = 28996
+    num_hidden_layers = 1
+    hidden_size = 60
 
     [components.transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
@@ -53,13 +55,9 @@ cfg_string = """
 
     [initialize.components.transformer]
 
-    [initialize.components.transformer.encoder_loader]
-    @model_loaders = "curated-transformers.HFEncoderLoader.v1"
-    name = "xlm-roberta-base"
-
     [initialize.components.transformer.piecer_loader]
     @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
-    name = "xlm-roberta-base"
+    name = "bert-base-cased"
 """
 
 TRAIN_DATA = [

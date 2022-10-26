@@ -2,6 +2,7 @@ from typing import List
 from pathlib import Path
 from functools import partial
 from spacy.tokens import Span, Doc
+from spacy.util import SimpleFrozenDict
 from thinc.api import Model, PyTorchWrapper_v2, get_current_ops, xp2torch, torch2xp
 from thinc.layers import chain
 from thinc.model import Model
@@ -41,7 +42,9 @@ def build_albert_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 0,
     type_vocab_size: int = 2,
-    torchscript=False,
+    torchscript: bool = False,
+    mixed_precision: bool = False,
+    grad_scaler_config: dict = SimpleFrozenDict(),
 ):
     config = AlbertConfig(
         embedding_size=embedding_size,
@@ -67,7 +70,11 @@ def build_albert_transformer_model_v1(
         )
     else:
         encoder = AlbertEncoder(config)
-        transformer = _pytorch_encoder(encoder)
+        transformer = _pytorch_encoder(
+            encoder,
+            mixed_precision=mixed_precision,
+            grad_scaler_config=grad_scaler_config,
+        )
 
     piece_encoder = build_sentencepiece_encoder()
 
@@ -94,7 +101,9 @@ def build_bert_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 0,
     type_vocab_size: int = 2,
-    torchscript=False,
+    torchscript: bool = False,
+    mixed_precision: bool = False,
+    grad_scaler_config: dict = SimpleFrozenDict(),
 ):
     config = BertConfig(
         hidden_size=hidden_size,
@@ -118,7 +127,11 @@ def build_bert_transformer_model_v1(
         )
     else:
         encoder = BertEncoder(config)
-        transformer = _pytorch_encoder(encoder)
+        transformer = _pytorch_encoder(
+            encoder,
+            mixed_precision=mixed_precision,
+            grad_scaler_config=grad_scaler_config,
+        )
 
     piece_encoder = build_wordpiece_encoder()
 
@@ -145,7 +158,9 @@ def build_roberta_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 1,
     type_vocab_size: int = 1,
-    torchscript=False,
+    torchscript: bool = False,
+    mixed_precision: bool = False,
+    grad_scaler_config: dict = SimpleFrozenDict(),
 ):
     config = RobertaConfig(
         hidden_size=hidden_size,
@@ -169,7 +184,11 @@ def build_roberta_transformer_model_v1(
         )
     else:
         encoder = RobertaEncoder(config)
-        transformer = _pytorch_encoder(encoder)
+        transformer = _pytorch_encoder(
+            encoder,
+            mixed_precision=mixed_precision,
+            grad_scaler_config=grad_scaler_config,
+        )
 
     piece_encoder = build_byte_bpe_encoder()
 
@@ -196,7 +215,9 @@ def build_xlmr_transformer_model_v1(
     num_hidden_layers: int = 12,
     padding_idx: int = 1,
     type_vocab_size: int = 1,
-    torchscript=False,
+    torchscript: bool = False,
+    mixed_precision: bool = False,
+    grad_scaler_config: dict = SimpleFrozenDict(),
 ):
     piece_adapter = build_xlmr_adapter()
 
@@ -214,6 +235,7 @@ def build_xlmr_transformer_model_v1(
         model_max_length=model_max_length,
         layer_norm_eps=layer_norm_eps,
         padding_idx=padding_idx,
+        mixed_precision=mixed_precision,
     )
 
     if torchscript:
@@ -222,7 +244,11 @@ def build_xlmr_transformer_model_v1(
         )
     else:
         encoder = RobertaEncoder(config)
-        transformer = _pytorch_encoder(encoder)
+        transformer = _pytorch_encoder(
+            encoder,
+            mixed_precision=mixed_precision,
+            grad_scaler_config=grad_scaler_config,
+        )
 
     piece_encoder = build_sentencepiece_encoder()
 
@@ -286,8 +312,12 @@ def _pytorch_encoder(
     encoder: SupportedEncoders,
     *,
     mixed_precision: bool = False,
-    grad_scaler_config: dict = {},
+    grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> Model[List[Ints1d], List[Floats2d]]:
+    if isinstance(grad_scaler_config, SimpleFrozenDict):
+        # Crate a new, mutable dict instance.
+        grad_scaler_config = {}
+
     if "enabled" not in grad_scaler_config:
         grad_scaler_config["enabled"] = mixed_precision
 

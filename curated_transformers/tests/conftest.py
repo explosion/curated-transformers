@@ -11,6 +11,10 @@ def pytest_addoption(parser):
         pass
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: include slow tests")
+
+
 def pytest_runtest_setup(item):
     def getopt(opt):
         # When using 'pytest --pyargs spacy' to test an installed copy of

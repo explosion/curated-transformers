@@ -7,23 +7,8 @@ from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_
 from curated_transformers._compat import has_hf_transformers
 
 
-@pytest.fixture
-def toy_model_path(test_dir):
-    return test_dir / "toy.wordpieces"
-
-
-@pytest.fixture
-def toy_encoder(toy_model_path):
-    encoder = build_wordpiece_encoder()
-    encoder.init = registry.model_loaders.get(
-        "curated-transformers.WordpieceLoader.v1"
-    )(path=toy_model_path)
-    encoder.initialize()
-    return encoder
-
-
-def test_wordpiece_encoder_local_model(toy_encoder, sample_docs):
-    encoding = toy_encoder.predict(sample_docs)
+def test_wordpiece_encoder_local_model(wordpiece_toy_encoder, sample_docs):
+    encoding = wordpiece_toy_encoder.predict(sample_docs)
     _check_toy_encoder(encoding)
 
 
@@ -52,12 +37,12 @@ def test_wordpiece_encoder_hf_model(sample_docs):
     )
 
 
-def test_serialize(toy_encoder):
-    encoder_bytes = toy_encoder.to_bytes()
+def test_serialize(wordpiece_toy_encoder):
+    encoder_bytes = wordpiece_toy_encoder.to_bytes()
     toy_encoder2 = build_wordpiece_encoder()
     toy_encoder2.from_bytes(encoder_bytes)
     assert (
-        toy_encoder.attrs["wordpiece_processor"].to_list()
+        wordpiece_toy_encoder.attrs["wordpiece_processor"].to_list()
         == toy_encoder2.attrs["wordpiece_processor"].to_list()
     )
 

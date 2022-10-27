@@ -11,12 +11,13 @@ import torch
 
 
 from .hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
-from ..models.albert import AlbertConfig, AlbertEncoder
-from ..models.bert import BertConfig, BertEncoder
-from ..models.output import TransformerModelOutput
-from ..models.remove_eos_bos import remove_bos_eos
-from ..models.roberta import RobertaConfig, RobertaEncoder
-from ..models.torchscript_wrapper import TorchScriptWrapper_v1
+from .albert import AlbertConfig, AlbertEncoder
+from .bert import BertConfig, BertEncoder
+from .output import TransformerModelOutput
+from .remove_eos_bos import remove_bos_eos
+from .roberta import RobertaConfig, RobertaEncoder
+from .torchscript_wrapper import TorchScriptWrapper_v1
+from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
 from ..tokenization.sentencepiece_adapters import build_xlmr_adapter
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
@@ -245,12 +246,12 @@ def build_transformer_model_v1(
     #        is it always the same post-processing?
     if piece_adapter:
         layers = [
-            chain(
+            with_non_ws_tokens(chain(
                 piece_encoder, piece_adapter, with_spans(transformer), remove_bos_eos()
-            )
+            ))
         ]
     else:
-        layers = [chain(piece_encoder, with_spans(transformer), remove_bos_eos())]
+        layers = [with_non_ws_tokens(chain(piece_encoder, with_spans(transformer), remove_bos_eos()))]
     refs = {
         "piece_encoder": piece_encoder,
         "transformer": transformer,

@@ -27,11 +27,6 @@ if has_cupy:
     OPS.append(CupyOps())
 
 
-@pytest.fixture(scope="module")
-def test_dir(request):
-    return Path(request.fspath).parent
-
-
 @pytest.fixture
 def toy_model(test_dir):
     return SentencePieceProcessor.from_file(
@@ -39,19 +34,11 @@ def toy_model(test_dir):
     )
 
 
-@pytest.fixture
-def example_docs():
-    nlp = spacy.blank("en")
-    doc1 = nlp.make_doc("I saw a girl with a telescope.")
-    doc2 = nlp.make_doc("Today we will eat poké bowl.")
-    return [doc1, doc2]
-
-
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
-def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
+def test_xlmr_model(sample_docs, stride, window, hf_model):
     hf_model_name, hidden_size, vocab_size = hf_model
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
@@ -63,8 +50,8 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
     model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
         name=hf_model_name
     )
-    model.initialize(X=example_docs)
-    Y, backprop = model(example_docs, is_train=False)
+    model.initialize(X=sample_docs)
+    Y, backprop = model(sample_docs, is_train=False)
     assert isinstance(Y, TransformerModelOutput)
     num_ouputs = Y.num_outputs
     Y = Y.last_hidden_states
@@ -75,16 +62,66 @@ def test_xlmr_model(example_docs, toy_model, stride, window, hf_model):
     assert Y[1].dataXd.shape == (9, hidden_size)
 
     # Backprop zeros to verify that backprop doesn't fail.
-    ops = NumpyOps()
     dY = [
         [
             Ragged(
-                ops.alloc2f(10, 768), lengths=ops.asarray1i([1, 1, 1, 1, 1, 1, 2, 2])
+                model.ops.alloc2f(10, 768),
+                lengths=model.ops.asarray1i([1, 1, 1, 1, 1, 1, 2, 2]),
             )
             for _ in range(num_ouputs)
         ],
         [
-            Ragged(ops.alloc2f(9, 768), lengths=ops.asarray1i([1, 1, 1, 1, 2, 1, 2]))
+            Ragged(
+                model.ops.alloc2f(9, 768),
+                lengths=model.ops.asarray1i([1, 1, 1, 1, 2, 1, 2]),
+            )
+            for _ in range(num_ouputs)
+        ],
+    ]
+    assert backprop(dY) == []
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
+@pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
+def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
+    hidden_size = 768
+    with_spans = build_with_strided_spans_v1(stride=stride, window=window)
+    model = build_xlmr_transformer_model_v1(
+        with_spans=with_spans,
+        vocab_size=250005,
+        hidden_size=hidden_size,
+        num_hidden_layers=1,
+    )
+    model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
+        name="xlm-roberta-base"
+    )
+    model.initialize(X=sample_docs_with_spaces)
+    Y, backprop = model(sample_docs_with_spaces, is_train=False)
+    assert isinstance(Y, TransformerModelOutput)
+    num_ouputs = Y.num_outputs
+    Y = Y.last_hidden_states
+    assert len(Y) == 2
+    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2])
+    assert Y[0].dataXd.shape == (11, hidden_size)
+    numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 1, 1, 2, 1, 2, 1])
+    assert Y[1].dataXd.shape == (12, hidden_size)
+
+    # Backprop zeros to verify that backprop doesn't fail.
+    dY = [
+        [
+            Ragged(
+                model.ops.alloc2f(11, 768),
+                lengths=model.ops.asarray1i([1, 1, 1, 1, 1, 1, 1, 2, 2]),
+            )
+            for _ in range(num_ouputs)
+        ],
+        [
+            Ragged(
+                model.ops.alloc2f(11, 768),
+                lengths=model.ops.asarray1i([1, 1, 1, 1, 1, 2, 1, 2, 1]),
+            )
             for _ in range(num_ouputs)
         ],
     ]

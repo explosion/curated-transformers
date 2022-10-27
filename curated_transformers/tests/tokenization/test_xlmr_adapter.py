@@ -20,11 +20,6 @@ from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.remove_eos_bos import remove_bos_eos
 
 
-@pytest.fixture(scope="module")
-def test_dir(request):
-    return Path(request.fspath).parent
-
-
 @pytest.fixture
 def toy_model(test_dir):
     return SentencePieceProcessor.from_file(str(test_dir / "toy.model"))

@@ -26,7 +26,10 @@ def _convert_encoder(model: Model, tokenizer: "transformers.PreTrainedTokenizerB
         return _convert_wordpiece_encoder(model, tokenizer)
     elif isinstance(tokenizer, transformers.RobertaTokenizerFast):
         return _convert_byte_bpe_encoder(model, tokenizer)
-    elif isinstance(tokenizer, transformers.XLMRobertaTokenizerFast):
+    elif isinstance(
+        tokenizer,
+        (transformers.XLMRobertaTokenizerFast, transformers.CamembertTokenizerFast),
+    ):
         return _convert_sentencepiece_encoder(model, tokenizer)
 
     raise ValueError(

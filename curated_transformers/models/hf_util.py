@@ -7,7 +7,7 @@ from .bert.encoder import BertEncoder
 from .roberta.encoder import RobertaEncoder
 from .._compat import transformers
 
-SUPPORTED_MODEL_TYPES = ["albert", "bert", "roberta", "xlm-roberta"]
+SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
 
 SupportedEncoders = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
 
@@ -45,6 +45,7 @@ def convert_hf_pretrained_model_parameters(
     converters = {
         "albert": _convert_albert_base_state,
         "bert": _convert_bert_base_state,
+        "camembert": _convert_roberta_base_state,
         "roberta": _convert_roberta_base_state,
         "xlm-roberta": _convert_roberta_base_state,
     }

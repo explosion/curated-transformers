@@ -27,7 +27,10 @@ from .roberta import RobertaConfig, RobertaEncoder
 from .torchscript_wrapper import TorchScriptWrapper_v1
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
-from ..tokenization.sentencepiece_adapters import build_xlmr_adapter
+from ..tokenization.sentencepiece_adapters import (
+    build_camembert_adapter,
+    build_xlmr_adapter,
+)
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
 
@@ -146,6 +149,60 @@ def build_bert_transformer_model_v1(
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
+        transformer=transformer,
+    )
+
+
+def build_camembert_transformer_model_v1(
+    *,
+    vocab_size,
+    with_spans,
+    attention_probs_dropout_prob: float = 0.1,
+    hidden_act: str = "gelu",
+    hidden_dropout_prob: float = 0.1,
+    hidden_size: int = 768,
+    intermediate_size: int = 3072,
+    layer_norm_eps: float = 1e-5,
+    max_position_embeddings: int = 514,
+    model_max_length: int = 512,
+    num_attention_heads: int = 12,
+    num_hidden_layers: int = 12,
+    padding_idx: int = 1,
+    type_vocab_size: int = 1,
+    torchscript=False,
+):
+    piece_adapter = build_camembert_adapter()
+
+    config = RobertaConfig(
+        hidden_size=hidden_size,
+        intermediate_size=intermediate_size,
+        num_attention_heads=num_attention_heads,
+        num_hidden_layers=num_hidden_layers,
+        attention_probs_dropout_prob=attention_probs_dropout_prob,
+        hidden_dropout_prob=hidden_dropout_prob,
+        hidden_act=hidden_act,
+        vocab_size=vocab_size,
+        type_vocab_size=type_vocab_size,
+        max_position_embeddings=max_position_embeddings,
+        model_max_length=model_max_length,
+        layer_norm_eps=layer_norm_eps,
+        padding_idx=padding_idx,
+    )
+
+    if torchscript:
+        transformer = _torchscript_encoder(
+            model_max_length=model_max_length, padding_idx=padding_idx
+        )
+    else:
+        encoder = RobertaEncoder(config)
+        transformer = _pytorch_encoder(encoder)
+
+    piece_encoder = build_sentencepiece_encoder()
+
+    return build_transformer_model_v1(
+        with_spans=with_spans,
+        piece_encoder=piece_encoder,
+        piece_adapter=piece_adapter,
         transformer=transformer,
     )
 

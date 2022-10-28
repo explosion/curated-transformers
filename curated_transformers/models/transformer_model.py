@@ -235,7 +235,6 @@ def build_xlmr_transformer_model_v1(
         model_max_length=model_max_length,
         layer_norm_eps=layer_norm_eps,
         padding_idx=padding_idx,
-        mixed_precision=mixed_precision,
     )
 
     if torchscript:

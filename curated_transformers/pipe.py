@@ -1,26 +1,10 @@
 from itertools import islice
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from spacy import Errors, Language, Vocab
 from spacy.tokens import Doc
 from spacy.pipeline import TrainablePipe
-from spacy.training import (
-    Example,
-    validate_examples,
-    validate_get_examples,
-    minibatch_by_padded_size,
-)
-
+from spacy.training import Example, validate_examples, validate_get_examples
 from thinc.api import Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
@@ -273,29 +257,6 @@ class Transformer(TrainablePipe):
                     and node.upstream_name in names
                 ):
                     self.add_listener(node, component.name)
-
-    def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
-        """Apply the pipe to a stream of documents. This usually happens under
-        the hood when the nlp object is called on a text and all components are
-        applied to the Doc.
-
-        stream (Iterable[Doc]): A stream of documents.
-        batch_size (int): The number of documents to buffer.
-        error_handler (Callable[[str, List[Doc], Exception], Any]): Function that
-            deals with a failing batch of documents. The default function just reraises
-            the exception.
-
-        YIELDS (Doc): Processed documents in order.
-        """
-        install_extensions()
-        error_handler = self.get_error_handler()
-        for batch in minibatch_by_padded_size(stream, batch_size):
-            try:
-                preds = self.predict(batch)
-                self.set_annotations(batch, preds)
-                yield from batch
-            except Exception as e:
-                error_handler(self.name, self, batch, e)
 
     def predict(self, docs: Iterable[Doc]):
         """Apply the pipeline's model to a batch of docs, without modifying them.

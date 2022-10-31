@@ -1,4 +1,5 @@
 from typing import List
+from functools import lru_cache
 
 from thinc.api import Model, Ragged
 
@@ -24,6 +25,7 @@ def _update_to_fairseq(piece_id):
         return piece_id + _FAIRSEQ_OFFSET
 
 
+@lru_cache(maxsize=128)
 def _update_to_fairseq_vectorized(xp):
     return xp.vectorize(_update_to_fairseq)
 
@@ -57,6 +59,7 @@ def _camembert_update_to_fairseq(piece_id):
         return piece_id + _CAMEMBERT_FAIRSEQ_OFFSET
 
 
+@lru_cache(maxsize=128)
 def _camembert_update_to_fairseq_vectorized(xp):
     return xp.vectorize(_camembert_update_to_fairseq)
 

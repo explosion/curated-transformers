@@ -3,7 +3,14 @@ from pathlib import Path
 from functools import partial
 from spacy.tokens import Span, Doc
 from spacy.util import SimpleFrozenDict
-from thinc.api import Model, PyTorchWrapper_v2, get_current_ops, xp2torch, torch2xp
+from thinc.api import (
+    Model,
+    PyTorchWrapper_v2,
+    get_current_ops,
+    xp2torch,
+    torch2xp,
+    get_torch_default_device,
+)
 from thinc.layers import chain
 from thinc.model import Model
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
@@ -419,8 +426,10 @@ def _convert_outputs(model, inputs_outputs, is_train):
 def build_pytorch_checkpoint_loader_v1(*, path: Path):
     def load(model: Model, X: List[Doc] = None, Y=None):
         encoder = model.shims[0]._model
-        params = torch.load(path)
+        device = get_torch_default_device()
+        params = torch.load(path, map_location=device)
         params = convert_pretrained_model_for_encoder(encoder, params)
         encoder.load_state_dict(params)
+        encoder.to(device)
 
     return load

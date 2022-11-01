@@ -1,45 +1,65 @@
 from itertools import islice
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from spacy import Errors, Language, Vocab
 from spacy.tokens import Doc
 from spacy.pipeline import TrainablePipe
 from spacy.training import Example, validate_examples, validate_get_examples
-from thinc.api import Optimizer, set_dropout_rate
+from spacy.util import minibatch
+from thinc.api import Config, Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
+from .util import batch_by_length
 
+DEFAULT_CONFIG_STR = """
+    [transformer]
+    max_batch_items = 4096
 
-DOC_EXT_ATTR = "trf_data"
-
-
-DEFAULT_TRANSFORMER_MODEL = """
-    [model]
+    [transformer.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"
     hf_model_name = "xlm-roberta-base"
 
-    [model.with_spans]
+    [transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
 """
+
+
+DEFAULT_CONFIG = Config().from_str(DEFAULT_CONFIG_STR)
+DOC_EXT_ATTR = "trf_data"
 
 
 @Language.factory(
     "curated_transformer",
     assigns=["doc._.trf_data"],
-    default_config={"model": DEFAULT_TRANSFORMER_MODEL},
+    default_config=DEFAULT_CONFIG["transformer"],
 )
 def make_transformer(
     nlp: Language,
     name: str,
     model: Model,
     *,
+    max_batch_items: int = 4096,
     frozen: bool = False,
     all_layer_outputs: bool = True,
 ) -> "Transformer":
     return Transformer(
-        nlp.vocab, model, name=name, frozen=frozen, all_layer_outputs=all_layer_outputs
+        nlp.vocab,
+        model,
+        name=name,
+        frozen=frozen,
+        all_layer_outputs=all_layer_outputs,
+        max_batch_items=max_batch_items,
     )
 
 
@@ -184,6 +204,7 @@ class Transformer(TrainablePipe):
         name: str = "transformer",
         frozen: bool = False,
         all_layer_outputs: bool = True,
+        max_batch_items: int = 4096,
     ) -> None:
         """Initialize a tok2vec component.
         vocab (Vocab): The shared vocabulary.
@@ -199,7 +220,7 @@ class Transformer(TrainablePipe):
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List["TransformerListener"]] = {}
-        self.cfg: Dict[str, Any] = {}
+        self.cfg = {"max_batch_items": max_batch_items}
 
         install_extensions()
         self.frozen = frozen
@@ -257,6 +278,23 @@ class Transformer(TrainablePipe):
                     and node.upstream_name in names
                 ):
                     self.add_listener(node, component.name)
+
+    def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
+        """Apply the pipe to a stream of documents. This usually happens under
+        the hood when the nlp object is called on a text and all components are
+        applied to the Doc.
+        stream (Iterable[Doc]): A stream of documents.
+        batch_size (int): The number of documents to buffer.
+        YIELDS (Doc): Processed documents in order.
+        DOCS: https://spacy.io/api/transformer#pipe
+        """
+        install_extensions()
+        for outer_batch in minibatch(stream, batch_size):
+            outer_batch = list(outer_batch)
+            for indices in batch_by_length(outer_batch, self.cfg["max_batch_items"]):
+                subbatch = [outer_batch[i] for i in indices]
+                self.set_annotations(subbatch, self.predict(subbatch))
+            yield from outer_batch
 
     def predict(self, docs: Iterable[Doc]):
         """Apply the pipeline's model to a batch of docs, without modifying them.

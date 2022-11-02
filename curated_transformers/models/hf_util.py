@@ -125,7 +125,7 @@ def _convert_albert_base_state(
     out["projection.weight"] = params["encoder.embedding_hidden_mapping_in.weight"]
     out["projection.bias"] = params["encoder.embedding_hidden_mapping_in.bias"]
 
-    return out
+    return _merge_kqv_albert(out)
 
 
 def _convert_bert_base_state(
@@ -172,7 +172,7 @@ def _convert_bert_base_state(
     out["embeddings.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
     out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
 
-    return out
+    return _merge_kqv(out)
 
 
 def _convert_roberta_base_state(
@@ -218,5 +218,51 @@ def _convert_roberta_base_state(
     ]
     out["embeddings.inner.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
     out["embeddings.inner.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
+
+    return _merge_kqv(out)
+
+
+def _merge_kqv(params):
+    out = {}
+    for name, parameter in params.items():
+        m = re.match(
+            r"layers\.(?P<layer>[0-9]+)\.mha\.(query|key|value).(?P<param_type>weight|bias)",
+            name,
+        )
+        if m:
+            if "key" in name:
+                base = f"layers.{m['layer']}.mha"
+                out[f"{base}.input.{m['param_type']}"] = torch.cat(
+                    [
+                        parameter,
+                        params[f"{base}.query.{m['param_type']}"],
+                        params[f"{base}.value.{m['param_type']}"],
+                    ]
+                )
+            continue
+        out[name] = parameter
+
+    return out
+
+
+def _merge_kqv_albert(params):
+    out = {}
+    for name, parameter in params.items():
+        m = re.match(
+            r"groups\.(?P<group>[0-9]+)\.group_layers\.(?P<layer>[0-9]+)\.mha\.(query|key|value).(?P<param_type>weight|bias)",
+            name,
+        )
+        if m:
+            if "key" in name:
+                base = f"groups.{m['group']}.group_layers.{m['layer']}.mha"
+                out[f"{base}.input.{m['param_type']}"] = torch.cat(
+                    [
+                        parameter,
+                        params[f"{base}.query.{m['param_type']}"],
+                        params[f"{base}.value.{m['param_type']}"],
+                    ]
+                )
+            continue
+        out[name] = parameter
 
     return out

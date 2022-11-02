@@ -23,9 +23,7 @@ class BertSelfAttention(Module):
 
         self.dims_per_head = self.model_dim // self.num_heads
         self.attention = ScaledDotProductAttention(dropout_prob=config.dropout_prob)
-        self.query = torch.nn.Linear(self.model_dim, self.model_dim)
-        self.key = torch.nn.Linear(self.model_dim, self.model_dim)
-        self.value = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.input = torch.nn.Linear(self.model_dim, self.model_dim * 3)
         self.output = torch.nn.Linear(self.model_dim, self.model_dim)
 
     def _split_heads(self, x: Tensor) -> Tensor:
@@ -50,20 +48,17 @@ class BertSelfAttention(Module):
             x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
         )
 
-    def forward(
-        self, k: Tensor, q: Tensor, v: Tensor, attn_mask: Optional[Tensor] = None
-    ) -> Tensor:
+    def forward(self, x: Tensor, attn_mask: Optional[Tensor] = None) -> Tensor:
         """
         Shapes:
-            k, q, v - (batch, seq_len, model_dim)
+            x - (batch, seq_len, model_dim)
             attn_mask - (batch, seq_len)
 
         `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
         """
 
-        k = self.key(k)
-        q = self.query(q)
-        v = self.value(v)
+        proj = self.input(x)
+        k, q, v = proj.chunk(3, dim=-1)
 
         # (batch, head, seq_len, dims_per_head)
         k = self._split_heads(k)
@@ -142,7 +137,7 @@ class BertEncoderLayer(Module):
 
         `mask` indicates elements to be masked with values of `1`
         """
-        attn_out = self.mha(x, x, x, mask)
+        attn_out = self.mha(x, mask)
         attn_out = self.attn_output_dropout(attn_out)
         attn_out = self.attn_output_layernorm(x + attn_out)
 

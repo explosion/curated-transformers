@@ -5,7 +5,7 @@ from torch.nn import Module
 from torch import Tensor
 
 from .. import GeluNew
-from ..attention import ScaledDotProductAttention
+from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
 
 
@@ -48,7 +48,7 @@ class BertSelfAttention(Module):
             x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
         )
 
-    def forward(self, x: Tensor, attn_mask: Optional[Tensor] = None) -> Tensor:
+    def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
             x - (batch, seq_len, model_dim)
@@ -64,14 +64,6 @@ class BertSelfAttention(Module):
         k = self._split_heads(k)
         q = self._split_heads(q)
         v = self._split_heads(v)
-
-        if attn_mask is not None:
-            if attn_mask.dim() != 2:
-                raise ValueError(
-                    f"attention mask dim mismatch, expected '2' but received {attn_mask.dim()}"
-                )
-            batch, seq_len = attn_mask.size()
-            attn_mask = attn_mask.contiguous().view(batch, 1, 1, seq_len)
 
         # (batch, seq_len, model_dim)
         attn = self._combine_heads(self.attention(k, q, v, attn_mask))
@@ -129,7 +121,7 @@ class BertEncoderLayer(Module):
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
-    def forward(self, x: Tensor, mask: Optional[Tensor] = None) -> Tensor:
+    def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
             x - (batch, seq_len, model_dim)
@@ -137,7 +129,7 @@ class BertEncoderLayer(Module):
 
         `mask` indicates elements to be masked with values of `1`
         """
-        attn_out = self.mha(x, mask)
+        attn_out = self.mha(x, attn_mask)
         attn_out = self.attn_output_dropout(attn_out)
         attn_out = self.attn_output_layernorm(x + attn_out)
 

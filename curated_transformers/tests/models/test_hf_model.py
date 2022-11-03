@@ -1,19 +1,18 @@
 from typing import Callable
 from dataclasses import dataclass
-from curated_transformers.models.albert import AlbertEncoder
-from curated_transformers.models.albert.config import AlbertConfig
-from curated_transformers.models.bert import BertConfig, BertEncoder
-from curated_transformers.models.roberta.config import RobertaConfig
-from curated_transformers.models.roberta.encoder import RobertaEncoder
 import pytest
 import torch
 from torch.nn import Module
 
-# fmt: off
+from curated_transformers.models.albert import AlbertEncoder
+from curated_transformers.models.albert.config import AlbertConfig
+from curated_transformers.models.attention import AttentionMask
+from curated_transformers.models.bert import BertConfig, BertEncoder
+from curated_transformers.models.roberta.config import RobertaConfig
+from curated_transformers.models.roberta.encoder import RobertaEncoder
 from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.models.transformer_model import _pytorch_encoder
 from curated_transformers._compat import has_hf_transformers, transformers
-# fmt: on
 
 
 @dataclass
@@ -67,7 +66,9 @@ def test_model_against_hf_transformers(model_config):
     attention_mask = tokenization["attention_mask"]
 
     # Test with the tokenizer's attention mask
-    Y_encoder = encoder(X, attention_mask=attention_mask)
+    Y_encoder = encoder(
+        X, attention_mask=AttentionMask(bool_mask=attention_mask.bool())
+    )
     Y_hf_encoder = hf_encoder(X, attention_mask=attention_mask)
 
     assert torch.allclose(Y_encoder.last_hidden_state, Y_hf_encoder.last_hidden_state)

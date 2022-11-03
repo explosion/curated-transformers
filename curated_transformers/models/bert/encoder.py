@@ -7,6 +7,7 @@ from torch import Tensor
 from .config import BertConfig
 from .embeddings import BertEmbeddings
 from .layer import BertEncoderLayer
+from ..attention import AttentionMask
 from ..output import PyTorchTransformerOutput
 
 
@@ -27,8 +28,8 @@ class BertEncoder(Module):
             ]
         )
 
-    def _create_attention_mask(self, x: Tensor) -> Tensor:
-        return x.ne(self.padding_idx).int()
+    def _create_attention_mask(self, x: Tensor) -> AttentionMask:
+        return AttentionMask(bool_mask=x.ne(self.padding_idx))
 
     def forward(
         self,
@@ -40,7 +41,7 @@ class BertEncoder(Module):
         Shapes:
             input_ids, token_type_ids - (batch, seq_len)
 
-        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
+        `attention_mask` indicates elements to attend to with `True` (and `False` otherwise)
 
         Returns a tuple of consisting of a list of tensors from each Transformer
         layer and the sum of the input and positional embeddings.

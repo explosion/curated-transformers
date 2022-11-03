@@ -5,6 +5,7 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
+from ..attention import AttentionMask
 from ..bert.layer import BertEncoderLayer
 from ..output import PyTorchTransformerOutput
 from .embeddings import RobertaEmbeddings
@@ -27,13 +28,13 @@ class RobertaEncoder(Module):
             ]
         )
 
-    def _create_attention_mask(self, x: Tensor) -> Tensor:
-        return x.ne(self.padding_idx).int()
+    def _create_attention_mask(self, x: Tensor) -> AttentionMask:
+        return AttentionMask(x.ne(self.padding_idx))
 
     def forward(
         self,
         input_ids: Tensor,
-        attention_mask: Optional[Tensor] = None,
+        attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> PyTorchTransformerOutput:
         """

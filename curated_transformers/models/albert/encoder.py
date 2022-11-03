@@ -3,6 +3,7 @@ import torch
 from torch.nn import Linear, Module
 from torch import Tensor
 
+from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
 from ..output import PyTorchTransformerOutput
 from .config import AlbertConfig
@@ -39,13 +40,13 @@ class AlbertEncoder(Module):
             ]
         )
 
-    def _create_attention_mask(self, x: Tensor) -> Tensor:
-        return x.ne(self.padding_idx).int()
+    def _create_attention_mask(self, x: Tensor) -> AttentionMask:
+        return AttentionMask(bool_mask=x.ne(self.padding_idx))
 
     def forward(
         self,
         input_ids: Tensor,
-        attention_mask: Optional[Tensor] = None,
+        attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> PyTorchTransformerOutput:
         """
@@ -69,7 +70,7 @@ class AlbertEncoder(Module):
         layer_outputs = []
         for i in range(self.num_hidden_layers):
             layer_output = self.groups[i // layers_per_group](
-                layer_output, mask=attention_mask
+                layer_output, attn_mask=attention_mask
             )
             layer_outputs.append(layer_output)
 

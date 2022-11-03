@@ -1,10 +1,13 @@
-from curated_transformers.models.attention import AttentionMask
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
+from typing import Dict, Any
+from functools import partial
 import pytest
 import spacy
 from spacy import Config, util
 from spacy.training import Example
+from spacy.training.initialize import init_nlp
+from spacy.training.loop import train
+from spacy.language import Language
+from spacy.util import registry as spacy_registry
 import torch
 
 from curated_transformers.models.transformer_model import (
@@ -16,7 +19,11 @@ from curated_transformers.models.transformer_model import (
 from curated_transformers.models.with_strided_spans import (
     build_with_strided_spans_v1,
 )
+from curated_transformers.models.attention import AttentionMask
+from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
+from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.pipe import make_transformer
+from curated_transformers.util import create_gradual_transformer_unfreezing
 from curated_transformers._compat import has_hf_transformers, transformers
 
 from .util import make_tempdir
@@ -424,3 +431,90 @@ def test_transformer_pipe_outputs():
     docs = list(pipe.pipe(docs))
     assert all([not doc._.trf_data.last_layer_only for doc in docs]) == True
     assert all([len(doc._.trf_data.all_outputs) == 12 + 1 for doc in docs]) == True
+
+
+cfg_string_gradual_unfreezing = (
+    cfg_string_last_layer_listener
+    + """
+    [corpora]
+
+    [corpora.train]
+    @readers = "spacy.Corpus.v1"
+    path = "toy-en-corpus.spacy"
+    max_length = 500
+    gold_preproc = false
+    limit = 0
+
+    [corpora.dev]
+    @readers = "spacy.Corpus.v1"
+    path = "toy-en-corpus.spacy"
+    max_length = 500
+    gold_preproc = false
+    limit = 0
+
+    [training]
+    train_corpus = "corpora.train"
+    dev_corpus = "corpora.dev"
+    seed = 1
+    gpu_allocator = "pytorch"
+    dropout = 0.1
+    accumulate_gradient = 3
+    patience = 5000
+    max_epochs = 1
+    max_steps = 6
+    eval_frequency = 10
+
+    [training.batcher]
+    @batchers = "spacy.batch_by_padded.v1"
+    discard_oversize = False
+    get_length = null
+    size = 1
+    buffer = 256
+"""
+)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+def test_gradual_transformer_unfreezing(test_dir):
+    def wrapped_callback():
+        def inner(
+            nlp: Language,
+            args: Dict[str, Any],
+            gradual_unfreezing_callback,
+            unfreeze_step,
+        ):
+            current_step = args["step"]
+            gradual_unfreezing_callback(nlp, args)
+
+            transformer = nlp.get_pipe("transformer")
+            if current_step < unfreeze_step:
+                assert transformer.frozen == True
+            else:
+                assert transformer.frozen == False
+
+        return partial(
+            inner,
+            gradual_unfreezing_callback=create_gradual_transformer_unfreezing({"*": 3}),
+            unfreeze_step=3,
+        )
+
+    spacy_registry.callbacks.register(
+        "test_gradual_unfreezing_callback",
+        func=wrapped_callback,
+    )
+
+    config = Config().from_str(cfg_string_gradual_unfreezing, interpolate=False)
+    config["corpora"]["train"]["path"] = str(test_dir / "toy-en-corpus.spacy")
+    config["corpora"]["dev"]["path"] = str(test_dir / "toy-en-corpus.spacy")
+    config["training"]["before_update"] = {
+        "@callbacks": "test_gradual_unfreezing_callback"
+    }
+    nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
+
+    nlp = init_nlp(config)
+    train(nlp)
+    assert nlp.get_pipe("transformer").frozen == False
+
+    with pytest.raises(ValueError):
+        create_gradual_transformer_unfreezing({"transformer": 5, "*": 4})

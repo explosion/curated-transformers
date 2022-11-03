@@ -1,4 +1,5 @@
 from .activations import GeluNew
+from .attention import AttentionMask
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
 from .hf_loader import build_hf_encoder_loader_v1

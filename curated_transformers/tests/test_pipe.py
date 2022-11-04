@@ -275,7 +275,7 @@ def test_camembert_transformer_pipe_against_hf():
     ):
         torch.testing.assert_allclose(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_state.dataXd,
+            doc._.trf_data.last_hidden_layer_state.dataXd,
         )
 
 

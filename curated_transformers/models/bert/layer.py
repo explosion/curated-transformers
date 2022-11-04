@@ -58,7 +58,7 @@ class BertSelfAttention(Module):
         """
 
         proj = self.input(x)
-        k, q, v = proj.chunk(3, dim=-1)
+        q, k, v = proj.chunk(3, dim=-1)
 
         # (batch, head, seq_len, dims_per_head)
         k = self._split_heads(k)

@@ -44,6 +44,7 @@ cfg_string_last_layer_listener = """
 
     [components.transformer]
     factory = "curated_transformer"
+    all_layer_outputs = False
 
     [components.transformer.model]
     @architectures = "curated-transformers.BertTransformer.v1"
@@ -92,6 +93,7 @@ cfg_string_scalar_weighting_layer_listener = """
 
     [components.transformer]
     factory = "curated_transformer"
+    all_layer_outputs = True
 
     [components.transformer.model]
     @architectures = "curated-transformers.BertTransformer.v1"

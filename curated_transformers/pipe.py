@@ -51,7 +51,7 @@ def make_transformer(
     *,
     max_batch_items: int = 4096,
     frozen: bool = False,
-    all_layer_outputs: bool = True,
+    all_layer_outputs: bool = False,
 ) -> "Transformer":
     return Transformer(
         nlp.vocab,
@@ -321,7 +321,7 @@ class Transformer(TrainablePipe):
         *,
         name: str = "transformer",
         frozen: bool = False,
-        all_layer_outputs: bool = True,
+        all_layer_outputs: bool = False,
         max_batch_items: int = 4096,
     ) -> None:
         """Initialize a tok2vec component.

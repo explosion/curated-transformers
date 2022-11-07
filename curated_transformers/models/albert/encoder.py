@@ -70,7 +70,8 @@ class AlbertEncoder(Module):
         layer_outputs = []
         for i in range(self.num_hidden_layers):
             layer_output = self.groups[i // layers_per_group](
-                layer_output, attn_mask=attention_mask
+                layer_output,
+                src_key_padding_mask=attention_mask.bool_mask.logical_not(),
             )
             layer_outputs.append(layer_output)
 

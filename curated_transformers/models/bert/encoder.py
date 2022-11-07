@@ -1,12 +1,12 @@
 from typing import Optional
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, TransformerEncoderLayer
 from torch import Tensor
 
 from .config import BertConfig
 from .embeddings import BertEmbeddings
-from .layer import BertEncoderLayer
+from ..activations import _get_activation
 from ..attention import AttentionMask
 from ..output import PyTorchTransformerOutput
 
@@ -23,7 +23,15 @@ class BertEncoder(Module):
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BertEncoderLayer(config.layer, config.attention)
+                TransformerEncoderLayer(
+                    config.layer.hidden_size,
+                    config.attention.num_attention_heads,
+                    config.layer.intermediate_size,
+                    config.layer.dropout_prob,
+                    _get_activation(config.layer.hidden_act),
+                    config.layer.layer_norm_eps,
+                    batch_first=True,
+                )
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
@@ -54,7 +62,10 @@ class BertEncoder(Module):
 
         layer_outputs = []
         for layer in self.layers:
-            layer_output = layer(layer_output, attention_mask)
+            layer_output = layer(
+                layer_output,
+                src_key_padding_mask=attention_mask.bool_mask.logical_not(),
+            )
             layer_outputs.append(layer_output)
 
         return PyTorchTransformerOutput(

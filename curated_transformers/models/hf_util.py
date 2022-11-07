@@ -94,16 +94,16 @@ def _convert_albert_base_state(
         name = re.sub(r"\.albert_layers\.", ".group_layers.", name)
 
         # Attention blocks.
-        name = re.sub(r"\.attention\.", ".mha.", name)
-        name = re.sub(r"\.mha\.LayerNorm", r".attn_output_layernorm", name)
-        name = re.sub(r"\.mha\.dense\.", r".mha.output.", name)
+        name = re.sub(r"\.attention\.", ".self_attn.", name)
+        name = re.sub(r"\.self_attn\.LayerNorm", r".norm1", name)
+        name = re.sub(r"\.self_attn\.dense\.", r".self_attn.out_proj.", name)
 
         # Pointwise feed-forward layers.
-        name = re.sub(r"\.ffn\.", r".ffn.intermediate.", name)
-        name = re.sub(r"\.ffn_output\.", r".ffn.output.", name)
+        name = re.sub(r"\.ffn\.", r".linear1.", name)
+        name = re.sub(r"\.ffn_output\.", r".linear2.", name)
         name = re.sub(
             r"\.full_layer_layer_norm\.",
-            r".ffn_output_layernorm.",
+            r".norm2.",
             name,
         )
 
@@ -149,14 +149,12 @@ def _convert_bert_base_state(
 
         # The HF model has one more level of indirection for the output layers in their
         # attention heads and the feed-forward network layers.
-        name = re.sub(r"\.attention\.self\.(query|key|value)", r".mha.\1", name)
-        name = re.sub(r"\.attention\.(output)\.dense", r".mha.\1", name)
-        name = re.sub(
-            r"\.attention\.output\.LayerNorm", r".attn_output_layernorm", name
-        )
-        name = re.sub(r"\.(intermediate)\.dense", r".ffn.\1", name)
-        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_output_layernorm", name)
-        name = re.sub(r"(\.\d+)\.(output)\.dense", r"\1.ffn.\2", name)
+        name = re.sub(r"\.attention\.self\.(query|key|value)", r".self_attn.\1", name)
+        name = re.sub(r"\.attention\.output\.dense", r".self_attn.out_proj", name)
+        name = re.sub(r"\.attention\.output\.LayerNorm", r".norm1", name)
+        name = re.sub(r"\.intermediate\.dense", r".linear1", name)
+        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.norm2", name)
+        name = re.sub(r"(\.\d+)\.output\.dense", r"\1.linear2", name)
 
         out[name] = parameter
 
@@ -196,14 +194,12 @@ def _convert_roberta_base_state(
 
         # The HF model has one more level of indirection for the output layers in their
         # attention heads and the feed-forward network layers.
-        name = re.sub(r"\.attention\.self\.(query|key|value)", r".mha.\1", name)
-        name = re.sub(r"\.attention\.(output)\.dense", r".mha.\1", name)
-        name = re.sub(
-            r"\.attention\.output\.LayerNorm", r".attn_output_layernorm", name
-        )
-        name = re.sub(r"\.(intermediate)\.dense", r".ffn.\1", name)
-        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_output_layernorm", name)
-        name = re.sub(r"(\.\d+)\.(output)\.dense", r"\1.ffn.\2", name)
+        name = re.sub(r"\.attention\.self\.(query|key|value)", r".self_attn.\1", name)
+        name = re.sub(r"\.attention\.output\.dense", r".self_attn.out_proj", name)
+        name = re.sub(r"\.attention\.output\.LayerNorm", r".norm1", name)
+        name = re.sub(r"\.intermediate\.dense", r".linear1", name)
+        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.norm2", name)
+        name = re.sub(r"(\.\d+)\.output\.dense", r"\1.linear2", name)
 
         out[name] = parameter
 
@@ -227,13 +223,13 @@ def _merge_qkv(params):
     out = {}
     for name, parameter in params.items():
         m = re.match(
-            r"layers\.(?P<layer>[0-9]+)\.mha\.(query|key|value).(?P<param_type>weight|bias)",
+            r"layers\.(?P<layer>[0-9]+)\.self_attn\.(query|key|value).(?P<param_type>weight|bias)",
             name,
         )
         if m:
             if "query" in name:
-                base = f"layers.{m['layer']}.mha"
-                out[f"{base}.input.{m['param_type']}"] = torch.cat(
+                base = f"layers.{m['layer']}.self_attn"
+                out[f"{base}.in_proj_{m['param_type']}"] = torch.cat(
                     [
                         parameter,
                         params[f"{base}.key.{m['param_type']}"],
@@ -250,13 +246,13 @@ def _merge_qkv_albert(params):
     out = {}
     for name, parameter in params.items():
         m = re.match(
-            r"groups\.(?P<group>[0-9]+)\.group_layers\.(?P<layer>[0-9]+)\.mha\.(query|key|value).(?P<param_type>weight|bias)",
+            r"groups\.(?P<group>[0-9]+)\.group_layers\.(?P<layer>[0-9]+)\.self_attn\.(query|key|value).(?P<param_type>weight|bias)",
             name,
         )
         if m:
             if "query" in name:
-                base = f"groups.{m['group']}.group_layers.{m['layer']}.mha"
-                out[f"{base}.input.{m['param_type']}"] = torch.cat(
+                base = f"groups.{m['group']}.group_layers.{m['layer']}.self_attn"
+                out[f"{base}.in_proj_{m['param_type']}"] = torch.cat(
                     [
                         parameter,
                         params[f"{base}.key.{m['param_type']}"],

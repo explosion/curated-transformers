@@ -1,9 +1,8 @@
-from typing import List
 from torch import Tensor
-from torch.nn import Module, ModuleList
+from torch.nn import Module, ModuleList, TransformerEncoderLayer
 
+from ..activations import _get_activation
 from ..bert.config import BertAttentionConfig
-from ..bert.layer import BertAttentionConfig, BertEncoderLayer
 from .config import AlbertLayerConfig
 
 
@@ -15,8 +14,15 @@ class AlbertLayerGroup(Module):
 
         self.group_layers = ModuleList(
             [
-                BertEncoderLayer(layer_config, attention_config)
-                for _ in range(layer_config.inner_group_num)
+                TransformerEncoderLayer(
+                    layer_config.hidden_size,
+                    attention_config.num_attention_heads,
+                    layer_config.intermediate_size,
+                    layer_config.dropout_prob,
+                    _get_activation(layer_config.hidden_act),
+                    layer_config.layer_norm_eps,
+                    batch_first=True,
+                )
             ]
         )
 

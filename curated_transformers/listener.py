@@ -1,7 +1,10 @@
 from typing import (
+    Any,
+    Callable,
     Iterable,
     List,
     Optional,
+    Tuple,
 )
 
 from spacy import Errors
@@ -9,26 +12,28 @@ from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
+from .models.output import TransformerModelOutput
 
-def last_transformer_layer_listener_v1(
+
+def build_last_transformer_layer_listener_v1(
     width: int,
     pooling: Model[Ragged, Floats2d],
     upstream: str = "*",
     grad_factor: float = 1.0,
-):
+) -> Model[List[Doc], List[Floats2d]]:
     tok2vec = LastTransformerLayerListener(
         upstream_name=upstream, pooling=pooling, width=width, grad_factor=grad_factor
     )
     return tok2vec
 
 
-def scalar_weighting_listener_v1(
+def build_scalar_weighting_listener_v1(
     width: int,
-    weighting: Model[List[List[Ragged]], List[Ragged]],
+    weighting: Model[List[Ragged], Ragged],
     pooling: Model[Ragged, Floats2d],
     upstream: str = "*",
     grad_factor: float = 1.0,
-):
+) -> Model[List[Doc], List[Floats2d]]:
     tok2vec = ScalarWeightingListener(
         upstream_name=upstream,
         weighting=weighting,
@@ -41,6 +46,9 @@ def scalar_weighting_listener_v1(
 
 class TransformerListener(Model):
     upstream_name: str
+    _batch_id: Optional[int]
+    _outputs: Optional[TransformerModelOutput]
+    _backprop: Optional[Callable[[List[List[Ragged]], Tuple[int]], Any]]
 
     @classmethod
     def get_batch_id(cls, inputs: Iterable[Doc]) -> int:
@@ -49,7 +57,12 @@ class TransformerListener(Model):
         """
         return sum(sum(token.orth for token in doc) for doc in inputs)
 
-    def receive(self, batch_id: int, outputs, backprop) -> None:
+    def receive(
+        self,
+        batch_id: int,
+        outputs: TransformerModelOutput,
+        backprop: Callable[[List[List[Ragged]], Tuple[int]], Any],
+    ) -> None:
         """Store a batch of training predictions and a backprop callback. The
         predictions and callback are produced by the upstream Tok2Vec component,
         and later will be used when the listener's component's model is called.
@@ -58,7 +71,7 @@ class TransformerListener(Model):
         self._outputs = outputs
         self._backprop = backprop
 
-    def verify_inputs(self, inputs) -> bool:
+    def verify_inputs(self, inputs: Iterable[Doc]) -> bool:
         """Check that the batch of Doc objects matches the ones we have a
         prediction for.
         """
@@ -102,14 +115,14 @@ class LastTransformerLayerListener(TransformerListener):
             attrs={"grad_factor": grad_factor},
         )
         self.upstream_name = upstream_name
-        self._batch_id: Optional[int] = None
+        self._batch_id = None
         self._outputs = None
         self._backprop = None
 
 
 def last_transformer_layer_listener_forward(
-    model: LastTransformerLayerListener, docs, is_train: bool
-):
+    model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
+) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     """Supply the outputs from the upstream Tok2Vec component."""
     pooling: Model[Ragged, Floats2d] = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
@@ -153,7 +166,7 @@ class ScalarWeightingListener(TransformerListener):
     def __init__(
         self,
         upstream_name: str,
-        weighting: Model[List[List[Ragged]], List[Ragged]],
+        weighting: Model[List[Ragged], Ragged],
         pooling: Model[Ragged, Floats2d],
         width: int,
         grad_factor: float,
@@ -180,14 +193,14 @@ class ScalarWeightingListener(TransformerListener):
             },
         )
         self.upstream_name = upstream_name
-        self._batch_id: Optional[int] = None
+        self._batch_id = None
         self._outputs = None
         self._backprop = None
 
 
 def scalar_weighting_listener_forward(
-    model: ScalarWeightingListener, docs, is_train: bool
-):
+    model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
+) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     """Supply the outputs from the upstream Tok2Vec component."""
     weighting: Model[List[Ragged], Ragged] = model.layers[0]
     pooling: Model[Ragged, Floats2d] = model.layers[1]

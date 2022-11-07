@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Callable, Any
 from thinc.layers.pytorchwrapper import PyTorchWrapper_v2
 from thinc.model import Model
 from thinc.types import ArgsKwargs, Ragged
@@ -84,7 +84,9 @@ def build_scalar_weight_v1(
     return model
 
 
-def _convert_inputs(model: Model, X: List[Ragged], is_train: bool = False):
+def _convert_inputs(
+    model: Model, X: List[Ragged], is_train: bool = False
+) -> Tuple[ArgsKwargs, Callable[[ArgsKwargs], List[Ragged]]]:
     ops = model.ops
     layer_hidden_sizes = [x.data.shape[1] for x in X]
     if not all_equal(layer_hidden_sizes):
@@ -111,11 +113,13 @@ def _convert_inputs(model: Model, X: List[Ragged], is_train: bool = False):
     return output, convert_from_torch_backward
 
 
-def _convert_outputs(model, inputs_outputs, is_train):
+def _convert_outputs(
+    model: Model, inputs_outputs: Tuple[Any, Any], is_train: bool
+) -> Tuple[Any, Callable[[Ragged], ArgsKwargs]]:
     X, Yt = inputs_outputs
     Y = Ragged(torch2xp(Yt, ops=model.ops), lengths=X[0].lengths)
 
-    def convert_for_torch_backward(dY):
+    def convert_for_torch_backward(dY: Ragged) -> ArgsKwargs:
         dYt = xp2torch(dY.dataXd)
         return ArgsKwargs(
             args=(Yt,),

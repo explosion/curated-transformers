@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from dataclasses import dataclass
 import math
 import torch
@@ -25,11 +25,11 @@ class AttentionMask:
             self._logit_mask = (1.0 - self.bool_mask.int()) * -3.4028234663852886e38
         return self._logit_mask
 
-    def dim(self):
+    def dim(self) -> int:
         return self.bool_mask.dim()
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple:
         return self.bool_mask.shape
 
 

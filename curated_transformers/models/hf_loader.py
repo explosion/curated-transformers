@@ -11,7 +11,7 @@ def build_hf_encoder_loader_v1(
     name: str,
     revision: str = "main",
 ):
-    def load(model: Model, X: List[Doc] = None, Y=None):
+    def load(model: Model, X: List[Doc] = None, Y=None) -> Model:
         if not has_hf_transformers:
             raise ValueError("requires huggingface transformers")
 

@@ -11,12 +11,20 @@ RaggedInOutT = Union[List[Ragged], List[List[Ragged]]]
 Floats2dInOutT = Union[List[Floats2d], List[List[Floats2d]]]
 
 
-def build_with_strided_spans_v1(stride=96, window=128):
+def build_with_strided_spans_v1(
+    stride: int = 96, window: int = 128
+) -> Callable[
+    [Model[List[Ints1d], TransformerModelOutput], int, int],
+    Model[List[Ragged], TransformerModelOutput],
+]:
     return partial(with_strided_spans, stride=stride, window=window)
 
 
 def with_strided_spans(
-    layer, *, stride=96, window=128
+    layer: Model[List[Ints1d], TransformerModelOutput],
+    *,
+    stride: int = 96,
+    window: int = 128,
 ) -> Model[List[Ragged], TransformerModelOutput]:
     if not (window // 2 <= stride <= window):
         raise ValueError(
@@ -36,7 +44,7 @@ def with_strided_spans(
     )
 
 
-def with_strided_spans_init(model: Model, X, Y):
+def with_strided_spans_init(model: Model, X: List[Ragged], Y: List[Ragged]):
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 
@@ -57,7 +65,7 @@ def with_strided_spans_forward(
     model: Model[List[Ragged], TransformerModelOutput],
     X: List[Ragged],
     is_train: bool,
-):
+) -> Tuple[TransformerModelOutput, Callable[[RaggedInOutT], RaggedInOutT]]:
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 

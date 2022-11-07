@@ -1,11 +1,9 @@
-from typing import List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, Tuple
 from pathlib import Path
 
 from cutlery import WordPieceProcessor
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
-
-InT = TypeVar("InT", List[Doc], List[Span])
 
 
 @serialize_attr.register(WordPieceProcessor)
@@ -35,7 +33,9 @@ def build_wordpiece_encoder() -> Model[List[Doc], List[Ragged]]:
     )
 
 
-def wordpiece_encoder_forward(model: Model, X: InT, is_train: bool):
+def wordpiece_encoder_forward(
+    model: Model, X: List[Doc], is_train: bool
+) -> Tuple[List[Ragged], Callable[[Any], Any]]:
     wpp: WordPieceProcessor = model.attrs["wordpiece_processor"]
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
@@ -72,7 +72,12 @@ def wordpiece_encoder_forward(model: Model, X: InT, is_train: bool):
     return pieces, lambda dY: []
 
 
-def build_wordpiece_encoder_loader_v1(*, path: Path):
+def build_wordpiece_encoder_loader_v1(
+    *, path: Path
+) -> Callable[
+    [Model[List[Doc], List[Ragged]], Optional[List[Doc]], Any],
+    Model[List[Doc], List[Ragged]],
+]:
     def load(
         model: Model[List[Doc], List[Ragged]], X: List[Doc] = None, Y=None
     ) -> Model[List[Doc], List[Ragged]]:

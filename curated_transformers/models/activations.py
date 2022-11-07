@@ -7,7 +7,7 @@ from torch.nn import Module
 class GeluNew(Module):
     """GELU approximation, called `gelu_new` in many transformer models."""
 
-    def forward(self, input: Tensor):
+    def forward(self, input: Tensor) -> Tensor:
         return (
             0.5
             * input

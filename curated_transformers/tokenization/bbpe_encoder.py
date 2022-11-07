@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Callable, List, Optional, Tuple
 from pathlib import Path
 
 from cutlery import ByteBPEProcessor
@@ -34,7 +34,9 @@ def build_byte_bpe_encoder() -> Model[List[Doc], List[Ragged]]:
     )
 
 
-def byte_bpe_encoder_forward(model: Model, X: List[Doc], is_train: bool):
+def byte_bpe_encoder_forward(
+    model: Model, X: List[Doc], is_train: bool
+) -> Tuple[List[Ragged], Callable[[Any], Any]]:
     bbp: ByteBPEProcessor = model.attrs["byte_bpe_processor"]
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
@@ -81,7 +83,12 @@ def byte_bpe_encoder_forward(model: Model, X: List[Doc], is_train: bool):
     return pieces, lambda dY: []
 
 
-def build_byte_bpe_encoder_loader_v1(*, vocab_path: Path, merges_path: Path):
+def build_byte_bpe_encoder_loader_v1(
+    *, vocab_path: Path, merges_path: Path
+) -> Callable[
+    [Model[List[Doc], List[Ragged]], Optional[List[Doc]], Any],
+    Model[List[Doc], List[Ragged]],
+]:
     def load(
         model: Model[List[Doc], List[Ragged]], X: Optional[List[Doc]] = None, Y=None
     ) -> Model[List[Doc], List[Ragged]]:

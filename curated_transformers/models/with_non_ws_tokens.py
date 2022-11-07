@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Iterator, Callable, Any
 from dataclasses import dataclass
 from collections import Counter
 
@@ -26,7 +26,7 @@ class TokenAlignment:
     n_pieces: int
 
     @property
-    def is_whitespace(self):
+    def is_whitespace(self) -> bool:
         return self.no_ws_piece_offset is None
 
 
@@ -42,10 +42,10 @@ class Alignment:
     no_ws_n_pieces: int
 
     @property
-    def has_no_whitespace(self):
+    def has_no_whitespace(self) -> bool:
         return self.ws_n_pieces == self.no_ws_n_pieces
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TokenAlignment]:
         return iter(self.tokens)
 
 
@@ -53,7 +53,9 @@ def with_non_ws_tokens(layer: Model[InnerInT, OutT]) -> Model[InT, OutT]:
     return Model("with_non_ws_tokens", forward, init=init, layers=[layer])
 
 
-def forward(model: Model, X: InT, is_train: bool):
+def forward(
+    model: Model, X: InT, is_train: bool
+) -> Tuple[OutT, Callable[[List[List[Ragged]]], Any]]:
     inner: Model[InnerInT, OutT] = model.layers[0]
     tokens, ws_counts = _filter_tokens(X)
     Y_no_ws, backprop_no_ws = inner(tokens, is_train)
@@ -66,7 +68,7 @@ def forward(model: Model, X: InT, is_train: bool):
     alignments = _create_alignments(model, Y_no_ws, ws_counts)
     _add_whitespace_tokens(model, Y_no_ws, alignments)
 
-    def backprop(dY: List[List[Ragged]]):
+    def backprop(dY: List[List[Ragged]]) -> Any:
         _remove_whitespace_tokens(model, dY, alignments)
         backprop_no_ws(dY)
         return []
@@ -83,7 +85,7 @@ def init(
 
 
 def _create_alignments(
-    model: Model, output: TransformerModelOutput, ws_counts: List[Counter]
+    model: Model, output: OutT, ws_counts: List[Counter]
 ) -> List[Alignment]:
     """Create an alignment between whitespace and non-whitespace sequences."""
     alignments = []
@@ -157,9 +159,7 @@ def _filter_tokens(docs: List[Doc]) -> Tuple[InnerInT, List[Counter]]:
     return tokens, ws_counts
 
 
-def _add_whitespace_tokens(
-    model: Model, Y_no_ws: TransformerModelOutput, alignments: List[Alignment]
-):
+def _add_whitespace_tokens(model: Model, Y_no_ws: OutT, alignments: List[Alignment]):
     """Add stub representations for whitespace tokens."""
     for Y_doc, doc_alignment in zip(Y_no_ws.all_outputs, alignments):
         if doc_alignment.has_no_whitespace:
@@ -187,7 +187,7 @@ def _add_whitespace_tokens(
 
 
 def _remove_whitespace_tokens(
-    model: Model, dY: TransformerModelOutput, alignments: List[Alignment]
+    model: Model, dY: List[List[Ragged]], alignments: List[Alignment]
 ):
     """Remove representations for whitespace tokens."""
     for dY_doc, doc_alignment in zip(dY, alignments):

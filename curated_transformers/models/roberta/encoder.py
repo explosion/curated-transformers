@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 
 import torch
 from torch.nn import Module

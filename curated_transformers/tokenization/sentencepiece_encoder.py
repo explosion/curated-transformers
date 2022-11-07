@@ -1,11 +1,8 @@
-from typing import List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, Tuple
 from pathlib import Path
 from cutlery import SentencePieceProcessor
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
-
-
-InT = TypeVar("InT", List[Doc], List[Span])
 
 
 @serialize_attr.register(SentencePieceProcessor)
@@ -30,7 +27,9 @@ def build_sentencepiece_encoder() -> Model[List[Doc], List[Ragged]]:
     )
 
 
-def sentencepiece_encoder_forward(model: Model, X: InT, is_train: bool):
+def sentencepiece_encoder_forward(
+    model: Model, X: List[Doc], is_train: bool
+) -> Tuple[List[Ragged], Callable[[Any], Any]]:
     spp: SentencePieceProcessor = model.attrs["sentencepiece_processor"]
 
     pieces = []
@@ -58,7 +57,12 @@ def sentencepiece_encoder_forward(model: Model, X: InT, is_train: bool):
     return pieces, lambda dY: []
 
 
-def build_sentencepiece_encoder_loader_v1(*, path: Path):
+def build_sentencepiece_encoder_loader_v1(
+    *, path: Path
+) -> Callable[
+    [Model[List[Doc], List[Ragged]], Optional[List[Doc]], Any],
+    Model[List[Doc], List[Ragged]],
+]:
     def load(
         model: Model[List[Doc], List[Ragged]], X: Optional[List[Doc]] = None, Y=None
     ) -> Model[List[Doc], List[Ragged]]:

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Callable, List, Tuple
 from functools import lru_cache
 
 from thinc.api import Model, Ragged
@@ -14,7 +14,7 @@ _SPP_EOS = 2
 _SPP_UNK = 0
 
 
-def _update_to_fairseq(piece_id):
+def _update_to_fairseq(piece_id: int):
     if piece_id == _SPP_UNK:
         return _FAIRSEQ_UNK
     elif piece_id == _SPP_BOS:
@@ -37,7 +37,9 @@ def build_xlmr_adapter() -> Model[List[Ragged], List[Ragged]]:
     )
 
 
-def xlmr_adapter_forward(model: Model, X: List[Ragged], is_train: bool):
+def xlmr_adapter_forward(
+    model: Model, X: List[Ragged], is_train: bool
+) -> Tuple[List[Ragged], Callable[[Any], Any]]:
     # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []
@@ -52,7 +54,7 @@ def xlmr_adapter_forward(model: Model, X: List[Ragged], is_train: bool):
     return X_xlmr, lambda dY: []
 
 
-def _camembert_update_to_fairseq(piece_id):
+def _camembert_update_to_fairseq(piece_id: int):
     if piece_id == _SPP_UNK:
         return _FAIRSEQ_UNK
     else:
@@ -71,7 +73,9 @@ def build_camembert_adapter() -> Model[List[Ragged], List[Ragged]]:
     )
 
 
-def camembert_adapter_forward(model: Model, X: List[Ragged], is_train: bool):
+def camembert_adapter_forward(
+    model: Model, X: List[Ragged], is_train: bool
+) -> Tuple[List[Ragged], Callable[[Any], Any]]:
     # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _camembert_update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []

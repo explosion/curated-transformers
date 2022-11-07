@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 from io import BytesIO
 import srsly
 from thinc.api import Model, PyTorchGradScaler, PyTorchShim, get_torch_default_device
@@ -45,7 +45,7 @@ class TorchScriptShim(PyTorchShim):
 
         super().__init__(model, config, optimizer, mixed_precision, grad_scaler, device)
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         filelike = BytesIO()
         torch.jit.save(self._model, filelike)
         filelike.seek(0)
@@ -53,7 +53,7 @@ class TorchScriptShim(PyTorchShim):
         msg = {"config": self.cfg, "model": model_bytes}
         return srsly.msgpack_dumps(msg)
 
-    def from_bytes(self, bytes_data):
+    def from_bytes(self, bytes_data: bytes) -> "TorchScriptShim":
         device = get_torch_default_device()
         msg = srsly.msgpack_loads(bytes_data)
         self.cfg = msg["config"]
@@ -112,7 +112,7 @@ def TorchScriptWrapper_v1(
     )
 
 
-def to_torchscript_wrapper(model: Model):
+def to_torchscript_wrapper(model: Model) -> Model:
     """Convert a PyTorch wrapper to a TorchScript wrapper. The embedded PyTorch
     `Module` is converted to `ScriptModule`.
     """

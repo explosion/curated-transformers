@@ -19,7 +19,7 @@ def _check_supported_hf_models(model_type: str):
 
 def convert_pretrained_model_for_encoder(
     encoder: SupportedEncoders, params: OrderedDict[str, torch.Tensor]
-):
+) -> Dict[str, torch.Tensor]:
     params = _rename_old_hf_names(params)
 
     if isinstance(encoder, AlbertEncoder):
@@ -227,7 +227,7 @@ def _convert_roberta_base_state(
     return _merge_qkv(out)
 
 
-def _merge_qkv(params):
+def _merge_qkv(params: OrderedDict[str, torch.Tensor]):
     out = {}
     for name, parameter in params.items():
         m = re.match(
@@ -250,7 +250,7 @@ def _merge_qkv(params):
     return out
 
 
-def _merge_qkv_albert(params):
+def _merge_qkv_albert(params: OrderedDict[str, torch.Tensor]):
     out = {}
     for name, parameter in params.items():
         m = re.match(

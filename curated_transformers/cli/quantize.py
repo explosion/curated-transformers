@@ -45,7 +45,7 @@ def quantize_cli(
     nlp.to_disk(output_path)
 
 
-def size_of_model(model):
+def size_of_model(model: Module):
     filelike = BytesIO()
     torch.save(model.state_dict(), filelike)
     return filelike.tell()

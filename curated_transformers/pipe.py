@@ -29,7 +29,6 @@ DEFAULT_CONFIG_STR = """
 
     [transformer.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"
-    hf_model_name = "xlm-roberta-base"
 
     [transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"

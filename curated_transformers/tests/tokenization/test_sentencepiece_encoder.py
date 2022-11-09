@@ -30,7 +30,7 @@ def test_sentencepiece_encoder(toy_encoder, sample_docs):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_sentencepiece_encoder_hf_model(sample_docs):
     encoder = build_sentencepiece_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")

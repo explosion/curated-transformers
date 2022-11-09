@@ -13,7 +13,7 @@ def build_hf_encoder_loader_v1(
 ):
     def load(model: Model, X: List[Doc] = None, Y=None):
         if not has_hf_transformers:
-            raise ValueError("requires 🤗 transformers")
+            raise ValueError("requires huggingface transformers")
 
         global transformers
         from transformers import AutoModel

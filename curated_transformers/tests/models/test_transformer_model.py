@@ -35,7 +35,7 @@ def toy_model(test_dir):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
 def test_xlmr_model(sample_docs, stride, window, hf_model):
@@ -82,7 +82,7 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
 def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
@@ -129,7 +129,7 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_huggingface_hub, reason="requires 🤗 hub")
+@pytest.mark.skipif(not has_huggingface_hub, reason="requires huggingface hub")
 @pytest.mark.parametrize(
     "test_config",
     [

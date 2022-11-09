@@ -38,7 +38,7 @@ def encoder_from_config(config: ModelConfig):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("model_config", TEST_MODELS)
 def test_hf_load_weights(model_config):
     model = encoder_from_config(model_config)
@@ -46,7 +46,7 @@ def test_hf_load_weights(model_config):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("model_config", TEST_MODELS)
 def test_model_against_hf_transformers(model_config):
     model = encoder_from_config(model_config)

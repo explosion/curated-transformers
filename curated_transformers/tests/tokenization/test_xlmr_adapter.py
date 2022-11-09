@@ -67,7 +67,7 @@ def _compare_model_hf_output(ops, Y, Y_hf):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_sentencepiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
 
@@ -86,7 +86,7 @@ def test_sentencepiece_encoder_against_hf(sample_docs):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
     encoder = build_wordpiece_encoder()

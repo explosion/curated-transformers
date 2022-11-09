@@ -18,7 +18,7 @@ def toy_encoder(test_dir):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_bbpe_encoder_hf_model(sample_docs):
     encoder = build_byte_bpe_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
@@ -47,7 +47,7 @@ def test_serialize(toy_encoder):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_serialize_hf_model(sample_docs):
     encoder = build_byte_bpe_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")

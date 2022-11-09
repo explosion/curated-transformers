@@ -33,7 +33,7 @@ def _convert_encoder(model: Model, tokenizer: "transformers.PreTrainedTokenizerB
         return _convert_sentencepiece_encoder(model, tokenizer)
 
     raise ValueError(
-        f"Loading from the '{type(tokenizer)}' 🤗 tokenizer is not supported"
+        f"Loading from the '{type(tokenizer)}' huggingface tokenizer is not supported"
     )
 
 

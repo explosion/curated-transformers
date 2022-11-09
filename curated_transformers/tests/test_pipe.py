@@ -155,7 +155,7 @@ def evaluate_tagger_on_train_data(model):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize(
     "cfg_string",
     [cfg_string_last_layer_listener, cfg_string_scalar_weighting_layer_listener],
@@ -207,7 +207,7 @@ def _hf_tokenize_per_token(tokenizer, docs, *, roberta=False):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_bert_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_bert_transformer_model_v1(
@@ -245,7 +245,7 @@ def test_bert_transformer_pipe_against_hf():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_camembert_transformer_pipe_against_hf():
     nlp = spacy.blank("fr")
     model = build_camembert_transformer_model_v1(
@@ -283,7 +283,7 @@ def test_camembert_transformer_pipe_against_hf():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_roberta_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_roberta_transformer_model_v1(
@@ -321,7 +321,7 @@ def test_roberta_transformer_pipe_against_hf():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_xlmr_transformer_pipe_against_hf():
     nlp = spacy.blank("en")
     model = build_xlmr_transformer_model_v1(
@@ -359,7 +359,7 @@ def test_xlmr_transformer_pipe_against_hf():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_frozen_transformer_pipe():
     config = Config().from_str(cfg_string_scalar_weighting_layer_listener)
     nlp = util.load_model_from_config(config, auto_fill=True, validate=True)
@@ -396,7 +396,7 @@ def test_frozen_transformer_pipe():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_transformer_pipe_outputs():
     nlp = spacy.blank("en")
     model = build_xlmr_transformer_model_v1(

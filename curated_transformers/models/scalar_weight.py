@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable, Any
+from typing import List, Tuple, Callable
 from thinc.layers.pytorchwrapper import PyTorchWrapper_v2
 from thinc.model import Model
 from thinc.types import ArgsKwargs, Ragged
@@ -10,6 +10,7 @@ from torch.nn import Module
 from spacy.util import SimpleFrozenDict
 
 from ..util import all_equal
+from .types import ScalarWeightInT, ScalarWeightOutT, ScalarWeightModelT
 
 
 # From syntaxdot:
@@ -60,7 +61,7 @@ def build_scalar_weight_v1(
     dropout_prob: float = 0.1,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Ragged], Ragged]:
+) -> ScalarWeightModelT:
     if isinstance(grad_scaler_config, SimpleFrozenDict):
         # Create a new, mutable dict instance.
         grad_scaler_config = {}
@@ -85,7 +86,7 @@ def build_scalar_weight_v1(
 
 
 def _convert_inputs(
-    model: Model, X: List[Ragged], is_train: bool = False
+    model: Model, X: ScalarWeightInT, is_train: bool = False
 ) -> Tuple[ArgsKwargs, Callable[[ArgsKwargs], List[Ragged]]]:
     ops = model.ops
     layer_hidden_sizes = [x.data.shape[1] for x in X]
@@ -114,8 +115,8 @@ def _convert_inputs(
 
 
 def _convert_outputs(
-    model: Model, inputs_outputs: Tuple[Any, Any], is_train: bool
-) -> Tuple[Any, Callable[[Ragged], ArgsKwargs]]:
+    model: Model, inputs_outputs: Tuple[ScalarWeightInT, Tensor], is_train: bool
+) -> Tuple[ScalarWeightOutT, Callable[[Ragged], ArgsKwargs]]:
     X, Yt = inputs_outputs
     Y = Ragged(torch2xp(Yt, ops=model.ops), lengths=X[0].lengths)
 

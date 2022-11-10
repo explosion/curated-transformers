@@ -1,15 +1,17 @@
-from typing import List, Optional, Tuple, Iterator, Callable, Any
+from typing import List, Optional, Tuple, Iterator, Any
 from dataclasses import dataclass
 from collections import Counter
 
-from spacy.tokens import Doc, Token
+from spacy.tokens import Doc
 from thinc.api import Model, Ragged
 
-from .output import TransformerModelOutput
-
-InT = List[Doc]
-OutT = TransformerModelOutput
-InnerInT = List[List[Token]]
+from .types import (
+    WsTokenAdapterInT,
+    WsTokenAdapterOutT,
+    WsTokenAdapterBackpropT,
+    WsTokenAdapterModelT,
+)
+from ..tokenization.types import Tok2PiecesInT
 
 
 @dataclass
@@ -49,14 +51,16 @@ class Alignment:
         return iter(self.tokens)
 
 
-def with_non_ws_tokens(layer: Model[InnerInT, OutT]) -> Model[InT, OutT]:
+def with_non_ws_tokens(
+    layer: Model[Tok2PiecesInT, WsTokenAdapterOutT]
+) -> WsTokenAdapterModelT:
     return Model("with_non_ws_tokens", forward, init=init, layers=[layer])
 
 
 def forward(
-    model: Model, X: InT, is_train: bool
-) -> Tuple[OutT, Callable[[List[List[Ragged]]], Any]]:
-    inner: Model[InnerInT, OutT] = model.layers[0]
+    model: Model, X: WsTokenAdapterInT, is_train: bool
+) -> Tuple[WsTokenAdapterOutT, WsTokenAdapterBackpropT]:
+    inner: Model[Tok2PiecesInT, WsTokenAdapterOutT] = model.layers[0]
     tokens, ws_counts = _filter_tokens(X)
     Y_no_ws, backprop_no_ws = inner(tokens, is_train)
 
@@ -77,15 +81,15 @@ def forward(
 
 
 def init(
-    model: Model[InT, OutT],
-    X: Optional[InT] = None,
-    Y: Optional[OutT] = None,
+    model: WsTokenAdapterModelT,
+    X: Optional[WsTokenAdapterInT] = None,
+    Y: Optional[WsTokenAdapterInT] = None,
 ) -> None:
     model.layers[0].initialize(X=_filter_tokens(X)[0] if X is not None else None, Y=Y)
 
 
 def _create_alignments(
-    model: Model, output: OutT, ws_counts: List[Counter]
+    model: Model, output: WsTokenAdapterOutT, ws_counts: List[Counter]
 ) -> List[Alignment]:
     """Create an alignment between whitespace and non-whitespace sequences."""
     alignments = []
@@ -137,7 +141,7 @@ def _create_alignments(
     return alignments
 
 
-def _filter_tokens(docs: List[Doc]) -> Tuple[InnerInT, List[Counter]]:
+def _filter_tokens(docs: List[Doc]) -> Tuple[Tok2PiecesInT, List[Counter]]:
     """Filter out whitespace tokens. Returns the non-whitespace tokens
     and a mapping from the (non-whitespace) token offset to the number
     of whitespaces that preceded the token."""
@@ -159,7 +163,9 @@ def _filter_tokens(docs: List[Doc]) -> Tuple[InnerInT, List[Counter]]:
     return tokens, ws_counts
 
 
-def _add_whitespace_tokens(model: Model, Y_no_ws: OutT, alignments: List[Alignment]):
+def _add_whitespace_tokens(
+    model: Model, Y_no_ws: WsTokenAdapterOutT, alignments: List[Alignment]
+):
     """Add stub representations for whitespace tokens."""
     for Y_doc, doc_alignment in zip(Y_no_ws.all_outputs, alignments):
         if doc_alignment.has_no_whitespace:

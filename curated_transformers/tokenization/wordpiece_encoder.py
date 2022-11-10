@@ -1,9 +1,15 @@
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 from pathlib import Path
 
 from cutlery import WordPieceProcessor
-from spacy.tokens import Doc
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
+
+from .types import (
+    Tok2PiecesBackpropT,
+    Tok2PiecesInT,
+    Tok2PiecesModelT,
+    Tok2PiecesOutT,
+)
 
 
 @serialize_attr.register(WordPieceProcessor)
@@ -20,7 +26,7 @@ def deserialize_my_custom_class(
     return WordPieceProcessor(value.decode("utf8").split("\n"))
 
 
-def build_wordpiece_encoder() -> Model[List[Doc], List[Ragged]]:
+def build_wordpiece_encoder() -> Tok2PiecesModelT:
     return Model(
         "wordpiece_encoder",
         forward=wordpiece_encoder_forward,
@@ -34,8 +40,8 @@ def build_wordpiece_encoder() -> Model[List[Doc], List[Ragged]]:
 
 
 def wordpiece_encoder_forward(
-    model: Model, X: List[Doc], is_train: bool
-) -> Tuple[List[Ragged], Callable[[Any], Any]]:
+    model: Model, X: Tok2PiecesInT, is_train: bool
+) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:
     wpp: WordPieceProcessor = model.attrs["wordpiece_processor"]
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
@@ -75,12 +81,10 @@ def wordpiece_encoder_forward(
 def build_wordpiece_encoder_loader_v1(
     *, path: Path
 ) -> Callable[
-    [Model[List[Doc], List[Ragged]], Optional[List[Doc]], Any],
-    Model[List[Doc], List[Ragged]],
+    [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
+    Tok2PiecesModelT,
 ]:
-    def load(
-        model: Model[List[Doc], List[Ragged]], X: List[Doc] = None, Y=None
-    ) -> Model[List[Doc], List[Ragged]]:
+    def load(model, X=None, Y=None):
         model.attrs["wordpiece_processor"] = WordPieceProcessor.from_file(str(path))
         return model
 

@@ -1,3 +1,5 @@
+import torch
+
 from torch import nn
 from typing import Sequence
 from collections import OrderedDict
@@ -48,7 +50,7 @@ class Residual(nn.Module):
         self.layer = layer
         self.rezero = rezero
         if rezero:
-            self.alpha = nn.Parameter(0.0)
+            self.alpha = nn.Parameter(torch.tensor(0.0))
 
     def forward(self, X):
         if self.rezero:

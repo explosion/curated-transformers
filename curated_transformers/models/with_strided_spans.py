@@ -1,27 +1,29 @@
-from typing import Callable, List, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union, cast
 from functools import partial
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d, Ints1d
 
 from .output import TransformerModelOutput
-
-# In case of a single list, each element corresponds to a single document/span.
-# For nested lists, each inner list corresponds to a single document/span.
-RaggedInOutT = Union[List[Ragged], List[List[Ragged]]]
-Floats2dInOutT = Union[List[Floats2d], List[List[Floats2d]]]
+from .types import (
+    RaggedInOutT,
+    Floats2dInOutT,
+    SpanExtractorBackpropT,
+    SpanExtractorInT,
+    SpanExtractorOutT,
+    SpanExtractorModelT,
+    TorchTransformerInT,
+    TorchTransformerModelT,
+)
 
 
 def build_with_strided_spans_v1(
     stride: int = 96, window: int = 128
-) -> Callable[
-    [Model[List[Ints1d], TransformerModelOutput], int, int],
-    Model[List[Ragged], TransformerModelOutput],
-]:
+) -> Callable[[TorchTransformerModelT, int, int], SpanExtractorModelT]:
     return partial(with_strided_spans, stride=stride, window=window)
 
 
 def with_strided_spans(
-    layer: Model[List[Ints1d], TransformerModelOutput],
+    trf_model: TorchTransformerModelT,
     *,
     stride: int = 96,
     window: int = 128,
@@ -39,12 +41,16 @@ def with_strided_spans(
         "with_strided_spans",
         with_strided_spans_forward,
         init=with_strided_spans_init,
-        layers=[layer],
+        layers=[trf_model],
         attrs=attrs,
     )
 
 
-def with_strided_spans_init(model: Model, X: List[Ragged], Y: List[Ragged]):
+def with_strided_spans_init(
+    model: SpanExtractorModelT,
+    X: Optional[SpanExtractorInT],
+    Y: Optional[SpanExtractorInT],
+):
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 
@@ -62,10 +68,11 @@ def with_strided_spans_init(model: Model, X: List[Ragged], Y: List[Ragged]):
 
 
 def with_strided_spans_forward(
-    model: Model[List[Ragged], TransformerModelOutput],
-    X: List[Ragged],
+    model: SpanExtractorModelT,
+    X: SpanExtractorInT,
     is_train: bool,
-) -> Tuple[TransformerModelOutput, Callable[[RaggedInOutT], RaggedInOutT]]:
+) -> Tuple[SpanExtractorOutT, SpanExtractorBackpropT]:
+    transformer: TorchTransformerModelT = model.layers[0]
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
 
@@ -73,9 +80,11 @@ def with_strided_spans_forward(
     # Calculate once and use for all layer outputs.
     doc_len_sums = [int(x.sum()) for x in doc_lens]
 
-    Y_layer, backprop_layer = model.layers[0](spans, is_train=is_train)
-    if not isinstance(Y_layer, TransformerModelOutput):
-        raise ValueError(f"Unsupported input of type '{type(Y_layer)}'")
+    trf_output, bp_trf = transformer(
+        cast(TorchTransformerInT, spans), is_train=is_train
+    )
+    if not isinstance(trf_output, TransformerModelOutput):
+        raise ValueError(f"Unsupported input of type '{type(trf_output)}'")
 
     # Suppose we have:
     #
@@ -87,7 +96,7 @@ def with_strided_spans_forward(
     # ensure that there is no drift in representations, we
     # average them in both representations.
     _apply_to_overlaps(
-        Y_layer.all_outputs,
+        trf_output.all_outputs,
         doc_len_sums,
         stride=stride,
         window=window,
@@ -95,9 +104,9 @@ def with_strided_spans_forward(
     )
 
     model_output = _strided_arrays_to_ragged(
-        model, Y_layer.all_outputs, doc_lens, doc_len_sums, stride=stride
+        model, trf_output.all_outputs, doc_lens, doc_len_sums, stride=stride
     )
-    Y_layer.all_outputs = model_output
+    trf_output.all_outputs = model_output
 
     def backprop(dY: RaggedInOutT):
         dY_spans, dY_lengths = _ragged_to_strided_arrays(
@@ -116,12 +125,12 @@ def with_strided_spans_forward(
             func=_normalize_gradients,
         )
 
-        dXlf = backprop_layer(dY_spans)
+        dXlf = bp_trf(dY_spans)
         return _strided_arrays_to_ragged(
             model, dXlf, dY_lengths, dY_length_sums, stride=stride
         )
 
-    return Y_layer, backprop
+    return trf_output, backprop
 
 
 def _apply_to_overlaps(
@@ -130,12 +139,12 @@ def _apply_to_overlaps(
     *,
     stride: int,
     window: int,
-    func: Callable,
+    func: Callable[[Any, Any], None],
 ):
     """Average representations of overlapping windows. This function
     modifies the arrays in Xlf in-place."""
 
-    def _apply_to_layer(input: List[Floats2d]):
+    def _apply_to_layer(input: Union[Tuple[Floats2d], List[Floats2d]]):
         for doc_len in len_sums:
             prev_overlap = None
             while doc_len != 0:

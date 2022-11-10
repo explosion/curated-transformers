@@ -1,10 +1,16 @@
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 from pathlib import Path
 
 from cutlery import ByteBPEProcessor
-from spacy.tokens import Doc
 import srsly
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
+
+from .types import (
+    Tok2PiecesBackpropT,
+    Tok2PiecesInT,
+    Tok2PiecesModelT,
+    Tok2PiecesOutT,
+)
 
 
 @serialize_attr.register(ByteBPEProcessor)
@@ -21,7 +27,7 @@ def deserialize_byte_bpe_processor(
     return ByteBPEProcessor(data["vocab"], data["merges"])
 
 
-def build_byte_bpe_encoder() -> Model[List[Doc], List[Ragged]]:
+def build_byte_bpe_encoder() -> Tok2PiecesModelT:
     return Model(
         "byte_bpe_encoder",
         forward=byte_bpe_encoder_forward,
@@ -35,8 +41,8 @@ def build_byte_bpe_encoder() -> Model[List[Doc], List[Ragged]]:
 
 
 def byte_bpe_encoder_forward(
-    model: Model, X: List[Doc], is_train: bool
-) -> Tuple[List[Ragged], Callable[[Any], Any]]:
+    model: Model, X: Tok2PiecesInT, is_train: bool
+) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:
     bbp: ByteBPEProcessor = model.attrs["byte_bpe_processor"]
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
@@ -86,12 +92,10 @@ def byte_bpe_encoder_forward(
 def build_byte_bpe_encoder_loader_v1(
     *, vocab_path: Path, merges_path: Path
 ) -> Callable[
-    [Model[List[Doc], List[Ragged]], Optional[List[Doc]], Any],
-    Model[List[Doc], List[Ragged]],
+    [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
+    Tok2PiecesModelT,
 ]:
-    def load(
-        model: Model[List[Doc], List[Ragged]], X: Optional[List[Doc]] = None, Y=None
-    ) -> Model[List[Doc], List[Ragged]]:
+    def load(model, X=None, Y=None):
         model.attrs["byte_bpe_processor"] = ByteBPEProcessor.load_from_files(
             vocab=vocab_path, merges=merges_path
         )

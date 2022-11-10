@@ -1,7 +1,13 @@
-from typing import Any, Callable, List, Tuple
+from typing import Tuple
 from functools import lru_cache
 
 from thinc.api import Model, Ragged
+
+from .types import (
+    PieceAdapterBackpropT,
+    PieceAdapterInOutT,
+    PieceAdapterModelT,
+)
 
 _FAIRSEQ_OFFSET = 1
 _CAMEMBERT_FAIRSEQ_OFFSET = 4
@@ -30,7 +36,7 @@ def _update_to_fairseq_vectorized(xp):
     return xp.vectorize(_update_to_fairseq)
 
 
-def build_xlmr_adapter() -> Model[List[Ragged], List[Ragged]]:
+def build_xlmr_adapter() -> PieceAdapterModelT:
     return Model(
         "xlmr_adapter",
         forward=xlmr_adapter_forward,
@@ -38,8 +44,8 @@ def build_xlmr_adapter() -> Model[List[Ragged], List[Ragged]]:
 
 
 def xlmr_adapter_forward(
-    model: Model, X: List[Ragged], is_train: bool
-) -> Tuple[List[Ragged], Callable[[Any], Any]]:
+    model: Model, X: PieceAdapterInOutT, is_train: bool
+) -> Tuple[PieceAdapterInOutT, PieceAdapterBackpropT]:
     # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []
@@ -54,7 +60,7 @@ def xlmr_adapter_forward(
     return X_xlmr, lambda dY: []
 
 
-def _camembert_update_to_fairseq(piece_id: int):
+def _camembert_update_to_fairseq(piece_id: int) -> int:
     if piece_id == _SPP_UNK:
         return _FAIRSEQ_UNK
     else:
@@ -66,7 +72,7 @@ def _camembert_update_to_fairseq_vectorized(xp):
     return xp.vectorize(_camembert_update_to_fairseq)
 
 
-def build_camembert_adapter() -> Model[List[Ragged], List[Ragged]]:
+def build_camembert_adapter() -> PieceAdapterModelT:
     return Model(
         "camembert_adapter",
         forward=camembert_adapter_forward,
@@ -74,8 +80,8 @@ def build_camembert_adapter() -> Model[List[Ragged], List[Ragged]]:
 
 
 def camembert_adapter_forward(
-    model: Model, X: List[Ragged], is_train: bool
-) -> Tuple[List[Ragged], Callable[[Any], Any]]:
+    model: Model, X: PieceAdapterInOutT, is_train: bool
+) -> Tuple[PieceAdapterInOutT, PieceAdapterBackpropT]:
     # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _camembert_update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []

@@ -1,17 +1,20 @@
-from typing import List
+from typing import Callable, List, Optional
 from spacy.tokens import Doc
-from thinc.api import Model
 
 from .._compat import transformers, has_hf_transformers
 from .hf_util import convert_hf_pretrained_model_parameters
+from .types import TorchTransformerModelT
 
 
 def build_hf_encoder_loader_v1(
     *,
     name: str,
     revision: str = "main",
-):
-    def load(model: Model, X: List[Doc] = None, Y=None) -> Model:
+) -> Callable[
+    [TorchTransformerModelT, Optional[List[Doc]], Optional[List[Doc]]],
+    TorchTransformerModelT,
+]:
+    def load(model, X=None, Y=None):
         if not has_hf_transformers:
             raise ValueError("requires huggingface transformers")
 

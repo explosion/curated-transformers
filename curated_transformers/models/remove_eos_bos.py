@@ -1,25 +1,28 @@
-from typing import List, Union, Tuple, Callable
+from typing import List, Tuple
 from thinc.api import Model, Ragged
 
 from .output import TransformerModelOutput
+from .types import (
+    SentMarkerRemoverInOutT,
+    SentMarkerRemoverBackpropT,
+    SentMarkerRemoverModelT,
+    RaggedInOutT,
+)
 
 
-BackpropInOutT = Union[List[Ragged], List[List[Ragged]]]
-
-
-def remove_bos_eos() -> Model[TransformerModelOutput, TransformerModelOutput]:
+def remove_bos_eos() -> SentMarkerRemoverModelT:
     return Model("remove_bos_eos", remove_bos_eos_forward)
 
 
 def remove_bos_eos_forward(
-    model: Model, X: TransformerModelOutput, is_train: bool
-) -> Tuple[TransformerModelOutput, Callable[[BackpropInOutT], BackpropInOutT]]:
+    model: Model, X: SentMarkerRemoverInOutT, is_train: bool
+) -> Tuple[SentMarkerRemoverInOutT, SentMarkerRemoverBackpropT]:
     if not isinstance(X, TransformerModelOutput):
         raise ValueError(f"Unsupported input of type '{type(X)}'")
 
     X.all_outputs = [[Xr[1:-1] for Xr in inner] for inner in X.all_outputs]
 
-    def backprop(dY: BackpropInOutT) -> BackpropInOutT:
+    def backprop(dY: RaggedInOutT) -> RaggedInOutT:
         # Pass-through dY, but add zero gradient for the special bos/eos
         # tokens.
 

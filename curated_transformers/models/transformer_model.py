@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable, Any
+from typing import List, Optional, Tuple, Callable, Any
 from pathlib import Path
 from functools import partial
 from spacy.tokens import Doc
@@ -13,14 +13,14 @@ from thinc.api import (
 from thinc.layers import chain
 from thinc.model import Model
 from thinc.shims.pytorch_grad_scaler import PyTorchGradScaler
-from thinc.types import ArgsKwargs, Floats2d, Ints1d, Ragged
+from thinc.types import ArgsKwargs, Floats2d, Ints1d
 import torch
 
 
 from .hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
 from .albert import AlbertConfig, AlbertEncoder
 from .bert import BertConfig, BertEncoder
-from .output import TransformerModelOutput
+from .output import TransformerModelOutput, PyTorchTransformerOutput
 from .remove_eos_bos import remove_bos_eos
 from .roberta import RobertaConfig, RobertaEncoder
 from .torchscript_wrapper import TorchScriptWrapper_v1
@@ -32,14 +32,25 @@ from ..tokenization.sentencepiece_adapters import (
 )
 from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
+from ..tokenization.types import Tok2PiecesModelT, PieceAdapterModelT
+from .types import (
+    TorchTransformerInT,
+    TorchTransformerModelT,
+    TorchTransformerOutT,
+    TransformerBackpropT,
+    TransformerInT,
+    TransformerOutT,
+    TransformerModelT,
+    SpanExtractorModelT,
+)
 
 
 def build_albert_transformer_model_v1(
     *,
     vocab_size: int,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.0,
     embedding_size=128,
@@ -58,7 +69,7 @@ def build_albert_transformer_model_v1(
     torchscript: bool = False,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Doc], TransformerModelOutput]:
+) -> TransformerModelT:
     config = AlbertConfig(
         embedding_size=embedding_size,
         hidden_size=hidden_size,
@@ -102,8 +113,8 @@ def build_bert_transformer_model_v1(
     *,
     vocab_size: int,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
@@ -120,7 +131,7 @@ def build_bert_transformer_model_v1(
     torchscript: bool = False,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Doc], TransformerModelOutput]:
+) -> TransformerModelT:
     config = BertConfig(
         hidden_size=hidden_size,
         intermediate_size=intermediate_size,
@@ -162,8 +173,8 @@ def build_camembert_transformer_model_v1(
     *,
     vocab_size: int,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
@@ -178,7 +189,7 @@ def build_camembert_transformer_model_v1(
     padding_idx: int = 1,
     type_vocab_size: int = 1,
     torchscript=False,
-) -> Model[List[Doc], TransformerModelOutput]:
+) -> TransformerModelT:
     piece_adapter = build_camembert_adapter()
 
     config = RobertaConfig(
@@ -219,8 +230,8 @@ def build_roberta_transformer_model_v1(
     *,
     vocab_size: int,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
@@ -237,7 +248,7 @@ def build_roberta_transformer_model_v1(
     torchscript: bool = False,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Doc], TransformerModelOutput]:
+) -> TransformerModelT:
     config = RobertaConfig(
         hidden_size=hidden_size,
         intermediate_size=intermediate_size,
@@ -279,8 +290,8 @@ def build_xlmr_transformer_model_v1(
     *,
     vocab_size: int,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
@@ -297,7 +308,7 @@ def build_xlmr_transformer_model_v1(
     torchscript: bool = False,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Doc], TransformerModelOutput]:
+) -> TransformerModelT:
     piece_adapter = build_xlmr_adapter()
 
     config = RobertaConfig(
@@ -341,13 +352,13 @@ def build_xlmr_transformer_model_v1(
 def build_transformer_model_v1(
     *,
     with_spans: Callable[
-        [Model[List[Ints1d], TransformerModelOutput]],
-        Model[List[Ragged], TransformerModelOutput],
+        [TorchTransformerModelT],
+        SpanExtractorModelT,
     ],
-    transformer: Model[List[Ints1d], TransformerModelOutput],
-    piece_encoder: Model[List[Doc], List[Ragged]],
-    piece_adapter: Model[List[Ragged], List[Ragged]] = None,
-) -> Model[List[Doc], TransformerModelOutput]:
+    transformer: TransformerModelT,
+    piece_encoder: Tok2PiecesModelT,
+    piece_adapter: PieceAdapterModelT = None,
+) -> TransformerModelT:
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?
     if piece_adapter:
@@ -385,8 +396,8 @@ def build_transformer_model_v1(
 
 
 def transformer_model_forward(
-    model: Model, docs: List[Doc], is_train: bool
-) -> Tuple[TransformerModelOutput, Callable[[List[List[Floats2d]]], Any]]:
+    model: TransformerModelT, docs: TransformerInT, is_train: bool
+) -> Tuple[TransformerOutT, TransformerBackpropT]:
     Y, backprop_layer = model.layers[0](docs, is_train=is_train)
 
     def backprop(dY):
@@ -399,7 +410,9 @@ def transformer_model_forward(
     return Y, backprop
 
 
-def transformer_model_init(model: Model, X: List[Doc] = None, Y=None) -> Model:
+def transformer_model_init(
+    model: TransformerModelT, X: Optional[TransformerInT] = None, Y=None
+) -> Model:
     model.layers[0].initialize(X, Y)
     return model
 
@@ -409,7 +422,7 @@ def _pytorch_encoder(
     *,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
-) -> Model[List[Ints1d], TransformerModelOutput]:
+) -> TorchTransformerModelT:
     if isinstance(grad_scaler_config, SimpleFrozenDict):
         # Crate a new, mutable dict instance.
         grad_scaler_config = {}
@@ -448,7 +461,7 @@ def _torchscript_encoder(*, model_max_length: int, padding_idx: int) -> Model:
 
 def _convert_inputs(
     model: Model,
-    X: List[Ints1d],
+    X: TorchTransformerInT,
     is_train: bool,
     *,
     max_model_seq_len: int,
@@ -478,8 +491,10 @@ def _convert_inputs(
 
 
 def _convert_outputs(
-    model: Model, inputs_outputs: Tuple[Any, Any], is_train: bool
-) -> Tuple[TransformerModelOutput, Callable[[List[List[Floats2d]]], ArgsKwargs]]:
+    model: Model,
+    inputs_outputs: Tuple[TorchTransformerInT, PyTorchTransformerOutput],
+    is_train: bool,
+) -> Tuple[TorchTransformerOutT, Callable[[List[List[Floats2d]]], ArgsKwargs]]:
     model_inputs, model_outputs = inputs_outputs
     ops = model.ops
     all_layer_outputs: bool = model.attrs["_all_layer_outputs"]
@@ -524,13 +539,17 @@ def _replace_listener_cfg(trf_model_cfg, listener_model_cfg):
 
 def build_pytorch_checkpoint_loader_v1(
     *, path: Path
-) -> Callable[[Model, List[Doc]], Any]:
-    def load(model: Model, X: List[Doc] = None, Y=None):
+) -> Callable[
+    [TorchTransformerModelT, Optional[List[Doc]], Optional[List[Doc]]],
+    TorchTransformerModelT,
+]:
+    def load(model, X=None, Y=None):
         encoder = model.shims[0]._model
         device = get_torch_default_device()
         params = torch.load(path, map_location=device)
         params = convert_pretrained_model_for_encoder(encoder, params)
         encoder.load_state_dict(params)
         encoder.to(device)
+        return model
 
     return load

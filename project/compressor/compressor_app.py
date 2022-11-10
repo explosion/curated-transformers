@@ -22,8 +22,14 @@ def load_model(config):
     compress_size = int(original_size / ratio)
     if model_config["type"] == "autoencoder":
         num_hidden = model_config["num_hidden"]
-        hidden_dims = np.linspace(original_size, compress_size, num_hidden + 2)
-        hidden_dims = [int(x) for x in hidden_dims[1:-1]]
+        residual = model_config["residual"]
+        if residual:
+            hidden_dims = [original_size for _ in range(num_hidden)]
+        else:
+            hidden_dims = np.linspace(
+                original_size, compress_size, num_hidden + 2
+            )
+            hidden_dims = [int(x) for x in hidden_dims[1:-1]]
         model = make_autoencoder(
             activation=model_config["activation"],
             in_dim=original_size,
@@ -48,7 +54,7 @@ def load_model(config):
 
 @app.command()
 def init_config(
-    data_path: str,
+    transformer: str,
     config_path: str,
     model_type: str
 ):
@@ -67,7 +73,7 @@ def init_config(
     else:
         raise NotImplementedError
     loader_config = {
-        "path": data_path,
+        "path": transformer,
         "batch_size": 512,
     }
     optimizer_config = {
@@ -99,16 +105,18 @@ def init_config(
 
 @app.command()
 def compress(
-    data_path: str,
     config_path: str,
     out_path: str
 ):
     config = srsly.read_yaml(config_path)
-    model = load_model(config)
     model_type = config["model"]["type"]
-    path = config["loader"]["path"]
+    transformer = config["loader"]["transformer"]
     batch_size = config["loader"]["batch_size"]
-    loader = make_loader(model_type, path, batch_size)
+    loader = make_loader(transformer, model_type, batch_size)
+    num_embeddings, embedding_dim = loader.dataset.vectors.shape
+    config["model"]["num_embeddings"] = num_embeddings
+    config["model"]["original_size"] = embedding_dim
+    model = load_model(config)
     learning_rate = config["optimizer"]["learning_rate"]
     weight_decay = config["optimizer"]["weight_decay"]
     optimizer = AdamW(

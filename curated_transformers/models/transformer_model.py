@@ -335,12 +335,21 @@ def build_transformer_model_v1(
     #        is it always the same post-processing?
     if piece_adapter:
         layers = [
-            with_non_ws_tokens(chain(
-                piece_encoder, piece_adapter, with_spans(transformer), remove_bos_eos()
-            ))
+            with_non_ws_tokens(
+                chain(
+                    piece_encoder,
+                    piece_adapter,
+                    with_spans(transformer),
+                    remove_bos_eos(),
+                )
+            )
         ]
     else:
-        layers = [with_non_ws_tokens(chain(piece_encoder, with_spans(transformer), remove_bos_eos()))]
+        layers = [
+            with_non_ws_tokens(
+                chain(piece_encoder, with_spans(transformer), remove_bos_eos())
+            )
+        ]
     refs = {
         "piece_encoder": piece_encoder,
         "transformer": transformer,
@@ -351,6 +360,10 @@ def build_transformer_model_v1(
         init=transformer_model_init,
         layers=layers,
         refs=refs,
+        attrs={
+            "replace_listener": _replace_listener,
+            "replace_listener_cfg": _replace_listener_cfg,
+        },
     )
 
 
@@ -477,6 +490,14 @@ def _convert_outputs(model, inputs_outputs, is_train):
         )
 
     return output, convert_for_torch_backward
+
+
+def _replace_listener(trf_model):
+    raise ValueError("Listener replacement is not currently supported")
+
+
+def _replace_listener_cfg(trf_model_cfg, listener_model_cfg):
+    raise ValueError("Listener replacement is not currently supported")
 
 
 def build_pytorch_checkpoint_loader_v1(*, path: Path):

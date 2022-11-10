@@ -27,10 +27,7 @@ def whiten(X: Floats2d) -> Floats2d:
 
 NORMALIZERS = {
     "zscore": zscore,
-    "z-score": zscore,
-    "l2": l2norm,
     "l2norm": l2norm,
-    "l2-norm": l2norm
 }
 
 
@@ -39,43 +36,47 @@ class Vectors(Dataset):
         self,
         vectors: Floats2d,
         *,
-        normalizer: Callable[Floats2d, Floats2d],
-        return_idx: bool = False
+        normalizer: Callable[[Floats2d], Floats2d] = None,
     ):
         if normalizer:
             vectors = normalizer(vectors)
         self.vectors = vectors
 
     def __len__(self):
-        return self.vectors.shape[1]
+        return self.vectors.shape[0]
 
     def __getitem__(self, idx):
-        return self.vectors, idx
+        mat = torch.tensor(self.vectors[idx], dtype=torch.float32)
+        idx = torch.tensor(idx)
+        return mat, idx
 
 
 def collate_autoencoder(batch) -> torch.Tensor:
-    matrix, idx = batch
-    return torch.as_tensor(matrix), torch.as_tensor(matrix)
+    matrices, _ = zip(*batch)
+    X = torch.stack(matrices, 0)
+    return X, X
 
 
 def collate_twinembedding(batch):
-    matrix, idx = batch
-    return torch.as_tensor(idx), torch.as_tensor(matrix)
+    matrices, idx = zip(*batch)
+    X = torch.stack(matrices, 0)
+    return torch.as_tensor(idx), X
 
 
 def make_loader(
     model_type: str,
     path: str,
     batch_size: int,
-    normalizer: Callable[Floats2d, Floats2d] = None
+    normalizer: Callable[[Floats2d], Floats2d] = None
 ) -> DataLoader:
     X = np.load(path)
     assert X.ndim == 2
-    if normalizer is not None and normalizer not in NORMALIZERS:
-        raise ValueError(f"Could not find normalizer {normalizer}")
-    else:
-        normalizer = NORMALIZERS[normalizer]
-    data = Vectors(X, normalizer)
+    if normalizer is not None:
+        if normalizer not in NORMALIZERS:
+            raise ValueError(f"Could not find normalizer {normalizer}")
+        else:
+            normalizer = NORMALIZERS[normalizer]
+    data = Vectors(X, normalizer=normalizer)
     if model_type == "autoencoder":
         loader = DataLoader(
             data,

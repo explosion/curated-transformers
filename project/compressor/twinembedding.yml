@@ -1,0 +1,21 @@
+model:
+  type: twinembedding
+  original_size: 300
+  ratio: 2
+  num_embeddings: 50000
+loader:
+  path: test.npy
+  batch_size: 512
+  normalizer: null
+optimizer:
+  learning_rate: 0.01
+  weight_decay: 0.01
+scheduler:
+  factor: 0.1
+  patience: 2
+loss:
+  type: mse
+  reduction: mean
+training:
+  epochs: 100
+  patience: 5

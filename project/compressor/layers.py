@@ -1,5 +1,6 @@
 from torch import nn
-from typing import List
+from typing import Sequence
+from collections import OrderedDict
 
 
 ACTIVATIONS = {
@@ -22,18 +23,22 @@ def make_layer(
     """
     Make a Residual Linear + Activation layer with a potential LayerNorm.
     """
-    stack = []
+    stack = OrderedDict()
     linear = nn.Linear(nI, nO)
-    stack.append(Residual(linear, rezero))
-    stack.append(act)
+    residual = nI == nO
+    if residual:
+        stack["residual"] = Residual(linear, rezero=rezero)
+    else:
+        stack["dense"] = linear
+    stack["activation"] = act
     if norm:
-        layernorm = nn.LayerNorm(nI)
-        stack.append(layernorm)
+        stack["norm"] = nn.LayerNorm(nO)
     return nn.Sequential(stack)
 
 
 class Residual(nn.Module):
     def __init__(self, layer: nn.Module, *, rezero: bool = False):
+        super(Residual, self).__init__()
         self.layer = layer
         self.rezero = rezero
         if rezero:
@@ -53,10 +58,11 @@ class MLP(nn.Module):
         in_dim: int,
         out_dim: int,
         normalize: bool = True,
-        hidden_dims: List[int] = [],
+        hidden_dims: Sequence[int] = [],
         *,
         rezero: bool = False
     ):
+        super(MLP, self).__init__()
         self.depth = len(hidden_dims) + 1
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -67,25 +73,27 @@ class MLP(nn.Module):
                 in_dim, out_dim, activation, normalize, rezero=rezero
             )
         else:
-            stack = []
+            stack = OrderedDict()
             input_layer = make_layer(
                 in_dim, hidden_dims[0], activation, normalize, rezero=rezero
             )
             output_layer = make_layer(
                 hidden_dims[-1], out_dim, activation, normalize, rezero=rezero
             )
-            stack.append(input_layer)
+            stack["input"] = input_layer
             if self.depth > 2:
-                nI = self.in_dim
-                for i in range(0, len(hidden_dims)):
+                nI = hidden_dims[0]
+                for i in range(1, len(hidden_dims)):
                     nO = hidden_dims[i]
                     layer = make_layer(
                         nI, nO, activation, normalize, rezero=rezero
                     )
                     nI = nO
-                    stack.append(layer)
-            stack.append(output_layer)
+                    stack[f"hidden_{i+1}"] = layer
+            stack["output"] = output_layer
+            print(stack)
             self.network = nn.Sequential(stack)
+            print(self.network)
 
     def forward(self, X):
         assert X.ndim == 2
@@ -100,6 +108,7 @@ class AutoEncoder(nn.Module):
     as encoder and a single layer linear decoder.
     """
     def __init__(self, encoder: MLP):
+        super(AutoEncoder, self).__init__()
         self.encoder = encoder
         self.decoder = nn.Linear(encoder.out_dim, encoder.in_dim)
 
@@ -109,14 +118,19 @@ class AutoEncoder(nn.Module):
     def forward(self, X):
         return self.decoder(self.encoder(X))
 
+    @property
+    def compressed_size(self):
+        return self.encoder.out_dim
 
-class TwinEmbeddings:
+
+class TwinEmbeddings(nn.Module):
     """
     An embedding table coupled with a linear layer.
     It allows to train embeddings that mimic another
     embedding table.
     """
     def __init__(self, num_embeddings, embedding_dim, out_dim):
+        super(TwinEmbeddings, self).__init__()
         self.embeddings = nn.Embedding(num_embeddings, embedding_dim)
         self.decoder = nn.Linear(embedding_dim, out_dim)
 
@@ -125,3 +139,7 @@ class TwinEmbeddings:
 
     def forward(self, idx):
         return self.decoder(self.embeddings(idx))
+
+    @property
+    def compressed_size(self):
+        return self.embedding_dim

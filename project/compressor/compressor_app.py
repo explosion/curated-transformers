@@ -69,7 +69,6 @@ def init_config(
     loader_config = {
         "path": data_path,
         "batch_size": 512,
-        "normalizer": None
     }
     optimizer_config = {
         "learning_rate": 0.001,
@@ -109,8 +108,7 @@ def compress(
     model_type = config["model"]["type"]
     path = config["loader"]["path"]
     batch_size = config["loader"]["batch_size"]
-    normalizer = config["loader"]["normalizer"]
-    loader = make_loader(model_type, path, batch_size, normalizer)
+    loader = make_loader(model_type, path, batch_size)
     learning_rate = config["optimizer"]["learning_rate"]
     weight_decay = config["optimizer"]["weight_decay"]
     optimizer = AdamW(

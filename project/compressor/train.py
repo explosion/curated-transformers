@@ -48,8 +48,18 @@ def training_loop(
     the entire training set the model gets saved and the
     previous checkpoint is deleted.
     """
+    def eval():
+        total_loss = 0
+        with torch.no_grad():
+            for i, batch in enumerate(data):
+                X, Y = batch
+                Y_hat = model(X)
+                total_loss += loss_fn(Y_hat, Y)
+        return total_loss / i
+
     no_improve = 0
     best_loss = float("inf")
+    print(f"Starting loss: {eval()}")
     for epoch in range(epochs):
         if no_improve == patience:
             break
@@ -60,28 +70,23 @@ def training_loop(
             X, Y = batch
             Y_hat = model(X)
             loss = loss_fn(Y_hat, Y)
-            pbar.set_description(f"Step {step}, loss: {loss}")
+            pbar.set_description(f"Loss: {loss}")
             loss.backward()
             optimizer.step()
         model.eval()
-        total_loss = 0
-        with torch.no_grad():
-            for i, batch in enumerate(data):
-                X, Y = batch
-                Y_hat = model(X)
-                total_loss += loss_fn(Y_hat, Y)
-            mean_loss = total_loss / i
-            if not mean_loss < best_loss:
-                no_improve += 1
-                print(f"No improvement, loss on full data: {mean_loss}")
+        mean_loss = eval()
+        if not mean_loss < best_loss:
+            no_improve += 1
+            print(f"No improvement, loss on full data: {mean_loss}")
+        else:
+            no_improve = 0
+            best_loss = mean_loss
+            print(f"Best loss on full data achieved: {mean_loss}")
+            print("Saving model")
+            if save_path.exists():
+                shutil.rmtree(save_path)
+                serialize(model, data, save_path)
             else:
-                best_loss = mean_loss
-                print(f"Best loss on full data achieved: {mean_loss}")
-                print("Saving model")
-                if save_path.exists():
-                    shutil.rmtree(save_path)
-                    serialize(model, data, save_path)
-                else:
-                    serialize(model, data, save_path)
-            scheduler.step(mean_loss)
+                serialize(model, data, save_path)
+        scheduler.step(mean_loss)
     return model

@@ -12,6 +12,12 @@ ACTIVATIONS = {
 }
 
 
+def init_layer(layer: nn.Module):
+    if isinstance(layer, nn.Linear):
+        nn.init.xavier_uniform(layer.weight)
+        layer.bias.data.fill_(0.01)
+
+
 def make_layer(
     nI: int,
     nO: int,
@@ -91,9 +97,8 @@ class MLP(nn.Module):
                     nI = nO
                     stack[f"hidden_{i+1}"] = layer
             stack["output"] = output_layer
-            print(stack)
             self.network = nn.Sequential(stack)
-            print(self.network)
+            self.network.apply(init_layer)
 
     def forward(self, X):
         assert X.ndim == 2

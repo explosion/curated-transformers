@@ -1,9 +1,20 @@
-import numpy as np
 import torch
 
-from typing import Callable
 from thinc.types import Floats2d
 from torch.utils.data import Dataset, DataLoader
+from transformers import AutoModel
+
+
+def get_embedding(name):
+    """
+    Take the (sub)word embeddings of huggingface
+    transformers as long as they are in
+    model.embeddings.word_embeddings
+    """
+    hf_model = AutoModel.from_pretrained(name)
+    embedding_tensor = hf_model.embeddings.word_embeddings.weight
+    embedding_matrix = embedding_tensor.detach().numpy()
+    return embedding_matrix
 
 
 class Vectors(Dataset):
@@ -35,11 +46,11 @@ def collate_twinembedding(batch):
 
 
 def make_loader(
+    transformer: str,
     model_type: str,
-    path: str,
     batch_size: int,
 ) -> DataLoader:
-    X = np.load(path)
+    X = get_embedding(transformer)
     assert X.ndim == 2
     data = Vectors(X)
     if model_type == "autoencoder":

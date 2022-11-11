@@ -18,7 +18,7 @@ class BertEncoder(Module):
     ):
         super().__init__()
 
-        self.embeddings = BertEmbeddings(config.embedding)
+        self.embeddings = BertEmbeddings(config.embedding, config.layer)
         self.padding_idx = config.padding_idx
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(

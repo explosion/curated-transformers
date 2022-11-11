@@ -17,7 +17,7 @@ class RobertaEncoder(Module):
         super().__init__()
 
         self.embeddings = RobertaEmbeddings(
-            config.embedding, padding_idx=config.padding_idx
+            config.embedding, config.layer, padding_idx=config.padding_idx
         )
         self.padding_idx = config.padding_idx
         self.max_seq_len = config.model_max_length

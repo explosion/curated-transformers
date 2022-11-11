@@ -123,8 +123,12 @@ def _convert_albert_base_state(
     out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
 
     # Embedding projection
-    out["projection.weight"] = params["encoder.embedding_hidden_mapping_in.weight"]
-    out["projection.bias"] = params["encoder.embedding_hidden_mapping_in.bias"]
+    out["embeddings.projection.weight"] = params[
+        "encoder.embedding_hidden_mapping_in.weight"
+    ]
+    out["embeddings.projection.bias"] = params[
+        "encoder.embedding_hidden_mapping_in.bias"
+    ]
 
     return _merge_qkv_albert(out)
 

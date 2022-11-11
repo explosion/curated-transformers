@@ -27,10 +27,7 @@ class AlbertEncoder(Module):
                 f"Number of hidden layers ({self.num_hidden_layers}) must be divisable by number of hidden groups ({num_hidden_groups})"
             )
 
-        self.embeddings = BertEmbeddings(config.embedding)
-        self.projection = Linear(
-            config.embedding.embedding_dim, config.layer.hidden_size
-        )
+        self.embeddings = BertEmbeddings(config.embedding, config.layer)
 
         # Parameters are shared by groups of layers.
         self.groups = torch.nn.ModuleList(
@@ -62,7 +59,6 @@ class AlbertEncoder(Module):
             attention_mask = self._create_attention_mask(input_ids)
 
         embeddings = self.embeddings(input_ids, token_type_ids, None)
-        embeddings = self.projection(embeddings)
         layer_output = embeddings
 
         layers_per_group = self.num_hidden_layers // len(self.groups)

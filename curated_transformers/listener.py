@@ -207,7 +207,8 @@ def scalar_weighting_listener_forward(
     grad_factor: float = model.attrs["grad_factor"]
 
     invalid_outputs_err_msg = (
-        "Scalar layer weighting requires all transformer layer outputs to function"
+        "Scalar layer weighting requires all transformer layer outputs to function - "
+        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
     )
 
     outputs = []

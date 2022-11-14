@@ -8,7 +8,7 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from model import make_autoencoder, make_twinembeddings
-from data import make_loader
+from data import make_transformer_loader
 from train import make_loss, training_loop
 
 
@@ -104,18 +104,21 @@ def init_config(
 
 
 @app.command()
-def compress(
+def compress_transformer(
     config_path: str,
     out_path: str
 ):
     config = srsly.read_yaml(config_path)
     model_type = config["model"]["type"]
+    if model_type != "autoencoder":
+        raise NotImplementedError(
+            "Transformer embedding compression, currently"
+            "only works with the autoencoder"
+        )
     transformer = config["loader"]["transformer"]
     batch_size = config["loader"]["batch_size"]
-    loader = make_loader(transformer, model_type, batch_size)
-    num_embeddings, embedding_dim = loader.dataset.vectors.shape
-    config["model"]["num_embeddings"] = num_embeddings
-    config["model"]["original_size"] = embedding_dim
+    loader = make_transformer_loader(transformer, batch_size)
+    config["model"]["original_size"] = loader.dim
     model = load_model(config)
     learning_rate = config["optimizer"]["learning_rate"]
     weight_decay = config["optimizer"]["weight_decay"]
@@ -145,6 +148,22 @@ def compress(
         scheduler,
         out_path
     )
+
+
+@app.command()
+def compress_spacy(
+    config_path,
+    out_path
+):
+    print("Future command for compressing spaCy vectors.")
+
+
+@app.command()
+def compress_vectors(
+    config_path,
+    out_path
+):
+    print("Future command for compressing other vectors.")
 
 
 if __name__ == "__main__":

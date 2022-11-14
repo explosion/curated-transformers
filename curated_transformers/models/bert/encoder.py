@@ -34,7 +34,7 @@ class BertEncoder(Module):
     def forward(
         self,
         input_ids: Tensor,
-        attention_mask: Optional[Tensor] = None,
+        attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> PyTorchTransformerOutput:
         """

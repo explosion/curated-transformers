@@ -1,4 +1,4 @@
-from typing import List, Set, Iterable
+from typing import Any, List, Set, Iterable
 import itertools
 import thinc
 
@@ -38,8 +38,8 @@ def batch_by_length(seqs, max_words: int) -> List[List[int]]:
     return batches
 
 
-def all_equal(iterable: Iterable) -> bool:
+def all_equal(iterable: Iterable[Any]) -> bool:
     """Return True if all the elements are equal to each other
     (or if the input is an empty sequence), False otherwise."""
     g = itertools.groupby(iterable)
-    return next(g, True) and not next(g, False)
+    return next(g, True) and not next(g, False)  # type: ignore

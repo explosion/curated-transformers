@@ -106,7 +106,7 @@ def with_strided_spans_forward(
     model_output = _strided_arrays_to_ragged(
         model, trf_output.all_outputs, doc_lens, doc_len_sums, stride=stride
     )
-    trf_output.all_outputs = model_output
+    trf_output.all_outputs = cast(List[List[Ragged]], model_output)
 
     def backprop(dY: RaggedInOutT):
         dY_spans, dY_lengths = _ragged_to_strided_arrays(
@@ -144,7 +144,7 @@ def _apply_to_overlaps(
     """Average representations of overlapping windows. This function
     modifies the arrays in Xlf in-place."""
 
-    def _apply_to_layer(input: Union[Tuple[Floats2d], List[Floats2d]]):
+    def _apply_to_layer(input: Union[Tuple[Floats2d, ...], List[Floats2d]]):
         for doc_len in len_sums:
             prev_overlap = None
             while doc_len != 0:
@@ -170,9 +170,11 @@ def _apply_to_overlaps(
         return
 
     if isinstance(Xlf[0], list):
-        _apply_to_layers(Xlf)
+        nested_list = cast(List[List[Floats2d]], Xlf)
+        _apply_to_layers(nested_list)
     else:
-        _apply_to_layer(Xlf)
+        flat_tuple = cast(Tuple[Floats2d, ...], Xlf)
+        _apply_to_layer(flat_tuple)
 
 
 def _average_arrays(array1, array2):
@@ -193,10 +195,10 @@ def _ragged_to_strided_arrays(
     all the input documents."""
 
     def _apply_to_layer(
-        input: Union[Tuple[Ragged], List[Ragged]], output: List[Floats2d]
+        input: Union[Tuple[Ragged, ...], List[Ragged]], output: List[Floats2d]
     ):
         for Xr in input:
-            data = Xr.dataXd
+            data = cast(Floats2d, Xr.dataXd)
             while data.shape[0] != 0:
                 output.append(data[:window])
                 data = data[stride:]
@@ -204,7 +206,7 @@ def _ragged_to_strided_arrays(
     def _apply_to_layers(input: List[List[Ragged]]):
         # Transpose input to reconstruct strides across all documents.
         transposed = list(zip(*Xlr))
-        spans = [[] for _ in range(len(transposed))]
+        spans: List[List[Floats2d]] = [[] for _ in range(len(transposed))]
         lens = [x.lengths for x in transposed[0]]
         for x, y in zip(transposed, spans):
             _apply_to_layer(x, y)
@@ -216,12 +218,14 @@ def _ragged_to_strided_arrays(
     if isinstance(Xlr[0], list):
         # Gradients in the backward pass.
         # Shape of spans: (span, layer)
-        return _apply_to_layers(Xlr)
+        nested_list = cast(List[List[Ragged]], Xlr)
+        return _apply_to_layers(nested_list)
     else:
         # Inputs in the forward pass.
-        spans = []
-        lens = [x.lengths for x in Xlr]
-        _apply_to_layer(Xlr, spans)
+        flat_list = cast(List[Ragged], Xlr)
+        spans: List[Floats2d] = []
+        lens = [x.lengths for x in flat_list]
+        _apply_to_layer(flat_list, spans)
         return spans, lens
 
 
@@ -236,7 +240,7 @@ def _strided_arrays_to_ragged(
     """Inverse operation of _ragged_to_strided_arrays."""
 
     def _apply_to_layer(
-        input: Union[Tuple[Floats2d], List[Floats2d]], output: List[Ragged]
+        input: Union[Tuple[Floats2d, ...], List[Floats2d]], output: List[Ragged]
     ):
         for doc_len, Xr_lens in zip(len_sums, lens):
             arrs = []
@@ -250,7 +254,7 @@ def _strided_arrays_to_ragged(
     def _apply_to_layers(input: List[List[Floats2d]]):
         # Transpose input to reconstruct strides across all documents.
         transposed = list(zip(*input))
-        Xlr = [[] for _ in range(len(transposed))]
+        Xlr: List[List[Ragged]] = [[] for _ in range(len(transposed))]
         for x, y in zip(transposed, Xlr):
             _apply_to_layer(x, y)
 
@@ -260,9 +264,11 @@ def _strided_arrays_to_ragged(
 
     if isinstance(Xlf[0], list):
         # Transformer output in forward pass.
-        return _apply_to_layers(Xlf)
+        nested_list = cast(List[List[Floats2d]], Xlf)
+        return _apply_to_layers(nested_list)
     else:
         # Gradient from torch in backward pass.
-        Xlr = []
-        _apply_to_layer(Xlf, Xlr)
+        flat_tuple = cast(Tuple[Floats2d, ...], Xlf)
+        Xlr: List[Ragged] = []
+        _apply_to_layer(flat_tuple, Xlr)
         return Xlr

@@ -1,6 +1,6 @@
 from typing import Callable, Optional, Tuple
 from pathlib import Path
-from cutlery import SentencePieceProcessor
+from cutlery import SentencePieceProcessor  # type: ignore
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
 
 from .types import (

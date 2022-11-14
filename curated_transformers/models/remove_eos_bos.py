@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, cast
 from thinc.api import Model, Ragged
 
 from .output import TransformerModelOutput
@@ -41,16 +41,19 @@ def remove_bos_eos_forward(
 
         def _apply_to_layers(input: List[List[Ragged]], output: List[List[Ragged]]):
             for inner_dY in input:
-                inner_dX = []
+                inner_dX: List[Ragged] = []
                 _apply_to_layer(inner_dY, inner_dX)
                 output.append(inner_dX)
 
-        dX = []
         if isinstance(dY[0], list):
-            _apply_to_layers(dY, dX)
+            nested_list = cast(List[List[Ragged]], dY)
+            dX_nested: List[List[Ragged]] = []
+            _apply_to_layers(nested_list, dX_nested)
+            return dX_nested
         else:
-            _apply_to_layer(dY, dX)
-
-        return dX
+            flat_list = cast(List[Ragged], dY)
+            dX_flat: List[Ragged] = []
+            _apply_to_layer(flat_list, dX_flat)
+            return dX_flat
 
     return X, backprop

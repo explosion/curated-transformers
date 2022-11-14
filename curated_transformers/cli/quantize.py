@@ -11,8 +11,8 @@ from torch.nn import Embedding, Linear, Module, MSELoss
 from torch.quantization import qconfig
 from typer import Argument as Arg, Option
 
-from ..models.torchscript_wrapper import to_torchscript_wrapper
-from ..pipe import Transformer
+from ..models.torchscript_wrapper import to_torchscript_wrapper  # type: ignore
+from ..pipe import Transformer  # type: ignore
 
 
 MODULE_QUANTIZERS = {
@@ -101,7 +101,7 @@ def quantize_dynamic(
         quantize_types[Embedding] = MODULE_QUANTIZERS[Embedding]
 
     if not skip_linear:
-        quantize_types[Linear] = MODULE_QUANTIZERS[Linear]
+        quantize_types[Linear] = MODULE_QUANTIZERS[Linear]  # type: ignore
 
     quantized_model = torch.quantization.quantize_dynamic(
         pytorch_model,

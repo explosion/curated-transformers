@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 from io import BytesIO
-import srsly
+import srsly  # type: ignore
 from thinc.api import Model, PyTorchGradScaler, PyTorchShim, get_torch_default_device
 from thinc.layers.pytorchwrapper import convert_pytorch_default_inputs
 from thinc.layers.pytorchwrapper import convert_pytorch_default_outputs

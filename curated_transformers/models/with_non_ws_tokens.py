@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Iterator, Any
+from typing import List, Optional, Tuple, Iterator, Any, cast
 from dataclasses import dataclass
 from collections import Counter
 
@@ -149,7 +149,7 @@ def _filter_tokens(docs: List[Doc]) -> Tuple[Tok2PiecesInT, List[Counter]]:
     ws_counts = []
     for doc in docs:
         doc_tokens = []
-        doc_ws_counts = Counter()
+        doc_ws_counts: Counter = Counter()
         offset = 0
         for token in doc:
             if token.is_space:
@@ -178,6 +178,7 @@ def _add_whitespace_tokens(
 
             for alignment in doc_alignment:
                 if not alignment.is_whitespace:
+                    assert alignment.no_ws_piece_offset is not None
                     new_layer[
                         alignment.ws_piece_offset : alignment.ws_piece_offset
                         + alignment.n_pieces,
@@ -200,7 +201,7 @@ def _remove_whitespace_tokens(
         if doc_alignment.has_no_whitespace:
             continue
 
-        hidden_size = dY_doc[0].dataXd.shape[1]
+        hidden_size = cast(Tuple[int, ...], dY_doc[0].dataXd.shape)[1]
         for layer_idx, layer in enumerate(dY_doc):
             new_layer = model.ops.alloc2f(doc_alignment.no_ws_n_pieces, hidden_size)
             lengths = []
@@ -209,11 +210,12 @@ def _remove_whitespace_tokens(
                 if alignment.is_whitespace:
                     continue
 
-                new_layer[
+                assert alignment.no_ws_piece_offset is not None
+                new_layer[  # type: ignore
                     alignment.no_ws_piece_offset : alignment.no_ws_piece_offset
                     + alignment.n_pieces,
                     :,
-                ] = layer.dataXd[
+                ] = layer.dataXd[  # type: ignore
                     alignment.ws_piece_offset : alignment.ws_piece_offset
                     + alignment.n_pieces,
                     :,

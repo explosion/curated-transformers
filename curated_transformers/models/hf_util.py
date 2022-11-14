@@ -40,7 +40,7 @@ def convert_hf_pretrained_model_parameters(
 
     Returns the state_dict that can be directly loaded by our Transformer module.
     """
-    _check_supported_hf_models(hf_model.config.model_type)
+    _check_supported_hf_models(hf_model.config.model_type)  # type: ignore
 
     converters = {
         "albert": _convert_albert_base_state,
@@ -50,7 +50,7 @@ def convert_hf_pretrained_model_parameters(
         "xlm-roberta": _convert_roberta_base_state,
     }
 
-    return converters[hf_model.config.model_type](hf_model.state_dict())
+    return converters[hf_model.config.model_type](hf_model.state_dict())  # type: ignore
 
 
 def _rename_old_hf_names(
@@ -68,7 +68,7 @@ def _convert_albert_base_state(
     params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
     # Strip the `albert` prefix from ALBERT model parameters.
-    params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
+    stripped_params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
 
     # The ALBERT encoder parameters have the following form:
     #
@@ -78,7 +78,7 @@ def _convert_albert_base_state(
     # inner_layer is in [0, inner_group_num)
 
     out = {}
-    for name, parameter in params.items():
+    for name, parameter in stripped_params.items():
         if "encoder.albert_layer" not in name:
             continue
 
@@ -110,23 +110,23 @@ def _convert_albert_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = params[
+    out["embeddings.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = params[
+    out["embeddings.token_type_embeddings.weight"] = stripped_params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.position_embeddings.weight"] = params[
+    out["embeddings.position_embeddings.weight"] = stripped_params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
+    out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
+    out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
 
     # Embedding projection
-    out["embeddings.projection.weight"] = params[
+    out["embeddings.projection.weight"] = stripped_params[
         "encoder.embedding_hidden_mapping_in.weight"
     ]
-    out["embeddings.projection.bias"] = params[
+    out["embeddings.projection.bias"] = stripped_params[
         "encoder.embedding_hidden_mapping_in.bias"
     ]
 
@@ -139,9 +139,9 @@ def _convert_bert_base_state(
     out = {}
 
     # Strip the `bert` prefix from BERT model parameters.
-    params = {re.sub(r"^bert\.", "", k): v for k, v in params.items()}
+    stripped_params = {re.sub(r"^bert\.", "", k): v for k, v in params.items()}
 
-    for name, parameter in params.items():
+    for name, parameter in stripped_params.items():
         if "encoder.layer." not in name:
             continue
 
@@ -165,17 +165,17 @@ def _convert_bert_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = params[
+    out["embeddings.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = params[
+    out["embeddings.token_type_embeddings.weight"] = stripped_params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.position_embeddings.weight"] = params[
+    out["embeddings.position_embeddings.weight"] = stripped_params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
+    out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
+    out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
 
     return _merge_qkv(out)
 
@@ -186,9 +186,9 @@ def _convert_roberta_base_state(
     out = {}
 
     # Strip the `roberta` prefix from XLM-Roberta model parameters.
-    params = {re.sub(r"^roberta\.", "", k): v for k, v in params.items()}
+    stripped_params = {re.sub(r"^roberta\.", "", k): v for k, v in params.items()}
 
-    for name, parameter in params.items():
+    for name, parameter in stripped_params.items():
         if "encoder.layer." not in name:
             continue
 
@@ -212,22 +212,26 @@ def _convert_roberta_base_state(
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.inner.word_embeddings.weight"] = params[
+    out["embeddings.inner.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.inner.token_type_embeddings.weight"] = params[
+    out["embeddings.inner.token_type_embeddings.weight"] = stripped_params[
         "embeddings.token_type_embeddings.weight"
     ]
-    out["embeddings.inner.position_embeddings.weight"] = params[
+    out["embeddings.inner.position_embeddings.weight"] = stripped_params[
         "embeddings.position_embeddings.weight"
     ]
-    out["embeddings.inner.layer_norm.weight"] = params["embeddings.LayerNorm.weight"]
-    out["embeddings.inner.layer_norm.bias"] = params["embeddings.LayerNorm.bias"]
+    out["embeddings.inner.layer_norm.weight"] = stripped_params[
+        "embeddings.LayerNorm.weight"
+    ]
+    out["embeddings.inner.layer_norm.bias"] = stripped_params[
+        "embeddings.LayerNorm.bias"
+    ]
 
     return _merge_qkv(out)
 
 
-def _merge_qkv(params: OrderedDict[str, torch.Tensor]):
+def _merge_qkv(params: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     out = {}
     for name, parameter in params.items():
         m = re.match(
@@ -250,7 +254,7 @@ def _merge_qkv(params: OrderedDict[str, torch.Tensor]):
     return out
 
 
-def _merge_qkv_albert(params: OrderedDict[str, torch.Tensor]):
+def _merge_qkv_albert(params: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     out = {}
     for name, parameter in params.items():
         m = re.match(

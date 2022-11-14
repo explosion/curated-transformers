@@ -5,6 +5,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    cast,
 )
 
 from spacy import Errors
@@ -12,7 +13,7 @@ from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
-from .models.output import TransformerModelOutput
+from .models.output import DocTransformerOutput, TransformerModelOutput
 
 
 def build_last_transformer_layer_listener_v1(
@@ -131,6 +132,7 @@ def last_transformer_layer_listener_forward(
     if is_train:
         model.verify_inputs(docs)
         backprops = []
+        assert model._outputs is not None
         for output in model._outputs.last_hidden_layer_states:
             output, pooling_backprop = pooling(output, is_train)
             outputs.append(output)
@@ -212,6 +214,7 @@ def scalar_weighting_listener_forward(
 
     outputs = []
     if is_train:
+        assert model._outputs is not None
         if model._outputs.last_layer_only:
             raise ValueError(invalid_outputs_err_msg)
 
@@ -222,8 +225,8 @@ def scalar_weighting_listener_forward(
         outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
         for input in weighting_inputs:
             weighted_output, weighting_backprop = weighting(input, is_train)
-            output, pooling_backprop = pooling(weighted_output, is_train)
-            outputs.append(output)
+            output_pooling, pooling_backprop = pooling(weighted_output, is_train)
+            outputs.append(output_pooling)
             backprops.append((weighting_backprop, pooling_backprop))
 
         def backprop(dYs):
@@ -250,12 +253,12 @@ def scalar_weighting_listener_forward(
             if doc._.trf_data is None:
                 outputs.append(model.ops.alloc2f(len(doc), width))
             else:
-                if doc._.trf_data.last_layer_only:
+                trf_data = cast(DocTransformerOutput, doc._.trf_data)
+                if trf_data.last_layer_only:
                     raise ValueError(invalid_outputs_err_msg)
 
-                weighting_inputs = doc._.trf_data.all_outputs
-                output, _ = weighting(weighting_inputs, is_train)
-                output, _ = pooling(output, is_train)
-                outputs.append(output)
+                weighted_output, _ = weighting(trf_data.all_outputs, is_train)
+                pooling_output, _ = pooling(weighted_output, is_train)
+                outputs.append(pooling_output)
 
         return outputs, lambda dX: []

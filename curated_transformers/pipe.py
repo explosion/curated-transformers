@@ -188,10 +188,18 @@ class Transformer(TrainablePipe):
         if not any(len(doc) for doc in docs):
             # Handle cases where there are no tokens in any docs.
             width = self.model.get_dim("nO")
-            return [
-                Ragged(self.model.ops.alloc((0, width), self.model.ops.alloc1i(0)))
-                for doc in docs
-            ]
+            return TransformerModelOutput(
+                outputs=[
+                    [
+                        Ragged(
+                            data=self.model.ops.alloc2f(0, width),
+                            lengths=self.model.ops.alloc1i(0),
+                        )
+                    ]
+                    for _ in docs
+                ],
+                last_layer_only=True,
+            )
 
         # To ensure that the model's internal state is always consistent with the pipe's.
         self._set_model_all_layer_outputs(self.all_layer_outputs)
@@ -254,7 +262,7 @@ class Transformer(TrainablePipe):
             ]
 
         def accumulate_gradient(
-            one_d_outputs: List[List[Ragged]], *, outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
         ) -> None:
             """Accumulate tok2vec loss and gradient. This is passed as a callback
             to all but the last listener. Only the last one does the backprop.
@@ -263,23 +271,27 @@ class Transformer(TrainablePipe):
             the gradients are to be propagated.
             """
             nonlocal d_outputs
+            assert d_outputs is not None
+            assert losses is not None
             for i in range(len(one_d_outputs)):
                 for j in outputs_to_backprop:
                     d_outputs[i][j].data += one_d_outputs[i][j].data
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
         def accumulate_gradient_noop(
-            one_d_outputs: List[List[Ragged]], *, outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
         ) -> None:
+            assert losses is not None
             for i in range(len(one_d_outputs)):
                 for j in outputs_to_backprop:
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
         def backprop(
-            one_d_outputs: List[List[Ragged]], *, outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
         ) -> Any:
             """Callback to actually do the backprop. Passed to last listener."""
             nonlocal d_outputs
+            assert bp_outputs is not None
             accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
             d_docs = bp_outputs(d_outputs)
             if sgd is not None:
@@ -287,7 +299,7 @@ class Transformer(TrainablePipe):
             return d_docs
 
         def backprop_noop(
-            one_d_outputs: List[List[Ragged]], *, outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
         ) -> Any:
             accumulate_gradient_noop(
                 one_d_outputs, outputs_to_backprop=outputs_to_backprop
@@ -331,9 +343,9 @@ class Transformer(TrainablePipe):
         validate_get_examples(get_examples, "Transformer.initialize")
 
         if encoder_loader:
-            self.model.get_ref("transformer").init = encoder_loader
+            self.model.get_ref("transformer").init = encoder_loader  # type: ignore
         if piecer_loader:
-            self.model.get_ref("piece_encoder").init = piecer_loader
+            self.model.get_ref("piece_encoder").init = piecer_loader  # type: ignore
 
         doc_sample = []
         for example in islice(get_examples(), 10):

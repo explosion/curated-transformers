@@ -1,4 +1,4 @@
-from typing import List, Optional, TypeVar
+from typing import List, Optional, TypeVar, Generic
 from dataclasses import dataclass
 import torch
 from torch import Tensor
@@ -46,7 +46,7 @@ class PyTorchTransformerOutput:
 
 
 @dataclass
-class TransformerModelOutput:
+class TransformerModelOutput(Generic[TrfOutputT]):
     """Wrapper for PyTorchTransformerOutput consumed by downstream non-PyTorch components.
     Also acts as the accumulator for the outputs of subsequent models in the Transformer pipeline."""
 

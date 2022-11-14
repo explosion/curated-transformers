@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Callable, Any
+from typing import Dict, List, Mapping, Optional, Tuple, Callable, Any, cast
 from pathlib import Path
 from functools import partial
 from spacy.tokens import Doc
@@ -355,7 +355,7 @@ def build_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
-    transformer: TransformerModelT,
+    transformer: TorchTransformerModelT,
     piece_encoder: Tok2PiecesModelT,
     piece_adapter: PieceAdapterModelT = None,
 ) -> TransformerModelT:
@@ -387,7 +387,7 @@ def build_transformer_model_v1(
         transformer_model_forward,
         init=transformer_model_init,
         layers=layers,
-        refs=refs,
+        refs=refs,  # type: ignore
         attrs={
             "replace_listener": _replace_listener,
             "replace_listener_cfg": _replace_listener_cfg,
@@ -513,7 +513,9 @@ def _convert_outputs(
             for i, len in enumerate(input_lens)
         ]
 
-    Y = [[torch2xp(layer, ops=ops) for layer in output] for output in Yt]
+    Y = [
+        [cast(Floats2d, torch2xp(layer, ops=ops)) for layer in output] for output in Yt
+    ]
     output = TransformerModelOutput(outputs=Y, last_layer_only=not all_layer_outputs)
 
     def convert_for_torch_backward(dY: List[List[Floats2d]]):

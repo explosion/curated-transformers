@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, cast
 from thinc.layers.pytorchwrapper import PyTorchWrapper_v2
 from thinc.model import Model
 from thinc.types import ArgsKwargs, Ragged
@@ -95,18 +95,18 @@ def _convert_inputs(
             f"Not all hidden sizes are equal in input passed to scalar weight"
         )
 
-    Xt = ops.alloc3f(X[0].data.shape[0], len(X), X[0].data.shape[1])
+    Xops = ops.alloc3f(X[0].data.shape[0], len(X), X[0].data.shape[1])
     for i, layer in enumerate(X):
-        Xt[:, i, :] = layer.dataXd
-    Xt = xp2torch(Xt, requires_grad=True)
+        Xops[:, i, :] = layer.dataXd  # type: ignore
+    Xt = xp2torch(Xops, requires_grad=True)
 
     def convert_from_torch_backward(d_inputs: ArgsKwargs):
         # (seq, num_layers, hidden)
-        d_inputs: Tensor = d_inputs.args[0]
+        dt_inputs: Tensor = cast(Tensor, d_inputs.args[0])
 
         dX = []
-        for i in range(d_inputs.shape[1]):
-            dX_layer = d_inputs[:, i, :]
+        for i in range(dt_inputs.shape[1]):
+            dX_layer = dt_inputs[:, i, :]
             dX.append(Ragged(data=torch2xp(dX_layer, ops=ops), lengths=X[0].lengths))
         return dX
 

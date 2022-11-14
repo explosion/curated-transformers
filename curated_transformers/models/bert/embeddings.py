@@ -30,7 +30,7 @@ class BertEmbeddings(Module):
                 embedding_config.embedding_dim, layer_config.hidden_size
             )
         else:
-            self.projection = None
+            self.projection = None  # type: ignore
 
         self.layer_norm = LayerNorm(
             embedding_config.embedding_dim, eps=embedding_config.layer_norm_eps

@@ -18,6 +18,15 @@ def build_hf_piece_encoder_loader_v1(
     [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
     Tok2PiecesModelT,
 ]:
+    """Construct a callback that initializes a HuggingFace piece encoder
+    model. Used in conjunction with the HuggingFace model loader.
+
+    name (str):
+        Name of the HuggingFace model.
+    revision (str):
+        Name of the model revision/branch.
+    """
+
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
             raise ValueError("requires transformers package")

@@ -27,6 +27,13 @@ def deserialize_my_custom_class(
 
 
 def build_wordpiece_encoder() -> Tok2PiecesModelT:
+    """Construct a WordPiece piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
     return Model(
         "wordpiece_encoder",
         forward=wordpiece_encoder_forward,
@@ -84,6 +91,13 @@ def build_wordpiece_encoder_loader_v1(
     [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
     Tok2PiecesModelT,
 ]:
+    """Construct a callback that initializes a WordPiece piece encoder
+    model.
+
+    path (Path):
+        Path to the serialized WordPiece model.
+    """
+
     def load(model, X=None, Y=None):
         model.attrs["wordpiece_processor"] = WordPieceProcessor.from_file(str(path))
         return model

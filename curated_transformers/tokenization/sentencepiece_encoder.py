@@ -26,6 +26,13 @@ def deserialize_my_custom_class(
 
 
 def build_sentencepiece_encoder() -> Tok2PiecesModelT:
+    """Construct a SentencePiece piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
     return Model(
         "sentencepiece_encoder",
         forward=sentencepiece_encoder_forward,
@@ -69,6 +76,13 @@ def build_sentencepiece_encoder_loader_v1(
     [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
     Tok2PiecesModelT,
 ]:
+    """Construct a callback that initializes a SentencePiece piece encoder
+    model.
+
+    path (Path):
+        Path to the serialized SentencePiece model.
+    """
+
     def load(model, X=None, Y=None):
         model.attrs["sentencepiece_processor"] = SentencePieceProcessor.from_file(
             str(path)

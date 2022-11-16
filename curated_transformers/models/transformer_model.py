@@ -53,7 +53,7 @@ def build_albert_transformer_model_v1(
         SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.0,
-    embedding_size=128,
+    embedding_size: int = 128,
     hidden_act: str = "gelu_new",
     hidden_dropout_prob: float = 0.0,
     hidden_size: int = 768,
@@ -70,6 +70,49 @@ def build_albert_transformer_model_v1(
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TransformerModelT:
+    """Construct an ALBERT transformer model.
+
+    vocab_size (int):
+        Vocabulary size.
+    with_spans (Callable):
+        Callback that constructs a span generator model.
+    attention_probs_dropout_prob (float):
+        Dropout probabilty of the self-attention layers.
+    embedding_size (int):
+        Width of the embedding representations.
+    hidden_act (str):
+        Activation used by the point-wise feed-forward layers.
+    hidden_dropout_prob (float):
+        Dropout probabilty of the point-wise feed-forward and
+        embedding layers.
+    hidden_size (int):
+        Width of the final representations.
+    intermediate_size (int):
+        Size of the intermediate projection layer in the
+        point-wise feed-forward layer.
+    layer_norm_eps (float):
+        Epsilon for layer normalization.
+    max_position_embeddings (int):
+        Maximum length of position embeddings.
+    model_max_length (int):
+        Maximum length of model inputs.
+    num_attention_heads (int):
+        Number of self-attention heads.
+    num_hidden_groups (int):
+        Number of layer groups whose constituents share parameters.
+    num_hidden_layers (int):
+        Number of hidden layers.
+    padding_idx (int):
+        Index of the padding meta-token.
+    type_vocab_size (int):
+        Type vocabulary size.
+    torchscript (bool):
+        Set to `True` when loading TorchScript models, `False` otherwise.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     config = AlbertConfig(
         embedding_size=embedding_size,
         hidden_size=hidden_size,
@@ -132,6 +175,45 @@ def build_bert_transformer_model_v1(
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TransformerModelT:
+    """Construct a BERT transformer model.
+
+    vocab_size (int):
+        Vocabulary size.
+    with_spans (Callable):
+        Callback that constructs a span generator model.
+    attention_probs_dropout_prob (float):
+        Dropout probabilty of the self-attention layers.
+    hidden_act (str):
+        Activation used by the point-wise feed-forward layers.
+    hidden_dropout_prob (float):
+        Dropout probabilty of the point-wise feed-forward and
+        embedding layers.
+    hidden_size (int):
+        Width of the final representations.
+    intermediate_size (int):
+        Size of the intermediate projection layer in the
+        point-wise feed-forward layer.
+    layer_norm_eps (float):
+        Epsilon for layer normalization.
+    max_position_embeddings (int):
+        Maximum length of position embeddings.
+    model_max_length (int):
+        Maximum length of model inputs.
+    num_attention_heads (int):
+        Number of self-attention heads.
+    num_hidden_layers (int):
+        Number of hidden layers.
+    padding_idx (int):
+        Index of the padding meta-token.
+    type_vocab_size (int):
+        Type vocabulary size.
+    torchscript (bool):
+        Set to `True` when loading TorchScript models, `False` otherwise.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     config = BertConfig(
         hidden_size=hidden_size,
         intermediate_size=intermediate_size,
@@ -190,6 +272,45 @@ def build_camembert_transformer_model_v1(
     type_vocab_size: int = 1,
     torchscript=False,
 ) -> TransformerModelT:
+    """Construct a CamemBERT transformer model.
+
+    vocab_size (int):
+        Vocabulary size.
+    with_spans (Callable):
+        Callback that constructs a span generator model.
+    attention_probs_dropout_prob (float):
+        Dropout probabilty of the self-attention layers.
+    hidden_act (str):
+        Activation used by the point-wise feed-forward layers.
+    hidden_dropout_prob (float):
+        Dropout probabilty of the point-wise feed-forward and
+        embedding layers.
+    hidden_size (int):
+        Width of the final representations.
+    intermediate_size (int):
+        Size of the intermediate projection layer in the
+        point-wise feed-forward layer.
+    layer_norm_eps (float):
+        Epsilon for layer normalization.
+    max_position_embeddings (int):
+        Maximum length of position embeddings.
+    model_max_length (int):
+        Maximum length of model inputs.
+    num_attention_heads (int):
+        Number of self-attention heads.
+    num_hidden_layers (int):
+        Number of hidden layers.
+    padding_idx (int):
+        Index of the padding meta-token.
+    type_vocab_size (int):
+        Type vocabulary size.
+    torchscript (bool):
+        Set to `True` when loading TorchScript models, `False` otherwise.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     piece_adapter = build_camembert_adapter()
 
     config = RobertaConfig(
@@ -249,6 +370,45 @@ def build_roberta_transformer_model_v1(
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TransformerModelT:
+    """Construct a RoBERTa transformer model.
+
+    vocab_size (int):
+        Vocabulary size.
+    with_spans (Callable):
+        Callback that constructs a span generator model.
+    attention_probs_dropout_prob (float):
+        Dropout probabilty of the self-attention layers.
+    hidden_act (str):
+        Activation used by the point-wise feed-forward layers.
+    hidden_dropout_prob (float):
+        Dropout probabilty of the point-wise feed-forward and
+        embedding layers.
+    hidden_size (int):
+        Width of the final representations.
+    intermediate_size (int):
+        Size of the intermediate projection layer in the
+        point-wise feed-forward layer.
+    layer_norm_eps (float):
+        Epsilon for layer normalization.
+    max_position_embeddings (int):
+        Maximum length of position embeddings.
+    model_max_length (int):
+        Maximum length of model inputs.
+    num_attention_heads (int):
+        Number of self-attention heads.
+    num_hidden_layers (int):
+        Number of hidden layers.
+    padding_idx (int):
+        Index of the padding meta-token.
+    type_vocab_size (int):
+        Type vocabulary size.
+    torchscript (bool):
+        Set to `True` when loading TorchScript models, `False` otherwise.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     config = RobertaConfig(
         hidden_size=hidden_size,
         intermediate_size=intermediate_size,
@@ -309,6 +469,45 @@ def build_xlmr_transformer_model_v1(
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TransformerModelT:
+    """Construct a XLM-RoBERTa transformer model.
+
+    vocab_size (int):
+        Vocabulary size.
+    with_spans (Callable):
+        Callback that constructs a span generator model.
+    attention_probs_dropout_prob (float):
+        Dropout probabilty of the self-attention layers.
+    hidden_act (str):
+        Activation used by the point-wise feed-forward layers.
+    hidden_dropout_prob (float):
+        Dropout probabilty of the point-wise feed-forward and
+        embedding layers.
+    hidden_size (int):
+        Width of the final representations.
+    intermediate_size (int):
+        Size of the intermediate projection layer in the
+        point-wise feed-forward layer.
+    layer_norm_eps (float):
+        Epsilon for layer normalization.
+    max_position_embeddings (int):
+        Maximum length of position embeddings.
+    model_max_length (int):
+        Maximum length of model inputs.
+    num_attention_heads (int):
+        Number of self-attention heads.
+    num_hidden_layers (int):
+        Number of hidden layers.
+    padding_idx (int):
+        Index of the padding meta-token.
+    type_vocab_size (int):
+        Type vocabulary size.
+    torchscript (bool):
+        Set to `True` when loading TorchScript models, `False` otherwise.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     piece_adapter = build_xlmr_adapter()
 
     config = RobertaConfig(
@@ -545,6 +744,13 @@ def build_pytorch_checkpoint_loader_v1(
     [TorchTransformerModelT, Optional[List[Doc]], Optional[List[Doc]]],
     TorchTransformerModelT,
 ]:
+    """Construct a callback that initializes a supported transformer
+    model with weights from a PyTorch checkpoint.
+
+    path (Path):
+        Path to the PyTorch checkpoint.
+    """
+
     def load(model, X=None, Y=None):
         encoder = model.shims[0]._model
         device = get_torch_default_device()

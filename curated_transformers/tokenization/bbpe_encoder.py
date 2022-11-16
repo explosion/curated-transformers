@@ -28,6 +28,13 @@ def deserialize_byte_bpe_processor(
 
 
 def build_byte_bpe_encoder() -> Tok2PiecesModelT:
+    """Construct a Byte-BPE piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
     return Model(
         "byte_bpe_encoder",
         forward=byte_bpe_encoder_forward,
@@ -95,6 +102,15 @@ def build_byte_bpe_encoder_loader_v1(
     [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
     Tok2PiecesModelT,
 ]:
+    """Construct a callback that initializes a Byte-BPE piece encoder
+    model.
+
+    vocab_path (Path):
+        Path to the vocabulary file.
+    merges_path (Path):
+        Path to the merges file.
+    """
+
     def load(model, X=None, Y=None):
         model.attrs["byte_bpe_processor"] = ByteBPEProcessor.load_from_files(
             vocab=vocab_path, merges=merges_path

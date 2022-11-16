@@ -14,6 +14,15 @@ def build_hf_encoder_loader_v1(
     [TorchTransformerModelT, Optional[List[Doc]], Optional[List[Doc]]],
     TorchTransformerModelT,
 ]:
+    """Construct a callback that initializes a supported transformer
+    model with weights from a corresponding HuggingFace model.
+
+    name (str):
+        Name of the HuggingFace model.
+    revision (str):
+        Name of the model revision/branch.
+    """
+
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
             raise ValueError("requires huggingface transformers")

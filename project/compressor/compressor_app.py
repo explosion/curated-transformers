@@ -1,15 +1,18 @@
 import typer
 import srsly
-
+import spacy
+import torch
 import numpy as np
 
 from spacy.util import ensure_path
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
 from model import make_autoencoder, make_twinembeddings
 from data import make_transformer_loader
 from train import make_loss, training_loop
+from layers import ProjectedBertEmbeddings
 
 
 app = typer.Typer()
@@ -115,9 +118,21 @@ def compress_transformer(
             "Transformer embedding compression, currently"
             "only works with the autoencoder"
         )
-    transformer = config["loader"]["transformer"]
+    if "huggingface" in config["loader"]:
+        transformer = config["loader"]["hf-transformer"]
+        source = "hf"
+    elif "curated-transformers" in config["loader"]:
+        transformer = config["loader"]["curated-transformers"]
+        source = "curated"
+    else:
+        raise NotImplementedError(
+            "Can only load transformer from curated-transformers "
+            "and hf-transformers. Please put one of these strings "
+            "as keys in the 'loader' section."
+        )
+
     batch_size = config["loader"]["batch_size"]
-    loader = make_transformer_loader(transformer, batch_size)
+    loader = make_transformer_loader(transformer, batch_size, source=source)
     config["model"]["original_size"] = loader.dim
     model = load_model(config)
     learning_rate = config["optimizer"]["learning_rate"]
@@ -151,11 +166,47 @@ def compress_transformer(
 
 
 @app.command()
+def stitch_curated_transformer(
+    model_path: str,
+    embedding_path: str,
+    output_path: str
+):
+    model_path = ensure_path(model_path)
+    embedding_path = ensure_path(embedding_path)
+    output_path = ensure_path(output_path)
+    nlp = spacy.load(model_path)
+    new_embedding = ProjectedBertEmbeddings(
+        np.load(embedding_path / "word_pieces.npy"),
+        np.load(embedding_path / "positional.npy"),
+        np.load(embedding_path / "token_type.npy"),
+        np.load(embedding_path / "weights.npy"),
+        np.load(embedding_path / "bias.npy")
+    )
+    trf_pipe = nlp.get_pipe("transformer")
+    trf_model = trf_pipe.model.get_ref("transformer")
+    trf_pytorch = trf_model.shims[0]._model
+    if isinstance(trf_pytorch.embeddings, RobertaEmbeddings):
+        trf_pytorch.embeddings.inner = new_embedding
+    else:
+        trf_pytorch.embeddings = new_embedding
+    nlp.to_disk(output_path)
+
+
+@app.command()
 def compress_spacy(
     config_path,
     out_path
 ):
-    print("Future command for compressing spaCy vectors.")
+    print("future command for compressing spacy vectors.")
+
+
+@app.command()
+def stitch_spacy(
+    model_path: str,
+    embedding_path: str,
+    output_path: str
+):
+    ...
 
 
 @app.command()
@@ -164,6 +215,8 @@ def compress_vectors(
     out_path
 ):
     print("Future command for compressing other vectors.")
+
+
 
 
 if __name__ == "__main__":

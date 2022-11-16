@@ -48,7 +48,7 @@ def _encode_vectors(
         batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_fn
-    ),
+    )
     num_embeddings = len(data.dataset)
     emb = np.empty((num_embeddings, model.compressed_size))
     bottom = 0
@@ -60,10 +60,6 @@ def _encode_vectors(
     return emb
 
 
-def _encode_transformer(loader: TransformerLoader, model):
-    ...
-
-
 def serialize(
     model: Union[AutoEncoder, TwinEmbeddings],
     data: Union[DataLoader, TransformerLoader],
@@ -73,11 +69,12 @@ def serialize(
     Save compressed embeddings and linear decoder
     to disk as numpy arrays.
     """
+    path = ensure_path(path)
     os.mkdir(path)
     W = model.decoder.weight.detach().numpy()
     b = model.decoder.bias.detach().numpy()
-    np.save(ensure_path(path) / "weights", W)
-    np.save(ensure_path(path) / "bias", b)
+    np.save(path / "weights", W)
+    np.save(path / "bias", b)
     if isinstance(model, AutoEncoder):
         if isinstance(data, DataLoader):
             emb = _encode_vectors(

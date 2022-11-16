@@ -62,6 +62,18 @@ def build_scalar_weight_v1(
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> ScalarWeightModelT:
+    """Construct a model that accepts a list of transformer layer
+    outputs and returns a weighted representation of the same.
+
+    num_layers (int):
+        Number of transformer hidden layers.
+    dropout_prob (float):
+        Dropout probability.
+    mixed_precision (bool):
+        Use mixed-precision training.
+    grad_scaler_config (dict):
+        Configuration passed to the PyTorch gradient scaler.
+    """
     if isinstance(grad_scaler_config, SimpleFrozenDict):
         # Create a new, mutable dict instance.
         grad_scaler_config = {}

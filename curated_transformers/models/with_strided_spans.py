@@ -19,6 +19,14 @@ from .types import (
 def build_with_strided_spans_v1(
     stride: int = 96, window: int = 128
 ) -> Callable[[TorchTransformerModelT, int, int], SpanExtractorModelT]:
+    """Construct a model that can be used to convert a list of ragged
+    piece identifiers to strided spans and vice-versa.
+
+    stride (int):
+        The stride of the span generator.
+    window (int):
+        The (maximum) size of each span.
+    """
     return partial(with_strided_spans, stride=stride, window=window)
 
 

@@ -45,8 +45,6 @@ class ScaledDotProductAttention(Module):
         """
         Shapes:
             k, q, v, attn_mask - (batch, heads, seq, model_dim)
-
-        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
         """
 
         if attn_mask.dim() != 2:

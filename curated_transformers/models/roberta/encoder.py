@@ -39,11 +39,6 @@ class RobertaEncoder(Module):
         """
         Shapes:
             input_ids, token_type_ids - (batch, seq_len)
-
-        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
-
-        Returns a tuple of consisting of a list of tensors from each Transformer
-        layer and the sum of the input and positional embeddings.
         """
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input_ids)

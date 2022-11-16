@@ -51,8 +51,8 @@ class TransformerModelOutput(Generic[TrfOutputT]):
     Also acts as the accumulator for the outputs of subsequent models in the Transformer pipeline."""
 
     # Non-padded, un-stacked versions of the outputs.
-    # The outer list tracks Docs/spans and the inner
-    # list tracks the embedding + hidden layer outputs of each Doc/span.
+    # The outer list tracks Docs and the inner list
+    # tracks the embedding + hidden layer outputs of each Doc.
     #
     # The inner-most element is a Floats2d when returned by
     # the PyTorchWrapper transformer model, which are subsequently

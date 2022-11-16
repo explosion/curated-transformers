@@ -51,8 +51,6 @@ class BertSelfAttention(Module):
         Shapes:
             x - (batch, seq_len, model_dim)
             attn_mask - (batch, seq_len)
-
-        `attn_mask` indicates elements to attend to with `1` (and `0` otherwise)
         """
 
         proj = self.input(x)
@@ -123,9 +121,7 @@ class BertEncoderLayer(Module):
         """
         Shapes:
             x - (batch, seq_len, model_dim)
-            mask - (batch, seq_len)
-
-        `mask` indicates elements to be masked with values of `1`
+            attn_mask - (batch, seq_len)
         """
         attn_out = self.mha(x, attn_mask)
         attn_out = self.attn_output_dropout(attn_out)

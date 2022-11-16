@@ -54,6 +54,24 @@ def make_transformer(
     frozen: bool = False,
     all_layer_outputs: bool = False,
 ) -> "Transformer":
+    """Construct a Transformer component, which lets you plug a pre-trained
+    transformer model into spaCy so you can use it in your pipeline. One or
+    more subsequent spaCy components can use the transformer outputs as features
+    in its model, with gradients backpropagated to the single shared weights.
+
+    vocab (Vocab):
+        The shared vocabulary.
+    model (Model):
+        One of the supported pre-trained transformer models.
+    name (str):
+        The component instance name.
+    frozen (bool):
+        If `True`, the model's weights are frozen and no backpropagation is performed.
+    all_layer_outputs (bool):
+        If `True`, the model returns the outputs of all the layers. Otherwise, only the
+        output of the last layer is returned. This must be set to `True` if any of the pipe's
+        downstream listeners require the outputs of all transformer layers.
+    """
     return Transformer(
         nlp.vocab,
         model,
@@ -65,18 +83,13 @@ def make_transformer(
 
 
 class Transformer(TrainablePipe):
-    """Apply a "token-to-vector" model and set its outputs in the doc._.trf_data
-    attribute. This is mostly useful to share a single subnetwork between multiple
-    components, e.g. to have one embedding and CNN network shared between a
-    parser, tagger and NER.
-    In order to use the `Tok2Vec` predictions, subsequent components should use
-    the `TransformerListener` layer as the tok2vec subnetwork of their model. This
-    layer will read data from the `doc._.trf_data` attribute during prediction.
-    During training, the `Tok2Vec` component will save its prediction and backprop
-    callback for each batch, so that the subsequent components can backpropagate
-    to the shared weights. This implementation is used because it allows us to
-    avoid relying on object identity within the models to achieve the parameter
-    sharing.
+    """spaCy pipeline component that provides access to a pre-trained transformer
+    model from. Downstream components are connected to this pip using TransformerListener
+    layers. This works similarly to spaCy's Transformer component and TransformerListener
+    sublayer.
+
+    The activations from the transformer are saved in the doc._.trf_data extension
+    attribute.
     """
 
     def __init__(
@@ -89,15 +102,19 @@ class Transformer(TrainablePipe):
         all_layer_outputs: bool = False,
         max_batch_items: int = 4096,
     ) -> None:
-        """Initialize a tok2vec component.
-        vocab (Vocab): The shared vocabulary.
-        model (thinc.api.Model[List[Doc], List[Floats2d]]):
-            The Thinc Model powering the pipeline component. It should take
-            a list of Doc objects as input, and output a list of 2d float arrays.
-        name (str): The component instance name.
-        frozen (bool): Model weights are frozen and no backpropagation is performed.
-        all_layer_outputs (bool): Downstream listeners can use the outputs of all transformer layers.
-        DOCS: https://spacy.io/api/tok2vec#init
+        """
+        vocab (Vocab):
+            The shared vocabulary.
+        model (Model):
+            One of the supported pre-trained transformer models.
+        name (str):
+            The component instance name.
+        frozen (bool):
+            If `True`, the model's weights are frozen and no backpropagation is performed.
+        all_layer_outputs (bool):
+            If `True`, the model returns the outputs of all the layers. Otherwise, only the
+            output of the last layer is returned. This must be set to `True` if any of the pipe's
+            downstream listeners require the outputs of all transformer layers.
         """
         self.vocab = vocab
         self.model = model
@@ -105,22 +122,24 @@ class Transformer(TrainablePipe):
         self.listener_map: Dict[str, List[TransformerListener]] = {}
         self.cfg = {"max_batch_items": max_batch_items}
 
-        install_extensions()
+        _install_extensions()
         self.frozen = frozen
         self.all_layer_outputs = all_layer_outputs
         self._set_model_all_layer_outputs(all_layer_outputs)
 
     @property
     def listeners(self) -> List[TransformerListener]:
-        """RETURNS (List[TransformerListener]): The listener models listening to this
-        component. Usually internals.
+        """
+        RETURNS (List[TransformerListener]):
+            The listener models listening to this component. Usually internals.
         """
         return [m for c in self.listening_components for m in self.listener_map[c]]
 
     @property
     def listening_components(self) -> List[str]:
-        """RETURNS (List[str]): The downstream components listening to this
-        component. Usually internals.
+        """
+        RETURNS (List[str]):
+            The downstream components listening to this component. Usually internals.
         """
         return list(self.listener_map.keys())
 
@@ -133,7 +152,11 @@ class Transformer(TrainablePipe):
     def remove_listener(
         self, listener: TransformerListener, component_name: str
     ) -> bool:
-        """Remove a listener for a downstream component. Usually internals."""
+        """Remove a listener for a downstream component. Usually internals.
+
+        RETURNS (bool):
+            `True` if successful, `False` otherwise.
+        """
         if component_name in self.listener_map:
             if listener in self.listener_map[component_name]:
                 self.listener_map[component_name].remove(listener)
@@ -145,10 +168,10 @@ class Transformer(TrainablePipe):
 
     def find_listeners(self, component: Any) -> None:
         """Walk over a model of a processing component, looking for layers that
-        are Tok2vecListener subclasses that have an upstream_name that matches
+        are TransformerListener subclasses that have an upstream_name that matches
         this component. Listeners can also set their upstream_name attribute to
-        the wildcard string '*' to match any `Tok2Vec`.
-        You're unlikely to ever need multiple `Tok2Vec` components, so it's
+        the wildcard string '*' to match any `Transformer`.
+        You're unlikely to ever need multiple `Transformer` components, so it's
         fine to leave your listeners upstream_name on '*'.
         """
         names = ("*", self.name)
@@ -164,12 +187,16 @@ class Transformer(TrainablePipe):
         """Apply the pipe to a stream of documents. This usually happens under
         the hood when the nlp object is called on a text and all components are
         applied to the Doc.
-        stream (Iterable[Doc]): A stream of documents.
-        batch_size (int): The number of documents to buffer.
-        YIELDS (Doc): Processed documents in order.
-        DOCS: https://spacy.io/api/transformer#pipe
+
+        stream (Iterable[Doc]):
+            A stream of documents.
+        batch_size (int):
+            The number of documents to buffer.
+
+        YIELDS (Doc):
+            Processed documents in order.
         """
-        install_extensions()
+        _install_extensions()
         for outer_batch in minibatch(stream, batch_size):
             outer_batch = list(outer_batch)
             for indices in batch_by_length(outer_batch, self.cfg["max_batch_items"]):
@@ -179,12 +206,14 @@ class Transformer(TrainablePipe):
 
     def predict(self, docs: Iterable[Doc]) -> TransformerModelOutput:
         """Apply the pipeline's model to a batch of docs, without modifying them.
-        Returns a single tensor for a batch of documents.
-        docs (Iterable[Doc]): The documents to predict.
-        RETURNS: Vector representations for each token in the documents.
-        DOCS: https://spacy.io/api/tok2vec#predict
+
+        docs (Iterable[Doc]):
+            The documents to predict.
+
+        RETURNS (TransformerModelOutput):
+            The extracted features of each document.
         """
-        install_extensions()
+        _install_extensions()
         if not any(len(doc) for doc in docs):
             # Handle cases where there are no tokens in any docs.
             width = self.model.get_dim("nO")
@@ -208,10 +237,13 @@ class Transformer(TrainablePipe):
     def set_annotations(
         self, docs: Sequence[Doc], trf_output: TransformerModelOutput
     ) -> None:
-        """Modify a batch of documents, using pre-computed scores.
-        docs (Iterable[Doc]): The documents to modify.
-        tokvecses: The tensors to set, produced by Tok2Vec.predict.
-        DOCS: https://spacy.io/api/tok2vec#set_annotations
+        """Assign the extracted features to the Doc objects. By default, a
+        DocTransformerOutput object is written to the doc._.trf_data attribute.
+
+        docs (Iterable[Doc]):
+            The documents to modify.
+        trf_output (TransformerModelOutput):
+            The outputs of the transformer model.
         """
         for doc, tokvecs in zip(docs, trf_output.all_outputs):
             doc._.trf_data = DocTransformerOutput(
@@ -226,15 +258,35 @@ class Transformer(TrainablePipe):
         sgd: Optional[Optimizer] = None,
         losses: Optional[Dict[str, float]] = None,
     ) -> Dict[str, float]:
-        """Learn from a batch of documents and gold-standard information,
-        updating the pipe's model.
-        examples (Iterable[Example]): A batch of Example objects.
-        drop (float): The dropout rate.
-        sgd (thinc.api.Optimizer): The optimizer.
-        losses (Dict[str, float]): Optional record of the loss during training.
-            Updated using the component name as the key.
-        RETURNS (Dict[str, float]): The updated losses dictionary.
-        DOCS: https://spacy.io/api/tok2vec#update
+        """Prepare for an update to the transformer.
+
+        Like the `Tok2Vec` component, the `Transformer` component is unusual
+        in that it does not receive "gold standard" annotations to calculate
+        a weight update. The optimal output of the transformer data is unknown;
+        it's a hidden layer inside the network that is updated by backpropagating
+        from output layers.
+
+        The `Transformer` component therefore does not perform a weight update
+        during its own `update` method. Instead, it runs its transformer model
+        and communicates the output and the backpropagation callback to any
+        downstream components that have been connected to it via the
+        TransformerListener sublayer. If there are multiple listeners, the last
+        layer will actually backprop to the transformer and call the optimizer,
+        while the others simply increment the gradients.
+
+        examples (Iterable[Example]):
+            A batch of Example objects. Only the `predicted` doc object is used,
+            the reference doc is ignored.
+        drop (float):
+            The dropout rate.
+        sgd (thinc.api.Optimizer):
+            The optimizer.
+        losses (Dict[str, float]):
+            Optional record of the loss during training. Updated using the component
+            name as the key.
+
+        RETURNS (Dict[str, float]):
+            The updated losses dictionary.
         """
         if losses is None:
             losses = {}
@@ -262,9 +314,9 @@ class Transformer(TrainablePipe):
             ]
 
         def accumulate_gradient(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
         ) -> None:
-            """Accumulate tok2vec loss and gradient. This is passed as a callback
+            """Accumulate transformer loss and gradient. This is passed as a callback
             to all but the last listener. Only the last one does the backprop.
 
             `outputs_to_backprop` is a tuple of indices indicating to which layers/outputs
@@ -279,7 +331,7 @@ class Transformer(TrainablePipe):
                     losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
         def accumulate_gradient_noop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
         ) -> None:
             assert losses is not None
             for i in range(len(one_d_outputs)):
@@ -287,7 +339,7 @@ class Transformer(TrainablePipe):
                     losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
         def backprop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
         ) -> Any:
             """Callback to actually do the backprop. Passed to last listener."""
             nonlocal d_outputs
@@ -299,7 +351,7 @@ class Transformer(TrainablePipe):
             return d_docs
 
         def backprop_noop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
         ) -> Any:
             accumulate_gradient_noop(
                 one_d_outputs, outputs_to_backprop=outputs_to_backprop
@@ -323,6 +375,9 @@ class Transformer(TrainablePipe):
         return losses
 
     def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
+        """A noop function, for compatibility with the Pipe API. See the `update`
+        method for an explanation of the loss mechanics of the component.
+        """
         pass
 
     def initialize(
@@ -333,12 +388,12 @@ class Transformer(TrainablePipe):
         encoder_loader: Optional[Callable] = None,
         piecer_loader: Optional[Callable] = None,
     ):
-        """Initialize the pipe for training, using a representative set
-        of data examples.
-        get_examples (Callable[[], Iterable[Example]]): Function that
-            returns a representative sample of gold-standard Example objects.
-        nlp (Language): The current nlp object the component is part of.
-        DOCS: https://spacy.io/api/tok2vec#initialize
+        """Initialize the pipe for training, using data examples if available.
+
+        get_examples (Callable[[], Iterable[Example]]):
+            Optional function that returns gold-standard Example objects.
+        nlp (Language):
+            The current nlp object.
         """
         validate_get_examples(get_examples, "Transformer.initialize")
 
@@ -360,6 +415,6 @@ class Transformer(TrainablePipe):
         self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
 
-def install_extensions() -> None:
+def _install_extensions() -> None:
     if not Doc.has_extension(DOC_EXT_ATTR):
         Doc.set_extension(DOC_EXT_ATTR, default=None)

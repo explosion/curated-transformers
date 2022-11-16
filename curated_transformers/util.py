@@ -90,6 +90,14 @@ def gradual_transformer_unfreezing_all_pipes(
 def create_gradual_transformer_unfreezing(
     target_pipes: Dict[str, int]
 ) -> Callable[[Language, Dict[str, Any]], None]:
+    """Construct a callback that can be used to gradually unfreeze the
+    weights of one or more Transformer components during training. This
+    can be used to prevent catastrophic forgetting during fine-tuning.
+
+    target_pipes (Dict[str, int]):
+        A dictionary whose keys and values correspond to the names of Transformer
+        components and the training step at which they should be unfrozen respectively.
+    """
     unfreeze_step_all_pipes = target_pipes.get("*")
     if unfreeze_step_all_pipes is not None and len(target_pipes) > 1:
         raise ValueError(

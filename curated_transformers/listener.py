@@ -22,10 +22,28 @@ def build_last_transformer_layer_listener_v1(
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
-    tok2vec = LastTransformerLayerListener(
+    """Construct a listener layer that communicates with one or more upstream Transformer
+    components. This layer extracts the output of the last transformer layer and performs
+    pooling over the individual pieces of each Doc token, returning their corresponding
+    representations.
+
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component. You'll almost
+        never have multiple upstream Transformer components, so the wildcard
+        string will almost always be fine.
+    width (int):
+        The width of the vectors produced by the upstream transformer component.
+    pooling (Model):
+        Model that is used to perform pooling over the piece representations.
+    grad_factor (float):
+        Factor to multiply gradients with.
+    """
+    transformer = LastTransformerLayerListener(
         upstream_name=upstream, pooling=pooling, width=width, grad_factor=grad_factor
     )
-    return tok2vec
+    return transformer
 
 
 def build_scalar_weighting_listener_v1(
@@ -35,17 +53,50 @@ def build_scalar_weighting_listener_v1(
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
-    tok2vec = ScalarWeightingListener(
+    """Construct a listener layer that communicates with one or more upstream Transformer
+    components. This layer calculates a weighted representation of all transformer layer
+    outputs and performs pooling over the individual pieces of each Doc token, returning
+    their corresponding representations.
+
+    Requires its upstream Transformer components to return all layer outputs from
+    their models.
+
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component. You'll almost
+        never have multiple upstream Transformer components, so the wildcard
+        string will almost always be fine.
+    width (int):
+        The width of the vectors produced by the upstream transformer component.
+    weighting (Model):
+        Model that is used to perform the weighting of the different layer outputs.
+    pooling (Model):
+        Model that is used to perform pooling over the piece representations.
+    grad_factor (float):
+        Factor to multiply gradients with.
+    """
+    transformer = ScalarWeightingListener(
         upstream_name=upstream,
         weighting=weighting,
         pooling=pooling,
         width=width,
         grad_factor=grad_factor,
     )
-    return tok2vec
+    return transformer
 
 
 class TransformerListener(Model):
+    """A layer that gets fed its answers from an upstream Transformer component.
+
+    The TransformerListener layer is used as a sublayer within a component such
+    as a parser, NER or text categorizer. Usually you'll have multiple listeners
+    connecting to a single upstream Transformer component that's earlier in the
+    pipeline. These layers act as proxies, passing the predictions
+    from the Transformer component into downstream components and communicating
+    gradients back upstream.
+    """
+
     upstream_name: str
     _batch_id: Optional[int]
     _outputs: Optional[TransformerModelOutput]
@@ -65,7 +116,7 @@ class TransformerListener(Model):
         backprop: Callable[[List[List[Ragged]], Tuple[int]], Any],
     ) -> None:
         """Store a batch of training predictions and a backprop callback. The
-        predictions and callback are produced by the upstream Tok2Vec component,
+        predictions and callback are produced by the upstream Transformer component,
         and later will be used when the listener's component's model is called.
         """
         self._batch_id = batch_id
@@ -87,6 +138,10 @@ class TransformerListener(Model):
 
 
 class LastTransformerLayerListener(TransformerListener):
+    """Extracts the output of the last transformer layer and performs pooling over the
+    individual pieces of each Doc token, returning their corresponding representations.
+    """
+
     name = "last_transformer_layer_listener"
 
     def __init__(
@@ -97,13 +152,16 @@ class LastTransformerLayerListener(TransformerListener):
         grad_factor: float,
     ) -> None:
         """
-        upstream_name (str): A string to identify the 'upstream' Tok2Vec component
+        upstream_name (str):
+            A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the `Tok2Vec` component. You'll almost
-            never have multiple upstream Tok2Vec components, so the wildcard
+            string '*', or the name of the Transformer component. You'll almost
+            never have multiple upstream Transformer components, so the wildcard
             string will almost always be fine.
         width (int):
-            The width of the vectors produced by the upstream tok2vec component.
+            The width of the vectors produced by the upstream transformer component.
+        pooling (Model):
+            Model that is used to perform pooling over the piece representations.
         grad_factor (float):
             Factor to multiply gradients with.
         """
@@ -124,7 +182,6 @@ class LastTransformerLayerListener(TransformerListener):
 def last_transformer_layer_listener_forward(
     model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    """Supply the outputs from the upstream Tok2Vec component."""
     pooling: Model[Ragged, Floats2d] = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
 
@@ -163,6 +220,14 @@ def last_transformer_layer_listener_forward(
 
 
 class ScalarWeightingListener(TransformerListener):
+    """Calculates a weighted representation of all transformer layer outputs and
+    performs pooling over the individual pieces of each Doc token, returning their
+    corresponding representations.
+
+    Requires its upstream Transformer component to return all layer outputs from
+    its model.
+    """
+
     name = "scalar_weighting_listener"
 
     def __init__(
@@ -174,13 +239,18 @@ class ScalarWeightingListener(TransformerListener):
         grad_factor: float,
     ) -> None:
         """
-        upstream_name (str): A string to identify the 'upstream' Tok2Vec component
+        upstream_name (str):
+            A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the `Tok2Vec` component. You'll almost
-            never have multiple upstream Tok2Vec components, so the wildcard
-            string will almost always be fine.`
+            string '*', or the name of the Transformer component. You'll almost
+            never have multiple upstream Transformer components, so the wildcard
+            string will almost always be fine.
         width (int):
-            The width of the vectors produced by the upstream tok2vec component.
+            The width of the vectors produced by the upstream transformer component.
+        weighting (Model):
+            Model that is used to perform the weighting of the different layer outputs.
+        pooling (Model):
+            Model that is used to perform pooling over the piece representations.
         grad_factor (float):
             Factor to multiply gradients with.
         """
@@ -203,7 +273,6 @@ class ScalarWeightingListener(TransformerListener):
 def scalar_weighting_listener_forward(
     model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    """Supply the outputs from the upstream Tok2Vec component."""
     weighting: Model[List[Ragged], Ragged] = model.layers[0]
     pooling: Model[Ragged, Floats2d] = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]

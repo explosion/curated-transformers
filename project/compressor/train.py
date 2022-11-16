@@ -64,7 +64,7 @@ def training_loop(
         if no_improve == patience:
             break
         model.train()
-        pbar = tqdm(data, total=len(data.dataset))
+        pbar = tqdm(data, total=len(data))
         for step, batch in enumerate(pbar):
             optimizer.zero_grad()
             X, Y = batch

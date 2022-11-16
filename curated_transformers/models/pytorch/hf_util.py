@@ -5,7 +5,7 @@ import re
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
 from .roberta.encoder import RobertaEncoder
-from .._compat import transformers
+from ..._compat import transformers
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
 

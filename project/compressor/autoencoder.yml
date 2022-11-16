@@ -2,16 +2,16 @@ model:
   type: autoencoder
   original_size: 300
   ratio: 2
-  num_hidden: 1
-  activation: sigmoid
+  num_hidden: 0
+  activation: linear
   rezero: False
+  residual: False
   normalize: True
 loader:
-  path: test.npy
-  batch_size: 512
-  normalizer: null
+  curated-transformers: /home/ubuntu/curated-transformers/project/training/UD_Dutch-Alpino/model-best
+  batch_size: 128
 optimizer:
-  learning_rate: 0.0001
+  learning_rate: 0.001
   weight_decay: 0.0
 scheduler:
   factor: 0.1

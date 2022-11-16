@@ -8,7 +8,7 @@ from .config import BertConfig
 from .embeddings import BertEmbeddings
 from .layer import BertEncoderLayer
 from ..attention import AttentionMask
-from ..output import PyTorchTransformerOutput
+from ...output import PyTorchTransformerOutput
 
 
 class BertEncoder(Module):

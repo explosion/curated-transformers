@@ -5,7 +5,7 @@ from torch import Tensor
 
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
-from ..output import PyTorchTransformerOutput
+from ...output import PyTorchTransformerOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
 

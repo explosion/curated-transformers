@@ -19,7 +19,7 @@ from curated_transformers.models.transformer_model import (
 from curated_transformers.models.with_strided_spans import (
     build_with_strided_spans_v1,
 )
-from curated_transformers.models.attention import AttentionMask
+from curated_transformers.models.pytorch.attention import AttentionMask
 from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.pipe import make_transformer

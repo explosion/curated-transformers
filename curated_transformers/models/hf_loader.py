@@ -2,7 +2,7 @@ from typing import Callable, List, Optional
 from spacy.tokens import Doc
 
 from .._compat import transformers, has_hf_transformers
-from .hf_util import convert_hf_pretrained_model_parameters
+from .pytorch.hf_util import convert_hf_pretrained_model_parameters
 from .types import TorchTransformerModelT
 
 

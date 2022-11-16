@@ -17,12 +17,12 @@ from thinc.types import ArgsKwargs, Floats2d, Ints1d
 import torch
 
 
-from .hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
-from .albert import AlbertConfig, AlbertEncoder
-from .bert import BertConfig, BertEncoder
 from .output import TransformerModelOutput, PyTorchTransformerOutput
+from .pytorch.albert import AlbertConfig, AlbertEncoder
+from .pytorch.bert import BertConfig, BertEncoder
+from .pytorch.hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
+from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
-from .roberta import RobertaConfig, RobertaEncoder
 from .torchscript_wrapper import TorchScriptWrapper_v1
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder

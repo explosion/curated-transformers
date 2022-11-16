@@ -3,7 +3,7 @@ from typing import Any, Callable, List, TypeVar
 from spacy.tokens.doc import Doc
 from spacy.tokens.token import Token
 from thinc.model import Model
-from thinc.types import Ints1d, Ragged
+from thinc.types import Ragged
 
 
 TokenSequenceT = TypeVar("TokenSequenceT", Doc, List[Token])

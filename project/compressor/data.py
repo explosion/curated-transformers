@@ -1,12 +1,31 @@
 import numpy
 import torch
 import spacy
+from wasabi import msg
+from thinc.api import LayerNorm as ThincNorm
+from torch import nn
 
-from typing import Tuple, Callable
+from dataclasses import dataclass
+from math import floor
+from typing import Tuple
 
 from thinc.types import Floats2d, ArrayXd
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoModel
+from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
+
+
+def layernorm2thinc(layernorm: nn.LayerNorm) -> ThincNorm:
+    """
+    Converts PyTorch LayerNorm to thinc LayerNorm.
+    """
+    W = layernorm.weight.detach().numpy()
+    b = layernorm.bias.detach().numpy()
+    norm = ThincNorm(b.shape[0])
+    norm.initialize()
+    norm.set_param("G", W)
+    norm.set_param("b", b)
+    return norm
 
 
 def get_vectors(path: str) -> Floats2d:
@@ -22,11 +41,8 @@ def get_spacy_vectors(model) -> Floats2d:
     return nlp.vocab.vectors.data
 
 
-def get_hf_embeddings(name: str) -> Tuple[Floats2d, Floats2d, Floats2d]:
-    """
-    Load word-piece, positional and token-type
-    embeddings with HuggingFace.
-    """
+def get_hf_transformer(name: str) -> Tuple[Floats2d, Floats2d, Floats2d]:
+    """Word-piece, positional and token-type embeddings from HuggingFace."""
     hf_model = AutoModel.from_pretrained(name)
     embedding_tensor = hf_model.embeddings.word_embeddings.weight
     position_tensor = hf_model.embeddings.position_embeddings.weight
@@ -35,6 +51,32 @@ def get_hf_embeddings(name: str) -> Tuple[Floats2d, Floats2d, Floats2d]:
     position_matrix = position_tensor.detach().numpy()
     token_type_matrix = token_type_tensor.detach().numpy()
     return embedding_matrix, position_matrix, token_type_matrix
+
+
+def get_curated_transformer(model: str) -> Tuple[Floats2d, Floats2d, Floats2d]:
+    """
+    Word-piece, positional and token-type
+    embeddings from curated-transformers model.
+    """
+    nlp = spacy.load(model)
+    if not nlp.has_pipe("transformer"):
+        raise ValueError(
+            f"Could not find transformer in the pipeline {model}"
+        )
+    trf_pipe = nlp.get_pipe("transformer")
+    trf_model = trf_pipe.model.get_ref("transformer")
+    trf_pytorch = trf_model.shims[0]._model
+    embeddings = trf_pytorch.embeddings
+    if isinstance(embeddings, RobertaEmbeddings):
+        embeddings = embeddings.inner
+    embedding_tensor = embeddings.word_embeddings.weight
+    position_tensor = embeddings.position_embeddings.weight
+    token_type_tensor = embeddings.token_type_embeddings.weight
+    embedding_matrix = embedding_tensor.detach().numpy()
+    position_matrix = position_tensor.detach().numpy()
+    token_type_matrix = token_type_tensor.detach().numpy()
+    layernorm = layernorm2thinc(embeddings.layer_norm)
+    return embedding_matrix, position_matrix, token_type_matrix, layernorm
 
 
 class Vectors(Dataset):
@@ -60,6 +102,13 @@ def cyclic_slice(arr: ArrayXd, bottom: int, top: int) -> ArrayXd:
     return arr[idx]
 
 
+@dataclass
+class TransformerBatch:
+    word_pieces: Floats2d
+    positional: Floats2d
+    token_type: Floats2d
+
+
 # TODO Currently only works with the AutoEncoder
 class TransformerLoader:
     def __init__(
@@ -67,6 +116,7 @@ class TransformerLoader:
         word_pieces: Floats2d,
         positional: Floats2d,
         token_type: Floats2d,
+        layernorm: ThincNorm,
         *,
         batch_size: int,
         shuffle: bool = True,
@@ -87,7 +137,9 @@ class TransformerLoader:
         assert token_type.ndim == 2
         assert word_pieces.shape[1] == positional.shape[1]
         assert positional.shape[1] == token_type.shape[1]
-
+        msg.good(f"Word-pieces shape {word_pieces.shape}")
+        msg.good(f"Positional shape {positional.shape}")
+        msg.good(f"Token-type shape {token_type.shape}")
         self.word_pieces = word_pieces
         self.positional = positional
         self.token_type = token_type
@@ -95,6 +147,10 @@ class TransformerLoader:
         self.shuffle = shuffle
         self._n = word_pieces.shape[0]
         self.dim = token_type.shape[1]
+        self.layernorm = layernorm
+
+    def __len__(self):
+        return floor(self._n / self.batch_size)
 
     def __iter__(self):
         self._cursor = 0
@@ -105,23 +161,24 @@ class TransformerLoader:
         return self
 
     def __next__(self) -> Tuple[Floats2d, Floats2d]:
-        # New epoch based on word-pieces.
-        if self._cursor + self.batch_size >= self._n - 1:
+        if self._cursor == self._n - 1:
             raise StopIteration
-        else:
-            wp_top = self._cursor + self.batch_size
-            word_piece = self.word_pieces[self._cursor:wp_top]
-            positional = cyclic_slice(
-                self.positional, self._cursor, wp_top
-            )
-            token_type = cyclic_slice(
-                self.token_type, self._cursor, wp_top
-            )
-            self._cursor = wp_top
-            out = torch.tensor(
-                word_piece + positional + token_type, dtype=torch.float32
-            )
-            return out, out
+        wp_top = min(self._cursor + self.batch_size, self._n - 1)
+        word_piece = self.word_pieces[self._cursor:wp_top]
+        positional = cyclic_slice(
+            self.positional, self._cursor, wp_top
+        )
+        token_type = cyclic_slice(
+            self.token_type, self._cursor, wp_top
+        )
+        self._cursor = wp_top
+        X = TransformerBatch(
+            torch.tensor(word_piece, dtype=torch.float32),
+            torch.tensor(positional, dtype=torch.float32),
+            torch.tensor(token_type, dtype=torch.float32)
+        )
+        Y, _ = self.layernorm(word_piece + positional + token_type, False)
+        return X, torch.tensor(Y, dtype=torch.float32)
 
 
 def collate_autoencoder(batch) -> torch.Tensor:
@@ -167,13 +224,20 @@ def make_vector_loader(
 
 def make_transformer_loader(
     transformer: str,
-    batch_size: int
+    batch_size: int,
+    *,
+    source: str = "curated"
 ) -> TransformerLoader:
-    word_pieces, positional, token_type = get_hf_embeddings(transformer)
+    assert source in {"curated", "hf"}
+    if source == "curated":
+        wp, pos, typ, norm = get_curated_transformer(transformer)
+    else:
+        wp, pos, typ = get_hf_transformer(transformer)
     loader = TransformerLoader(
-        word_pieces,
-        positional,
-        token_type,
+        wp,
+        pos,
+        typ,
+        norm,
         batch_size=batch_size,
         shuffle=True
     )

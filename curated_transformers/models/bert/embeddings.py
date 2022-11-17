@@ -1,31 +1,41 @@
 from typing import Optional
 import torch
 from torch import Tensor
-from torch.nn import Module
+from torch.nn import Dropout, Embedding, LayerNorm, Linear, Module
 
-from .config import BertEmbeddingConfig
+from .config import BertEmbeddingConfig, BertLayerConfig
 
 
 class BertEmbeddings(Module):
-    def __init__(self, config: BertEmbeddingConfig) -> None:
+    def __init__(
+        self, embedding_config: BertEmbeddingConfig, layer_config: BertLayerConfig
+    ) -> None:
         super().__init__()
 
-        self.word_embeddings = torch.nn.Embedding(
-            num_embeddings=config.vocab_size,
-            embedding_dim=config.embedding_dim,
+        self.word_embeddings = Embedding(
+            num_embeddings=embedding_config.vocab_size,
+            embedding_dim=embedding_config.embedding_dim,
         )
-        self.token_type_embeddings = torch.nn.Embedding(
-            num_embeddings=config.type_vocab_size, embedding_dim=config.embedding_dim
+        self.token_type_embeddings = Embedding(
+            num_embeddings=embedding_config.type_vocab_size,
+            embedding_dim=embedding_config.embedding_dim,
         )
-        self.position_embeddings = torch.nn.Embedding(
-            num_embeddings=config.max_position_embeddings,
-            embedding_dim=config.embedding_dim,
+        self.position_embeddings = Embedding(
+            num_embeddings=embedding_config.max_position_embeddings,
+            embedding_dim=embedding_config.embedding_dim,
         )
 
-        self.layer_norm = torch.nn.LayerNorm(
-            config.embedding_dim, eps=config.layer_norm_eps
+        if embedding_config.embedding_dim != layer_config.hidden_size:
+            self.projection = Linear(
+                embedding_config.embedding_dim, layer_config.hidden_size
+            )
+        else:
+            self.projection = None  # type: ignore
+
+        self.layer_norm = LayerNorm(
+            embedding_config.embedding_dim, eps=embedding_config.layer_norm_eps
         )
-        self.dropout = torch.nn.Dropout(p=config.dropout_prob)
+        self.dropout = Dropout(p=embedding_config.dropout_prob)
 
     def _get_position_ids(self, x: Tensor) -> Tensor:
         return torch.arange(x.shape[1], device=x.device).expand(1, -1)
@@ -52,4 +62,9 @@ class BertEmbeddings(Module):
         embedding_sum += token_type_embeddings
         embedding_sum += position_embeddings
         normalized = self.layer_norm(embedding_sum)
-        return self.dropout(normalized)
+        embeddings = self.dropout(normalized)
+
+        if self.projection is not None:
+            return self.projection(embeddings)
+        else:
+            return embeddings

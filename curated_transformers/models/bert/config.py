@@ -88,6 +88,7 @@ class BertConfig:
     def __init__(
         self,
         *,
+        embedding_dim: int = 768,
         hidden_size: int = 768,
         intermediate_size: int = 3072,
         num_attention_heads: int = 12,
@@ -103,7 +104,7 @@ class BertConfig:
         padding_idx: int = 0,
     ):
         self.embedding = BertEmbeddingConfig(
-            embedding_dim=hidden_size,
+            embedding_dim=embedding_dim,
             vocab_size=vocab_size,
             type_vocab_size=type_vocab_size,
             max_position_embeddings=max_position_embeddings,

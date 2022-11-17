@@ -2,15 +2,20 @@ from typing import Optional
 from torch.nn import Module
 from torch import Tensor
 
-from ..bert import BertEmbeddings, BertEmbeddingConfig
-from .config import RobertaConfig
+from ..bert import BertEmbeddings, BertEmbeddingConfig, BertLayerConfig
 
 
 class RobertaEmbeddings(Module):
-    def __init__(self, config: BertEmbeddingConfig, *, padding_idx: int) -> None:
+    def __init__(
+        self,
+        embedding_config: BertEmbeddingConfig,
+        layer_config: BertLayerConfig,
+        *,
+        padding_idx: int
+    ) -> None:
         super().__init__()
 
-        self.inner = BertEmbeddings(config)
+        self.inner = BertEmbeddings(embedding_config, layer_config)
         self.padding_idx = padding_idx
 
     def _get_position_ids(self, x: Tensor) -> Tensor:

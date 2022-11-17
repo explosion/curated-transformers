@@ -1,23 +1,28 @@
-from typing import List, Union
+from typing import List, Tuple, cast
 from thinc.api import Model, Ragged
 
 from .output import TransformerModelOutput
+from .types import (
+    SentMarkerRemoverInOutT,
+    SentMarkerRemoverBackpropT,
+    SentMarkerRemoverModelT,
+    RaggedInOutT,
+)
 
 
-RemoveBosEosBackpropInOutT = Union[List[Ragged], List[List[Ragged]]]
-
-
-def remove_bos_eos() -> Model[TransformerModelOutput, TransformerModelOutput]:
+def remove_bos_eos() -> SentMarkerRemoverModelT:
     return Model("remove_bos_eos", remove_bos_eos_forward)
 
 
-def remove_bos_eos_forward(model: Model, X: TransformerModelOutput, is_train: bool):
+def remove_bos_eos_forward(
+    model: Model, X: SentMarkerRemoverInOutT, is_train: bool
+) -> Tuple[SentMarkerRemoverInOutT, SentMarkerRemoverBackpropT]:
     if not isinstance(X, TransformerModelOutput):
         raise ValueError(f"Unsupported input of type '{type(X)}'")
 
     X.all_outputs = [[Xr[1:-1] for Xr in inner] for inner in X.all_outputs]
 
-    def backprop(dY: RemoveBosEosBackpropInOutT):
+    def backprop(dY: RaggedInOutT) -> RaggedInOutT:
         # Pass-through dY, but add zero gradient for the special bos/eos
         # tokens.
 
@@ -36,16 +41,19 @@ def remove_bos_eos_forward(model: Model, X: TransformerModelOutput, is_train: bo
 
         def _apply_to_layers(input: List[List[Ragged]], output: List[List[Ragged]]):
             for inner_dY in input:
-                inner_dX = []
+                inner_dX: List[Ragged] = []
                 _apply_to_layer(inner_dY, inner_dX)
                 output.append(inner_dX)
 
-        dX = []
         if isinstance(dY[0], list):
-            _apply_to_layers(dY, dX)
+            nested_list = cast(List[List[Ragged]], dY)
+            dX_nested: List[List[Ragged]] = []
+            _apply_to_layers(nested_list, dX_nested)
+            return dX_nested
         else:
-            _apply_to_layer(dY, dX)
-
-        return dX
+            flat_list = cast(List[Ragged], dY)
+            dX_flat: List[Ragged] = []
+            _apply_to_layer(flat_list, dX_flat)
+            return dX_flat
 
     return X, backprop

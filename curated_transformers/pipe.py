@@ -1,5 +1,6 @@
 from itertools import islice
 from typing import (
+    Any,
     Callable,
     Dict,
     Iterable,
@@ -101,7 +102,7 @@ class Transformer(TrainablePipe):
         self.vocab = vocab
         self.model = model
         self.name = name
-        self.listener_map: Dict[str, List["TransformerListener"]] = {}
+        self.listener_map: Dict[str, List[TransformerListener]] = {}
         self.cfg = {"max_batch_items": max_batch_items}
 
         install_extensions()
@@ -110,7 +111,7 @@ class Transformer(TrainablePipe):
         self._set_model_all_layer_outputs(all_layer_outputs)
 
     @property
-    def listeners(self) -> List["TransformerListener"]:
+    def listeners(self) -> List[TransformerListener]:
         """RETURNS (List[TransformerListener]): The listener models listening to this
         component. Usually internals.
         """
@@ -123,16 +124,14 @@ class Transformer(TrainablePipe):
         """
         return list(self.listener_map.keys())
 
-    def add_listener(
-        self, listener: "TransformerListener", component_name: str
-    ) -> None:
+    def add_listener(self, listener: TransformerListener, component_name: str) -> None:
         """Add a listener for a downstream component. Usually internals."""
         self.listener_map.setdefault(component_name, [])
         if listener not in self.listener_map[component_name]:
             self.listener_map[component_name].append(listener)
 
     def remove_listener(
-        self, listener: "TransformerListener", component_name: str
+        self, listener: TransformerListener, component_name: str
     ) -> bool:
         """Remove a listener for a downstream component. Usually internals."""
         if component_name in self.listener_map:
@@ -144,7 +143,7 @@ class Transformer(TrainablePipe):
                 return True
         return False
 
-    def find_listeners(self, component) -> None:
+    def find_listeners(self, component: Any) -> None:
         """Walk over a model of a processing component, looking for layers that
         are Tok2vecListener subclasses that have an upstream_name that matches
         this component. Listeners can also set their upstream_name attribute to
@@ -178,7 +177,7 @@ class Transformer(TrainablePipe):
                 self.set_annotations(subbatch, self.predict(subbatch))
             yield from outer_batch
 
-    def predict(self, docs: Iterable[Doc]):
+    def predict(self, docs: Iterable[Doc]) -> TransformerModelOutput:
         """Apply the pipeline's model to a batch of docs, without modifying them.
         Returns a single tensor for a batch of documents.
         docs (Iterable[Doc]): The documents to predict.
@@ -189,10 +188,18 @@ class Transformer(TrainablePipe):
         if not any(len(doc) for doc in docs):
             # Handle cases where there are no tokens in any docs.
             width = self.model.get_dim("nO")
-            return [
-                Ragged(self.model.ops.alloc((0, width), self.model.ops.alloc1i(0)))
-                for doc in docs
-            ]
+            return TransformerModelOutput(
+                outputs=[
+                    [
+                        Ragged(
+                            data=self.model.ops.alloc2f(0, width),
+                            lengths=self.model.ops.alloc1i(0),
+                        )
+                    ]
+                    for _ in docs
+                ],
+                last_layer_only=True,
+            )
 
         # To ensure that the model's internal state is always consistent with the pipe's.
         self._set_model_all_layer_outputs(self.all_layer_outputs)
@@ -218,7 +225,7 @@ class Transformer(TrainablePipe):
         drop: float = 0.0,
         sgd: Optional[Optimizer] = None,
         losses: Optional[Dict[str, float]] = None,
-    ):
+    ) -> Dict[str, float]:
         """Learn from a batch of documents and gold-standard information,
         updating the pipe's model.
         examples (Iterable[Example]): A batch of Example objects.
@@ -254,7 +261,9 @@ class Transformer(TrainablePipe):
                 for doc_layers in outputs.all_outputs
             ]
 
-        def accumulate_gradient(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+        def accumulate_gradient(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+        ) -> None:
             """Accumulate tok2vec loss and gradient. This is passed as a callback
             to all but the last listener. Only the last one does the backprop.
 
@@ -262,26 +271,36 @@ class Transformer(TrainablePipe):
             the gradients are to be propagated.
             """
             nonlocal d_outputs
+            assert d_outputs is not None
+            assert losses is not None
             for i in range(len(one_d_outputs)):
                 for j in outputs_to_backprop:
                     d_outputs[i][j].data += one_d_outputs[i][j].data
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
-        def accumulate_gradient_noop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+        def accumulate_gradient_noop(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+        ) -> None:
+            assert losses is not None
             for i in range(len(one_d_outputs)):
                 for j in outputs_to_backprop:
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())
+                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
 
-        def backprop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+        def backprop(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+        ) -> Any:
             """Callback to actually do the backprop. Passed to last listener."""
             nonlocal d_outputs
+            assert bp_outputs is not None
             accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
             d_docs = bp_outputs(d_outputs)
             if sgd is not None:
                 self.finish_update(sgd)
             return d_docs
 
-        def backprop_noop(one_d_outputs, *, outputs_to_backprop: Tuple[int]):
+        def backprop_noop(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int]
+        ) -> Any:
             accumulate_gradient_noop(
                 one_d_outputs, outputs_to_backprop=outputs_to_backprop
             )
@@ -303,7 +322,7 @@ class Transformer(TrainablePipe):
             self.listeners[-1].receive(batch_id, outputs, backprop_func)
         return losses
 
-    def get_loss(self, examples, scores) -> None:
+    def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
         pass
 
     def initialize(
@@ -324,9 +343,9 @@ class Transformer(TrainablePipe):
         validate_get_examples(get_examples, "Transformer.initialize")
 
         if encoder_loader:
-            self.model.get_ref("transformer").init = encoder_loader
+            self.model.get_ref("transformer").init = encoder_loader  # type: ignore
         if piecer_loader:
-            self.model.get_ref("piece_encoder").init = piecer_loader
+            self.model.get_ref("piece_encoder").init = piecer_loader  # type: ignore
 
         doc_sample = []
         for example in islice(get_examples(), 10):
@@ -334,7 +353,7 @@ class Transformer(TrainablePipe):
         assert doc_sample, Errors.E923.format(name=self.name)
         self.model.initialize(X=doc_sample)
 
-    def add_label(self, label):
+    def add_label(self, label: Any):
         raise NotImplementedError
 
     def _set_model_all_layer_outputs(self, new_value: bool):

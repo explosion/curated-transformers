@@ -76,6 +76,12 @@ def serialize(
     np.save(path / "weights", W)
     np.save(path / "bias", b)
     if isinstance(model, AutoEncoder):
+        if model.normalizer is not None:
+            layernorm = model.normalizer
+            weight = layernorm.weight.detach().numpy()
+            bias = layernorm.bias.detach().numpy()
+            np.save(path / "ln_weight", weight)
+            np.save(path / "ln_bias", bias)
         if isinstance(data, DataLoader):
             emb = _encode_vectors(
                 data.dataset.vectors,

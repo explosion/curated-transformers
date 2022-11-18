@@ -5,9 +5,11 @@ is focused on deep integration into spaCy and will support deployment-focused
 features such as distillation and quantization. Curated transformers currently
 supports the following model types:
 
-- XLM-RoBERTa
-- BERT
 - ALBERT
+- BERT
+- CamemBERT
+- RoBERTa
+- XLM-RoBERTa
 
 Supporting a wide variety of transformer models is a non-goal. If you want
 to use another type of model, use

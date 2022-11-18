@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from math import floor
 from typing import Tuple
 
-from thinc.types import Floats2d, ArrayXd
+from thinc.types import Floats2d, Floats1d, ArrayXd
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoModel
 from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
@@ -26,6 +26,35 @@ def layernorm2thinc(layernorm: nn.LayerNorm) -> ThincNorm:
     norm.set_param("G", W)
     norm.set_param("b", b)
     return norm
+
+
+def array2embedding(array: Floats2d) -> nn.Embedding:
+    embedding = nn.Embedding(
+        num_embeddings=array.shape[0],
+        embedding_dim=array.shape[1],
+        _weight=torch.tensor(array, dtype=torch.float32)
+    )
+    return embedding
+
+
+def arrays2linear(weight: Floats2d, bias: Floats1d) -> nn.Linear:
+    W = torch.tensor(weight, dtype=torch.float32)
+    b = torch.tensor(bias, dtype=torch.float32)
+    linear = nn.Linear(W.shape[1], W.shape[0])
+    with torch.no_grad():
+        linear.weight.copy_(W)
+        linear.bias.copy_(b)
+    return linear
+
+
+def arrays2layernorm(weight: Floats1d, bias: Floats1d)-> nn.LayerNorm:
+    weight = torch.tensor(weight, dtype=torch.float32)
+    bias = torch.tensor(bias, dtype=torch.float32)
+    layernorm = nn.LayerNorm(weight.shape[0])
+    with torch.no_grad():
+        layernorm.weight.copy_(weight)
+        layernorm.bias.copy_(bias)
+    return layernorm
 
 
 def get_vectors(path: str) -> Floats2d:

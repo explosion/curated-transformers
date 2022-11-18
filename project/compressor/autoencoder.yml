@@ -20,5 +20,5 @@ loss:
   type: mse
   reduction: mean
 training:
-  epochs: 100
-  patience: 5
+  epochs: 10
+  patience: 2

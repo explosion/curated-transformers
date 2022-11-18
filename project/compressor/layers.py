@@ -7,6 +7,7 @@ from typing import Sequence, Optional
 from collections import OrderedDict
 
 from data import TransformerBatch
+from dataclasses import dataclass
 
 
 ACTIVATIONS = {
@@ -122,18 +123,20 @@ class AutoEncoder(nn.Module):
         super(AutoEncoder, self).__init__()
         self.encoder = encoder
         self.decoder = nn.Linear(encoder.out_dim, encoder.in_dim)
-        input(self.decoder)
-        input(self.decoder.weight.data.shape)
+        self.normalizer = None
 
     def encode(self, X):
         return self.encoder(X).detach().numpy()
 
     def forward(self, X):
+        # Make a LayerNorm on demand
         if isinstance(X, TransformerBatch):
+            if self.normalizer is None:
+                self.normalizer = nn.LayerNorm(self.encoder.out_dim)
             wp = self.encoder(X.word_pieces)
             pos = self.encoder(X.positional)
             typ = self.encoder(X.token_type)
-            return self.decoder(wp + pos + typ)
+            return self.decoder(self.normalizer(wp + pos + typ))
         else:
             return self.decoder(self.encoder(X))
 
@@ -173,60 +176,21 @@ class TwinEmbeddings(nn.Module):
         return self.embedding_dim
 
 
-# FIXME Dirty ass patch copy/paste BertEmbeddings frankenlayer
-class ProjectedBertEmbeddings(nn.Module):
-    def __init__(
-        self,
-        word_embeddings: Floats2d,
-        token_type_embeddings: Floats2d,
-        position_embeddings: Floats2d,
-        W: Floats2d,
-        b: Floats1d
-    ) -> None:
-        super().__init__()
+@dataclass
+class BertEmbeddingParams:
+    word_embeddings: Floats2d
+    token_type_embeddings: Floats2d
+    position_embeddings: Floats2d
+    W_proj: Floats2d
+    b_proj: Floats1d
+    W_ln: Floats2d
+    b_ln: Floats1d
 
-        self.word_embeddings = torch.nn.Embedding(
-            num_embeddings=word_embeddings.shape[0],
-            embedding_dim=word_embeddings.shape[1],
-            _weight=torch.tensor(word_embeddings, dtype=torch.float32)
-        )
-        self.token_type_embeddings = torch.nn.Embedding(
-            num_embeddings=token_type_embeddings.shape[0],
-            embedding_dim=token_type_embeddings.shape[1],
-            _weight=torch.tensor(token_type_embeddings, dtype=torch.float32)
-        )
-        self.position_embeddings = torch.nn.Embedding(
-            num_embeddings=position_embeddings.shape[0],
-            embedding_dim=position_embeddings.shape[1],
-            _weight=torch.tensor(position_embeddings, dtype=torch.float32)
-        )
-        self.projection = nn.Linear(W.shape[1], W.shape[0])
-        with torch.no_grad():
-            self.projection.weight.copy_(torch.tensor(W, dtype=torch.float32))
-            self.projection.bias.copy_(torch.tensor(b, dtype=torch.float32))
-
-    def _get_position_ids(self, x: Tensor) -> Tensor:
-        return torch.arange(x.shape[1], device=x.device).expand(1, -1)
-
-    def _get_token_type_ids(self, x: Tensor) -> Tensor:
-        return torch.zeros_like(x)
-
-    def forward(
-        self,
-        input_ids: Tensor,
-        token_type_ids: Optional[Tensor] = None,
-        position_ids: Optional[Tensor] = None,
-    ) -> Tensor:
-        if token_type_ids is None:
-            token_type_ids = self._get_token_type_ids(input_ids)
-        if position_ids is None:
-            position_ids = self._get_position_ids(input_ids)
-
-        input_embeddings = self.word_embeddings(input_ids)
-        position_embeddings = self.position_embeddings(position_ids)
-        token_type_embeddings = self.token_type_embeddings(token_type_ids)
-
-        embedding_sum = input_embeddings
-        embedding_sum += token_type_embeddings
-        embedding_sum += position_embeddings
-        return self.projection(embedding_sum)
+    def __post_init__(self):
+        self.word_embeddings = torch.tensor(word_embeddings, dtype=torch.float32)
+        self.token_type_embeddings = torch.tensor(token_type_embeddings, dtype=torch.float32)
+        self.position_embeddings = torch.tensor(position_embeddings, dtype=torch.float32)
+        self.W_proj = torch.tensor(W_proj, dtype=torch.float32)
+        self.b_proj = torch.tensor(b_proj, dtype=torch.float32)
+        self.W_ln = torch.tensor(W_ln, dtype=torch.float32)
+        self.b_ln = torch.tensor(b_ln, dtype=torch.float32)

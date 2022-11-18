@@ -9,10 +9,11 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
+from curated_transformers.models.bert.embeddings import BertEmbeddings
+from curated_transformers.models.bert.config import BertEmbeddingConfig, BertLayerConfig
 from model import make_autoencoder, make_twinembeddings
-from data import make_transformer_loader
+from data import make_transformer_loader, array2embedding, arrays2linear, arrays2layernorm
 from train import make_loss, training_loop
-from layers import ProjectedBertEmbeddings
 
 
 app = typer.Typer()
@@ -175,20 +176,47 @@ def stitch_curated_transformer(
     embedding_path = ensure_path(embedding_path)
     output_path = ensure_path(output_path)
     nlp = spacy.load(model_path)
-    new_embedding = ProjectedBertEmbeddings(
-        np.load(embedding_path / "word_pieces.npy"),
-        np.load(embedding_path / "positional.npy"),
-        np.load(embedding_path / "token_type.npy"),
-        np.load(embedding_path / "weights.npy"),
-        np.load(embedding_path / "bias.npy")
+    word_embeddings = array2embedding(
+        np.load(embedding_path / "word_pieces.npy") 
     )
+    token_type_embeddings = array2embedding(
+        np.load(embedding_path / "token_type.npy")
+    )
+    position_embeddings = array2embedding(
+        np.load(embedding_path / "positional.npy")
+    )
+    projection = arrays2linear(
+        np.load(embedding_path / "weights.npy"),
+        np.load(embedding_path / "bias.npy"),
+    )
+    layer_norm = arrays2layernorm(
+        np.load(embedding_path / "ln_weight.npy"),
+        np.load(embedding_path / "ln_bias.npy")
+    )
+    embedding_config = BertEmbeddingConfig(
+        embedding_dim=word_embeddings.embedding_dim,
+        vocab_size=word_embeddings.num_embeddings,
+        type_vocab_size=token_type_embeddings.num_embeddings,
+        max_position_embeddings=position_embeddings.num_embeddings
+    )
+    layer_config = BertLayerConfig()
+    new_embeddings = BertEmbeddings(embedding_config, layer_config)
+    new_embeddings.word_embeddings = word_embeddings
+    new_embeddings.position_embeddings = position_embeddings
+    new_embeddings.token_type_embeddings = token_type_embeddings
+    new_embeddings.projection = projection
     trf_pipe = nlp.get_pipe("transformer")
     trf_model = trf_pipe.model.get_ref("transformer")
     trf_pytorch = trf_model.shims[0]._model
     if isinstance(trf_pytorch.embeddings, RobertaEmbeddings):
-        trf_pytorch.embeddings.inner = new_embedding
+        padding_idx = trf_pytorch.embeddings.padding_idx
+        roberta_embeddings = RobertaEmbeddings(
+            embedding_config, layer_config, padding_idx=padding_idx
+        )
+        roberta_embeddings.inner = new_embeddings
+        trf_pytorch.embeddings = roberta_embeddings
     else:
-        trf_pytorch.embeddings = new_embedding
+        trf_pytorch.embeddings = new_embeddings
     nlp.to_disk(output_path)
 
 

@@ -414,6 +414,20 @@ class Transformer(TrainablePipe):
     def _set_model_all_layer_outputs(self, new_value: bool):
         self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
+    def finish_update(self, sgd: Optimizer) -> None:
+        """Update parameters using the current parameter gradients.
+        The Optimizer instance contains the functionality to perform
+        the stochastic gradient descent.
+
+        This method is a noop when the pipe is frozen.
+
+        sgd (thinc.api.Optimizer): The optimizer.
+
+        DOCS: https://spacy.io/api/pipe#finish_update
+        """
+        if not self.frozen:
+            self.model.finish_update(sgd)
+
 
 def _install_extensions() -> None:
     if not Doc.has_extension(DOC_EXT_ATTR):

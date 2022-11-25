@@ -117,14 +117,3 @@ def serialize(
         np.save(ensure_path(path) / "embs", emb)
     else:
         raise ValueError(f"Cannot serialize object {model}")
-
-
-def deserialize(
-    path: str,
-    target_transformer: str
-):
-    """
-    Load compressed embeddings and linear decoder
-    from disk and stitch them into a transformer.
-    """
-    ...

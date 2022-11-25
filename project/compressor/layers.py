@@ -174,23 +174,3 @@ class TwinEmbeddings(nn.Module):
     @property
     def compressed_size(self):
         return self.embedding_dim
-
-
-@dataclass
-class BertEmbeddingParams:
-    word_embeddings: Floats2d
-    token_type_embeddings: Floats2d
-    position_embeddings: Floats2d
-    W_proj: Floats2d
-    b_proj: Floats1d
-    W_ln: Floats2d
-    b_ln: Floats1d
-
-    def __post_init__(self):
-        self.word_embeddings = torch.tensor(word_embeddings, dtype=torch.float32)
-        self.token_type_embeddings = torch.tensor(token_type_embeddings, dtype=torch.float32)
-        self.position_embeddings = torch.tensor(position_embeddings, dtype=torch.float32)
-        self.W_proj = torch.tensor(W_proj, dtype=torch.float32)
-        self.b_proj = torch.tensor(b_proj, dtype=torch.float32)
-        self.W_ln = torch.tensor(W_ln, dtype=torch.float32)
-        self.b_ln = torch.tensor(b_ln, dtype=torch.float32)

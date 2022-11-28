@@ -4,15 +4,19 @@ import spacy
 import torch
 import numpy as np
 
+from functools import partial
+
 from spacy.util import ensure_path
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import Dataset, DataLoader
 
 from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
 from curated_transformers.models.bert.embeddings import BertEmbeddings
 from curated_transformers.models.bert.config import BertEmbeddingConfig, BertLayerConfig
 from model import make_autoencoder, make_twinembeddings
 from data import make_transformer_loader, array2embedding, arrays2linear, arrays2layernorm
+from data import get_curated_transformer, collate_autoencoder, Vectors
 from train import make_loss, training_loop
 
 
@@ -110,28 +114,25 @@ def init_config(
 @app.command()
 def compress_transformer(
     config_path: str,
-    out_path: str
+    model_path: str,
+    output_path: str
 ):
     config = srsly.read_yaml(config_path)
+    nlp = spacy.load(model_path)
+    trf_pipe = nlp.get_pipe("transformer")
+    trf_model = trf_pipe.model.get_ref("transformer")
+    trf_pytorch = trf_model.shims[0]._model
+    embeddings = trf_pytorch.embeddings
+    if isinstance(trf_pytorch.embeddings, RobertaEmbeddings):
+        embeddings = embeddings.inner
     model_type = config["model"]["type"]
     if model_type != "autoencoder":
         raise NotImplementedError(
             "Transformer embedding compression, currently"
             "only works with the autoencoder"
         )
-    if "huggingface" in config["loader"]:
-        transformer = config["loader"]["hf-transformer"]
-        source = "hf"
-    elif "curated-transformers" in config["loader"]:
-        transformer = config["loader"]["curated-transformers"]
-        source = "curated"
-    else:
-        raise NotImplementedError(
-            "Can only load transformer from curated-transformers "
-            "and hf-transformers. Please put one of these strings "
-            "as keys in the 'loader' section."
-        )
-
+    transformer = config["loader"]["curated-transformers"]
+    source = "curated"
     batch_size = config["loader"]["batch_size"]
     loader = make_transformer_loader(transformer, batch_size, source=source)
     config["model"]["original_size"] = loader.dim
@@ -153,98 +154,80 @@ def compress_transformer(
     loss_fn = make_loss(loss_type, reduction=reduction, delta=delta)
     epochs = config["training"]["epochs"]
     patience = config["training"]["patience"]
-    out_path = ensure_path(out_path)
-    training_loop(
-        model,
-        loss_fn,
-        loader,
-        epochs,
-        patience,
-        optimizer,
-        scheduler,
-        out_path
-    )
-
-
-@app.command()
-def stitch_curated_transformer(
-    model_path: str,
-    embedding_path: str,
-    output_path: str
-):
-    model_path = ensure_path(model_path)
-    embedding_path = ensure_path(embedding_path)
     output_path = ensure_path(output_path)
-    nlp = spacy.load(model_path)
-    word_embeddings = array2embedding(
-        np.load(embedding_path / "word_pieces.npy") 
+    train_loop = partial(
+        training_loop,
+        loss_fn=loss_fn,
+        epochs=epochs,
+        patience=patience,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        save_path=output_path,
     )
-    token_type_embeddings = array2embedding(
-        np.load(embedding_path / "token_type.npy")
-    )
-    position_embeddings = array2embedding(
-        np.load(embedding_path / "positional.npy")
-    )
-    projection = arrays2linear(
-        np.load(embedding_path / "weights.npy"),
-        np.load(embedding_path / "bias.npy"),
-    )
-    layer_norm = arrays2layernorm(
-        np.load(embedding_path / "ln_weight.npy"),
-        np.load(embedding_path / "ln_bias.npy")
-    )
-    embedding_config = BertEmbeddingConfig(
-        embedding_dim=word_embeddings.embedding_dim,
-        vocab_size=word_embeddings.num_embeddings,
-        type_vocab_size=token_type_embeddings.num_embeddings,
-        max_position_embeddings=position_embeddings.num_embeddings
-    )
-    layer_config = BertLayerConfig()
-    new_embeddings = BertEmbeddings(embedding_config, layer_config)
-    new_embeddings.word_embeddings = word_embeddings
-    new_embeddings.position_embeddings = position_embeddings
-    new_embeddings.token_type_embeddings = token_type_embeddings
-    new_embeddings.projection = projection
-    trf_pipe = nlp.get_pipe("transformer")
-    trf_model = trf_pipe.model.get_ref("transformer")
-    trf_pytorch = trf_model.shims[0]._model
-    if isinstance(trf_pytorch.embeddings, RobertaEmbeddings):
-        padding_idx = trf_pytorch.embeddings.padding_idx
-        roberta_embeddings = RobertaEmbeddings(
-            embedding_config, layer_config, padding_idx=padding_idx
+    best_model = train_loop(data=loader, model=model)
+    with torch.no_grad():
+        l1 = torch.nn.L1Loss()
+        wp_loss = l1(
+            best_model(embeddings.word_embeddings.weight), 
+            embeddings.word_embeddings.weight
         )
-        roberta_embeddings.inner = new_embeddings
-        trf_pytorch.embeddings = roberta_embeddings
-    else:
-        trf_pytorch.embeddings = new_embeddings
+        pos_loss = l1(
+            best_model(embeddings.position_embeddings.weight), 
+            embeddings.position_embeddings.weight
+        )
+        typ_loss = l1(
+            best_model(embeddings.token_type_embeddings.weight), 
+            embeddings.token_type_embeddings.weight
+        )
+        print(f"Word-piece loss {wp_loss}")
+        print(f"Positional loss {pos_loss}")
+        print(f"Token-type loss {typ_loss}")
+        new_pos = array2embedding(
+            best_model.encode(embeddings.position_embeddings.weight)
+        )
+        new_wp = array2embedding(
+            best_model.encode(embeddings.word_embeddings.weight)
+        )
+        new_typ = array2embedding(
+            best_model.encode(embeddings.token_type_embeddings.weight)
+        )
+    embeddings.word_embeddings = new_wp
+    embeddings.position_embeddings = new_pos
+    embeddings.token_type_embeddings = new_typ
+    embeddings.projection = best_model.decoder
+    embeddings.layer_norm = best_model.layer_norm
+    nlp.config["components"]["transformer"]["model"]["embedding_size"] = model.compressed_size
     nlp.to_disk(output_path)
 
 
 @app.command()
-def compress_spacy(
-    config_path,
-    out_path
-):
-    print("future command for compressing spacy vectors.")
-
-
-@app.command()
-def stitch_spacy(
+def noise_transformer(
     model_path: str,
-    embedding_path: str,
     output_path: str
 ):
-    ...
-
-
-@app.command()
-def compress_vectors(
-    config_path,
-    out_path
-):
-    print("Future command for compressing other vectors.")
-
-
+    nlp = spacy.load(model_path)
+    trf_pipe = nlp.get_pipe("transformer")
+    trf_model = trf_pipe.model.get_ref("transformer")
+    trf_pytorch = trf_model.shims[0]._model
+    embeddings = trf_pytorch.embeddings.inner
+    wp = torch.rand(embeddings.word_embeddings.weight.shape) / 10
+    pos = torch.rand(embeddings.position_embeddings.weight.shape) / 10
+    typ = torch.rand(embeddings.token_type_embeddings.weight.shape) / 10
+    loss = torch.nn.L1Loss()
+    print(
+        loss(
+            embeddings.word_embeddings.weight,
+            embeddings.word_embeddings.weight + wp
+        )
+    )
+    wp += embeddings.word_embeddings.weight
+    pos += embeddings.position_embeddings.weight
+    typ += embeddings.token_type_embeddings.weight
+    embeddings.word_embeddings = array2embedding(wp)
+    embeddings.position_embeddings = array2embedding(pos)
+    embeddings.token_type_embeddings = array2embedding(typ)
+    nlp.to_disk(output_path)
+    
 
 
 if __name__ == "__main__":

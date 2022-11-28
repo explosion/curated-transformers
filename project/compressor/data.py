@@ -2,9 +2,9 @@ import numpy
 import torch
 import spacy
 from wasabi import msg
-from thinc.api import LayerNorm as ThincNorm
+# from thinc.api import LayerNorm as ThincNorm
 from torch import nn
-
+from thinc.api import LayerNorm
 from dataclasses import dataclass
 from math import floor
 from typing import Tuple
@@ -15,24 +15,24 @@ from transformers import AutoModel
 from curated_transformers.models.roberta.embeddings import RobertaEmbeddings
 
 
-def layernorm2thinc(layernorm: nn.LayerNorm) -> ThincNorm:
-    """
-    Converts PyTorch LayerNorm to thinc LayerNorm.
-    """
-    W = layernorm.weight.detach().numpy()
-    b = layernorm.bias.detach().numpy()
-    norm = ThincNorm(b.shape[0])
-    norm.initialize()
-    norm.set_param("G", W)
-    norm.set_param("b", b)
-    return norm
+# def layernorm2thinc(layernorm: nn.LayerNorm) -> ThincNorm:
+#    """
+#    Converts PyTorch LayerNorm to thinc LayerNorm.
+#    """
+#    W = layernorm.weight.detach().numpy()
+#    b = layernorm.bias.detach().numpy()
+#    norm = ThincNorm(b.shape[0])
+#    norm.initialize()
+#    norm.set_param("G", W)
+#    norm.set_param("b", b)
+#    return norm
 
 
 def array2embedding(array: Floats2d) -> nn.Embedding:
     embedding = nn.Embedding(
         num_embeddings=array.shape[0],
         embedding_dim=array.shape[1],
-        _weight=torch.tensor(array, dtype=torch.float32)
+        _weight=array.detach().clone()
     )
     return embedding
 
@@ -104,7 +104,7 @@ def get_curated_transformer(model: str) -> Tuple[Floats2d, Floats2d, Floats2d]:
     embedding_matrix = embedding_tensor.detach().numpy()
     position_matrix = position_tensor.detach().numpy()
     token_type_matrix = token_type_tensor.detach().numpy()
-    layernorm = layernorm2thinc(embeddings.layer_norm)
+    layernorm = embeddings.layer_norm
     return embedding_matrix, position_matrix, token_type_matrix, layernorm
 
 
@@ -119,7 +119,7 @@ class Vectors(Dataset):
         return self.vectors.shape[0]
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
-        mat = torch.tensor(self.vectors[idx], dtype=torch.float32)
+        mat = self.vectors[idx].clone().detach().requires_grad_(False)
         idx = torch.tensor(idx)
         return mat, idx
 
@@ -137,6 +137,10 @@ class TransformerBatch:
     positional: Floats2d
     token_type: Floats2d
 
+    def to_cuda(self):
+        self.word_pieces = self.word_pieces.to("cuda")
+        self.positional = self.positional.to("cuda")
+        self.token_type = self.token_type.to("cuda")
 
 # TODO Currently only works with the AutoEncoder
 class TransformerLoader:
@@ -145,7 +149,7 @@ class TransformerLoader:
         word_pieces: Floats2d,
         positional: Floats2d,
         token_type: Floats2d,
-        layernorm: ThincNorm,
+        layernorm: nn.LayerNorm,
         *,
         batch_size: int,
         shuffle: bool = True,
@@ -204,16 +208,21 @@ class TransformerLoader:
         X = TransformerBatch(
             torch.tensor(word_piece, dtype=torch.float32),
             torch.tensor(positional, dtype=torch.float32),
-            torch.tensor(token_type, dtype=torch.float32)
+            torch.tensor(token_type, dtype=torch.float32)            
         )
-        Y, _ = self.layernorm(word_piece + positional + token_type, False)
+        with torch.no_grad():
+            Y = self.layernorm(X.word_pieces + X.positional + X.token_type)
         return X, torch.tensor(Y, dtype=torch.float32)
 
 
-def collate_autoencoder(batch) -> torch.Tensor:
+def collate_autoencoder(batch, normalizer=None) -> torch.Tensor:
     matrices, _ = zip(*batch)
     X = torch.stack(matrices, 0)
-    return X, X
+    if normalizer:
+        Y = normalizer(X)
+    else:
+        Y = X
+    return X, Y
 
 
 def collate_twinembedding(batch):

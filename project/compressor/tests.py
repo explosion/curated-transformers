@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.nn import LayerNorm
-from .data import TransformerLoader, layernorm2thinc
+from .data import TransformerLoader 
 
 
 #TODO this fails
@@ -12,7 +12,7 @@ def test_transformerloader():
     typ = np.random.random(size=(n, d))
     layernorm = LayerNorm(d)
     loader = TransformerLoader(
-        wp, pos, typ, layernorm2thinc(layernorm), batch_size=bs
+        wp, pos, typ, layernorm, batch_size=bs
     )
     bottom = 0
     for batch in loader:

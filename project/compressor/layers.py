@@ -123,22 +123,22 @@ class AutoEncoder(nn.Module):
         super(AutoEncoder, self).__init__()
         self.encoder = encoder
         self.decoder = nn.Linear(encoder.out_dim, encoder.in_dim)
-        self.normalizer = None
+        self.layer_norm = nn.LayerNorm(self.encoder.out_dim)
 
     def encode(self, X):
-        return self.encoder(X).detach().numpy()
+        with torch.no_grad():
+            self.eval()
+            return self.encoder(X)
 
     def forward(self, X):
         # Make a LayerNorm on demand
         if isinstance(X, TransformerBatch):
-            if self.normalizer is None:
-                self.normalizer = nn.LayerNorm(self.encoder.out_dim)
             wp = self.encoder(X.word_pieces)
             pos = self.encoder(X.positional)
             typ = self.encoder(X.token_type)
-            return self.decoder(self.normalizer(wp + pos + typ))
+            return self.decoder(self.layer_norm(wp + pos + typ))
         else:
-            return self.decoder(self.encoder(X))
+            return self.decoder(self.layer_norm(self.encoder(X)))
 
     @property
     def compressed_size(self):

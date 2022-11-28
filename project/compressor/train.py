@@ -26,7 +26,7 @@ def make_loss(name: str, *, reduction: int = "mean", delta: float = 1.0):
     if name == "huber":
         loss = loss(reduction=reduction, delta=delta)
     else:
-        loss = loss(reduction)
+        loss = loss(reduction=reduction)
     return loss
 
 
@@ -48,45 +48,38 @@ def training_loop(
     the entire training set the model gets saved and the
     previous checkpoint is deleted.
     """
+    model = model.to("cuda")
     def eval():
+        model.eval()
         total_loss = 0
         with torch.no_grad():
             for i, batch in enumerate(data):
                 X, Y = batch
+                X.to_cuda()
+                Y = Y.to("cuda")
                 Y_hat = model(X)
                 total_loss += loss_fn(Y_hat, Y)
-        return total_loss / i
+        model.train()
+        return total_loss / (i + 1)
 
     no_improve = 0
     best_loss = float("inf")
+    best_model = None
     print(f"Starting loss: {eval()}")
     for epoch in range(epochs):
-        if no_improve == patience:
-            break
-        model.train()
+        print(f"Epoch {epoch + 1}")
         pbar = tqdm(data, total=len(data))
         for step, batch in enumerate(pbar):
             optimizer.zero_grad()
             X, Y = batch
+            X.to_cuda()
+            Y = Y.to("cuda")
             Y_hat = model(X)
             loss = loss_fn(Y_hat, Y)
             pbar.set_description(f"Loss: {loss}")
             loss.backward()
             optimizer.step()
-        model.eval()
         mean_loss = eval()
-        if not mean_loss < best_loss:
-            no_improve += 1
-            print(f"No improvement, loss on full data: {mean_loss}")
-        else:
-            no_improve = 0
-            best_loss = mean_loss
-            print(f"Best loss on full data achieved: {mean_loss}")
-            print("Saving model")
-            if save_path.exists():
-                shutil.rmtree(save_path)
-                serialize(model, data, save_path)
-            else:
-                serialize(model, data, save_path)
-        scheduler.step(mean_loss)
+        print(f"Best loss on full data achieved: {mean_loss}")
+    model = model.to("cpu")
     return model

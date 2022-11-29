@@ -145,6 +145,55 @@ class AutoEncoder(nn.Module):
         return self.encoder.out_dim
 
 
+class TrfAutoEncoder(nn.Module):
+    """
+    Linear autoencoder with 3 encoders:
+        1. word pieces
+        2. positional embeddings
+        3. token type embeddings
+    """
+    def __init__(self, in_dim, out_dim):
+        super(TrfAutoEncoder, self).__init__()
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.wp_encoder = nn.Linear(in_dim, out_dim)
+        self.pos_encoder = nn.Linear(in_dim, out_dim)
+        self.typ_encoder = nn.Linear(in_dim, out_dim)
+        self.decoder = nn.Linear(out_dim, in_dim)
+        self.layer_norm = nn.LayerNorm(out_dim)
+    
+    def encode_wp(self, X):
+        with torch.no_grad():
+            return self.wp_encoder(X)
+    
+    def encode_pos(self, X):
+        with torch.no_grad():
+            return self.pos_encoder(X)
+    
+    def encode_typ(self, X):
+        with torch.no_grad():
+            return self.typ_encoder(X)
+    
+    def forward_wp(self, X):
+        return self.decoder(self.layer_norm(self.wp_encoder(X)))
+    
+    def forward_pos(self, X):
+        return self.decoder(self.layer_norm(self.pos_encoder(X)))
+    
+    def forward_typ(self, X):
+        return self.decoder(self.layer_norm(self.typ_encoder(X)))
+
+    def forward(self, X: TransformerBatch):
+        wp = self.wp_encoder(X.word_pieces)
+        pos = self.pos_encoder(X.positional)
+        typ = self.typ_encoder(X.token_type)
+        return self.decoder(self.layer_norm(wp + pos + typ))
+
+    @property
+    def compressed_size(self):
+        return self.out_dim
+
+
 # TODO doesn't work with the transformer atm.
 class TwinEmbeddings(nn.Module):
     """

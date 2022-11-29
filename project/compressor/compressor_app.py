@@ -18,6 +18,7 @@ from model import make_autoencoder, make_twinembeddings
 from data import make_transformer_loader, array2embedding, arrays2linear, arrays2layernorm
 from data import get_curated_transformer, collate_autoencoder, Vectors
 from train import make_loss, training_loop
+from layers import TrfAutoEncoder
 
 
 app = typer.Typer()
@@ -28,7 +29,9 @@ def load_model(config):
     original_size = model_config["original_size"]
     ratio = model_config["ratio"]
     compress_size = int(original_size / ratio)
-    if model_config["type"] == "autoencoder":
+    if model_config["type"] == "trfautoencoder":
+        model = TrfAutoEncoder(in_dim=original_size, out_dim=compress_size)
+    elif model_config["type"] == "autoencoder":
         num_hidden = model_config["num_hidden"]
         residual = model_config["residual"]
         if residual:
@@ -126,10 +129,10 @@ def compress_transformer(
     if isinstance(trf_pytorch.embeddings, RobertaEmbeddings):
         embeddings = embeddings.inner
     model_type = config["model"]["type"]
-    if model_type != "autoencoder":
+    if model_type != "trfautoencoder":
         raise NotImplementedError(
             "Transformer embedding compression, currently"
-            "only works with the autoencoder"
+            "only works with the trfautoencoder"
         )
     transformer = config["loader"]["curated-transformers"]
     source = "curated"
@@ -168,28 +171,28 @@ def compress_transformer(
     with torch.no_grad():
         l1 = torch.nn.L1Loss()
         wp_loss = l1(
-            best_model(embeddings.word_embeddings.weight), 
+            best_model.forward_wp(embeddings.word_embeddings.weight), 
             embeddings.word_embeddings.weight
         )
         pos_loss = l1(
-            best_model(embeddings.position_embeddings.weight), 
+            best_model.forward_pos(embeddings.position_embeddings.weight), 
             embeddings.position_embeddings.weight
         )
         typ_loss = l1(
-            best_model(embeddings.token_type_embeddings.weight), 
+            best_model.forward_typ(embeddings.token_type_embeddings.weight), 
             embeddings.token_type_embeddings.weight
         )
         print(f"Word-piece loss {wp_loss}")
         print(f"Positional loss {pos_loss}")
         print(f"Token-type loss {typ_loss}")
-        new_pos = array2embedding(
-            best_model.encode(embeddings.position_embeddings.weight)
-        )
         new_wp = array2embedding(
-            best_model.encode(embeddings.word_embeddings.weight)
+            best_model.encode_wp(embeddings.word_embeddings.weight)
+        )
+        new_pos = array2embedding(
+            best_model.encode_pos(embeddings.position_embeddings.weight)
         )
         new_typ = array2embedding(
-            best_model.encode(embeddings.token_type_embeddings.weight)
+            best_model.encode_typ(embeddings.token_type_embeddings.weight)
         )
     embeddings.word_embeddings = new_wp
     embeddings.position_embeddings = new_pos

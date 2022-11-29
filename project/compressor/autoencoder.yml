@@ -1,5 +1,5 @@
 model:
-  type: autoencoder
+  type: trfautoencoder
   original_size: 300
   ratio: 2
   num_hidden: 0
@@ -17,8 +17,9 @@ scheduler:
   factor: 0.1
   patience: 2
 loss:
-  type: mse
+  type: l1
   reduction: mean
+  delta: 1.0
 training:
-  epochs: 10
+  epochs: 30
   patience: 2

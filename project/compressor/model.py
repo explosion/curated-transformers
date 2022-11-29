@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from spacy.util import ensure_path
 
 from data import TransformerLoader, Vectors, collate_autoencoder
-from layers import AutoEncoder, ACTIVATIONS, MLP, TwinEmbeddings
+from layers import AutoEncoder, TrfAutoEncoder, ACTIVATIONS, MLP, TwinEmbeddings
 
 
 def make_autoencoder(

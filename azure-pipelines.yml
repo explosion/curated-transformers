@@ -31,7 +31,7 @@ jobs:
         python.version: '3.11'
       Python311Mac:
         imageName: 'macos-latest'
-          python.version: '3.11'
+        python.version: '3.11'
     maxParallel: 4
   pool:
     vmImage: $(imageName)

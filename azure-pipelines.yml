@@ -1,3 +1,6 @@
+variables:
+  HUGGINGFACE_CACHE_DIR: $(Agent.HomeDirectory)/.cache/huggingface
+
 trigger:
   batch: true
   branches:
@@ -44,6 +47,13 @@ jobs:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
+
+  - task: CacheHuggingFace@2
+    displayName: Use cached HuggingFace models
+    inputs:
+      key: 'huggingface | "$(Agent.OS)" | requirements.txt'
+      path: $(HUGGINGFACE_CACHE_DIR)
+      cacheHitVar: HUGGINGFACE_CACHE_RESTORED
 
   - script: |
       python -m pip install --upgrade pip setuptools wheel

@@ -28,7 +28,7 @@ def build_hf_encoder_loader_v1(
             raise ValueError("requires huggingface transformers")
 
         global transformers
-        from transformers import AutoModel
+        from transformers import AutoModel  # type: ignore
 
         encoder = model.shims[0]._model
 

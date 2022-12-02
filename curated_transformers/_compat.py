@@ -1,5 +1,5 @@
 try:
-    import transformers
+    import transformers  # type: ignore
 
     has_hf_transformers = True
 except ImportError:

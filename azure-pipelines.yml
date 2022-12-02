@@ -48,7 +48,7 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - task: CacheHuggingFace@2
+  - task: Cache@2
     displayName: Use cached HuggingFace models
     inputs:
       key: 'huggingface | "$(Agent.OS)" | requirements.txt'

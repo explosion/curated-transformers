@@ -54,7 +54,7 @@ jobs:
       python setup.py sdist
     displayName: 'Build sdist'
 
-  - script: python -m mypy confection
+  - script: python -m mypy curated_transformers
     displayName: 'Run mypy'
     condition: ne(variables['python.version'], '3.6')
 

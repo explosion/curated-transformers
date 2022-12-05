@@ -65,7 +65,7 @@ jobs:
     condition: ne(variables['python.version'], '3.6')
 
   - script: |
-      python -m pip install --no-build-isolation .
+      python -m pip install .
       cp curated_transformers/tests/conftest.py .
       rm -rf curated_transformers
     displayName: 'Install from source'

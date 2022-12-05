@@ -71,5 +71,5 @@ jobs:
     displayName: 'Install from source'
 
   - script: |
-      python -m pytest --pyargs curated_transformers --slow
+      python -m pytest --pyargs curated-transformers --slow
     displayName: 'Run tests'

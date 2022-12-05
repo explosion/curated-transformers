@@ -456,6 +456,7 @@ def build_xlmr_transformer_model_v1(
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
+    embedding_size: int = 768,
     hidden_size: int = 768,
     intermediate_size: int = 3072,
     layer_norm_eps: float = 1e-5,
@@ -511,6 +512,7 @@ def build_xlmr_transformer_model_v1(
     piece_adapter = build_xlmr_adapter()
 
     config = RobertaConfig(
+        embedding_dim=embedding_size,
         hidden_size=hidden_size,
         intermediate_size=intermediate_size,
         num_attention_heads=num_attention_heads,

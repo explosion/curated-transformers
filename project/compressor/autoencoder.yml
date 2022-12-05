@@ -1,0 +1,25 @@
+model:
+  type: trfautoencoder
+  original_size: 300
+  ratio: 2
+  num_hidden: 0
+  activation: linear
+  rezero: False
+  residual: False
+  normalize: True
+loader:
+  curated-transformers: /home/ubuntu/curated-transformers/project/training/UD_Dutch-Alpino/model-best
+  batch_size: 128
+optimizer:
+  learning_rate: 0.001
+  weight_decay: 0.0
+scheduler:
+  factor: 0.1
+  patience: 2
+loss:
+  type: l1
+  reduction: mean
+  delta: 1.0
+training:
+  epochs: 30
+  patience: 2

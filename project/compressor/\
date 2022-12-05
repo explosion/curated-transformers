@@ -1,0 +1,48 @@
+from torch import nn
+import torch.nn.functional as F
+
+
+def make_layer(nI: int, nO: int, act: nn.Module, norm: bool) -> nn.Module:
+    """
+    Make a Linear + Activation layer with a potential LayerNorm.
+    """
+    stack = []
+    linear = nn.Linear(nI, nO)
+    stack.append(linear)
+    stack.append(act)
+    if norm:
+        layernorm = nn.LayerNorm(nI)
+        stack.append(layernorm)
+    return nn.Sequential(stack)
+    
+
+
+class Encoder(nn.Module):
+    def __init__(self, depth, activation, in_dim, width, out_dim, normalize):
+        assert depth >= 1
+        if activation == "linear":
+            activation = nn.Identity()
+        if activation == "relu":
+            activation = nn.ReLU()
+        elif activation == "tanh":
+            activation = nn.Tanh()
+        elif activation == "sigmoid":
+            activation = nn.Sigmoid()
+        elif activation == "swish":
+            activation = nn.SiLU()
+        if depth == 1:
+            self.network = make_layer(in_dim, out_dim, activation, normalize)
+        else:
+            stack = []
+            input_layer = make_layer(in_dim, width, activation, normalize)
+            output_layer = make_layer(width, out_dim, activation, normalize)
+            stack.append(input_layer)
+            if depth > 2:
+                for i in range(depth - 2):
+                    layer = make_layer(width, width, activation, normalize)
+                    stack.append(layer)
+            stack.append(output_layer)
+            self.network = nn.Sequential(stack)
+
+    def forward(X):
+        return self.network(X)

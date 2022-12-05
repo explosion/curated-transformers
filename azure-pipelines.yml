@@ -89,5 +89,5 @@ jobs:
     displayName: 'Install test dependencies'
 
   - script: |
-      python -m pytest --pyargs curated_transformers
+      python -m pytest --pyargs curated_transformers --slow
     displayName: 'Run tests'

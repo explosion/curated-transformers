@@ -212,7 +212,7 @@ def _remove_whitespace_tokens(
 
                 assert alignment.no_ws_piece_offset is not None
                 new_layer[  # type: ignore
-                    alignment.no_ws_piece_offset : alignment.no_ws_piece_offset
+                    alignment.no_ws_piece_offset : alignment.no_ws_piece_offset # type: ignore
                     + alignment.n_pieces,
                     :,
                 ] = layer.dataXd[  # type: ignore

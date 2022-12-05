@@ -60,33 +60,15 @@ jobs:
       pip install -r requirements.txt
     displayName: 'Install dependencies'
 
-  - script: |
-      python setup.py sdist
-    displayName: 'Build sdist'
-
   - script: python -m mypy curated_transformers
     displayName: 'Run mypy'
     condition: ne(variables['python.version'], '3.6')
 
-  - task: DeleteFiles@1
-    inputs:
-      contents: 'curated_transformers'
-    displayName: 'Delete source directory'
-
   - script: |
-      python -m pip freeze
-      pip freeze --exclude pywin32 > installed.txt
-      pip uninstall -y -r installed.txt
-    displayName: 'Uninstall all packages'
-
-  - bash: |
-      SDIST=$(python -c "import os;print(os.listdir('./dist')[-1])" 2>&1)
-      pip install dist/$SDIST
-    displayName: 'Install from sdist'
-
-  - script: |
-      pip install -r requirements.txt
-    displayName: 'Install test dependencies'
+      python pip install --no-build-isolation .
+      cp curated_transformers/tests/conftest.py .
+      rm -rf curated_transformers
+    displayName: 'Install from source'
 
   - script: |
       python -m pytest --pyargs curated_transformers --slow

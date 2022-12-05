@@ -57,7 +57,7 @@ jobs:
 
   - script: |
       python -m pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt
+      python -m pip install -r requirements.txt
     displayName: 'Install dependencies'
 
   - script: python -m mypy curated_transformers
@@ -65,7 +65,7 @@ jobs:
     condition: ne(variables['python.version'], '3.6')
 
   - script: |
-      python pip install --no-build-isolation .
+      python -m pip install --no-build-isolation .
       cp curated_transformers/tests/conftest.py .
       rm -rf curated_transformers
     displayName: 'Install from source'

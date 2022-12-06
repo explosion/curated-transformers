@@ -127,6 +127,24 @@ class Transformer(TrainablePipe):
         self.all_layer_outputs = all_layer_outputs
         self._set_model_all_layer_outputs(all_layer_outputs)
 
+    def distill(self,
+               teacher_pipe: "TrainablePipe",
+               teacher_docs: Iterable["Doc"],
+               student_docs: Iterable["Doc"],
+               *,
+               drop: float=0.0,
+               sgd: Optimizer=None,
+               losses: Optional[Dict[str, float]]=None) -> Dict[str, float]:
+        # TODO: add MSE loss between layers
+
+        #teacher_pipe.set_annotations(docs, teacher_pipe.predict(docs))
+        # Ensure that downstream teacher components get transformer outputs
+        teacher_pipe.set_annotations(teacher_docs, teacher_pipe.predict(teacher_docs))
+
+        # And prepare the student for backprop.
+        examples = [Example(doc, doc) for doc in student_docs]
+        return self.update(examples, drop=drop, sgd=sgd, losses=losses)
+
     @property
     def listeners(self) -> List[TransformerListener]:
         """

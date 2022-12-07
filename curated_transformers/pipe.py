@@ -16,7 +16,7 @@ from spacy.tokens import Doc
 from spacy.pipeline import TrainablePipe
 from spacy.training import Example, validate_examples, validate_get_examples
 from spacy.util import minibatch
-from thinc.api import Config, Optimizer, set_dropout_rate
+from thinc.api import Config, Linear, Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Ragged
 
@@ -127,23 +127,72 @@ class Transformer(TrainablePipe):
         self.all_layer_outputs = all_layer_outputs
         self._set_model_all_layer_outputs(all_layer_outputs)
 
-    def distill(self,
-               teacher_pipe: "TrainablePipe",
-               teacher_docs: Iterable["Doc"],
-               student_docs: Iterable["Doc"],
-               *,
-               drop: float=0.0,
-               sgd: Optimizer=None,
-               losses: Optional[Dict[str, float]]=None) -> Dict[str, float]:
+    def distill(
+        self,
+        teacher_pipe: "TrainablePipe",
+        teacher_docs: Iterable["Doc"],
+        student_docs: Iterable["Doc"],
+        *,
+        drop: float = 0.0,
+        sgd: Optimizer = None,
+        losses: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, float]:
         # TODO: add MSE loss between layers
 
-        #teacher_pipe.set_annotations(docs, teacher_pipe.predict(docs))
+        # teacher_pipe.set_annotations(docs, teacher_pipe.predict(docs))
         # Ensure that downstream teacher components get transformer outputs
-        teacher_pipe.set_annotations(teacher_docs, teacher_pipe.predict(teacher_docs))
 
-        # And prepare the student for backprop.
-        examples = [Example(doc, doc) for doc in student_docs]
-        return self.update(examples, drop=drop, sgd=sgd, losses=losses)
+        # Currently the losses come from backprop, but maybe we want to use
+        # the L2 loss, since we actually have a real loss now?
+        losses.setdefault(self.name, 0.0)
+
+        teacher_outputs = teacher_pipe.predict(teacher_docs)
+        teacher_pipe.set_annotations(teacher_docs, teacher_outputs)
+
+        student_outputs, acc, backprop = self._create_backprops(
+            student_docs, losses, sgd=sgd
+        )
+
+        # Provide output + backprop to listenens.
+        batch_id = TransformerListener.get_batch_id(student_docs)
+        for listener in self.listeners[:-1]:
+            listener.receive(batch_id, student_outputs, acc)
+        if self.listeners:
+            self.listeners[-1].receive(batch_id, student_outputs, backprop)
+
+        d_repr, outputs_to_backprop, loss = self._layer_loss(
+            teacher_outputs, student_outputs
+        )
+        # print(len(d_repr), d_repr[0].shape)
+        acc(d_repr, outputs_to_backprop=outputs_to_backprop)
+
+        losses[self.name] = loss
+
+        return losses
+
+    def _layer_loss(self, teacher_outputs, student_outputs):
+        if teacher_outputs.last_layer_only or student_outputs.last_layer_only:
+            teacher_last = teacher_outputs.last_hidden_layer_states
+            student_last = student_outputs.last_hidden_layer_states
+            student_last, backprop = self._map_student_to_teacher(
+                teacher_last, student_last
+            )
+            diffs = [(t.dataXd - s.dataXd) for t, s in zip(teacher_last, student_last)]
+            d_mse = [
+                Ragged(2 * diff, s.lengths) for diff, s in zip(diffs, student_last)
+            ]
+            loss = sum((diff**2).sum() for diff in diffs)
+            return backprop(d_mse), (-1,), loss
+
+        raise NotImplemented
+
+    def _map_student_to_teacher(self, teacher_outputs, student_outputs):
+        teacher_size = teacher_outputs[0].data_shape[1]
+        student_size = student_outputs[0].data_shape[1]
+        if teacher_size == student_size:
+            return student_outputs, lambda dY: dY
+        if self.projection is None:
+            self.projection = Linear(teacher_size, student_size)
 
     @property
     def listeners(self) -> List[TransformerListener]:
@@ -313,6 +362,59 @@ class Transformer(TrainablePipe):
         set_dropout_rate(self.model, drop)
         losses.setdefault(self.name, 0.0)
 
+        outputs, acc, backprop = self._create_backprops(docs, losses, sgd=sgd)
+
+        batch_id = TransformerListener.get_batch_id(docs)
+        for listener in self.listeners[:-1]:
+            listener.receive(batch_id, outputs, acc)
+        if self.listeners:
+            self.listeners[-1].receive(batch_id, outputs, backprop)
+        return losses
+
+    def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
+        """A noop function, for compatibility with the Pipe API. See the `update`
+        method for an explanation of the loss mechanics of the component.
+        """
+        pass
+
+    def initialize(
+        self,
+        get_examples: Callable[[], Iterable[Example]],
+        *,
+        nlp: Optional[Language] = None,
+        encoder_loader: Optional[Callable] = None,
+        piecer_loader: Optional[Callable] = None,
+    ):
+        """Initialize the pipe for training, using data examples if available.
+
+        get_examples (Callable[[], Iterable[Example]]):
+            Optional function that returns gold-standard Example objects.
+        nlp (Language):
+            The current nlp object.
+        """
+        validate_get_examples(get_examples, "Transformer.initialize")
+
+        if encoder_loader:
+            self.model.get_ref("transformer").init = encoder_loader  # type: ignore
+        if piecer_loader:
+            self.model.get_ref("piece_encoder").init = piecer_loader  # type: ignore
+
+        doc_sample = []
+        for example in islice(get_examples(), 10):
+            doc_sample.append(example.x)
+        assert doc_sample, Errors.E923.format(name=self.name)
+        self.model.initialize(X=doc_sample)
+
+    def add_label(self, label: Any):
+        raise NotImplementedError
+
+    def _create_backprops(
+        self,
+        docs: Iterable[Doc],
+        losses: Dict[str, float],
+        *,
+        sgd: Optional[Optimizer] = None,
+    ):
         # To ensure that the model's internal state is always consistent with the pipe's.
         self._set_model_all_layer_outputs(self.all_layer_outputs)
 
@@ -379,55 +481,9 @@ class Transformer(TrainablePipe):
             return []
 
         if self.frozen:
-            accum_func = accumulate_gradient_noop
-            backprop_func = backprop_noop
+            return outputs, accumulate_gradient_noop, backprop_noop
         else:
-            accum_func = accumulate_gradient
-            backprop_func = backprop
-
-        batch_id = TransformerListener.get_batch_id(docs)
-        for listener in self.listeners[:-1]:
-            listener.receive(batch_id, outputs, accum_func)
-        if self.listeners:
-            self.listeners[-1].receive(batch_id, outputs, backprop_func)
-        return losses
-
-    def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
-        """A noop function, for compatibility with the Pipe API. See the `update`
-        method for an explanation of the loss mechanics of the component.
-        """
-        pass
-
-    def initialize(
-        self,
-        get_examples: Callable[[], Iterable[Example]],
-        *,
-        nlp: Optional[Language] = None,
-        encoder_loader: Optional[Callable] = None,
-        piecer_loader: Optional[Callable] = None,
-    ):
-        """Initialize the pipe for training, using data examples if available.
-
-        get_examples (Callable[[], Iterable[Example]]):
-            Optional function that returns gold-standard Example objects.
-        nlp (Language):
-            The current nlp object.
-        """
-        validate_get_examples(get_examples, "Transformer.initialize")
-
-        if encoder_loader:
-            self.model.get_ref("transformer").init = encoder_loader  # type: ignore
-        if piecer_loader:
-            self.model.get_ref("piece_encoder").init = piecer_loader  # type: ignore
-
-        doc_sample = []
-        for example in islice(get_examples(), 10):
-            doc_sample.append(example.x)
-        assert doc_sample, Errors.E923.format(name=self.name)
-        self.model.initialize(X=doc_sample)
-
-    def add_label(self, label: Any):
-        raise NotImplementedError
+            return outputs, accumulate_gradient, backprop
 
     def _set_model_all_layer_outputs(self, new_value: bool):
         self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value

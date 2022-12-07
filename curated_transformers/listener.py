@@ -172,6 +172,7 @@ class LastTransformerLayerListener(TransformerListener):
             dims={"nO": width},
             layers=[pooling],
             attrs={"grad_factor": grad_factor},
+            refs={"pooling": pooling},
         )
         self.upstream_name = upstream_name
         self._batch_id = None

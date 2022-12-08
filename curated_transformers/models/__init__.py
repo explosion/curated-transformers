@@ -1,3 +1,4 @@
+from .distill import build_layer_distill_model_v1
 from .hf_loader import build_hf_encoder_loader_v1
 from .scalar_weight import build_scalar_weight_v1
 from .transformer_model import (

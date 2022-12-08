@@ -11,6 +11,10 @@ DEFAULT_CONFIG_STR = """
     [transformer_distiller]
 
     [transformer_distiller.model]
+    @architectures = "curated-transformers.LayerDistill.v1"
+    teacher_width = 768
+
+    [transformer_distiller.model.tok2vec]
     @architectures = "curated-transformers.LastTransformerLayerListener.v1"
     width = 768
     pooling = {"@layers":"reduce_mean.v1"}
@@ -81,15 +85,19 @@ class TransformerDistiller(TrainablePipe):
         student_hidden, student_backprop = self.model.begin_update(student_docs)
 
         # We have to pool the teacher output in the same way as the student.
-        student_pooler = self.model.get_ref("pooling")
+        student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
         teacher_hidden = [
             student_pooler.predict(doc._.trf_data.last_hidden_layer_state)
             for doc in teacher_docs
         ]
 
-        diffs = [(t - s) for t, s in zip(teacher_hidden, student_hidden)]
-        d_mse = [2 * diff for diff in diffs]
-        losses[self.name] += sum((diff**2).sum() for diff in diffs)
+        normalize = False
+        if normalize:
+            n = len(teacher_hidden)
+            d_mse = [(s - t) / n for t, s in zip(teacher_hidden, student_hidden)]
+        else:
+            d_mse = [(s - t) for t, s in zip(teacher_hidden, student_hidden)]
+        losses[self.name] += sum((d**2).sum() for d in d_mse)
         student_backprop(d_mse)
         if sgd not in (None, False):
             self.finish_update(sgd)

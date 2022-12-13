@@ -63,6 +63,34 @@ class TransformerDistiller(TrainablePipe):
         self.vocab = vocab
         self.model = model
         self.name = name
+        self.layer_mapping = None
+    
+    def _layer_mapping(self, teacher_hidden, student_hidden):
+        if self.layer_mapping is not None:
+            return self.layer_mapping
+
+        t_doc = teacher_hidden[0]
+        s_doc = student_hidden[0]
+
+        n_teacher = len(t_doc) - 1
+        n_student = len(s_doc) - 1
+        if n_student == 0 or n_teacher == 0:
+            # Distill the last layer if the teacher or student only has one layer.
+            self.layer_mapping = [(-1, -1)]
+        elif n_teacher % n_student != 0:
+            raise ValueError(
+                "Cannot distribute student layers evenly over teacher layers"
+            )
+        else:
+            layer_multiple = n_teacher // n_student
+            # Always map the embedding layer.
+            self.layer_mapping = [(0, 0)]
+            # Uniformly distribute other layers.
+            self.layer_mapping.extend(
+                (i + 1, (i + 1) * layer_multiple) for i in range(n_student)
+            )
+     
+        return self.layer_mapping
 
     def distill(
         self,
@@ -82,6 +110,9 @@ class TransformerDistiller(TrainablePipe):
         set_dropout_rate(self.model, drop)
         losses.setdefault(self.name, 0.0)
 
+        if len(teacher_docs) == 0 or len(student_docs) == 0:
+            return losses
+
         student_hidden, student_backprop = self.model.begin_update(student_docs)
 
         ## Todo: correct teacher-student mapping rather than just the first N layers.
@@ -93,45 +124,30 @@ class TransformerDistiller(TrainablePipe):
             for doc in teacher_docs
         ]
 
-        normalize = True
-        gradients = []
-        for t_doc, s_doc in zip(teacher_hidden, student_hidden):
-            # TODO: lift this logic out of the loop and compute only once.
-            n_teacher = len(t_doc) - 1
-            n_student = len(s_doc) - 1
-            if n_student == 0 or n_teacher == 0:
-                # Distill the last layer if the teacher or student only has one layer.
-                layer_mapping = [(-1, -1)]
-            elif n_teacher % n_student != 0:
-                raise ValueError(
-                    "Cannot distribute student layers evenly over teacher layers"
-                )
-            else:
-                layer_multiple = n_teacher // n_student
-                layer_mapping = [(0, 0)]
-                layer_mapping.extend(
-                    (i + 1, (i + 1) * layer_multiple) for i in range(n_student)
-                )
+        layer_mapping = self._layer_mapping(teacher_hidden, student_hidden)
 
+        normalize = True
+        d_mse = []
+        for t_doc, s_doc in zip(teacher_hidden, student_hidden):
             if normalize:
-                d_mse = [
+                d_mse_doc = [
                     (s_doc[student_layer] - t_doc[teacher_layer])
                     / self.model.ops.xp.linalg.norm(t_doc[teacher_layer])
                     for student_layer, teacher_layer in layer_mapping
                 ]
             else:
-                d_mse = [
+                d_mse_doc = [
                     s_doc[student_layer] - t_doc[teacher_layer]
                     for student_layer, teacher_layer in layer_mapping
                 ]
 
-            gradients.append(d_mse)
+            d_mse.append(d_mse_doc)
 
         losses[self.name] += sum(
-            sum((d_layer**2).sum() for d_layer in d) for d in gradients
+            sum((d_layer**2).sum() for d_layer in d) for d in d_mse
         )
 
-        student_backprop(gradients)
+        student_backprop(d_mse)
         if sgd not in (None, False):
             self.finish_update(sgd)
 

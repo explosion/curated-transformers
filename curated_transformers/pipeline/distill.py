@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Iterator, Optional
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple
 from itertools import islice
 from spacy import Language, Vocab
 from spacy.errors import Errors
@@ -84,21 +84,54 @@ class TransformerDistiller(TrainablePipe):
 
         student_hidden, student_backprop = self.model.begin_update(student_docs)
 
+        ## Todo: correct teacher-student mapping rather than just the first N layers.
+
         # We have to pool the teacher output in the same way as the student.
         student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
         teacher_hidden = [
-            student_pooler.predict(doc._.trf_data.last_hidden_layer_state)
+            [student_pooler.predict(layer) for layer in doc._.trf_data.all_outputs]
             for doc in teacher_docs
         ]
 
-        normalize = False
-        if normalize:
-            n = len(teacher_hidden)
-            d_mse = [(s - t) / n for t, s in zip(teacher_hidden, student_hidden)]
-        else:
-            d_mse = [(s - t) for t, s in zip(teacher_hidden, student_hidden)]
-        losses[self.name] += sum((d**2).sum() for d in d_mse)
-        student_backprop(d_mse)
+        normalize = True
+        gradients = []
+        for t_doc, s_doc in zip(teacher_hidden, student_hidden):
+            # TODO: lift this logic out of the loop and compute only once.
+            n_teacher = len(t_doc) - 1
+            n_student = len(s_doc) - 1
+            if n_student == 0 or n_teacher == 0:
+                # Distill the last layer if the teacher or student only has one layer.
+                layer_mapping = [(-1, -1)]
+            elif n_teacher % n_student != 0:
+                raise ValueError(
+                    "Cannot distribute student layers evenly over teacher layers"
+                )
+            else:
+                layer_multiple = n_teacher // n_student
+                layer_mapping = [(0, 0)]
+                layer_mapping.extend(
+                    (i + 1, (i + 1) * layer_multiple) for i in range(n_student)
+                )
+
+            if normalize:
+                d_mse = [
+                    (s_doc[student_layer] - t_doc[teacher_layer])
+                    / self.model.ops.xp.linalg.norm(t_doc[teacher_layer])
+                    for student_layer, teacher_layer in layer_mapping
+                ]
+            else:
+                d_mse = [
+                    s_doc[student_layer] - t_doc[teacher_layer]
+                    for student_layer, teacher_layer in layer_mapping
+                ]
+
+            gradients.append(d_mse)
+
+        losses[self.name] += sum(
+            sum((d_layer**2).sum() for d_layer in d) for d in gradients
+        )
+
+        student_backprop(gradients)
         if sgd not in (None, False):
             self.finish_update(sgd)
 

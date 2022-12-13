@@ -16,6 +16,36 @@ from thinc.types import Ragged, Floats2d
 from .models.output import DocTransformerOutput, TransformerModelOutput
 
 
+def build_transformer_layer_listener_v1(
+    width: int,
+    pooling: Model[Ragged, Floats2d],
+    upstream: str = "*",
+    grad_factor: float = 1.0,
+) -> Model[List[Doc], List[Floats2d]]:
+    """Construct a listener layer that communicates with one or more upstream Transformer
+    components. This layer extracts the output of all transformer layers and performs
+    pooling over the individual pieces of each Doc token, returning their corresponding
+    representations.
+
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component. You'll almost
+        never have multiple upstream Transformer components, so the wildcard
+        string will almost always be fine.
+    width (int):
+        The width of the vectors produced by the upstream transformer component.
+    pooling (Model):
+        Model that is used to perform pooling over the piece representations.
+    grad_factor (float):
+        Factor to multiply gradients with.
+    """
+    transformer = TransformerLayerListener(
+        upstream_name=upstream, pooling=pooling, width=width, grad_factor=grad_factor
+    )
+    return transformer
+
+
 def build_last_transformer_layer_listener_v1(
     width: int,
     pooling: Model[Ragged, Floats2d],
@@ -135,6 +165,121 @@ class TransformerListener(Model):
                 raise ValueError(Errors.E953.format(id1=batch_id, id2=self._batch_id))
             else:
                 return True
+
+
+class TransformerLayerListener(TransformerListener):
+    """Passes through the pooled representations of all layers.
+
+    Requires its upstream Transformer component to return all layer outputs from
+    its model.
+    """
+
+    name = "transformer_layer_listener"
+
+    def __init__(
+        self,
+        upstream_name: str,
+        pooling: Model[Ragged, Floats2d],
+        width: int,
+        grad_factor: float,
+    ) -> None:
+        """
+        upstream_name (str):
+            A string to identify the 'upstream' Transformer component
+            to communicate with. The upstream name should either be the wildcard
+            string '*', or the name of the Transformer component. You'll almost
+            never have multiple upstream Transformer components, so the wildcard
+            string will almost always be fine.
+        width (int):
+            The width of the vectors produced by the upstream transformer component.
+        pooling (Model):
+            Model that is used to perform pooling over the piece representations.
+        grad_factor (float):
+            Factor to multiply gradients with.
+        """
+        Model.__init__(
+            self,
+            name=self.name,
+            forward=tranformer_layer_listener_forward,
+            dims={"nO": width},
+            layers=[pooling],
+            attrs={
+                "grad_factor": grad_factor,
+            },
+            refs={"pooling": pooling},
+        )
+        self.upstream_name = upstream_name
+        self._batch_id = None
+        self._outputs = None
+        self._backprop = None
+
+
+def tranformer_layer_listener_forward(
+    model: TransformerLayerListener, docs: Iterable[Doc], is_train: bool
+) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
+    pooling: Model[Ragged, Floats2d] = model.layers[0]
+    grad_factor: float = model.attrs["grad_factor"]
+
+    invalid_outputs_err_msg = (
+        "The layer listener requires all transformer layer outputs to function - "
+        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
+    )
+
+    outputs = []
+    if is_train:
+        assert model._outputs is not None
+        if model._outputs.last_layer_only:
+            raise ValueError(invalid_outputs_err_msg)
+
+        model.verify_inputs(docs)
+        all_transformer_outputs = model._outputs.all_outputs
+
+        backprops = []
+        outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
+        for input in all_transformer_outputs:
+            layers_backprops = []
+            layers_outputs = []
+            for layer in input:
+                output_pooling, pooling_backprop = pooling(layer, is_train)
+                layers_outputs.append(output_pooling)
+                layers_backprops.append(pooling_backprop)
+            backprops.append(layers_backprops)
+            outputs.append(layers_outputs)
+
+        def backprop(dYs):
+            dX_weighting = []
+            for bp_pool, dY in zip(backprops, dYs):
+                dX_layers = []
+                for bp_pool_layer, dY_layer in zip(bp_pool, dY):
+                    dX_layers.append(bp_pool_layer(dY_layer))
+                dX_weighting.append(dX_layers)
+
+            if grad_factor != 1.0:
+                for dx_inner in dX_weighting:
+                    for dx in dx_inner:
+                        dx.data *= grad_factor
+
+            dX = model._backprop(dX_weighting, outputs_to_backprop=outputs_to_backprop)
+            model._batch_id = None
+            model._outputs = None
+            model._backprop = None
+            return dX
+
+        return outputs, backprop
+    else:
+        width = model.get_dim("nO")
+        for doc in docs:
+            if doc._.trf_data is None:
+                outputs.append([model.ops.alloc2f(len(doc), width)])
+            else:
+                trf_data = cast(DocTransformerOutput, doc._.trf_data)
+                if trf_data.last_layer_only:
+                    raise ValueError(invalid_outputs_err_msg)
+
+                pooling_output, _ = pooling(trf_data.all_outputs, is_train)
+                outputs.append(pooling_output)
+
+        return outputs, lambda dX: []
 
 
 class LastTransformerLayerListener(TransformerListener):

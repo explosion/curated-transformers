@@ -1,6 +1,6 @@
 from typing import List
 from spacy.tokens import Doc
-from thinc.api import Linear, Model, chain, with_array, with_flatten
+from thinc.api import Linear, Model, chain, with_array, with_flatten_v2
 from thinc.types import Floats2d
 
 
@@ -12,9 +12,7 @@ def build_layer_distill_model_v1(
     if student_width == teacher_width:
         model = tok2vec
     else:
-        model = chain(
-            tok2vec, with_flatten(with_array(Linear(teacher_width, student_width)))
-        )
+        model = chain(tok2vec, with_flatten_v2(with_array(Linear(teacher_width, student_width))))
 
     model.set_ref("tok2vec", tok2vec)
 

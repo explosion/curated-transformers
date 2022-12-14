@@ -64,7 +64,7 @@ class TransformerDistiller(TrainablePipe):
         self.model = model
         self.name = name
         self.layer_mapping = None
-    
+
     def _layer_mapping(self, teacher_hidden, student_hidden):
         if self.layer_mapping is not None:
             return self.layer_mapping
@@ -89,7 +89,7 @@ class TransformerDistiller(TrainablePipe):
             self.layer_mapping.extend(
                 (i + 1, (i + 1) * layer_multiple) for i in range(n_student)
             )
-     
+
         return self.layer_mapping
 
     def distill(
@@ -114,8 +114,6 @@ class TransformerDistiller(TrainablePipe):
             return losses
 
         student_hidden, student_backprop = self.model.begin_update(student_docs)
-
-        ## Todo: correct teacher-student mapping rather than just the first N layers.
 
         # We have to pool the teacher output in the same way as the student.
         student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
@@ -143,8 +141,8 @@ class TransformerDistiller(TrainablePipe):
 
             d_mse.append(d_mse_doc)
 
-        losses[self.name] += sum(
-            sum((d_layer**2).sum() for d_layer in d) for d in d_mse
+        losses[self.name] += float(
+            sum(sum((d_layer**2).sum() for d_layer in d) for d in d_mse)
         )
 
         student_backprop(d_mse)

@@ -171,10 +171,10 @@ def _add_whitespace_tokens(
         if doc_alignment.has_no_whitespace:
             continue
 
-        hidden_size = Y_doc[0].dataXd.shape[1]
+        hidden_width = Y_doc[0].dataXd.shape[1]
         for layer_idx, layer in enumerate(Y_doc):
             lengths = []
-            new_layer = model.ops.alloc2f(doc_alignment.ws_n_pieces, hidden_size)
+            new_layer = model.ops.alloc2f(doc_alignment.ws_n_pieces, hidden_width)
 
             for alignment in doc_alignment:
                 if not alignment.is_whitespace:
@@ -201,9 +201,9 @@ def _remove_whitespace_tokens(
         if doc_alignment.has_no_whitespace:
             continue
 
-        hidden_size = cast(Tuple[int, ...], dY_doc[0].dataXd.shape)[1]
+        hidden_width = cast(Tuple[int, ...], dY_doc[0].dataXd.shape)[1]
         for layer_idx, layer in enumerate(dY_doc):
-            new_layer = model.ops.alloc2f(doc_alignment.no_ws_n_pieces, hidden_size)
+            new_layer = model.ops.alloc2f(doc_alignment.no_ws_n_pieces, hidden_width)
             lengths = []
 
             for alignment in doc_alignment:

@@ -47,7 +47,7 @@ cfg_string_last_layer_listener = """
 
     [components.tagger.model.tok2vec]
     @architectures = "curated-transformers.LastTransformerLayerListener.v1"
-    width = ${components.transformer.model.hidden_size}
+    width = ${components.transformer.model.hidden_width}
     pooling = {"@layers":"reduce_mean.v1"}
 
     [components.transformer]
@@ -58,7 +58,7 @@ cfg_string_last_layer_listener = """
     @architectures = "curated-transformers.BertTransformer.v1"
     vocab_size = 28996
     num_hidden_layers = 1
-    hidden_size = 60
+    hidden_width = 60
 
     [components.transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
@@ -92,7 +92,7 @@ cfg_string_scalar_weighting_layer_listener = """
 
     [components.tagger.model.tok2vec]
     @architectures = "curated-transformers.ScalarWeightingListener.v1"
-    width = ${components.transformer.model.hidden_size}
+    width = ${components.transformer.model.hidden_width}
     pooling = {"@layers":"reduce_mean.v1"}
 
     [components.tagger.model.tok2vec.weighting]
@@ -107,7 +107,7 @@ cfg_string_scalar_weighting_layer_listener = """
     @architectures = "curated-transformers.BertTransformer.v1"
     vocab_size = 28996
     num_hidden_layers = 1
-    hidden_size = 60
+    hidden_width = 60
 
     [components.transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"

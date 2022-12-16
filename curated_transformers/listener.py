@@ -17,6 +17,7 @@ from .models.output import DocTransformerOutput, TransformerModelOutput
 
 
 def build_transformer_layer_listener_v1(
+    layers: int,
     width: int,
     pooling: Model[Ragged, Floats2d],
     upstream: str = "*",
@@ -33,6 +34,9 @@ def build_transformer_layer_listener_v1(
         string '*', or the name of the Transformer component. You'll almost
         never have multiple upstream Transformer components, so the wildcard
         string will almost always be fine.
+    layers (int):
+        The the number of layers produced by the upstream transformer component,
+        excluding the embedding layer.
     width (int):
         The width of the vectors produced by the upstream transformer component.
     pooling (Model):
@@ -41,7 +45,11 @@ def build_transformer_layer_listener_v1(
         Factor to multiply gradients with.
     """
     transformer = TransformerLayerListener(
-        upstream_name=upstream, pooling=pooling, width=width, grad_factor=grad_factor
+        upstream_name=upstream,
+        pooling=pooling,
+        layers=layers,
+        width=width,
+        grad_factor=grad_factor,
     )
     return transformer
 
@@ -181,6 +189,7 @@ class TransformerLayerListener(TransformerListener):
         upstream_name: str,
         pooling: Model[Ragged, Floats2d],
         width: int,
+        layers: int,
         grad_factor: float,
     ) -> None:
         """
@@ -192,6 +201,9 @@ class TransformerLayerListener(TransformerListener):
             string will almost always be fine.
         width (int):
             The width of the vectors produced by the upstream transformer component.
+        layers (int):
+            The the number of layers produced by the upstream transformer component,
+            excluding the embedding layer.
         pooling (Model):
             Model that is used to perform pooling over the piece representations.
         grad_factor (float):
@@ -205,6 +217,7 @@ class TransformerLayerListener(TransformerListener):
             layers=[pooling],
             attrs={
                 "grad_factor": grad_factor,
+                "layers": layers + 1,
             },
             refs={"pooling": pooling},
         )
@@ -219,6 +232,7 @@ def tranformer_layer_listener_forward(
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     pooling: Model[Ragged, Floats2d] = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
+    n_layers: int = model.attrs["layers"]
 
     invalid_outputs_err_msg = (
         "The layer listener requires all transformer layer outputs to function - "
@@ -270,14 +284,17 @@ def tranformer_layer_listener_forward(
         width = model.get_dim("nO")
         for doc in docs:
             if doc._.trf_data is None:
-                outputs.append([model.ops.alloc2f(len(doc), width)])
+                outputs.append(n_layers * [model.ops.alloc2f(len(doc), width)])
             else:
                 trf_data = cast(DocTransformerOutput, doc._.trf_data)
                 if trf_data.last_layer_only:
                     raise ValueError(invalid_outputs_err_msg)
 
-                pooling_output, _ = pooling(trf_data.all_outputs, is_train)
-                outputs.append(pooling_output)
+                pooled_outputs = []
+                for layer_output in doc._.trf_data.last_hidden_layer_states:
+                    pooled_output, _ = pooling(layer_output, is_train)
+                    pooled_outputs.append(pooled_output)
+                outputs.append(pooled_outputs)
 
         return outputs, lambda dX: []
 

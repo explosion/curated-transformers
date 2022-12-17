@@ -5,7 +5,9 @@ from spacy.errors import Errors
 from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc
 from spacy.training import validate_get_examples
-from thinc.api import Config, Model, Optimizer, set_dropout_rate
+from thinc.api import Config, Model, Ops, Optimizer, Ragged, set_dropout_rate
+
+from ..models.pooling import pool_all_outputs
 
 DEFAULT_CONFIG_STR = """
     [transformer_distiller]
@@ -117,10 +119,8 @@ class TransformerDistiller(TrainablePipe):
 
         # We have to pool the teacher output in the same way as the student.
         student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
-        teacher_hidden = [
-            [student_pooler.predict(layer) for layer in doc._.trf_data.all_outputs]
-            for doc in teacher_docs
-        ]
+
+        teacher_hidden = pool_all_outputs(student_pooler).predict(teacher_docs)
 
         layer_mapping = self._layer_mapping(teacher_hidden, student_hidden)
 

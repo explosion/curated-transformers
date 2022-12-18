@@ -143,8 +143,8 @@ class TransformerDistiller(TrainablePipe):
 
             d_mse.append(d_mse_doc)
 
-        losses[self.name] += float(
-            sum(sum((d_layer**2).sum() for d_layer in d) for d in d_mse)
+        losses[self.name] += sum(
+            sum(float((d_layer**2).sum()) for d_layer in d) for d in d_mse
         )
 
         student_backprop(d_mse)

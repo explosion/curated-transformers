@@ -112,7 +112,9 @@ class TransformerDistiller(TrainablePipe):
         set_dropout_rate(self.model, drop)
         losses.setdefault(self.name, 0.0)
 
-        if len(teacher_docs) == 0 or len(student_docs) == 0:
+        if not any(len(doc) for doc in teacher_docs):
+            return losses
+        if not any(len(doc) for doc in student_docs):
             return losses
 
         student_hidden, student_backprop = self.model.begin_update(student_docs)
@@ -167,4 +169,4 @@ class TransformerDistiller(TrainablePipe):
         self.model.initialize(X=doc_sample)
 
     def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
-        return stream
+        return iter(stream)

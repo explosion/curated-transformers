@@ -90,7 +90,7 @@ def _pool_last_layer_outputs_forward(
     doc_lens = []
     for X_doc in X:
         X_doc_layer = (
-            X_doc._.trf_data.last_hidden_layer_states
+            X_doc._.trf_data.last_hidden_layer_state
             if isinstance(X_doc, Doc)
             else X_doc
         )

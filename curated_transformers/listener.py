@@ -241,7 +241,6 @@ def tranformer_layer_listener_forward(
         "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
     )
 
-    outputs = []
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
@@ -272,21 +271,17 @@ def tranformer_layer_listener_forward(
     else:
         width = model.get_dim("nO")
 
-        for doc in docs:
-            if doc._.trf_data is None:
-                outputs.append(n_layers * [model.ops.alloc2f(len(doc), width)])
-            else:
-                trf_data = cast(DocTransformerOutput, doc._.trf_data)
-                if trf_data.last_layer_only:
-                    raise ValueError(invalid_outputs_err_msg)
+        no_trf_data = [doc._.trf_data is None for doc in docs]
+        if any(no_trf_data):
+            assert all(no_trf_data)
+            return [
+                n_layers * [model.ops.alloc2f(len(doc), width)] for doc in docs
+            ], lambda dY: []
 
-                pooled_outputs = []
-                for layer_output in doc._.trf_data.last_hidden_layer_states:
-                    pooled_output, _ = pooling.layers[0](layer_output, is_train)
-                    pooled_outputs.append(pooled_output)
-                outputs.append(pooled_outputs)
+        if any(doc._.trf_data.last_layer_only for doc in docs):
+            raise ValueError(invalid_outputs_err_msg)
 
-        return outputs, lambda dX: []
+        return pooling.predict(docs), lambda dY: []
 
 
 class LastTransformerLayerListener(TransformerListener):
@@ -356,18 +351,14 @@ def last_transformer_layer_listener_forward(
 
         return Y, backprop
     else:
-        outputs = []
         width = model.get_dim("nO")
-        for doc in docs:
-            if doc._.trf_data is None:
-                outputs.append(model.ops.alloc2f(len(doc), width))
-            else:
-                output, _ = pooling.layers[0](
-                    doc._.trf_data.last_hidden_layer_state, is_train
-                )
-                outputs.append(output)
 
-        return outputs, lambda dX: []
+        no_trf_data = [doc._.trf_data is None for doc in docs]
+        if any(no_trf_data):
+            assert all(no_trf_data)
+            return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
+
+        return pooling.predict(docs), lambda dY: []
 
 
 class ScalarWeightingListener(TransformerListener):

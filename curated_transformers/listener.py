@@ -14,12 +14,14 @@ from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
+from .models.pooling import pool_all_outputs
+from .models.types import AllOutputsPoolingModelT, PoolingModelT
 
 
 def build_transformer_layer_listener_v1(
     layers: int,
     width: int,
-    pooling: Model[Ragged, Floats2d],
+    pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
@@ -56,7 +58,7 @@ def build_transformer_layer_listener_v1(
 
 def build_last_transformer_layer_listener_v1(
     width: int,
-    pooling: Model[Ragged, Floats2d],
+    pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
@@ -87,7 +89,7 @@ def build_last_transformer_layer_listener_v1(
 def build_scalar_weighting_listener_v1(
     width: int,
     weighting: Model[List[Ragged], Ragged],
-    pooling: Model[Ragged, Floats2d],
+    pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
@@ -187,7 +189,7 @@ class TransformerLayerListener(TransformerListener):
     def __init__(
         self,
         upstream_name: str,
-        pooling: Model[Ragged, Floats2d],
+        pooling: PoolingModelT,
         width: int,
         layers: int,
         grad_factor: float,
@@ -214,7 +216,7 @@ class TransformerLayerListener(TransformerListener):
             name=self.name,
             forward=tranformer_layer_listener_forward,
             dims={"nO": width},
-            layers=[pooling],
+            layers=[pool_all_outputs(pooling)],
             attrs={
                 "grad_factor": grad_factor,
                 "layers": layers + 1,
@@ -230,7 +232,7 @@ class TransformerLayerListener(TransformerListener):
 def tranformer_layer_listener_forward(
     model: TransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    pooling: Model[Ragged, Floats2d] = model.layers[0]
+    pooling: AllOutputsPoolingModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
     n_layers: int = model.attrs["layers"]
 
@@ -246,42 +248,30 @@ def tranformer_layer_listener_forward(
             raise ValueError(invalid_outputs_err_msg)
 
         model.verify_inputs(docs)
-        all_transformer_outputs = model._outputs.all_outputs
 
-        backprops = []
-        outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
-        for input in all_transformer_outputs:
-            layers_backprops = []
-            layers_outputs = []
-            for layer in input:
-                output_pooling, pooling_backprop = pooling(layer, is_train)
-                layers_outputs.append(output_pooling)
-                layers_backprops.append(pooling_backprop)
-            backprops.append(layers_backprops)
-            outputs.append(layers_outputs)
+        Y, pooling_backprop = pooling(model._outputs.all_outputs, is_train)
 
-        def backprop(dYs):
-            dX_weighting = []
-            for bp_pool, dY in zip(backprops, dYs):
-                dX_layers = []
-                for bp_pool_layer, dY_layer in zip(bp_pool, dY):
-                    dX_layers.append(bp_pool_layer(dY_layer))
-                dX_weighting.append(dX_layers)
+        def backprop(dY):
+            dX = pooling_backprop(dY)
 
             if grad_factor != 1.0:
-                for dx_inner in dX_weighting:
-                    for dx in dx_inner:
-                        dx.data *= grad_factor
+                for dX_doc in dX:
+                    for dX_layer in dX_doc:
+                        dX_layer.data *= grad_factor
 
-            dX = model._backprop(dX_weighting, outputs_to_backprop=outputs_to_backprop)
+            outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
+            dX = model._backprop(dX, outputs_to_backprop=outputs_to_backprop)
+
             model._batch_id = None
             model._outputs = None
             model._backprop = None
+
             return dX
 
-        return outputs, backprop
+        return Y, backprop
     else:
         width = model.get_dim("nO")
+
         for doc in docs:
             if doc._.trf_data is None:
                 outputs.append(n_layers * [model.ops.alloc2f(len(doc), width)])
@@ -309,7 +299,7 @@ class LastTransformerLayerListener(TransformerListener):
     def __init__(
         self,
         upstream_name: str,
-        pooling: Model[Ragged, Floats2d],
+        pooling: PoolingModelT,
         width: int,
         grad_factor: float,
     ) -> None:
@@ -345,7 +335,7 @@ class LastTransformerLayerListener(TransformerListener):
 def last_transformer_layer_listener_forward(
     model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    pooling: Model[Ragged, Floats2d] = model.layers[0]
+    pooling: PoolingModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
 
     outputs = []
@@ -397,7 +387,7 @@ class ScalarWeightingListener(TransformerListener):
         self,
         upstream_name: str,
         weighting: Model[List[Ragged], Ragged],
-        pooling: Model[Ragged, Floats2d],
+        pooling: PoolingModelT,
         width: int,
         grad_factor: float,
     ) -> None:
@@ -437,7 +427,7 @@ def scalar_weighting_listener_forward(
     model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     weighting: Model[List[Ragged], Ragged] = model.layers[0]
-    pooling: Model[Ragged, Floats2d] = model.layers[1]
+    pooling: PoolingModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
     invalid_outputs_err_msg = (

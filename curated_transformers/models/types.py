@@ -6,11 +6,16 @@ from thinc.types import Floats2d, Ints1d, Ragged
 
 from .output import TransformerModelOutput
 
+PoolingModelT = Model[Ragged, Floats2d]
 
 AllOutputsPoolingInT = Union[Iterable[Doc], Iterable[Iterable[Ragged]]]
 AllOutputsPoolingOutT = List[List[Floats2d]]
 AllOutputsPoolingModelT = Model[AllOutputsPoolingInT, AllOutputsPoolingOutT]
-PoolingModelT = Model[Ragged, Floats2d]
+
+LastLayerPoolingInT = Union[Iterable[Doc], Iterable[Ragged]]
+LastLayerPoolingOutT = List[Floats2d]
+LastLayerPoolingModelT = Model[LastLayerPoolingInT, LastLayerPoolingOutT]
+
 
 WsTokenAdapterInT = List[Doc]
 WsTokenAdapterOutT = TransformerModelOutput

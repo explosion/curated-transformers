@@ -14,8 +14,8 @@ from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
-from .models.pooling import pool_all_outputs
-from .models.types import AllOutputsPoolingModelT, PoolingModelT
+from .models.pooling import pool_all_outputs, pool_last_layer_outputs
+from .models.types import AllOutputsPoolingModelT, LastLayerPoolingModelT, PoolingModelT
 
 
 def build_transformer_layer_listener_v1(
@@ -231,7 +231,7 @@ class TransformerLayerListener(TransformerListener):
 
 def tranformer_layer_listener_forward(
     model: TransformerLayerListener, docs: Iterable[Doc], is_train: bool
-) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
+) -> Tuple[List[List[Floats2d]], Callable[[Any], Any]]:
     pooling: AllOutputsPoolingModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
     n_layers: int = model.attrs["layers"]
@@ -282,7 +282,7 @@ def tranformer_layer_listener_forward(
 
                 pooled_outputs = []
                 for layer_output in doc._.trf_data.last_hidden_layer_states:
-                    pooled_output, _ = pooling(layer_output, is_train)
+                    pooled_output, _ = pooling.layers[0](layer_output, is_train)
                     pooled_outputs.append(pooled_output)
                 outputs.append(pooled_outputs)
 
@@ -322,7 +322,7 @@ class LastTransformerLayerListener(TransformerListener):
             name=self.name,
             forward=last_transformer_layer_listener_forward,
             dims={"nO": width},
-            layers=[pooling],
+            layers=[pool_last_layer_outputs(pooling)],
             attrs={"grad_factor": grad_factor},
             refs={"pooling": pooling},
         )
@@ -335,38 +335,36 @@ class LastTransformerLayerListener(TransformerListener):
 def last_transformer_layer_listener_forward(
     model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    pooling: PoolingModelT = model.layers[0]
+    pooling: LastLayerPoolingModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
 
-    outputs = []
     if is_train:
         model.verify_inputs(docs)
-        backprops = []
         assert model._outputs is not None
-        for output in model._outputs.last_hidden_layer_states:
-            output, pooling_backprop = pooling(output, is_train)
-            outputs.append(output)
-            backprops.append(pooling_backprop)
+        Y, backprop_pooling = pooling(model._outputs.last_hidden_layer_states, is_train)
 
-        def backprop(dYs):
-            dX_pooling = [[bp_pool(dY)] for bp_pool, dY in zip(backprops, dYs)]
+        def backprop(dY):
+            dX_pooling = backprop_pooling(dY)
             if grad_factor != 1.0:
                 for dx in dX_pooling:
                     dx.data *= grad_factor
-            dX = model._backprop(dX_pooling, outputs_to_backprop=(-1,))
+            dX = model._backprop([[d] for d in dX_pooling], outputs_to_backprop=(-1,))
             model._batch_id = None
             model._outputs = None
             model._backprop = None
             return dX
 
-        return outputs, backprop
+        return Y, backprop
     else:
+        outputs = []
         width = model.get_dim("nO")
         for doc in docs:
             if doc._.trf_data is None:
                 outputs.append(model.ops.alloc2f(len(doc), width))
             else:
-                output, _ = pooling(doc._.trf_data.last_hidden_layer_state, is_train)
+                output, _ = pooling.layers[0](
+                    doc._.trf_data.last_hidden_layer_state, is_train
+                )
                 outputs.append(output)
 
         return outputs, lambda dX: []

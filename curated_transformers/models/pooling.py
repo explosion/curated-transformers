@@ -5,7 +5,7 @@ from thinc.api import Model
 from thinc.types import Floats2d, Ragged
 
 
-from .types import AllOutputsPoolingModelT, PoolingModelT
+from .types import AllOutputsPoolingModelT, LastLayerPoolingModelT, PoolingModelT
 
 
 def pool_all_outputs(
@@ -65,6 +65,57 @@ def _pool_all_outputs_forward(
                 dY_flat = dY_flat[doc_unpooled_len:]
 
             dY.append(dY_layer)
+
+        return dY
+
+    return Y, backprop
+
+
+def pool_last_layer_outputs(
+    pooling: PoolingModelT,
+) -> LastLayerPoolingModelT:
+    return Model(
+        "pool_last_layer_outputs", _pool_last_layer_outputs_forward, layers=[pooling]
+    )
+
+
+def _pool_last_layer_outputs_forward(
+    model: AllOutputsPoolingModelT, X: List[Doc], is_train: bool
+):
+    pooling: PoolingModelT = model.layers[0]
+    xp = model.ops.xp
+
+    datas = []
+    lens = []
+    doc_lens = []
+    for X_doc in X:
+        X_doc_layer = (
+            X_doc._.trf_data.last_hidden_layer_states
+            if isinstance(X_doc, Doc)
+            else X_doc
+        )
+        datas.append(X_doc_layer.dataXd)
+        lens.append(X_doc_layer.lengths)
+        doc_lens.append(len(X_doc_layer.lengths))
+
+    X_flat = Ragged(xp.concatenate(datas, axis=0), xp.concatenate(lens, axis=0))
+    Y_pooled, pooling_backprop = pooling(X_flat, is_train)
+    Y = xp.split(Y_pooled, numpy.cumsum(doc_lens)[:-1])
+
+    def backprop(dY):
+        dY_pooled_flat = xp.concatenate(dY)
+        dY_flat = pooling_backprop(dY_pooled_flat).dataXd
+
+        dY = []
+        for X_doc in X:
+            X_doc_layer = (
+                X_doc._.trf_data.last_hidden_layer_states
+                if isinstance(X_doc, Doc)
+                else X_doc
+            )
+            doc_unpooled_len = X_doc_layer.dataXd.shape[0]
+            dY.append(Ragged(dY_flat[:doc_unpooled_len], X_doc_layer.lengths))
+            dY_flat = dY_flat[doc_unpooled_len:]
 
         return dY
 

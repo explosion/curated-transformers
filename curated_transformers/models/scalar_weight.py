@@ -58,10 +58,10 @@ def _convert_inputs(
     model: Model, X: ScalarWeightInT, is_train: bool = False
 ) -> Tuple[ArgsKwargs, Callable[[ArgsKwargs], List[Ragged]]]:
     ops = model.ops
-    layer_hidden_sizes = [x.data.shape[1] for x in X]
-    if not all_equal(layer_hidden_sizes):
+    layer_hidden_widths = [x.data.shape[1] for x in X]
+    if not all_equal(layer_hidden_widths):
         raise ValueError(
-            f"Not all hidden sizes are equal in input passed to scalar weight"
+            f"Not all hidden widths are equal in input passed to scalar weight"
         )
 
     Xops = ops.alloc3f(X[0].data.shape[0], len(X), X[0].data.shape[1])

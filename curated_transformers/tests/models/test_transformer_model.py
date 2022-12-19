@@ -39,12 +39,12 @@ def toy_model(test_dir):
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
 def test_xlmr_model(sample_docs, stride, window, hf_model):
-    hf_model_name, hidden_size, vocab_size = hf_model
+    hf_model_name, hidden_width, vocab_size = hf_model
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
         with_spans=with_spans,
         vocab_size=vocab_size,
-        hidden_size=hidden_size,
+        hidden_width=hidden_width,
     )
     model.get_ref("transformer").init = build_hf_encoder_loader_v1(name=hf_model_name)
     model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
@@ -57,9 +57,9 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
     Y = Y.last_hidden_layer_states
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
-    assert Y[0].dataXd.shape == (10, hidden_size)
+    assert Y[0].dataXd.shape == (10, hidden_width)
     numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 2, 1, 2])
-    assert Y[1].dataXd.shape == (9, hidden_size)
+    assert Y[1].dataXd.shape == (9, hidden_width)
 
     # Backprop zeros to verify that backprop doesn't fail.
     dY = [
@@ -86,12 +86,12 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
 @pytest.mark.parametrize("stride,window", [(2, 4), (96, 128)])
 @pytest.mark.parametrize("hf_model", [("xlm-roberta-base", 768, 250002)])
 def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
-    hidden_size = 768
+    hidden_width = 768
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
         with_spans=with_spans,
         vocab_size=250005,
-        hidden_size=hidden_size,
+        hidden_width=hidden_width,
         num_hidden_layers=1,
     )
     model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
@@ -104,9 +104,9 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
     Y = Y.last_hidden_layer_states
     assert len(Y) == 2
     numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2])
-    assert Y[0].dataXd.shape == (11, hidden_size)
+    assert Y[0].dataXd.shape == (11, hidden_width)
     numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 1, 1, 2, 1, 2, 1])
-    assert Y[1].dataXd.shape == (12, hidden_size)
+    assert Y[1].dataXd.shape == (12, hidden_width)
 
     # Backprop zeros to verify that backprop doesn't fail.
     dY = [

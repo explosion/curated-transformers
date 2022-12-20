@@ -4,14 +4,13 @@ from pathlib import Path
 import spacy
 from spacy import Language
 from spacy.cli import app
-from thinc.api import Model, PyTorchShim
+from thinc.api import Model, PyTorchShim, pytorch_to_torchscript_wrapper
 import torch
 import torch.nn.quantized as nnq
 from torch.nn import Embedding, Linear, Module, MSELoss
 from torch.quantization import qconfig
 from typer import Argument as Arg, Option
 
-from ..models.torchscript_wrapper import to_torchscript_wrapper  # type: ignore
 from ..pipe import Transformer  # type: ignore
 
 
@@ -81,7 +80,7 @@ def nlp_quantize_dynamic(
             f"Quantized model in pipe '{pipe_name}' ({before_size/2**20:.1f} MiB -> {after_size/2**20:.1f} MiB)"
         )
 
-        pipe.model.replace_node(model, to_torchscript_wrapper(model))
+        pipe.model.replace_node(model, pytorch_to_torchscript_wrapper(model))
         nlp.config["components"][pipe_name]["model"]["torchscript"] = True
 
 

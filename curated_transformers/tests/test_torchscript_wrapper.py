@@ -1,11 +1,10 @@
 import pytest
 import numpy
 from torch.nn import Linear
-from thinc.layers import PyTorchWrapper_v2
-
-from curated_transformers.models.torchscript_wrapper import (
+from thinc.layers import (
+    PyTorchWrapper_v2,
     TorchScriptWrapper_v1,
-    to_torchscript_wrapper,
+    pytorch_to_torchscript_wrapper,
 )
 
 
@@ -14,7 +13,7 @@ def test_pytorch_script(nN, nI, nO):
 
     model = PyTorchWrapper_v2(Linear(nI, nO)).initialize()
 
-    script_model = to_torchscript_wrapper(model)
+    script_model = pytorch_to_torchscript_wrapper(model)
 
     X = numpy.random.randn(nN, nI).astype("f")
     Y = model.predict(X)

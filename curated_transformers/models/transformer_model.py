@@ -9,6 +9,7 @@ from thinc.api import (
     xp2torch,
     torch2xp,
     get_torch_default_device,
+    TorchScriptWrapper_v1,
 )
 from thinc.layers import chain
 from thinc.model import Model
@@ -23,7 +24,6 @@ from .pytorch.bert import BertConfig, BertEncoder
 from .pytorch.hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
 from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
-from .torchscript_wrapper import TorchScriptWrapper_v1
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
 from ..tokenization.sentencepiece_adapters import (

@@ -5,18 +5,19 @@ from thinc.api import Model
 from thinc.types import Floats2d, Ragged
 
 
-from .types import AllOutputsPoolingModelT, LastLayerPoolingModelT, PoolingModelT
+from .types import WithRaggedLayersModelT, WithRaggedLastLayerModelT, PoolingModelT
 
 
-def pool_all_outputs(
+def with_ragged_layers(
     pooling: PoolingModelT,
-) -> AllOutputsPoolingModelT:
-    return Model("pool_all_outputs", _pool_all_outputs_forward, layers=[pooling])
+) -> WithRaggedLayersModelT:
+    return Model("with_ragged_layers", with_ragged_layers_forward, layers=[pooling])
 
 
-def _pool_all_outputs_forward(
-    model: AllOutputsPoolingModelT, X: List[Doc], is_train: bool
+def with_ragged_layers_forward(
+    model: WithRaggedLayersModelT, X: List[Doc], is_train: bool
 ):
+    """Concatenate all Docs and layers into a Ragged for pooling."""
     pooling: PoolingModelT = model.layers[0]
     xp = model.ops.xp
 
@@ -71,17 +72,19 @@ def _pool_all_outputs_forward(
     return Y, backprop
 
 
-def pool_last_layer_outputs(
+def with_ragged_last_layer(
     pooling: PoolingModelT,
-) -> LastLayerPoolingModelT:
+) -> WithRaggedLastLayerModelT:
+    """Concatenate the last layers for all Docs into a Ragged for pooling."""
     return Model(
-        "pool_last_layer_outputs", _pool_last_layer_outputs_forward, layers=[pooling]
+        "with_ragged_last_layer", with_ragged_last_layer_forward, layers=[pooling]
     )
 
 
-def _pool_last_layer_outputs_forward(
-    model: AllOutputsPoolingModelT, X: List[Doc], is_train: bool
+def with_ragged_last_layer_forward(
+    model: WithRaggedLastLayerModelT, X: List[Doc], is_train: bool
 ):
+    """Concatenate all Docs and layers into a Ragged for pooling."""
     pooling: PoolingModelT = model.layers[0]
     xp = model.ops.xp
 

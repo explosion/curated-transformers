@@ -8,13 +8,13 @@ from .output import TransformerModelOutput
 
 PoolingModelT = Model[Ragged, Floats2d]
 
-AllOutputsPoolingInT = Union[Iterable[Doc], Iterable[Iterable[Ragged]]]
-AllOutputsPoolingOutT = List[List[Floats2d]]
-AllOutputsPoolingModelT = Model[AllOutputsPoolingInT, AllOutputsPoolingOutT]
+WithRaggedLayersInT = Union[Iterable[Doc], Iterable[Iterable[Ragged]]]
+WithRaggedLayersOutT = List[List[Floats2d]]
+WithRaggedLayersModelT = Model[WithRaggedLayersInT, WithRaggedLayersOutT]
 
-LastLayerPoolingInT = Union[Iterable[Doc], Iterable[Ragged]]
-LastLayerPoolingOutT = List[Floats2d]
-LastLayerPoolingModelT = Model[LastLayerPoolingInT, LastLayerPoolingOutT]
+WithRaggedLastLayerInT = Union[Iterable[Doc], Iterable[Ragged]]
+WithRaggedLastLayerOutT = List[Floats2d]
+WithRaggedLastLayerModelT = Model[WithRaggedLastLayerInT, WithRaggedLastLayerOutT]
 
 
 WsTokenAdapterInT = List[Doc]

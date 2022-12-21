@@ -14,8 +14,12 @@ from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
-from .models.pooling import pool_all_outputs, pool_last_layer_outputs
-from .models.types import AllOutputsPoolingModelT, LastLayerPoolingModelT, PoolingModelT
+from .models.pooling import with_ragged_layers, with_ragged_last_layer
+from .models.types import (
+    WithRaggedLayersModelT,
+    WithRaggedLastLayerModelT,
+    PoolingModelT,
+)
 
 
 def build_transformer_layer_listener_v1(
@@ -216,7 +220,7 @@ class TransformerLayerListener(TransformerListener):
             name=self.name,
             forward=tranformer_layer_listener_forward,
             dims={"nO": width},
-            layers=[pool_all_outputs(pooling)],
+            layers=[with_ragged_layers(pooling)],
             attrs={
                 "grad_factor": grad_factor,
                 "layers": layers + 1,
@@ -232,7 +236,7 @@ class TransformerLayerListener(TransformerListener):
 def tranformer_layer_listener_forward(
     model: TransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[List[Floats2d]], Callable[[Any], Any]]:
-    pooling: AllOutputsPoolingModelT = model.layers[0]
+    pooling: WithRaggedLayersModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
     n_layers: int = model.attrs["layers"]
 
@@ -317,7 +321,7 @@ class LastTransformerLayerListener(TransformerListener):
             name=self.name,
             forward=last_transformer_layer_listener_forward,
             dims={"nO": width},
-            layers=[pool_last_layer_outputs(pooling)],
+            layers=[with_ragged_last_layer(pooling)],
             attrs={"grad_factor": grad_factor},
             refs={"pooling": pooling},
         )
@@ -330,7 +334,7 @@ class LastTransformerLayerListener(TransformerListener):
 def last_transformer_layer_listener_forward(
     model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    pooling: LastLayerPoolingModelT = model.layers[0]
+    pooling: WithRaggedLastLayerModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
 
     if is_train:

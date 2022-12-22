@@ -252,10 +252,10 @@ def tranformer_layer_listener_forward(
 
         model.verify_inputs(docs)
 
-        Y, pooling_backprop = pooling(model._outputs.all_outputs, is_train)
+        Y, backprop_pooling = pooling(model._outputs.all_outputs, is_train)
 
         def backprop(dY):
-            dX = pooling_backprop(dY)
+            dX = backprop_pooling(dY)
 
             if grad_factor != 1.0:
                 for dX_doc in dX:

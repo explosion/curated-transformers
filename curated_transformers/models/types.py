@@ -1,10 +1,20 @@
-from typing import Any, Callable, List, TypeVar, Union
+from typing import Any, Callable, Iterable, List, TypeVar, Union
 
 from spacy.tokens.doc import Doc
 from thinc.model import Model
 from thinc.types import Floats2d, Ints1d, Ragged
 
 from .output import TransformerModelOutput
+
+PoolingModelT = Model[Ragged, Floats2d]
+
+WithRaggedLayersInT = Union[Iterable[Doc], Iterable[Iterable[Ragged]]]
+WithRaggedLayersOutT = List[List[Floats2d]]
+WithRaggedLayersModelT = Model[WithRaggedLayersInT, WithRaggedLayersOutT]
+
+WithRaggedLastLayerInT = Union[Iterable[Doc], Iterable[Ragged]]
+WithRaggedLastLayerOutT = List[Floats2d]
+WithRaggedLastLayerModelT = Model[WithRaggedLastLayerInT, WithRaggedLastLayerOutT]
 
 
 WsTokenAdapterInT = List[Doc]

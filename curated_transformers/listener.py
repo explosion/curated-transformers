@@ -14,11 +14,17 @@ from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
+from .models.pooling import with_ragged_layers, with_ragged_last_layer
+from .models.types import (
+    WithRaggedLayersModelT,
+    WithRaggedLastLayerModelT,
+    PoolingModelT,
+)
 
 
 def build_last_transformer_layer_listener_v1(
     width: int,
-    pooling: Model[Ragged, Floats2d],
+    pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
@@ -49,7 +55,7 @@ def build_last_transformer_layer_listener_v1(
 def build_scalar_weighting_listener_v1(
     width: int,
     weighting: Model[List[Ragged], Ragged],
-    pooling: Model[Ragged, Floats2d],
+    pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
 ) -> Model[List[Doc], List[Floats2d]]:
@@ -147,7 +153,7 @@ class LastTransformerLayerListener(TransformerListener):
     def __init__(
         self,
         upstream_name: str,
-        pooling: Model[Ragged, Floats2d],
+        pooling: PoolingModelT,
         width: int,
         grad_factor: float,
     ) -> None:
@@ -170,8 +176,9 @@ class LastTransformerLayerListener(TransformerListener):
             name=self.name,
             forward=last_transformer_layer_listener_forward,
             dims={"nO": width},
-            layers=[pooling],
+            layers=[with_ragged_last_layer(pooling)],
             attrs={"grad_factor": grad_factor},
+            refs={"pooling": pooling},
         )
         self.upstream_name = upstream_name
         self._batch_id = None
@@ -182,41 +189,35 @@ class LastTransformerLayerListener(TransformerListener):
 def last_transformer_layer_listener_forward(
     model: LastTransformerLayerListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    pooling: Model[Ragged, Floats2d] = model.layers[0]
+    pooling: WithRaggedLastLayerModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
 
-    outputs = []
     if is_train:
         model.verify_inputs(docs)
-        backprops = []
         assert model._outputs is not None
-        for output in model._outputs.last_hidden_layer_states:
-            output, pooling_backprop = pooling(output, is_train)
-            outputs.append(output)
-            backprops.append(pooling_backprop)
+        Y, backprop_pooling = pooling(model._outputs.last_hidden_layer_states, is_train)
 
-        def backprop(dYs):
-            dX_pooling = [[bp_pool(dY)] for bp_pool, dY in zip(backprops, dYs)]
+        def backprop(dY):
+            dX_pooling = backprop_pooling(dY)
             if grad_factor != 1.0:
                 for dx in dX_pooling:
                     dx.data *= grad_factor
-            dX = model._backprop(dX_pooling, outputs_to_backprop=(-1,))
+            dX = model._backprop([[d] for d in dX_pooling], outputs_to_backprop=(-1,))
             model._batch_id = None
             model._outputs = None
             model._backprop = None
             return dX
 
-        return outputs, backprop
+        return Y, backprop
     else:
         width = model.get_dim("nO")
-        for doc in docs:
-            if doc._.trf_data is None:
-                outputs.append(model.ops.alloc2f(len(doc), width))
-            else:
-                output, _ = pooling(doc._.trf_data.last_hidden_layer_state, is_train)
-                outputs.append(output)
 
-        return outputs, lambda dX: []
+        no_trf_data = [doc._.trf_data is None for doc in docs]
+        if any(no_trf_data):
+            assert all(no_trf_data)
+            return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
+
+        return pooling.predict(docs), lambda dY: []
 
 
 class ScalarWeightingListener(TransformerListener):
@@ -234,7 +235,7 @@ class ScalarWeightingListener(TransformerListener):
         self,
         upstream_name: str,
         weighting: Model[List[Ragged], Ragged],
-        pooling: Model[Ragged, Floats2d],
+        pooling: PoolingModelT,
         width: int,
         grad_factor: float,
     ) -> None:
@@ -259,7 +260,7 @@ class ScalarWeightingListener(TransformerListener):
             name=self.name,
             forward=scalar_weighting_listener_forward,
             dims={"nO": width},
-            layers=[weighting, pooling],
+            layers=[weighting, with_ragged_last_layer(pooling)],
             attrs={
                 "grad_factor": grad_factor,
             },
@@ -274,7 +275,7 @@ def scalar_weighting_listener_forward(
     model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     weighting: Model[List[Ragged], Ragged] = model.layers[0]
-    pooling: Model[Ragged, Floats2d] = model.layers[1]
+    pooling: WithRaggedLastLayerModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
     invalid_outputs_err_msg = (
@@ -282,7 +283,6 @@ def scalar_weighting_listener_forward(
         "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
     )
 
-    outputs = []
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
@@ -291,19 +291,21 @@ def scalar_weighting_listener_forward(
         model.verify_inputs(docs)
         weighting_inputs = model._outputs.all_outputs
 
-        backprops = []
+        Y_weigthing = []
+        backprops_weighting = []
         outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
         for input in weighting_inputs:
-            weighted_output, weighting_backprop = weighting(input, is_train)
-            output_pooling, pooling_backprop = pooling(weighted_output, is_train)
-            outputs.append(output_pooling)
-            backprops.append((weighting_backprop, pooling_backprop))
+            Y_doc_weighting, backprop_weighting = weighting(input, is_train)
+            Y_weigthing.append(Y_doc_weighting)
+            backprops_weighting.append(backprop_weighting)
+
+        Y, backprop_pooling = pooling(Y_weigthing, is_train)
 
         def backprop(dYs):
+            dX_pooling = backprop_pooling(dYs)
             dX_weighting = []
-            for (bp_weighting, bp_pool), dY in zip(backprops, dYs):
-                dX_pooling = bp_pool(dY)
-                dX_weighting.append(bp_weighting(dX_pooling))
+            for bp_weighting, dX_pooling_doc in zip(backprops_weighting, dX_pooling):
+                dX_weighting.append(bp_weighting(dX_pooling_doc))
 
             if grad_factor != 1.0:
                 for dx_inner in dX_weighting:
@@ -316,19 +318,26 @@ def scalar_weighting_listener_forward(
             model._backprop = None
             return dX
 
-        return outputs, backprop
+        return Y, backprop
     else:
         width = model.get_dim("nO")
+
+        no_trf_data = [doc._.trf_data is None for doc in docs]
+        if any(no_trf_data):
+            assert all(no_trf_data)
+            return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
+
+        if any(doc._.trf_data.last_layer_only for doc in docs):
+            raise ValueError(invalid_outputs_err_msg)
+
+        Y_weigthing = []
         for doc in docs:
-            if doc._.trf_data is None:
-                outputs.append(model.ops.alloc2f(len(doc), width))
-            else:
-                trf_data = cast(DocTransformerOutput, doc._.trf_data)
-                if trf_data.last_layer_only:
-                    raise ValueError(invalid_outputs_err_msg)
+            trf_data = cast(DocTransformerOutput, doc._.trf_data)
+            if trf_data.last_layer_only:
+                raise ValueError(invalid_outputs_err_msg)
 
-                weighted_output, _ = weighting(trf_data.all_outputs, is_train)
-                pooling_output, _ = pooling(weighted_output, is_train)
-                outputs.append(pooling_output)
+            Y_weigthing.append(weighting.predict(trf_data.all_outputs))
 
-        return outputs, lambda dX: []
+        Y = pooling.predict(Y_weigthing)
+
+        return Y, lambda dX: []

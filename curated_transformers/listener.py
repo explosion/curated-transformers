@@ -405,7 +405,7 @@ class ScalarWeightingListener(TransformerListener):
             name=self.name,
             forward=scalar_weighting_listener_forward,
             dims={"nO": width},
-            layers=[weighting, pooling],
+            layers=[weighting, with_ragged_last_layer(pooling)],
             attrs={
                 "grad_factor": grad_factor,
             },
@@ -420,7 +420,7 @@ def scalar_weighting_listener_forward(
     model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
     weighting: Model[List[Ragged], Ragged] = model.layers[0]
-    pooling: PoolingModelT = model.layers[1]
+    pooling: WithRaggedLastLayerModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
     invalid_outputs_err_msg = (
@@ -428,7 +428,6 @@ def scalar_weighting_listener_forward(
         "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
     )
 
-    outputs = []
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
@@ -437,19 +436,21 @@ def scalar_weighting_listener_forward(
         model.verify_inputs(docs)
         weighting_inputs = model._outputs.all_outputs
 
-        backprops = []
+        Y_weigthing = []
+        backprops_weighting = []
         outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
         for input in weighting_inputs:
-            weighted_output, weighting_backprop = weighting(input, is_train)
-            output_pooling, pooling_backprop = pooling(weighted_output, is_train)
-            outputs.append(output_pooling)
-            backprops.append((weighting_backprop, pooling_backprop))
+            Y_doc_weighting, backprop_weighting = weighting(input, is_train)
+            Y_weigthing.append(Y_doc_weighting)
+            backprops_weighting.append(backprop_weighting)
+
+        Y, backprop_pooling = pooling(Y_weigthing, is_train)
 
         def backprop(dYs):
+            dX_pooling = backprop_pooling(dYs)
             dX_weighting = []
-            for (bp_weighting, bp_pool), dY in zip(backprops, dYs):
-                dX_pooling = bp_pool(dY)
-                dX_weighting.append(bp_weighting(dX_pooling))
+            for bp_weighting, dX_pooling_doc in zip(backprops_weighting, dX_pooling):
+                dX_weighting.append(bp_weighting(dX_pooling_doc))
 
             if grad_factor != 1.0:
                 for dx_inner in dX_weighting:
@@ -462,19 +463,26 @@ def scalar_weighting_listener_forward(
             model._backprop = None
             return dX
 
-        return outputs, backprop
+        return Y, backprop
     else:
         width = model.get_dim("nO")
+
+        no_trf_data = [doc._.trf_data is None for doc in docs]
+        if any(no_trf_data):
+            assert all(no_trf_data)
+            return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
+
+        if any(doc._.trf_data.last_layer_only for doc in docs):
+            raise ValueError(invalid_outputs_err_msg)
+
+        Y_weigthing = []
         for doc in docs:
-            if doc._.trf_data is None:
-                outputs.append(model.ops.alloc2f(len(doc), width))
-            else:
-                trf_data = cast(DocTransformerOutput, doc._.trf_data)
-                if trf_data.last_layer_only:
-                    raise ValueError(invalid_outputs_err_msg)
+            trf_data = cast(DocTransformerOutput, doc._.trf_data)
+            if trf_data.last_layer_only:
+                raise ValueError(invalid_outputs_err_msg)
 
-                weighted_output, _ = weighting(trf_data.all_outputs, is_train)
-                pooling_output, _ = pooling(weighted_output, is_train)
-                outputs.append(pooling_output)
+            Y_weigthing.append(weighting.predict(trf_data.all_outputs))
 
-        return outputs, lambda dX: []
+        Y = pooling.predict(Y_weigthing)
+
+        return Y, lambda dX: []

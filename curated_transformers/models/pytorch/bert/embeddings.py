@@ -14,26 +14,26 @@ class BertEmbeddings(Module):
 
         self.word_embeddings = Embedding(
             num_embeddings=embedding_config.vocab_size,
-            embedding_dim=embedding_config.embedding_dim,
+            embedding_dim=embedding_config.embedding_width,
         )
         self.token_type_embeddings = Embedding(
             num_embeddings=embedding_config.type_vocab_size,
-            embedding_dim=embedding_config.embedding_dim,
+            embedding_dim=embedding_config.embedding_width,
         )
         self.position_embeddings = Embedding(
             num_embeddings=embedding_config.max_position_embeddings,
-            embedding_dim=embedding_config.embedding_dim,
+            embedding_dim=embedding_config.embedding_width,
         )
 
-        if embedding_config.embedding_dim != layer_config.hidden_size:
+        if embedding_config.embedding_width != layer_config.hidden_width:
             self.projection = Linear(
-                embedding_config.embedding_dim, layer_config.hidden_size
+                embedding_config.embedding_width, layer_config.hidden_width
             )
         else:
             self.projection = None  # type: ignore
 
         self.layer_norm = LayerNorm(
-            embedding_config.embedding_dim, eps=embedding_config.layer_norm_eps
+            embedding_config.embedding_width, eps=embedding_config.layer_norm_eps
         )
         self.dropout = Dropout(p=embedding_config.dropout_prob)
 

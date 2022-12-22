@@ -12,7 +12,7 @@ class BertSelfAttention(Module):
     def __init__(self, config: BertAttentionConfig):
         super().__init__()
 
-        self.model_dim = config.hidden_size
+        self.model_dim = config.hidden_width
         self.num_heads = config.num_attention_heads
         if self.model_dim % self.num_heads != 0:
             raise ValueError(
@@ -73,9 +73,9 @@ class BertFeedForward(Module):
         super().__init__()
 
         self.intermediate = torch.nn.Linear(
-            config.hidden_size, config.intermediate_size
+            config.hidden_width, config.intermediate_width
         )
-        self.output = torch.nn.Linear(config.intermediate_size, config.hidden_size)
+        self.output = torch.nn.Linear(config.intermediate_width, config.hidden_width)
         if config.hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif config.hidden_act == "gelu":
@@ -108,12 +108,12 @@ class BertEncoderLayer(Module):
 
         self.mha = BertSelfAttention(attention_config)
         self.attn_output_layernorm = torch.nn.LayerNorm(
-            layer_config.hidden_size, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
         self.ffn = BertFeedForward(layer_config)
         self.ffn_output_layernorm = torch.nn.LayerNorm(
-            layer_config.hidden_size, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 

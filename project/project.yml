@@ -14,6 +14,11 @@ vars:
   # loss of accuracy.
   max_mse_qloss: 3e-6
   gpu: 0
+  # Can either be 'layer-weighting' or 'no-layer-weighting'. The former
+  # only uses the outputs of the last transformer layer in downstream
+  # components, while the latter will learn task-specific, weighted
+  # representations of all transformer layers for downstream usage.
+  config_name: "no-layer-weighting"
 
 directories: ["configs", "assets", "corpus", "training"]
 
@@ -56,7 +61,7 @@ commands:
     help: "Create a config"
     script:
       - "mkdir -p configs/${vars.treebank}"
-      - 'cp configs/base-config.cfg configs/${vars.treebank}/config.cfg'
+      - "cp configs/${vars.config_name}.cfg configs/${vars.treebank}/config.cfg"
 
   - name: "train"
     help: "Train the pipeline"

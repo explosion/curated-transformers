@@ -9,6 +9,7 @@ from thinc.api import (
     xp2torch,
     torch2xp,
     get_torch_default_device,
+    TorchScriptWrapper_v1,
 )
 from thinc.layers import chain
 from thinc.model import Model
@@ -23,7 +24,6 @@ from .pytorch.bert import BertConfig, BertEncoder
 from .pytorch.hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
 from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
-from .torchscript_wrapper import TorchScriptWrapper_v1
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
 from ..tokenization.sentencepiece_adapters import (
@@ -53,11 +53,11 @@ def build_albert_transformer_model_v1(
         SpanExtractorModelT,
     ],
     attention_probs_dropout_prob: float = 0.0,
-    embedding_size: int = 128,
+    embedding_width: int = 128,
     hidden_act: str = "gelu_new",
     hidden_dropout_prob: float = 0.0,
-    hidden_size: int = 768,
-    intermediate_size: int = 3072,
+    hidden_width: int = 768,
+    intermediate_width: int = 3072,
     layer_norm_eps: float = 1e-12,
     max_position_embeddings: int = 512,
     model_max_length: int = 512,
@@ -78,17 +78,17 @@ def build_albert_transformer_model_v1(
         Callback that constructs a span generator model.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
-    embedding_size (int):
+    embedding_width (int):
         Width of the embedding representations.
     hidden_act (str):
         Activation used by the point-wise feed-forward layers.
     hidden_dropout_prob (float):
         Dropout probabilty of the point-wise feed-forward and
         embedding layers.
-    hidden_size (int):
+    hidden_width (int):
         Width of the final representations.
-    intermediate_size (int):
-        Size of the intermediate projection layer in the
+    intermediate_width (int):
+        Width of the intermediate projection layer in the
         point-wise feed-forward layer.
     layer_norm_eps (float):
         Epsilon for layer normalization.
@@ -114,9 +114,9 @@ def build_albert_transformer_model_v1(
         Configuration passed to the PyTorch gradient scaler.
     """
     config = AlbertConfig(
-        embedding_size=embedding_size,
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
+        embedding_width=embedding_width,
+        hidden_width=hidden_width,
+        intermediate_width=intermediate_width,
         num_attention_heads=num_attention_heads,
         num_hidden_groups=num_hidden_groups,
         num_hidden_layers=num_hidden_layers,
@@ -162,8 +162,8 @@ def build_bert_transformer_model_v1(
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
-    hidden_size: int = 768,
-    intermediate_size: int = 3072,
+    hidden_width: int = 768,
+    intermediate_width: int = 3072,
     layer_norm_eps: float = 1e-12,
     max_position_embeddings: int = 512,
     model_max_length: int = 512,
@@ -188,10 +188,10 @@ def build_bert_transformer_model_v1(
     hidden_dropout_prob (float):
         Dropout probabilty of the point-wise feed-forward and
         embedding layers.
-    hidden_size (int):
+    hidden_width (int):
         Width of the final representations.
-    intermediate_size (int):
-        Size of the intermediate projection layer in the
+    intermediate_width (int):
+        Width of the intermediate projection layer in the
         point-wise feed-forward layer.
     layer_norm_eps (float):
         Epsilon for layer normalization.
@@ -215,8 +215,8 @@ def build_bert_transformer_model_v1(
         Configuration passed to the PyTorch gradient scaler.
     """
     config = BertConfig(
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
+        hidden_width=hidden_width,
+        intermediate_width=intermediate_width,
         num_attention_heads=num_attention_heads,
         num_hidden_layers=num_hidden_layers,
         attention_probs_dropout_prob=attention_probs_dropout_prob,
@@ -261,8 +261,8 @@ def build_camembert_transformer_model_v1(
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
-    hidden_size: int = 768,
-    intermediate_size: int = 3072,
+    hidden_width: int = 768,
+    intermediate_width: int = 3072,
     layer_norm_eps: float = 1e-5,
     max_position_embeddings: int = 514,
     model_max_length: int = 512,
@@ -285,10 +285,10 @@ def build_camembert_transformer_model_v1(
     hidden_dropout_prob (float):
         Dropout probabilty of the point-wise feed-forward and
         embedding layers.
-    hidden_size (int):
+    hidden_width (int):
         Width of the final representations.
-    intermediate_size (int):
-        Size of the intermediate projection layer in the
+    intermediate_width (int):
+        Width of the intermediate projection layer in the
         point-wise feed-forward layer.
     layer_norm_eps (float):
         Epsilon for layer normalization.
@@ -314,8 +314,8 @@ def build_camembert_transformer_model_v1(
     piece_adapter = build_camembert_adapter()
 
     config = RobertaConfig(
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
+        hidden_width=hidden_width,
+        intermediate_width=intermediate_width,
         num_attention_heads=num_attention_heads,
         num_hidden_layers=num_hidden_layers,
         attention_probs_dropout_prob=attention_probs_dropout_prob,
@@ -357,8 +357,8 @@ def build_roberta_transformer_model_v1(
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
-    hidden_size: int = 768,
-    intermediate_size: int = 3072,
+    hidden_width: int = 768,
+    intermediate_width: int = 3072,
     layer_norm_eps: float = 1e-5,
     max_position_embeddings: int = 514,
     model_max_length: int = 512,
@@ -383,10 +383,10 @@ def build_roberta_transformer_model_v1(
     hidden_dropout_prob (float):
         Dropout probabilty of the point-wise feed-forward and
         embedding layers.
-    hidden_size (int):
+    hidden_width (int):
         Width of the final representations.
-    intermediate_size (int):
-        Size of the intermediate projection layer in the
+    intermediate_width (int):
+        Width of the intermediate projection layer in the
         point-wise feed-forward layer.
     layer_norm_eps (float):
         Epsilon for layer normalization.
@@ -410,8 +410,8 @@ def build_roberta_transformer_model_v1(
         Configuration passed to the PyTorch gradient scaler.
     """
     config = RobertaConfig(
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
+        hidden_width=hidden_width,
+        intermediate_width=intermediate_width,
         num_attention_heads=num_attention_heads,
         num_hidden_layers=num_hidden_layers,
         attention_probs_dropout_prob=attention_probs_dropout_prob,
@@ -456,8 +456,8 @@ def build_xlmr_transformer_model_v1(
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
-    hidden_size: int = 768,
-    intermediate_size: int = 3072,
+    hidden_width: int = 768,
+    intermediate_width: int = 3072,
     layer_norm_eps: float = 1e-5,
     max_position_embeddings: int = 514,
     model_max_length: int = 512,
@@ -482,10 +482,10 @@ def build_xlmr_transformer_model_v1(
     hidden_dropout_prob (float):
         Dropout probabilty of the point-wise feed-forward and
         embedding layers.
-    hidden_size (int):
+    hidden_width (int):
         Width of the final representations.
-    intermediate_size (int):
-        Size of the intermediate projection layer in the
+    intermediate_width (int):
+        Width of the intermediate projection layer in the
         point-wise feed-forward layer.
     layer_norm_eps (float):
         Epsilon for layer normalization.
@@ -511,8 +511,8 @@ def build_xlmr_transformer_model_v1(
     piece_adapter = build_xlmr_adapter()
 
     config = RobertaConfig(
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
+        hidden_width=hidden_width,
+        intermediate_width=intermediate_width,
         num_attention_heads=num_attention_heads,
         num_hidden_layers=num_hidden_layers,
         attention_probs_dropout_prob=attention_probs_dropout_prob,

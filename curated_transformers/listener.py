@@ -291,15 +291,15 @@ def scalar_weighting_listener_forward(
         model.verify_inputs(docs)
         weighting_inputs = model._outputs.all_outputs
 
-        Y_weigthing = []
+        Y_weighting = []
         backprops_weighting = []
         outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
         for input in weighting_inputs:
             Y_doc_weighting, backprop_weighting = weighting(input, is_train)
-            Y_weigthing.append(Y_doc_weighting)
+            Y_weighting.append(Y_doc_weighting)
             backprops_weighting.append(backprop_weighting)
 
-        Y, backprop_pooling = pooling(Y_weigthing, is_train)
+        Y, backprop_pooling = pooling(Y_weighting, is_train)
 
         def backprop(dYs):
             dX_pooling = backprop_pooling(dYs)

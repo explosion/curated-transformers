@@ -1,3 +1,8 @@
 include LICENSE
 include README.md
 include pyproject.toml
+include curated_transformers/tests/*.spacy
+include curated_transformers/tests/tokenization/*.json
+include curated_transformers/tests/tokenization/*.txt
+include curated_transformers/tests/tokenization/*.model
+include curated_transformers/tests/tokenization/*.wordpieces

@@ -48,6 +48,6 @@ TransformerOutT = TransformerModelOutput
 TransformerBackpropT = Callable[[List[List[Floats2d]]], Any]
 TransformerModelT = Model[TransformerInT, TransformerOutT]
 
-ScalarWeightInT = List[Ragged]
-ScalarWeightOutT = Ragged
+ScalarWeightInT = List[List[Ragged]]
+ScalarWeightOutT = List[Ragged]
 ScalarWeightModelT = Model[ScalarWeightInT, ScalarWeightOutT]

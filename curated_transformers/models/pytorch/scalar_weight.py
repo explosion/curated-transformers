@@ -20,11 +20,11 @@ class ScalarWeight(Module):
     ) -> Tensor:
         """
         Shapes:
-            layer_outputs - (seq_len, num_layers, layer_size)
+            layer_outputs - (batch_size, seq_len, num_layers, layer_size)
 
-        Returns a weighted tensor of the input with shape (seq_len, layer_size).
+        Returns a weighted tensor of the input with shape (batch_size, seq_len, layer_size).
         """
-        if layer_outputs.shape[1] != self.layer_weights.shape[0]:
+        if layer_outputs.shape[2] != self.layer_weights.shape[0]:
             raise ValueError(
                 f"Expected {self.layer_weights.shape[0]} layers, got {layer_outputs.shape[1]} instead"
             )
@@ -39,8 +39,10 @@ class ScalarWeight(Module):
             layer_weights = self.layer_weights
 
         # Convert the layer weights into a probability distribution and
-        # expand dimensions to get shape [1, n_layers, 1].
-        layer_weights = layer_weights.softmax(dim=-1).unsqueeze(0).unsqueeze(-1)
+        # expand dimensions to get shape [1, 1, n_layers, 1].
+        layer_weights = (
+            layer_weights.softmax(dim=-1).unsqueeze(0).unsqueeze(0).unsqueeze(-1)
+        )
         weighted_layers = layer_outputs * layer_weights
 
         return weighted_layers.sum(dim=-2, keepdim=False) * self.scale

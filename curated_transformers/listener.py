@@ -5,7 +5,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    cast,
 )
 
 from spacy import Errors
@@ -13,12 +12,14 @@ from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
-from .models.output import DocTransformerOutput, TransformerModelOutput
+from .models.output import TransformerModelOutput
 from .models.pooling import with_ragged_layers, with_ragged_last_layer
 from .models.types import (
     WithRaggedLayersModelT,
     WithRaggedLastLayerModelT,
     PoolingModelT,
+    ScalarWeightOutT,
+    ScalarWeightModelT,
 )
 
 
@@ -54,7 +55,7 @@ def build_last_transformer_layer_listener_v1(
 
 def build_scalar_weighting_listener_v1(
     width: int,
-    weighting: Model[List[Ragged], Ragged],
+    weighting: ScalarWeightModelT,
     pooling: PoolingModelT,
     upstream: str = "*",
     grad_factor: float = 1.0,
@@ -234,7 +235,7 @@ class ScalarWeightingListener(TransformerListener):
     def __init__(
         self,
         upstream_name: str,
-        weighting: Model[List[Ragged], Ragged],
+        weighting: ScalarWeightModelT,
         pooling: PoolingModelT,
         width: int,
         grad_factor: float,
@@ -274,7 +275,7 @@ class ScalarWeightingListener(TransformerListener):
 def scalar_weighting_listener_forward(
     model: ScalarWeightingListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[Floats2d], Callable[[Any], Any]]:
-    weighting: Model[List[Ragged], Ragged] = model.layers[0]
+    weighting: ScalarWeightModelT = model.layers[0]
     pooling: WithRaggedLastLayerModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
@@ -289,23 +290,17 @@ def scalar_weighting_listener_forward(
             raise ValueError(invalid_outputs_err_msg)
 
         model.verify_inputs(docs)
+
+        Y_weighting: ScalarWeightOutT = []
         weighting_inputs = model._outputs.all_outputs
+        outputs_to_backprop = tuple(i for i in range(model._outputs.num_outputs))
 
-        Y_weighting = []
-        backprops_weighting = []
-        outputs_to_backprop = tuple(i for i in range(0, model._outputs.num_outputs))
-        for input in weighting_inputs:
-            Y_doc_weighting, backprop_weighting = weighting(input, is_train)
-            Y_weighting.append(Y_doc_weighting)
-            backprops_weighting.append(backprop_weighting)
-
+        Y_weighting, backprop_weighting = weighting(weighting_inputs, is_train)
         Y, backprop_pooling = pooling(Y_weighting, is_train)
 
         def backprop(dYs):
             dX_pooling = backprop_pooling(dYs)
-            dX_weighting = []
-            for bp_weighting, dX_pooling_doc in zip(backprops_weighting, dX_pooling):
-                dX_weighting.append(bp_weighting(dX_pooling_doc))
+            dX_weighting = backprop_weighting(dX_pooling)
 
             if grad_factor != 1.0:
                 for dx_inner in dX_weighting:
@@ -330,14 +325,7 @@ def scalar_weighting_listener_forward(
         if any(doc._.trf_data.last_layer_only for doc in docs):
             raise ValueError(invalid_outputs_err_msg)
 
-        Y_weigthing = []
-        for doc in docs:
-            trf_data = cast(DocTransformerOutput, doc._.trf_data)
-            if trf_data.last_layer_only:
-                raise ValueError(invalid_outputs_err_msg)
-
-            Y_weigthing.append(weighting.predict(trf_data.all_outputs))
-
+        Y_weigthing = weighting.predict([doc._.trf_data.all_outputs for doc in docs])
         Y = pooling.predict(Y_weigthing)
 
         return Y, lambda dX: []

@@ -18,29 +18,33 @@ def test_scalar_weight_model():
 
     lens = ops.asarray1i([1, 2, 3, 4, 5])
     X = [
-        Ragged(ones.copy(), lens.copy()),
-        Ragged(zeros.copy(), lens.copy()),
-        Ragged(ones.copy(), lens.copy()),
+        [
+            Ragged(ones.copy(), lens.copy()),
+            Ragged(zeros.copy(), lens.copy()),
+            Ragged(ones.copy(), lens.copy()),
+        ]
     ]
     Y = ops.alloc2f(15, 2) + (1.0 / 3.0) * 2
 
     Yh, backprop = model(X, is_train=True)
+    assert len(Yh) == 1
     ops.xp.testing.assert_equal(
-        Yh.dataXd,
+        Yh[0].dataXd,
         Y,
     )
     ops.xp.testing.assert_equal(
-        Yh.lengths,
+        Yh[0].lengths,
         lens,
     )
 
     dX = backprop(
-        Ragged(ones.copy(), lengths=lens.copy()),
+        [Ragged(ones.copy(), lengths=lens.copy())],
     )
     dX_expected = ops.alloc2f(15, 2) + (1.0 / 3.0)
 
-    assert len(dX) == 3
-    for dX_layer in dX:
+    assert len(dX) == 1
+    assert len(dX[0]) == 3
+    for dX_layer in dX[0]:
         ops.xp.testing.assert_equal(
             dX_layer.dataXd,
             dX_expected,

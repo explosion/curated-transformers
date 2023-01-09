@@ -16,34 +16,41 @@ def with_ragged_layers(
 
 
 def with_ragged_layers_forward(
-    model: WithRaggedLayersModelT, X: List[Doc], is_train: bool
+    model: WithRaggedLayersModelT,
+    X: Union[List[Doc], List[List[Ragged]]],
+    is_train: bool,
 ):
     pooling: PoolingModelT = model.layers[0]
     xp = model.ops.xp
 
     datas = []
     lens = []
-    doc_layers = []
-    doc_lens = []
+    doc_layer_counts = []
+    doc_token_counts = []
     for X_doc in X:
         X_doc_layers = X_doc._.trf_data.all_outputs if isinstance(X_doc, Doc) else X_doc
         for X_layer in X_doc_layers:
             datas.append(X_layer.dataXd)
             lens.append(X_layer.lengths)
-        doc_layers.append(len(X_doc_layers))
-        doc_lens.append(len(X_doc_layers[0].lengths))
+        doc_layer_counts.append(len(X_doc_layers))
+        doc_token_counts.append(len(X_doc_layers[0].lengths))
 
     X_flat = Ragged(xp.concatenate(datas, axis=0), xp.concatenate(lens, axis=0))
     Y_pooled, pooling_backprop = pooling(X_flat, is_train)
 
+    # This array is placed in CPU memory intentionally --- CuPy split (used
+    # below) does not support indices in device memory.
     doc_layer_lens = numpy.asarray(
-        [doc_layer * doc_len for doc_layer, doc_len in zip(doc_layers, doc_lens)]
+        [
+            doc_layer * doc_len
+            for doc_layer, doc_len in zip(doc_layer_counts, doc_token_counts)
+        ]
     )
     Y = [
         xp.split(doc_array, doc_layer)
         for (doc_array, doc_layer) in zip(
             xp.split(Y_pooled, numpy.cumsum(doc_layer_lens)[:-1]),
-            doc_layers,
+            doc_layer_counts,
         )
     ]
 
@@ -82,7 +89,7 @@ def with_ragged_last_layer(
 
 
 def with_ragged_last_layer_forward(
-    model: WithRaggedLastLayerModelT, X: List[Doc], is_train: bool
+    model: WithRaggedLastLayerModelT, X: Union[List[Doc], List[Ragged]], is_train: bool
 ):
     pooling: PoolingModelT = model.layers[0]
     xp = model.ops.xp

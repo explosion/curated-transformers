@@ -40,6 +40,7 @@ cfg_string_transformer_layers_listener = """
 """
 
 
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_transformer_layers_listener():
     config = Config().from_str(cfg_string_transformer_layers_listener)
     nlp = util.load_model_from_config(config, auto_fill=True, validate=True)

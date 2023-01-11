@@ -9,11 +9,11 @@ from .output import TransformerModelOutput
 PoolingModelT = Model[Ragged, Floats2d]
 
 WithRaggedLayersInT = Union[Iterable[Doc], Iterable[Iterable[Ragged]]]
-WithRaggedLayersOutT = List[List[Floats2d]]
+WithRaggedLayersOutT = List[List[Floats2d]]  # Doc -> Layer -> Representation
 WithRaggedLayersModelT = Model[WithRaggedLayersInT, WithRaggedLayersOutT]
 
 WithRaggedLastLayerInT = Union[Iterable[Doc], Iterable[Ragged]]
-WithRaggedLastLayerOutT = List[Floats2d]
+WithRaggedLastLayerOutT = List[Floats2d]  # Doc -> Last Layer Representation
 WithRaggedLastLayerModelT = Model[WithRaggedLastLayerInT, WithRaggedLastLayerOutT]
 
 
@@ -48,6 +48,6 @@ TransformerOutT = TransformerModelOutput
 TransformerBackpropT = Callable[[List[List[Floats2d]]], Any]
 TransformerModelT = Model[TransformerInT, TransformerOutT]
 
-ScalarWeightInT = List[Ragged]
-ScalarWeightOutT = Ragged
+ScalarWeightInT = List[List[Ragged]]  # Doc -> Layer -> Representation
+ScalarWeightOutT = List[Ragged]  # Doc -> Weighted Representation
 ScalarWeightModelT = Model[ScalarWeightInT, ScalarWeightOutT]

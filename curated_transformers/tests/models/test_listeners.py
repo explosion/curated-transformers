@@ -1,10 +1,11 @@
+import pytest
 from spacy import util
 from spacy.tokens import Doc
 from spacy.training import Example
 from thinc.api import Config, reduce_mean
 
 from curated_transformers.listener import build_transformer_layers_listener_v1
-
+from curated_transformers._compat import has_hf_transformers
 
 cfg_string_transformer_layers_listener = """
     # TransformerLayersListener

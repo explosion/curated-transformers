@@ -387,6 +387,15 @@ class Transformer(TrainablePipe):
             for doc_layers in outputs.all_outputs
         ]
 
+        # The loss of the transformer is calculated in a different manner than that of the
+        # tok2vec component. Instead of updating the loss value with each downstream component's
+        # gradient, we accumulate the gradients and and update it just once. This reduces the overhead
+        # of launching the associated kernels on the GPU as this operation would otherwise be
+        # performed on a per-document, per-layer basis. The resultant loss value, while potentially
+        # (slightly) different, still communicates the same information as before w.r.t the training
+        # progress: how large were the gradients of the downstream components in this step compared
+        # to the previous steps.
+
         def accumulate_gradient(
             one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
         ) -> None:

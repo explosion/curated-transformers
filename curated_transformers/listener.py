@@ -21,7 +21,7 @@ from .models.types import (
     ScalarWeightOutT,
     ScalarWeightModelT,
 )
-from .models.output import DocTransformerOutput, TransformerModelOutput
+from .models.output import TransformerModelOutput
 from .models.pooling import with_ragged_layers, with_ragged_last_layer
 from .models.types import (
     WithRaggedLayersModelT,
@@ -196,7 +196,7 @@ class TransformerLayersListener(TransformerListener):
     its model.
     """
 
-    name = "transformer_layer_listener"
+    name = "transformer_layers_listener"
 
     def __init__(
         self,
@@ -287,7 +287,7 @@ def tranformer_layers_listener_forward(
         if any(no_trf_data):
             assert all(no_trf_data)
             return [
-                n_layers * [model.ops.alloc2f(len(doc), width)] for doc in docs
+                [model.ops.alloc2f(len(doc), width) for _ in range(n_layers)] for doc in docs
             ], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):

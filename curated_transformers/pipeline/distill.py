@@ -33,9 +33,7 @@ DEFAULT_CONFIG = Config().from_str(DEFAULT_CONFIG_STR)
     default_config=DEFAULT_CONFIG["transformer_distiller"],
 )
 def make_transformer_distiller(
-    nlp: Language,
-    name: str,
-    model: Model,
+    nlp: Language, name: str, model: Model, loss_normalization: str = "squared_l2_norm"
 ) -> "TransformerDistiller":
     """Construct a Transformer distiller component, this component is a no-op
     in regular pipelines, but applies transformer layer losses in distillation.
@@ -46,11 +44,14 @@ def make_transformer_distiller(
         The component instance name.
     model (Model):
         Listerer and mapping (if when necessary)
+    loss_normalization (str):
+        Type of normalization applied to the MSE loss between the hidden
+        layers of the teacher and the student. Supported values:
+            "mean" - Takes the mean of all the columns.
+            "squared_l2_norm" - The loss is normalized with the L2 norm of the columns and the result is averaged.
     """
     return TransformerDistiller(
-        nlp.vocab,
-        model,
-        name=name,
+        nlp.vocab, model, name=name, loss_normalization=loss_normalization
     )
 
 
@@ -61,11 +62,19 @@ class TransformerDistiller(TrainablePipe):
         model: Model,
         *,
         name: str = "transformer_distiller",
+        loss_normalization: str = "squared_l2_norm",
     ) -> None:
         self.vocab = vocab
         self.model = model
         self.name = name
         self.layer_mapping = None
+
+        expected_loss_normalization = ("mean", "squared_l2_norm")
+        if loss_normalization not in expected_loss_normalization:
+            raise ValueError(
+                f"Loss normalization must one of the following values: {expected_loss_normalization}"
+            )
+        self.loss_normalization = loss_normalization
 
     def _layer_mapping(self, teacher_hidden, student_hidden):
         if self.layer_mapping is not None:
@@ -118,37 +127,49 @@ class TransformerDistiller(TrainablePipe):
             return losses
 
         student_hidden, student_backprop = self.model.begin_update(student_docs)
-
         # We have to pool the teacher output in the same way as the student.
         student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
-
         teacher_hidden = with_ragged_layers(student_pooler).predict(teacher_docs)
-
         layer_mapping = self._layer_mapping(teacher_hidden, student_hidden)
 
-        normalize = True
-        d_mse = []
-        for t_doc, s_doc in zip(teacher_hidden, student_hidden):
-            if normalize:
-                d_mse_doc = [
-                    (s_doc[student_layer] - t_doc[teacher_layer])
-                    / self.model.ops.xp.linalg.norm(t_doc[teacher_layer])
-                    for student_layer, teacher_layer in layer_mapping
-                ]
-            else:
-                d_mse_doc = [
-                    s_doc[student_layer] - t_doc[teacher_layer]
-                    for student_layer, teacher_layer in layer_mapping
-                ]
+        # Transpose the representations to the get the following shape: [layer, batch, seq, repr]
+        t_student_hidden = list(zip(*student_hidden))
+        t_teacher_hidden = list(zip(*teacher_hidden))
 
-            d_mse.append(d_mse_doc)
+        # Allocate loss accumulators on the GPU if possible.
+        cum_loss = self.model.ops.alloc1f(1)
+        layer_loss = self.model.ops.alloc1f(1)
+        t_mses = []
+        for student_layer_idx, teacher_layer_idx in layer_mapping:
+            student_batches = t_student_hidden[student_layer_idx]
+            teacher_batches = t_teacher_hidden[teacher_layer_idx]
 
-        losses[self.name] += sum(
-            sum(float((d_layer**2).sum()) for d_layer in d) for d in d_mse
-        )
+            batch_size = len(student_batches)
+            n_elements = student_batches[0].size
+            layer_loss.fill(0)
+            batch_mses = []
+            for s_doc, t_doc in zip(student_batches, teacher_batches):
+                # Calculate MSE loss between student and teacher representations.
+                mse = (s_doc - t_doc) ** 2
+                if self.loss_normalization == "mean":
+                    layer_loss += mse.sum()
+                elif self.loss_normalization == "squared_l2_norm":
+                    norm = self.model.ops.xp.linalg.norm(t_doc.reshape(-1)) ** 2
+                    mse /= norm
+                    layer_loss += mse.sum()
+                batch_mses.append(mse)
 
-        student_backprop(d_mse)
-        if sgd not in (None, False):
+            t_mses.append(batch_mses)
+            if self.loss_normalization == "mean":
+                cum_loss += layer_loss / (batch_size * n_elements)
+            elif self.loss_normalization == "squared_l2_norm":
+                cum_loss += layer_loss / batch_size
+
+        losses[self.name] += float(cum_loss)
+
+        # Transpose the gradients again to revert back to the original shape: [batch, layer, seq, repr]
+        student_backprop(list(zip(*t_mses)))
+        if sgd is not None:
             self.finish_update(sgd)
 
         return losses

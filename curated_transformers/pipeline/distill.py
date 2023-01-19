@@ -8,6 +8,7 @@ from spacy.training import validate_get_examples
 from thinc.api import Config, Model, Ops, Optimizer, Ragged, set_dropout_rate
 
 from ..models.pooling import with_ragged_layers
+from ..models.distill import MSELoss
 
 DEFAULT_CONFIG_STR = """
     [transformer_distiller]
@@ -68,13 +69,7 @@ class TransformerDistiller(TrainablePipe):
         self.model = model
         self.name = name
         self.layer_mapping = None
-
-        expected_loss_normalization = ("mean", "squared_l2_norm")
-        if loss_normalization not in expected_loss_normalization:
-            raise ValueError(
-                f"Loss normalization must one of the following values: {expected_loss_normalization}"
-            )
-        self.loss_normalization = loss_normalization
+        self.mse_loss = MSELoss(self.model.ops, normalization=loss_normalization)
 
     def _layer_mapping(self, teacher_hidden, student_hidden):
         if self.layer_mapping is not None:
@@ -133,42 +128,23 @@ class TransformerDistiller(TrainablePipe):
         layer_mapping = self._layer_mapping(teacher_hidden, student_hidden)
 
         # Transpose the representations to the get the following shape: [layer, batch, seq, repr]
-        t_student_hidden = list(zip(*student_hidden))
-        t_teacher_hidden = list(zip(*teacher_hidden))
+        student_hidden_t = list(zip(*student_hidden))
+        teacher_hidden_t = list(zip(*teacher_hidden))
 
         # Allocate loss accumulators on the GPU if possible.
         cum_loss = self.model.ops.alloc1f(1)
-        layer_loss = self.model.ops.alloc1f(1)
-        t_mses = []
+        d_mses_t = []
         for student_layer_idx, teacher_layer_idx in layer_mapping:
-            student_batches = t_student_hidden[student_layer_idx]
-            teacher_batches = t_teacher_hidden[teacher_layer_idx]
-
-            batch_size = len(student_batches)
-            n_elements = student_batches[0].size
-            layer_loss.fill(0)
-            batch_mses = []
-            for s_doc, t_doc in zip(student_batches, teacher_batches):
-                # Calculate MSE loss between student and teacher representations.
-                mse = (s_doc - t_doc) ** 2
-                if self.loss_normalization == "mean":
-                    layer_loss += mse.sum()
-                elif self.loss_normalization == "squared_l2_norm":
-                    norm = self.model.ops.xp.linalg.norm(t_doc.reshape(-1)) ** 2
-                    mse /= norm
-                    layer_loss += mse.sum()
-                batch_mses.append(mse)
-
-            t_mses.append(batch_mses)
-            if self.loss_normalization == "mean":
-                cum_loss += layer_loss / (batch_size * n_elements)
-            elif self.loss_normalization == "squared_l2_norm":
-                cum_loss += layer_loss / batch_size
+            layer_loss, layer_grads = self.mse_loss(
+                student_hidden_t[student_layer_idx], teacher_hidden_t[teacher_layer_idx]
+            )
+            d_mses_t.append(layer_grads)
+            cum_loss += layer_loss
 
         losses[self.name] += float(cum_loss)
 
         # Transpose the gradients again to revert back to the original shape: [batch, layer, seq, repr]
-        student_backprop(list(zip(*t_mses)))
+        student_backprop(list(zip(*d_mses_t)))
         if sgd is not None:
             self.finish_update(sgd)
 

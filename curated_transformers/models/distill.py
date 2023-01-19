@@ -1,7 +1,7 @@
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
 from spacy.tokens import Doc
-from thinc.api import Linear, Model, chain, with_array
-from thinc.types import Floats2d
+from thinc.api import Linear, Model, chain, with_array, Ops
+from thinc.types import Floats1d, Floats2d
 
 
 def _concat_layers(layer):
@@ -53,3 +53,58 @@ def build_layer_distill_model_v1(
     model.set_ref("tok2vec", tok2vec)
 
     return model
+
+
+class MSELoss:
+    mean_normalization: str = "mean"
+    squared_l2_normalization: str = "squared_l2_norm"
+
+    def __init__(self, ops: Ops, *, normalization: str = mean_normalization):
+        self.ops = ops
+        self.normalization = normalization
+
+        expected_normalizations = (
+            self.mean_normalization,
+            self.squared_l2_normalization,
+        )
+        if normalization not in expected_normalizations:
+            raise ValueError(
+                f"Normalization for MSE loss must be one of the following values: {expected_normalizations}"
+            )
+
+    def __call__(
+        self, predicted: List[Floats2d], target: List[Floats2d]
+    ) -> Tuple[Floats1d, List[Floats2d]]:
+        if len(predicted) != len(target):
+            raise ValueError(
+                f"MSE loss requires inputs with the same batch size, but got: {len(predicted)},{len(target)}"
+            )
+        batch_size = len(predicted)
+        n_elements = predicted[0].size
+        cum_loss = self.ops.alloc1f(1)
+        grads = []
+
+        for y_h, y in zip(predicted, target):
+            if len(y_h.shape) != len(y.shape) or len(y_h.shape) != 2:
+                raise ValueError(
+                    f"MSE loss requires 2D inputs of the same shape, but got: {y_h.shape},{y.shape}"
+                )
+            grad = y_h - y
+            loss = grad**2
+
+            if self.normalization == self.mean_normalization:
+                grad /= batch_size * n_elements
+                cum_loss += loss.sum()  # type: ignore
+            elif self.normalization == self.squared_l2_normalization:
+                norm = self.ops.xp.linalg.norm(y.reshape(-1)) ** 2  # type: ignore
+                grad /= norm
+                loss /= norm
+                cum_loss += loss.sum()  # type: ignore
+            grads.append(grad)
+
+        if self.normalization == self.mean_normalization:
+            cum_loss /= batch_size * n_elements
+        elif self.normalization == self.squared_l2_normalization:
+            cum_loss /= batch_size
+
+        return (cum_loss, grads)

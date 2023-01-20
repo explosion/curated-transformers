@@ -1,10 +1,11 @@
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
 from itertools import islice
 from spacy import Language, Vocab
 from spacy.errors import Errors
 from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc
 from spacy.training import validate_get_examples
+from spacy.training.example import Example
 from thinc.api import Config, Model, Ops, Optimizer, Ragged, set_dropout_rate
 
 from ..models.pooling import with_ragged_layers
@@ -168,5 +169,31 @@ class TransformerDistiller(TrainablePipe):
         assert len(doc_sample) > 0, Errors.E923.format(name=self.name)
         self.model.initialize(X=doc_sample)
 
-    def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
-        return iter(stream)
+    def predict(self, docs: Iterable[Doc]) -> Any:
+        return None
+
+    def set_annotations(self, docs: Iterable[Doc], scores) -> None:
+        pass
+
+    def update(
+        self,
+        examples: Iterable["Example"],
+        *,
+        drop: float = 0.0,
+        sgd: Optional[Optimizer] = None,
+        losses: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, float]:
+        if losses is None:
+            losses = {}
+        losses.setdefault(self.name, 0.0)
+        return losses
+
+    def finish_update(self, sgd: Optimizer) -> None:
+        pass
+
+    def add_label(self, label: str) -> int:
+        return 0
+
+    @property
+    def is_trainable(self) -> bool:
+        return False

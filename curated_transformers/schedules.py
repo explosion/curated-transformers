@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 from thinc.api import Schedule
 
 
@@ -59,10 +59,13 @@ def transformer_discriminative(
 
 
 def _transformer_discriminative_schedule(
-    schedule: Schedule, step: int, *, key: Tuple[int, str], **kwargs
+    schedule: Schedule, step: int, *, key: Optional[Tuple[int, str]] = None, **kwargs
 ) -> float:
     default_schedule: Schedule = schedule.attrs["default_schedule"]
     transformer_schedule: Schedule = schedule.attrs["transformer_schedule"]
+
+    if key is None:
+        return default_schedule(step=step, key=key, **kwargs)
 
     key_str = key[1]
     if "layers." in key_str or "embeddings." in key_str:

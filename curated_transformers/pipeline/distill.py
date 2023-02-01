@@ -172,27 +172,8 @@ class TransformerDistiller(TrainablePipe):
     def predict(self, docs: Iterable[Doc]) -> Any:
         return None
 
-    def set_annotations(self, docs: Iterable[Doc], scores) -> None:
+    def set_annotations(self, docs: Iterable[Doc], scores: Optional[Any]) -> None:
         pass
-
-    def update(
-        self,
-        examples: Iterable["Example"],
-        *,
-        drop: float = 0.0,
-        sgd: Optional[Optimizer] = None,
-        losses: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, float]:
-        if losses is None:
-            losses = {}
-        losses.setdefault(self.name, 0.0)
-        return losses
-
-    def finish_update(self, sgd: Optimizer) -> None:
-        pass
-
-    def add_label(self, label: str) -> int:
-        return 0
 
     @property
     def is_trainable(self) -> bool:

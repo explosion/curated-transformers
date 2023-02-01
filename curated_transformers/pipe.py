@@ -14,7 +14,12 @@ from typing import (
 from spacy import Errors, Language, Vocab
 from spacy.tokens import Doc
 from spacy.pipeline import TrainablePipe
-from spacy.training import Example, validate_examples, validate_get_examples
+from spacy.training import (
+    Example,
+    validate_examples,
+    validate_distillation_examples,
+    validate_get_examples,
+)
 from spacy.util import minibatch
 from thinc.api import Config, Optimizer, set_dropout_rate
 from thinc.model import Model
@@ -127,22 +132,21 @@ class Transformer(TrainablePipe):
         self.all_layer_outputs = all_layer_outputs
         self._set_model_all_layer_outputs(all_layer_outputs)
 
-    def distill(self,
-               teacher_pipe: "TrainablePipe",
-               teacher_docs: Iterable["Doc"],
-               student_docs: Iterable["Doc"],
-               *,
-               drop: float=0.0,
-               sgd: Optimizer=None,
-               losses: Optional[Dict[str, float]]=None) -> Dict[str, float]:
-        # TODO: add MSE loss between layers
-
-        #teacher_pipe.set_annotations(docs, teacher_pipe.predict(docs))
+    def distill(
+        self,
+        teacher_pipe: "TrainablePipe",
+        examples: Iterable[Example],
+        *,
+        drop: float = 0.0,
+        sgd: Optimizer = None,
+        losses: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, float]:
+        validate_distillation_examples(examples, "Transformer.distill")
         # Ensure that downstream teacher components get transformer outputs
+        teacher_docs = [eg.reference for eg in examples]
         teacher_pipe.set_annotations(teacher_docs, teacher_pipe.predict(teacher_docs))
 
         # And prepare the student for backprop.
-        examples = [Example(doc, doc) for doc in student_docs]
         return self.update(examples, drop=drop, sgd=sgd, losses=losses)
 
     @property

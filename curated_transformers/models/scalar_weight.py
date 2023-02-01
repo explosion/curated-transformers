@@ -58,25 +58,42 @@ def _convert_inputs(
     model: Model, X: ScalarWeightInT, is_train: bool = False
 ) -> Tuple[ArgsKwargs, Callable[[ArgsKwargs], List[Ragged]]]:
     ops = model.ops
-    layer_hidden_widths = [x.data.shape[1] for x in X]
-    if not all_equal(layer_hidden_widths):
+
+    batch_size = len(X)
+    seq_lens = [x[0].data.shape[0] for x in X]
+    max_seq_len = max(seq_lens)
+    num_layers = [len(x) for x in X]
+    if not all_equal(num_layers):
+        raise ValueError(f"Not all inputs have the same number of layers")
+    layer_widths = [layer.data.shape[1] for x in X for layer in x]
+    if not all_equal(layer_widths):
         raise ValueError(
             f"Not all hidden widths are equal in input passed to scalar weight"
         )
 
-    Xops = ops.alloc3f(X[0].data.shape[0], len(X), X[0].data.shape[1])
-    for i, layer in enumerate(X):
-        Xops[:, i, :] = layer.dataXd  # type: ignore
+    # [batch_size, max_seq_len, num_layers, layer_width]
+    Xops = ops.alloc4f(batch_size, max_seq_len, num_layers[0], layer_widths[0])
+    for doc_idx, layers in enumerate(X):
+        seq_len = seq_lens[doc_idx]
+        for layer_idx, data in enumerate(layers):
+            Xops[doc_idx, :seq_len, layer_idx, :] = data.dataXd  # type: ignore
     Xt = xp2torch(Xops, requires_grad=True)
 
     def convert_from_torch_backward(d_inputs: ArgsKwargs):
-        # (seq, num_layers, hidden)
+        # [batch, seq, num_layers, hidden]
         dt_inputs: Tensor = cast(Tensor, d_inputs.args[0])
 
         dX = []
-        for i in range(dt_inputs.shape[1]):
-            dX_layer = dt_inputs[:, i, :]
-            dX.append(Ragged(data=torch2xp(dX_layer, ops=ops), lengths=X[0].lengths))
+        for doc_idx in range(dt_inputs.shape[0]):
+            seq_len = seq_lens[doc_idx]
+            lengths = X[doc_idx][0].lengths
+            dX_layers = []
+            for layer_idx in range(dt_inputs.shape[2]):
+                dX_layer = dt_inputs[doc_idx, :seq_len, layer_idx, :]
+                dX_layers.append(
+                    Ragged(data=torch2xp(dX_layer, ops=ops), lengths=lengths)
+                )
+            dX.append(dX_layers)
         return dX
 
     output = ArgsKwargs(args=(Xt,), kwargs={})
@@ -85,12 +102,28 @@ def _convert_inputs(
 
 def _convert_outputs(
     model: Model, inputs_outputs: Tuple[ScalarWeightInT, Tensor], is_train: bool
-) -> Tuple[ScalarWeightOutT, Callable[[Ragged], ArgsKwargs]]:
+) -> Tuple[ScalarWeightOutT, Callable[[List[Ragged]], ArgsKwargs]]:
+    ops = model.ops
     X, Yt = inputs_outputs
-    Y = Ragged(torch2xp(Yt, ops=model.ops), lengths=X[0].lengths)
 
-    def convert_for_torch_backward(dY: Ragged) -> ArgsKwargs:
-        dYt = xp2torch(dY.dataXd)
+    Y = []
+    for doc_idx in range(len(X)):
+        seq_len = X[doc_idx][0].data.shape[0]
+        lengths = X[doc_idx][0].lengths
+        # [batch, seq, hidden]
+        Y_layer = Yt[doc_idx, :seq_len, :]  # type: ignore
+        Y.append(Ragged(torch2xp(Y_layer, ops=model.ops), lengths=lengths))
+
+    def convert_for_torch_backward(dY: List[Ragged]) -> ArgsKwargs:
+        max_seq_len = max(y.data.shape[0] for y in dY)
+        width = dY[0].data.shape[1]
+
+        dYt_ops = ops.alloc3f(len(dY), max_seq_len, width)
+        for doc_idx in range(len(dY)):
+            seq_len = dY[doc_idx].data.shape[0]
+            dYt_ops[doc_idx, :seq_len, :] = dY[doc_idx].dataXd  # type: ignore
+
+        dYt = xp2torch(dYt_ops)
         return ArgsKwargs(
             args=(Yt,),
             kwargs={"grad_tensors": dYt},

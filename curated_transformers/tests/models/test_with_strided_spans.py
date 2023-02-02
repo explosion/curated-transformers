@@ -39,10 +39,11 @@ def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
     return Model("mock_transformer", forward)
 
 
-def test_with_strided_spans():
+@pytest.mark.parametrize("batch_size", [1, 2, 3, 5])
+def test_with_strided_spans(batch_size):
     ops = NumpyOps()
     trf = chain(with_array(relu_activation()), _mock_transformer())
-    model = with_strided_spans(trf, stride=4, window=4)
+    model = with_strided_spans(trf, stride=4, window=4, batch_size=batch_size)
 
     zeros = ops.alloc2f(15, 5)
     ones = ops.alloc2f(15, 5) + 1
@@ -54,26 +55,34 @@ def test_with_strided_spans():
     X = [
         Ragged(fives.copy(), lengths=lengths1),
         Ragged(-fives, lengths=lengths2),
+        Ragged(fives.copy(), lengths=lengths1.copy()),
+        Ragged(-fives, lengths=lengths2.copy()),
     ]
     model.initialize(X)
 
     Y, backprop = model(X, is_train=True)
     Y = Y.all_outputs
-    ops.xp.testing.assert_array_equal(Y[0][0].data, fives)
-    ops.xp.testing.assert_array_equal(Y[1][0].data, zeros)
-    ops.xp.testing.assert_array_equal(Y[0][0].lengths, lengths1)
-    ops.xp.testing.assert_array_equal(Y[1][0].lengths, lengths2)
+    assert len(Y) == len(X)
 
     dX = backprop(
         [
             Ragged(ones.copy(), lengths=lengths1),
             Ragged(ones.copy(), lengths=lengths2),
+            Ragged(ones.copy(), lengths=lengths1.copy()),
+            Ragged(ones.copy(), lengths=lengths2.copy()),
         ]
     )
-    ops.xp.testing.assert_array_equal(dX[0].data, ones)
-    ops.xp.testing.assert_array_equal(dX[1].data, zeros)
-    ops.xp.testing.assert_array_equal(dX[0].lengths, lengths1)
-    ops.xp.testing.assert_array_equal(dX[1].lengths, lengths2)
+
+    for i in [0, 2]:
+        ops.xp.testing.assert_array_equal(Y[i][0].data, fives)
+        ops.xp.testing.assert_array_equal(Y[i][0].lengths, lengths1)
+        ops.xp.testing.assert_array_equal(dX[i].data, ones)
+        ops.xp.testing.assert_array_equal(dX[i].lengths, lengths1)
+    for i in [1, 3]:
+        ops.xp.testing.assert_array_equal(Y[i][0].data, zeros)
+        ops.xp.testing.assert_array_equal(Y[i][0].lengths, lengths2)
+        ops.xp.testing.assert_array_equal(dX[i].data, zeros)
+        ops.xp.testing.assert_array_equal(dX[i].lengths, lengths2)
 
 
 def test_with_strided_spans_averaging():
@@ -114,9 +123,13 @@ def test_with_strided_spans_averaging():
     ops.xp.testing.assert_array_equal(dX[0].lengths, lengths)
 
 
-def test_incorrect_strides_are_rejected():
+def test_incorrect_strides_and_batch_sizes_are_rejected():
     relu = with_array(relu_activation())
     with pytest.raises(ValueError):
         with_strided_spans(relu, stride=2, window=6)
     with pytest.raises(ValueError):
         with_strided_spans(relu, stride=4, window=3)
+    with pytest.raises(ValueError):
+        with_strided_spans(relu, batch_size=-1)
+    with pytest.raises(ValueError):
+        with_strided_spans(relu, batch_size=0)

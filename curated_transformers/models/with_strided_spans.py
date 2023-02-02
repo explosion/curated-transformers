@@ -150,8 +150,9 @@ def with_strided_spans_forward(
         )
 
         dXlf = []
-        assert len(dY_spans) == len(backprops)
-        for dY_batch, bp_trf in zip(_split_spans(dY_spans, batch_size), backprops):
+        split_dY_spans = list(_split_spans(dY_spans, batch_size))
+        assert len(split_dY_spans) == len(backprops)
+        for dY_batch, bp_trf in zip(split_dY_spans, backprops):
             dXlf_batch = bp_trf(dY_batch)
             dXlf.extend(dXlf_batch)
 

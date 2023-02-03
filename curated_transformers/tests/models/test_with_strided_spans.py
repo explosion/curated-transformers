@@ -129,7 +129,6 @@ def test_incorrect_strides_are_rejected():
         with_strided_spans(relu, stride=2, window=6)
     with pytest.raises(ValueError):
         with_strided_spans(relu, stride=4, window=3)
-    with pytest.raises(ValueError):
 
 
 def test_batch_sizes_are_rejected():

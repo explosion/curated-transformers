@@ -26,7 +26,6 @@ from .util import batch_by_length
 
 DEFAULT_CONFIG_STR = """
     [transformer]
-    max_batch_items = 4096
 
     [transformer.model]
     @architectures = "curated-transformers.XLMRTransformer.v1"
@@ -50,7 +49,6 @@ def make_transformer(
     name: str,
     model: Model,
     *,
-    max_batch_items: int = 4096,
     frozen: bool = False,
     all_layer_outputs: bool = False,
 ) -> "Transformer":
@@ -78,7 +76,6 @@ def make_transformer(
         name=name,
         frozen=frozen,
         all_layer_outputs=all_layer_outputs,
-        max_batch_items=max_batch_items,
     )
 
 
@@ -100,7 +97,6 @@ class Transformer(TrainablePipe):
         name: str = "transformer",
         frozen: bool = False,
         all_layer_outputs: bool = False,
-        max_batch_items: int = 4096,
     ) -> None:
         """
         vocab (Vocab):
@@ -120,7 +116,7 @@ class Transformer(TrainablePipe):
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List[TransformerListener]] = {}
-        self.cfg = {"max_batch_items": max_batch_items}
+        self.cfg = {}
 
         _install_extensions()
         self.frozen = frozen
@@ -197,12 +193,10 @@ class Transformer(TrainablePipe):
             Processed documents in order.
         """
         _install_extensions()
-        for outer_batch in minibatch(stream, batch_size):
-            outer_batch = list(outer_batch)
-            for indices in batch_by_length(outer_batch, self.cfg["max_batch_items"]):
-                subbatch = [outer_batch[i] for i in indices]
-                self.set_annotations(subbatch, self.predict(subbatch))
-            yield from outer_batch
+        for batch in minibatch(stream, batch_size):
+            preds = self.predict(batch)
+            self.set_annotations(batch, preds)
+            yield from batch
 
     def predict(self, docs: Iterable[Doc]) -> TransformerModelOutput:
         """Apply the pipeline's model to a batch of docs, without modifying them.

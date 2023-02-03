@@ -22,7 +22,6 @@ from thinc.types import Ragged
 
 from .models.output import DocTransformerOutput, TransformerModelOutput
 from .listener import TransformerListener
-from .util import batch_by_length
 
 DEFAULT_CONFIG_STR = """
     [transformer]

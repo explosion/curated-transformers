@@ -116,7 +116,7 @@ class Transformer(TrainablePipe):
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List[TransformerListener]] = {}
-        self.cfg = {}
+        self.cfg: Dict[str, Any] = {}
 
         _install_extensions()
         self.frozen = frozen

@@ -123,12 +123,17 @@ def test_with_strided_spans_averaging():
     ops.xp.testing.assert_array_equal(dX[0].lengths, lengths)
 
 
-def test_incorrect_strides_and_batch_sizes_are_rejected():
+def test_incorrect_strides_are_rejected():
     relu = with_array(relu_activation())
     with pytest.raises(ValueError):
         with_strided_spans(relu, stride=2, window=6)
     with pytest.raises(ValueError):
         with_strided_spans(relu, stride=4, window=3)
+    with pytest.raises(ValueError):
+
+
+def test_batch_sizes_are_rejected():
+    relu = with_array(relu_activation())
     with pytest.raises(ValueError):
         with_strided_spans(relu, batch_size=-1)
     with pytest.raises(ValueError):

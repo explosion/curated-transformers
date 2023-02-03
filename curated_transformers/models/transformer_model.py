@@ -556,7 +556,7 @@ def build_transformer_model_v1(
     ],
     transformer: TorchTransformerModelT,
     piece_encoder: Tok2PiecesModelT,
-    piece_adapter: PieceAdapterModelT = None,
+    piece_adapter: Optional[PieceAdapterModelT] = None,
 ) -> TransformerModelT:
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?

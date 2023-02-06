@@ -22,11 +22,11 @@ from curated_transformers.models.with_strided_spans import (
 from curated_transformers.models.pytorch.attention import AttentionMask
 from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
-from curated_transformers.pipe import make_transformer
+from curated_transformers.pipeline.transformer import make_transformer
 from curated_transformers.util import create_gradual_transformer_unfreezing
 from curated_transformers._compat import has_hf_transformers, transformers
 
-from .util import make_tempdir
+from ..util import make_tempdir
 
 
 cfg_string_last_layer_listener = """
@@ -395,7 +395,7 @@ def test_frozen_transformer_pipe():
         nlp.update(train_examples, sgd=optimizer, losses=losses)
 
     transformer_trained_params = get_transformer_params_sorted()
-    for ((old_param, old_vec), (new_param, new_vec)) in zip(
+    for (old_param, old_vec), (new_param, new_vec) in zip(
         transformer_init_params, transformer_trained_params
     ):
         assert old_param == new_param

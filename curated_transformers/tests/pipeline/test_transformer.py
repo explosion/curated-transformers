@@ -475,7 +475,6 @@ cfg_string_gradual_unfreezing = (
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason="fails until spaCy supports after_update callbacks")
 @pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
 def test_gradual_transformer_unfreezing(test_dir):
     def wrapped_callback():

@@ -475,7 +475,7 @@ cfg_string_gradual_unfreezing = (
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires 🤗 transformers")
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_gradual_transformer_unfreezing(test_dir):
     def wrapped_callback():
         def inner(

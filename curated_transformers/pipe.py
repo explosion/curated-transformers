@@ -27,7 +27,7 @@ DEFAULT_CONFIG_STR = """
     [transformer]
 
     [transformer.model]
-    @architectures = "curated-transformers.XLMRTransformer.v1"
+    @architectures = "curated-transformers.XlmrTransformer.v1"
 
     [transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"

@@ -20,8 +20,8 @@ from thinc.api import Config, Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Ragged
 
-from .models.output import DocTransformerOutput, TransformerModelOutput
-from .listener import TransformerListener
+from ..models.output import DocTransformerOutput, TransformerModelOutput
+from ..models.listener import TransformerListener
 
 DEFAULT_CONFIG_STR = """
     [transformer]

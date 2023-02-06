@@ -12,18 +12,18 @@ from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
-from .models.output import TransformerModelOutput
-from .models.pooling import with_ragged_layers, with_ragged_last_layer
-from .models.types import (
+from .output import TransformerModelOutput
+from .pooling import with_ragged_layers, with_ragged_last_layer
+from .types import (
     WithRaggedLayersModelT,
     WithRaggedLastLayerModelT,
     PoolingModelT,
     ScalarWeightOutT,
     ScalarWeightModelT,
 )
-from .models.output import TransformerModelOutput
-from .models.pooling import with_ragged_layers, with_ragged_last_layer
-from .models.types import (
+from .output import TransformerModelOutput
+from .pooling import with_ragged_layers, with_ragged_last_layer
+from .types import (
     WithRaggedLayersModelT,
     WithRaggedLastLayerModelT,
     PoolingModelT,
@@ -287,7 +287,8 @@ def tranformer_layers_listener_forward(
         if any(no_trf_data):
             assert all(no_trf_data)
             return [
-                [model.ops.alloc2f(len(doc), width) for _ in range(n_layers)] for doc in docs
+                [model.ops.alloc2f(len(doc), width) for _ in range(n_layers)]
+                for doc in docs
             ], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):

@@ -4,7 +4,11 @@ from spacy import Language, Vocab
 from spacy.errors import Errors
 from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc
-from spacy.training import validate_get_examples
+from spacy.training import (
+    Example,
+    validate_distillation_examples,
+    validate_get_examples,
+)
 from thinc.api import Config, Model, Ops, Optimizer, Ragged, set_dropout_rate
 
 from ..models.pooling import with_ragged_layers
@@ -101,8 +105,7 @@ class TransformerDistiller(TrainablePipe):
     def distill(
         self,
         teacher_pipe: Optional["TrainablePipe"],
-        teacher_docs: Iterable[Doc],
-        student_docs: Iterable[Doc],
+        examples: Iterable[Example],
         *,
         drop: float = 0.0,
         sgd: Optimizer = None,
@@ -116,15 +119,19 @@ class TransformerDistiller(TrainablePipe):
         set_dropout_rate(self.model, drop)
         losses.setdefault(self.name, 0.0)
 
-        if not any(len(doc) for doc in teacher_docs):
-            return losses
-        if not any(len(doc) for doc in student_docs):
-            return losses
+        validate_distillation_examples(examples, "Distiller.distill")
 
-        student_hidden, student_backprop = self.model.begin_update(student_docs)
+        student_hidden, student_backprop = self.model.begin_update(
+            [eg.predicted for eg in examples]
+        )
+
         # We have to pool the teacher output in the same way as the student.
         student_pooler = self.model.get_ref("tok2vec").get_ref("pooling")
-        teacher_hidden = with_ragged_layers(student_pooler).predict(teacher_docs)
+
+        teacher_hidden = with_ragged_layers(student_pooler).predict(
+            [eg.reference for eg in examples]
+        )
+
         layer_mapping = self._layer_mapping(teacher_hidden, student_hidden)
 
         # Transpose the representations to the get the following shape: [layer, batch, seq, repr]
@@ -158,7 +165,7 @@ class TransformerDistiller(TrainablePipe):
             returns a representative sample of gold-standard Example objects..
         nlp (Language): The current nlp object the component is part of.
         """
-        validate_get_examples(get_examples, "TransformerDistiller.initialize")
+        validate_get_examples(get_examples, "Distiller.initialize")
         doc_sample = []
         for example in islice(get_examples(), 10):
             doc_sample.append(example.x)

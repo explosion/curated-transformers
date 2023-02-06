@@ -80,7 +80,7 @@ class MSELoss:
                 f"MSE loss requires inputs with the same batch size, but got: {len(predicted)},{len(target)}"
             )
         batch_size = len(predicted)
-        n_elements = predicted[0].size
+        n_batch_elements = sum(x.size for x in predicted)
         cum_loss = self.ops.alloc1f(1)
         grads = []
 
@@ -93,7 +93,7 @@ class MSELoss:
             loss = grad**2
 
             if self.normalization == self.mean_normalization:
-                grad /= batch_size * n_elements
+                grad /= n_batch_elements
                 cum_loss += loss.sum()  # type: ignore
             elif self.normalization == self.squared_l2_normalization:
                 norm = self.ops.xp.linalg.norm(y.reshape(-1)) ** 2  # type: ignore
@@ -103,7 +103,7 @@ class MSELoss:
             grads.append(grad)
 
         if self.normalization == self.mean_normalization:
-            cum_loss /= batch_size * n_elements
+            cum_loss /= n_batch_elements
         elif self.normalization == self.squared_l2_normalization:
             cum_loss /= batch_size
 

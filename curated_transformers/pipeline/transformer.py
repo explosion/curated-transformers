@@ -21,7 +21,7 @@ from thinc.model import Model
 from thinc.types import Ragged
 
 from ..models.output import DocTransformerOutput, TransformerModelOutput
-from ..models.listener import TransformerListener
+from ..models.listeners import TransformerListener
 
 DEFAULT_CONFIG_STR = """
     [transformer]

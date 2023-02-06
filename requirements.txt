@@ -1,5 +1,5 @@
 cutlery>=0.0.3,<0.1.0
-spacy>=3.4.0,<4.1.0
+spacy>=4.0.0.dev0,<4.1.0
 thinc>=8.1.6,<9.1.0
 srsly
 torch>=1.12.0

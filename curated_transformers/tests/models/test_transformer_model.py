@@ -6,15 +6,15 @@ from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged, registry
 from thinc.compat import has_cupy
 
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
-from curated_transformers.models.output import TransformerModelOutput
-from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
-from curated_transformers.models.transformer_model import (
+from curated_transformers.models.architectures import (
     build_albert_transformer_model_v1,
     build_bert_transformer_model_v1,
     build_roberta_transformer_model_v1,
     build_xlmr_transformer_model_v1,
 )
+from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
+from curated_transformers.models.output import TransformerModelOutput
+from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import (
     has_hf_transformers,

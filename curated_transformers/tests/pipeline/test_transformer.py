@@ -10,17 +10,17 @@ from spacy.language import Language
 from spacy.util import registry as spacy_registry
 import torch
 
-from curated_transformers.models.transformer_model import (
+from curated_transformers.models.architectures import (
     build_camembert_transformer_model_v1,
     build_xlmr_transformer_model_v1,
     build_bert_transformer_model_v1,
     build_roberta_transformer_model_v1,
 )
+from curated_transformers.models.pytorch.attention import AttentionMask
+from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.models.with_strided_spans import (
     build_with_strided_spans_v1,
 )
-from curated_transformers.models.pytorch.attention import AttentionMask
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.pipeline.transformer import make_transformer
 from curated_transformers.util import create_gradual_transformer_unfreezing

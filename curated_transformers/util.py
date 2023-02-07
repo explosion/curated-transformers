@@ -78,7 +78,7 @@ def gradual_transformer_unfreezing_all_pipes(
     current_step = callback_args["step"]
 
     # Scoped import to avoid import cycles.
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
     for _, pipe in nlp.components:
         if not isinstance(pipe, Transformer):

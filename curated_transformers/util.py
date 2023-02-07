@@ -5,7 +5,7 @@ import itertools
 import thinc
 
 if TYPE_CHECKING:
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
 thinc.registry.create("model_loaders", entry_points=True)
 registry = thinc.registry
@@ -58,7 +58,7 @@ def gradual_transformer_unfreezing_per_pipe(
     current_step = callback_args["step"]
 
     # Scoped import to avoid import cycles.
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
     for name, pipe in nlp.components:
         unfreeze_step = freeze_params.get(name)

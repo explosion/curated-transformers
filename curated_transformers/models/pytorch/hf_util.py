@@ -1,15 +1,15 @@
-from typing import Dict, OrderedDict, Union
+from typing import Dict, OrderedDict
 import torch
 import re
 
+
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
+from .curated_transformer import CuratedTransformer, CuratedEncoderT
 from .roberta.encoder import RobertaEncoder
 from ..._compat import transformers
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
-
-SupportedEncoders = Union[AlbertEncoder, BertEncoder, RobertaEncoder]
 
 
 def _check_supported_hf_models(model_type: str):
@@ -18,18 +18,22 @@ def _check_supported_hf_models(model_type: str):
 
 
 def convert_pretrained_model_for_encoder(
-    encoder: SupportedEncoders, params: OrderedDict[str, torch.Tensor]
+    transformer: CuratedTransformer[CuratedEncoderT],
+    params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
     params = _rename_old_hf_names(params)
+    encoder = transformer.curated_encoder
 
     if isinstance(encoder, AlbertEncoder):
-        return _convert_albert_base_state(params)
+        converted = _convert_albert_base_state(params)
     elif isinstance(encoder, BertEncoder):
-        return _convert_bert_base_state(params)
+        converted = _convert_bert_base_state(params)
     elif isinstance(encoder, RobertaEncoder):
-        return _convert_roberta_base_state(params)
+        converted = _convert_roberta_base_state(params)
     else:
         raise ValueError(f"Unsupported encoder type: {type(encoder)}")
+
+    return _add_curated_encoder_prefix(converted)
 
 
 def convert_hf_pretrained_model_parameters(
@@ -50,7 +54,15 @@ def convert_hf_pretrained_model_parameters(
         "xlm-roberta": _convert_roberta_base_state,
     }
 
-    return converters[hf_model.config.model_type](hf_model.state_dict())  # type: ignore
+    converted = converters[hf_model.config.model_type](hf_model.state_dict())  # type: ignore
+
+    return _add_curated_encoder_prefix(converted)
+
+
+def _add_curated_encoder_prefix(
+    converted: Dict[str, torch.Tensor]
+) -> Dict[str, torch.Tensor]:
+    return {f"curated_encoder.{k}": v for k, v in converted.items()}
 
 
 def _rename_old_hf_names(

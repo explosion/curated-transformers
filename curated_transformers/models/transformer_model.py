@@ -21,7 +21,8 @@ import torch
 from .output import TransformerModelOutput, PyTorchTransformerOutput
 from .pytorch.albert import AlbertConfig, AlbertEncoder
 from .pytorch.bert import BertConfig, BertEncoder
-from .pytorch.hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
+from .pytorch.curated_transformer import CuratedTransformer, CuratedEncoderT
+from .pytorch.hf_util import convert_pretrained_model_for_encoder
 from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
 from .with_non_ws_tokens import with_non_ws_tokens
@@ -617,7 +618,7 @@ def transformer_model_init(
 
 
 def _pytorch_encoder(
-    encoder: SupportedEncoders,
+    encoder: CuratedEncoderT,
     *,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
@@ -630,7 +631,7 @@ def _pytorch_encoder(
         grad_scaler_config["enabled"] = mixed_precision
 
     model = PyTorchWrapper_v2(
-        encoder,
+        CuratedTransformer(encoder),
         convert_inputs=partial(
             _convert_inputs,
             max_model_seq_len=encoder.max_seq_len,

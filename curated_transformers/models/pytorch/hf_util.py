@@ -21,6 +21,12 @@ def convert_pretrained_model_for_encoder(
     transformer: CuratedTransformer[CuratedEncoderT],
     params: OrderedDict[str, torch.Tensor],
 ) -> Dict[str, torch.Tensor]:
+    """Converts parameters from a compatible pre-trained model to
+    parameters that can be consumed by the given curated transformer.
+
+    Returns the state_dict that can be directly loaded by the curated
+    transformer.
+    """
     params = _rename_old_hf_names(params)
     encoder = transformer.curated_encoder
 
@@ -42,7 +48,8 @@ def convert_hf_pretrained_model_parameters(
     """Converts HF model parameters to parameters that can be consumed by
     our implementation of the Transformer.
 
-    Returns the state_dict that can be directly loaded by our Transformer module.
+    Returns the state_dict that can be directly loaded by one of the
+    curated transformers.
     """
     _check_supported_hf_models(hf_model.config.model_type)  # type: ignore
 

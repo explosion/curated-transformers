@@ -80,7 +80,7 @@ def _convert_inputs(
     Xt = xp2torch(Xops, requires_grad=True)
 
     def convert_from_torch_backward(d_inputs: ArgsKwargs):
-        # [batch, seq, num_layers, hidden]
+        # [batch, seq, num_layers, layer_width]
         dt_inputs: Tensor = cast(Tensor, d_inputs.args[0])
 
         dX = []
@@ -110,7 +110,7 @@ def _convert_outputs(
     for doc_idx in range(len(X)):
         seq_len = X[doc_idx][0].data.shape[0]
         lengths = X[doc_idx][0].lengths
-        # [batch, seq, hidden]
+        # [batch, seq, width]
         Y_layer = Yt[doc_idx, :seq_len, :]  # type: ignore
         Y.append(Ragged(torch2xp(Y_layer, ops=model.ops), lengths=lengths))
 

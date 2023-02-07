@@ -56,12 +56,12 @@ def make_transformer(
     more subsequent spaCy components can use the transformer outputs as features
     in its model, with gradients backpropagated to the single shared weights.
 
-    vocab (Vocab):
-        The shared vocabulary.
-    model (Model):
-        One of the supported pre-trained transformer models.
+    nlp (Language):
+        The pipeline.
     name (str):
         The component instance name.
+    model (Model):
+        One of the supported pre-trained transformer models.
     frozen (bool):
         If `True`, the model's weights are frozen and no backpropagation is performed.
     all_layer_outputs (bool):
@@ -302,7 +302,7 @@ class Transformer(TrainablePipe):
             self.listeners[-1].receive(batch_id, outputs, backprop_func)
         return losses
 
-    def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
+    def get_loss(self, examples: Iterable[Example], scores: Any) -> None:
         """A noop function, for compatibility with the Pipe API. See the `update`
         method for an explanation of the loss mechanics of the component.
         """
@@ -322,6 +322,10 @@ class Transformer(TrainablePipe):
             Optional function that returns gold-standard Example objects.
         nlp (Language):
             The current nlp object.
+        encoder_loader (Optional[Callable]):
+            Initialization callback for the transformer model.
+        piece_loader (Optional[Callable]):
+            Initialization callback for the input piece encoder.
         """
         validate_get_examples(get_examples, "Transformer.initialize")
 
@@ -338,9 +342,6 @@ class Transformer(TrainablePipe):
 
     def add_label(self, label: Any):
         raise NotImplementedError
-
-    def _set_model_all_layer_outputs(self, new_value: bool):
-        self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
     def finish_update(self, sgd: Optimizer) -> None:
         """Update parameters using the current parameter gradients.
@@ -434,6 +435,9 @@ class Transformer(TrainablePipe):
             return []
 
         return outputs, accumulate_gradient, backprop_noop if self.frozen else backprop
+
+    def _set_model_all_layer_outputs(self, new_value: bool):
+        self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
 
 def _install_extensions() -> None:

@@ -37,6 +37,9 @@ def _update_to_fairseq_vectorized(xp):
 
 
 def build_xlmr_adapter() -> PieceAdapterModelT:
+    """Align the original fairseq vocab used by pre-trained HF transformer
+    models with the sentencepiece vocabulary."""
+
     return Model(
         "xlmr_adapter",
         forward=xlmr_adapter_forward,
@@ -46,7 +49,6 @@ def build_xlmr_adapter() -> PieceAdapterModelT:
 def xlmr_adapter_forward(
     model: Model, X: PieceAdapterInOutT, is_train: bool
 ) -> Tuple[PieceAdapterInOutT, PieceAdapterBackpropT]:
-    # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []
     for tokens_pieces in X:
@@ -73,6 +75,8 @@ def _camembert_update_to_fairseq_vectorized(xp):
 
 
 def build_camembert_adapter() -> PieceAdapterModelT:
+    """Align the original fairseq vocab used by pre-trained Camembert
+    HF transformer model with the sentencepiece vocabulary."""
     return Model(
         "camembert_adapter",
         forward=camembert_adapter_forward,
@@ -82,7 +86,6 @@ def build_camembert_adapter() -> PieceAdapterModelT:
 def camembert_adapter_forward(
     model: Model, X: PieceAdapterInOutT, is_train: bool
 ) -> Tuple[PieceAdapterInOutT, PieceAdapterBackpropT]:
-    # Align original fairseq vocab with the sentencepiece vocabulary.
     update_to_fairseq = _camembert_update_to_fairseq_vectorized(model.ops.xp)
     X_xlmr = []
     for tokens_pieces in X:

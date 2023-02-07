@@ -11,10 +11,10 @@ TrfOutputT = TypeVar("TrfOutputT", Floats2d, Ragged)
 
 @torch.jit.script
 class PyTorchTransformerOutput:
-    """Output of the PyTorch Transformer Encoders"""
+    """Padded output of the PyTorch Transformer encoders."""
 
-    # The first element is the output of the embedding layer with shape [batch, seq, emb_dim].
-    # The rest of the elements are the states of each encoder hidden layer respectively with shape [batch, seq, model_hidden].
+    # The first element is the output of the embedding layer with shape [batch, seq, width].
+    # The rest of the elements are the states of each encoder hidden layer respectively with shape [batch, seq, width].
     all_outputs: List[Tensor]
 
     def __init__(
@@ -91,7 +91,7 @@ class TransformerModelOutput(Generic[TrfOutputT]):
 @dataclass
 class DocTransformerOutput:
     """Stored on Doc instances. Each Ragged element corresponds to a layer in
-    original TransformerModelOutput, containing piece identifiers."""
+    original TransformerModelOutput, containing representations of piece identifiers."""
 
     all_outputs: List[Ragged]
 

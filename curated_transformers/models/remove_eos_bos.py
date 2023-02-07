@@ -11,6 +11,7 @@ from .types import (
 
 
 def remove_bos_eos() -> SentMarkerRemoverModelT:
+    """Strips the BOS/EOS piece identifiers from the transformer output."""
     return Model("remove_bos_eos", remove_bos_eos_forward)
 
 

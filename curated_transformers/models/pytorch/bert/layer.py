@@ -27,8 +27,8 @@ class BertSelfAttention(Module):
     def _split_heads(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, emd_dim)
-            output - (batch, head, seq_len, dims_per_head)
+            x - (batch, seq_len, width)
+            output - (batch, head, seq_len, width_per_head)
         """
         batch_size, seq_len, model_dim = x.size()
         return x.view(
@@ -38,8 +38,8 @@ class BertSelfAttention(Module):
     def _combine_heads(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, head, seq_len, dims_per_head)
-            output - (batch, seq_len, emd_dim)
+            x - (batch, head, seq_len, width_per_head)
+            output - (batch, seq_len, width)
         """
         batch_size, head, seq_len, model_dim = x.size()
         return (
@@ -49,19 +49,19 @@ class BertSelfAttention(Module):
     def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
         """
 
         proj = self.input(x)
         q, k, v = proj.chunk(3, dim=-1)
 
-        # (batch, head, seq_len, dims_per_head)
+        # (batch, head, seq_len, width_per_head)
         k = self._split_heads(k)
         q = self._split_heads(q)
         v = self._split_heads(v)
 
-        # (batch, seq_len, model_dim)
+        # (batch, seq_len, width)
         attn = self._combine_heads(self.attention(k, q, v, attn_mask))
         out = self.output(attn)
 
@@ -92,7 +92,7 @@ class BertFeedForward(Module):
     def forward(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
         """
         out = self.intermediate(x)
         out = self.activation(out)
@@ -120,7 +120,7 @@ class BertEncoderLayer(Module):
     def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
         """
         attn_out = self.mha(x, attn_mask)

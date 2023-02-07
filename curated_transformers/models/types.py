@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, List, TypeVar, Union
+from typing import Any, Callable, Iterable, List, Union
 
 from spacy.tokens.doc import Doc
 from thinc.model import Model

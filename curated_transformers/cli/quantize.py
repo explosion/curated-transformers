@@ -35,7 +35,7 @@ def quantize_cli(
     ),
 ):
     """
-    Quantize a curated-transformers model.
+    Quantize a curated transformers model to reduce its size.
     """
     nlp = spacy.load(model_path)
     nlp_quantize_dynamic(

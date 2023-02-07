@@ -1,7 +1,7 @@
 from typing import Callable, Optional, Tuple
 from pathlib import Path
 
-from cutlery import WordPieceProcessor  # type:ignore
+from cutlery import WordPieceProcessor
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
 
 from .types import (

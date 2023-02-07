@@ -7,7 +7,7 @@ except ImportError:
     has_hf_transformers = False
 
 try:
-    import huggingface_hub  # type: ignore
+    import huggingface_hub
 
     has_huggingface_hub = True
 except ImportError:

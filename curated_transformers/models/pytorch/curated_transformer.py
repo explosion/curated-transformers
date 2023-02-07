@@ -31,4 +31,8 @@ class CuratedTransformer(Generic[CuratedEncoderT], Module):
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> PyTorchTransformerOutput:
+        """
+        Shapes:
+            input_ids, attention_mask, token_type_ids - (batch, seq_len)
+        """
         return self.curated_encoder.forward(input_ids, attention_mask, token_type_ids)

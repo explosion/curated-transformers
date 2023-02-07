@@ -11,7 +11,7 @@ from torch.nn import Embedding, Linear, Module, MSELoss
 from torch.quantization import qconfig
 from typer import Argument as Arg, Option
 
-from ..pipe import Transformer  # type: ignore
+from ..pipeline.transformer import Transformer
 
 
 MODULE_QUANTIZERS = {

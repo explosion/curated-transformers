@@ -11,16 +11,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest]
         # os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7", "3.10"]
+        # python-version: ["3.7", "3.10"]
+        python-version: ["3.10"]
         include:
           # - os: ubuntu-latest
           #   hf-path: ~/.cache/huggingface/hub
-          - os: macos-latest
-            hf-path: ~/.cache/huggingface/hub
+          # - os: macos-latest
+          #   hf-path: ~/.cache/huggingface/hub
           - os: windows-latest
-            hf-path: ~/.cache/huggingface/hub
+            hf-path: $HOME/.cache/huggingface/hub
     steps:
       - uses: actions/checkout@v1
         with:
@@ -49,6 +50,9 @@ jobs:
           pip install '${{ env.hf-transformers-pip }}'
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
         shell: bash
+
+      - name: Echo home
+        run: echo "home dir = ${{ matrix.hf-path }}""
 
       - name: Cache HF pre-trained models
         uses: actions/cache@v3

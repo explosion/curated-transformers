@@ -52,7 +52,7 @@ jobs:
         shell: bash
 
       - name: Echo home
-        run: echo "home dir = ${{ matrix.hf-path }}""
+        run: echo "home dir = ${{ matrix.hf-path }}"
 
       - name: Cache HF pre-trained models
         uses: actions/cache@v3

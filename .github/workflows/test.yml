@@ -1,6 +1,10 @@
 name: Test
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_call]
+
+env:
+  hf-transformers-pip: transformers>=3.4.0,<4.27.0
+  hf-cache-file-list: hf-cache-file-list.log
 
 jobs:
   test:
@@ -9,15 +13,51 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.10']
+        python-version: ["3.7", "3.10"]
+        include:
+          - os: ubuntu-latest
+            hf-path: ~/.cache/huggingface/hub
+          - os: macos-latest
+            hf-path: ~/.cache/huggingface/hub
+          - os: windows-latest
+            hf-path: ~/.cache/huggingface/hub
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: true
-      - uses: actions/setup-python@v2
+
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install tox
-        run: pip install tox tox-gh-actions
-      - name: Test 
-        run: tox
+          cache: "pip" # caching pip dependencies
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      - name: Run mypy
+        run: mypy curated_transformers
+
+      - name: Run pytest
+        run: pytest curated_transformers --slow
+
+      # - name: Get HuggingFace cache file listing
+      #   id: get-hf-cache-files
+      #   run: echo "hfcache=$(find ${{ matrix.hf-path }})" >> ${{ env.hf-cache-file-list }}
+      #   shell: bash
+
+      - name: Install HF transformers
+        id: init-hf-transformers
+        run: |
+          pip install ${{ env.hf-transformers-pip }}
+          echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
+
+      - name: Run pytest (w/t HF transformers)
+        run: pytest curated_transformers --slow
+
+      - name: Cache HF pre-trained models
+        uses: actions/cache@v3
+        with:
+          path: ${{ matrix.hf-path }}
+          key: hf-cache-${{ steps.init-hf-transformers.outputs.version }}
+          restore-keys: hf-cache-
+          enableCrossOsArchive: true

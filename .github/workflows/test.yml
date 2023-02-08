@@ -11,17 +11,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
-        # os: [ubuntu-latest, macos-latest, windows-latest]
-        # python-version: ["3.7", "3.10"]
-        python-version: ["3.10"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.7", "3.10"]
         include:
-          # - os: ubuntu-latest
-          #   hf-path: ~/.cache/huggingface/hub
-          # - os: macos-latest
-          #   hf-path: ~/.cache/huggingface/hub
-          - os: windows-latest
-            hf-path: $HOME\\.cache\\huggingface\\hub
+          - os: ubuntu-latest
+            hf-path: ~/.cache/huggingface/hub
+          - os: macos-latest
+            hf-path: ~/.cache/huggingface/hub
+          # - os: windows-latest
+          #   hf-path: $HOME\\.cache\\huggingface\\hub
     steps:
       - uses: actions/checkout@v1
         with:
@@ -51,11 +49,14 @@ jobs:
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Echo HF cache directory
-        run: echo "${{ matrix.hf-path }}"
+      # - name: Echo HF cache directory
+      #   run: echo "${{ matrix.hf-path }}"
 
+      # Disabled for Windows as the models appear to
+      # be stored at a non-standard location.
       - name: Cache HF pre-trained models
         uses: actions/cache@v3
+        if: startsWith(runner.os, 'Windows') == false
         with:
           path: ${{ matrix.hf-path }}
           key: hf-cache-${{ steps.init-hf-transformers.outputs.version }}

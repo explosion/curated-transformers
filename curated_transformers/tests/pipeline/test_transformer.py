@@ -245,9 +245,9 @@ def test_bert_transformer_pipe_against_hf():
     for doc, hf_doc_encoding, encoding_len in zip(
         docs, hf_encoding.last_hidden_state, lens
     ):
-        torch.testing.assert_allclose(
+        torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_layer_state.dataXd,
+            torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
         )
 
 
@@ -283,9 +283,9 @@ def test_camembert_transformer_pipe_against_hf():
     for doc, hf_doc_encoding, encoding_len in zip(
         docs, hf_encoding.last_hidden_state, lens
     ):
-        torch.testing.assert_allclose(
+        torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_layer_state.dataXd,
+            torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
         )
 
 
@@ -321,9 +321,9 @@ def test_roberta_transformer_pipe_against_hf():
     for doc, hf_doc_encoding, encoding_len in zip(
         docs, hf_encoding.last_hidden_state, lens
     ):
-        torch.testing.assert_allclose(
+        torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_layer_state.dataXd,
+            torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
         )
 
 
@@ -359,9 +359,9 @@ def test_xlmr_transformer_pipe_against_hf():
     for doc, hf_doc_encoding, encoding_len in zip(
         docs, hf_encoding.last_hidden_state, lens
     ):
-        torch.testing.assert_allclose(
+        torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
-            doc._.trf_data.last_hidden_layer_state.dataXd,
+            torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
         )
 
 
@@ -399,7 +399,7 @@ def test_frozen_transformer_pipe():
         transformer_init_params, transformer_trained_params
     ):
         assert old_param == new_param
-        torch.testing.assert_allclose(old_vec, new_vec)
+        torch.testing.assert_close(old_vec, new_vec)
 
 
 @pytest.mark.slow

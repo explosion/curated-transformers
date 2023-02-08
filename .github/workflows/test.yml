@@ -21,7 +21,7 @@ jobs:
           # - os: macos-latest
           #   hf-path: ~/.cache/huggingface/hub
           - os: windows-latest
-            hf-path: $HOME/.cache/huggingface/hub
+            hf-path: $HOME\\.cache\\huggingface\\hub
     steps:
       - uses: actions/checkout@v1
         with:
@@ -51,15 +51,14 @@ jobs:
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Echo home
-        run: echo "home dir = ${{ matrix.hf-path }}"
+      - name: Echo HF cache directory
+        run: echo "${{ matrix.hf-path }}"
 
       - name: Cache HF pre-trained models
         uses: actions/cache@v3
         with:
           path: ${{ matrix.hf-path }}
           key: hf-cache-${{ steps.init-hf-transformers.outputs.version }}
-          restore-keys: hf-cache-
           enableCrossOsArchive: true
 
       - name: Run pytest (w/t HF transformers)

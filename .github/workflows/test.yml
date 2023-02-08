@@ -55,9 +55,6 @@ jobs:
           pip install '${{ env.hf-transformers-pip }}'
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
 
-      - name: Run pytest (w/t HF transformers)
-        run: pytest curated_transformers --slow
-
       - name: Cache HF pre-trained models
         uses: actions/cache@v3
         with:
@@ -65,3 +62,6 @@ jobs:
           key: hf-cache-${{ steps.init-hf-transformers.outputs.version }}
           restore-keys: hf-cache-
           enableCrossOsArchive: true
+
+      - name: Run pytest (w/t HF transformers)
+        run: pytest curated_transformers --slow

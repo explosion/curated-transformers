@@ -4,7 +4,6 @@ on: [push, pull_request, workflow_call]
 
 env:
   hf-transformers-pip: transformers>=3.4.0,<4.27.0
-  hf-cache-file-list: hf-cache-file-list.log
 
 jobs:
   test:
@@ -43,11 +42,6 @@ jobs:
 
       - name: Run pytest
         run: pytest curated_transformers --slow
-
-      # - name: Get HuggingFace cache file listing
-      #   id: get-hf-cache-files
-      #   run: echo "hfcache=$(find ${{ matrix.hf-path }})" >> ${{ env.hf-cache-file-list }}
-      #   shell: bash
 
       - name: Install HF transformers
         id: init-hf-transformers

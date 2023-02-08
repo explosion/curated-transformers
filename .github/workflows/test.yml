@@ -18,10 +18,10 @@ jobs:
         include:
           - os: ubuntu-latest
             hf-path: ~/.cache/huggingface/hub
-          - os: macos-latest
-            hf-path: ~/.cache/huggingface/hub
-          - os: windows-latest
-            hf-path: ~/.cache/huggingface/hub
+          # - os: macos-latest
+          #   hf-path: ~/.cache/huggingface/hub
+          # - os: windows-latest
+          #   hf-path: ~/.cache/huggingface/hub
     steps:
       - uses: actions/checkout@v1
         with:

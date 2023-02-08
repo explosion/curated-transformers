@@ -64,4 +64,4 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Run pytest (w/t HF transformers)
-        run: pytest curated_transformers --slow
+        run: pytest curated_transformers --slow -s

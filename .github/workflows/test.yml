@@ -15,10 +15,10 @@ jobs:
         # os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.10"]
         include:
-          - os: ubuntu-latest
-            hf-path: ~/.cache/huggingface/hub
-          # - os: macos-latest
+          # - os: ubuntu-latest
           #   hf-path: ~/.cache/huggingface/hub
+          - os: macos-latest
+            hf-path: ~/.cache/huggingface/hub
           - os: windows-latest
             hf-path: ~/.cache/huggingface/hub
     steps:
@@ -43,19 +43,12 @@ jobs:
       - name: Run pytest
         run: pytest curated_transformers --slow
 
-      - name: Install HF transformers (Windows)
+      - name: Install HF transformers
         id: init-hf-transformers
-        if: startsWith(runner.os, 'Windows')
-        run: |
-          pip install '${{ env.hf-transformers-pip }}'
-          echo "version=$(pip show transformers | grep -i version:)" >> $ENV:GITHUB_OUTPUT
-
-      - name: Install HF transformers (non-Windows)
-        id: init-hf-transformers
-        if: startsWith(runner.os, 'Windows') == false
         run: |
           pip install '${{ env.hf-transformers-pip }}'
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Cache HF pre-trained models
         uses: actions/cache@v3

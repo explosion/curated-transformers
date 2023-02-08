@@ -52,7 +52,7 @@ jobs:
       - name: Install HF transformers
         id: init-hf-transformers
         run: |
-          pip install '${{ env.hf-transformers-pip }}''
+          pip install '${{ env.hf-transformers-pip }}'
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
 
       - name: Run pytest (w/t HF transformers)

@@ -1,9 +1,6 @@
 from typing import List
 from cutlery import SentencePieceProcessor
 import numpy.testing
-from pathlib import Path
-
-import numpy.testing
 import pytest
 from thinc.api import NumpyOps, Ragged, chain, Model
 

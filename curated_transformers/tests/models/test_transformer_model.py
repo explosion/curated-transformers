@@ -1,7 +1,5 @@
-from pathlib import Path
 import numpy
 import pytest
-import spacy
 from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged, registry
 from thinc.compat import has_cupy

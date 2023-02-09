@@ -1,6 +1,5 @@
 import pytest
 from spacy import util
-from spacy.tokens import Doc
 from spacy.training import Example
 from thinc.api import Config, reduce_mean
 

@@ -16,7 +16,6 @@ from curated_transformers.models.architectures import (
     build_bert_transformer_model_v1,
     build_roberta_transformer_model_v1,
 )
-from curated_transformers.models.pytorch.attention import AttentionMask
 from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.models.with_strided_spans import (
     build_with_strided_spans_v1,
@@ -25,8 +24,6 @@ from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_l
 from curated_transformers.pipeline.transformer import make_transformer
 from curated_transformers.util import create_gradual_transformer_unfreezing
 from curated_transformers._compat import has_hf_transformers, transformers
-
-from ..util import make_tempdir
 
 
 cfg_string_last_layer_listener = """

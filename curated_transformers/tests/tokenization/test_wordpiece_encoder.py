@@ -1,6 +1,6 @@
 import numpy.testing
 import pytest
-from thinc.api import Ragged, registry
+from thinc.api import Ragged
 
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder

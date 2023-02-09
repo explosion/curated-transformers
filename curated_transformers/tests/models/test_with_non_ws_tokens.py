@@ -5,10 +5,6 @@ from thinc.types import Floats2d, Ragged
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.remove_eos_bos import remove_bos_eos
 from curated_transformers.models.with_non_ws_tokens import with_non_ws_tokens
-from curated_transformers.tokenization.wordpiece_encoder import (
-    build_wordpiece_encoder_loader_v1,
-)
-from curated_transformers.util import registry
 
 
 def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:

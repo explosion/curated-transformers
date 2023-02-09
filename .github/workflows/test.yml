@@ -49,9 +49,6 @@ jobs:
           echo "version=$(pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
         shell: bash
 
-      # - name: Echo HF cache directory
-      #   run: echo "${{ matrix.hf-path }}"
-
       # Disabled for Windows as the models appear to
       # be stored at a non-standard location.
       - name: Cache HF pre-trained models

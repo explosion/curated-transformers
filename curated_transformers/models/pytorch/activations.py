@@ -8,6 +8,10 @@ class GeluNew(Module):
     """GELU approximation, called `gelu_new` in many transformer models."""
 
     def forward(self, input: Tensor) -> Tensor:
+        """
+        Shapes:
+            input - (batch, seq_len, width)
+        """
         return (
             0.5
             * input

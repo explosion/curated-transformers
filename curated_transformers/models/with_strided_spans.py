@@ -190,8 +190,8 @@ def _apply_to_overlaps(
     window: int,
     func: Callable[[Any, Any], None],
 ):
-    """Average representations of overlapping windows. This function
-    modifies the arrays in Xlf in-place."""
+    """Applies a function to overlapping windows, modifying the arrays
+    in Xlf in-place."""
 
     def _apply_to_layer(input: Union[Tuple[Floats2d, ...], List[Floats2d]]):
         for doc_len in len_sums:

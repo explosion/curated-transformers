@@ -44,7 +44,7 @@ class ScaledDotProductAttention(Module):
     ) -> Tensor:
         """
         Shapes:
-            k, q, v, attn_mask - (batch, heads, seq, model_dim)
+            k, q, v, attn_mask - (batch, heads, seq_len, width)
         """
 
         if attn_mask.dim() != 2:

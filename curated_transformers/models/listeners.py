@@ -52,9 +52,13 @@ def build_transformer_layers_listener_v1(
     upstream_name (str):
         A string to identify the 'upstream' Transformer component
         to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
@@ -79,16 +83,20 @@ def build_last_transformer_layer_listener_v1(
     pooling over the individual pieces of each Doc token, returning their corresponding
     representations.
 
-    upstream_name (str):
-        A string to identify the 'upstream' Transformer component
-        to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
     width (int):
         The width of the vectors produced by the upstream transformer component.
     pooling (Model):
         Model that is used to perform pooling over the piece representations.
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
@@ -113,18 +121,22 @@ def build_scalar_weighting_listener_v1(
     Requires its upstream Transformer components to return all layer outputs from
     their models.
 
-    upstream_name (str):
-        A string to identify the 'upstream' Transformer component
-        to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
     width (int):
         The width of the vectors produced by the upstream transformer component.
     weighting (Model):
         Model that is used to perform the weighting of the different layer outputs.
     pooling (Model):
         Model that is used to perform pooling over the piece representations.
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
@@ -210,9 +222,13 @@ class TransformerLayersListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
         pooling (PoolingModelT):
             Model that is used to perform pooling over the piece representations.
         width (int):
@@ -315,9 +331,13 @@ class LastTransformerLayerListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
         width (int):
             The width of the vectors produced by the upstream transformer component.
         pooling (Model):
@@ -397,15 +417,19 @@ class ScalarWeightingListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
-        width (int):
-            The width of the vectors produced by the upstream transformer component.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
         weighting (Model):
             Model that is used to perform the weighting of the different layer outputs.
         pooling (Model):
             Model that is used to perform pooling over the piece representations.
+        width (int):
+            The width of the vectors produced by the upstream transformer component.
         grad_factor (float):
             Factor to multiply gradients with.
         """

@@ -2,7 +2,6 @@ from typing import Callable, Optional
 import json
 
 from .._compat import has_hf_transformers, transformers
-from ..util import registry
 from .bbpe_encoder import ByteBPEProcessor
 from .sentencepiece_encoder import SentencePieceProcessor
 from .wordpiece_encoder import WordPieceProcessor

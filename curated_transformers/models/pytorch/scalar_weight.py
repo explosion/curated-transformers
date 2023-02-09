@@ -1,4 +1,3 @@
-from typing import List, Tuple, Callable
 import torch
 from torch import Tensor
 from torch.nn import Module
@@ -20,9 +19,9 @@ class ScalarWeight(Module):
     ) -> Tensor:
         """
         Shapes:
-            layer_outputs - (batch_size, seq_len, num_layers, layer_size)
+            layer_outputs - (batch_size, seq_len, num_layers, width)
 
-        Returns a weighted tensor of the input with shape (batch_size, seq_len, layer_size).
+        Returns a weighted tensor of the input with shape (batch_size, seq_len, width).
         """
         if layer_outputs.shape[2] != self.layer_weights.shape[0]:
             raise ValueError(

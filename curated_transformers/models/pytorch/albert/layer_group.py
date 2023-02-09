@@ -20,6 +20,10 @@ class AlbertLayerGroup(Module):
         )
 
     def forward(self, input: Tensor, **kwargs) -> Tensor:
+        """
+        Shapes:
+            input - (batch, seq_len, width)
+        """
         layer_output = input
         for layer in self.group_layers:
             layer_output = layer(layer_output, **kwargs)

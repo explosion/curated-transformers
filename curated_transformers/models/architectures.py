@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional, Tuple, Callable, Any, cast
+from typing import List, Optional, Tuple, Callable, Any, cast
 from pathlib import Path
 from functools import partial
 from spacy.tokens import Doc
@@ -624,7 +624,7 @@ def _pytorch_encoder(
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TorchTransformerModelT:
     if isinstance(grad_scaler_config, SimpleFrozenDict):
-        # Crate a new, mutable dict instance.
+        # Create a new, mutable dict instance.
         grad_scaler_config = {}
 
     if "enabled" not in grad_scaler_config:

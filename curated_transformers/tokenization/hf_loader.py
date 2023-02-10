@@ -77,7 +77,9 @@ def _convert_sentencepiece_encoder(
     model: Tok2PiecesModelT,
     tokenizer: "transformers.RobertaTokenizerFast",
 ) -> Tok2PiecesModelT:
-    model.attrs["sentencepiece_processor"] = SentencePieceProcessor.from_file(
+    model.get_ref("encoder").attrs[
+        "sentencepiece_processor"
+    ] = SentencePieceProcessor.from_file(
         tokenizer.vocab_file  # type: ignore
     )
     return model

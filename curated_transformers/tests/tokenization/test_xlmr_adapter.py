@@ -7,6 +7,7 @@ from thinc.api import NumpyOps, Ragged, chain, Model
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder,
+    build_xlmr_sentencepiece_encoder,
 )
 from curated_transformers.tokenization.sentencepiece_adapters import (
     build_xlmr_adapter,
@@ -24,14 +25,14 @@ def toy_model(test_dir):
 
 @pytest.fixture
 def toy_encoder(toy_model):
-    encoder = build_sentencepiece_encoder()
-    encoder.attrs["sentencepiece_processor"] = toy_model
-    return chain(encoder, build_xlmr_adapter())
+    encoder = build_xlmr_sentencepiece_encoder()
+    encoder.get_ref("encoder").attrs["sentencepiece_processor"] = toy_model
+    return encoder
 
 
 @pytest.fixture
 def empty_encoder():
-    return chain(build_sentencepiece_encoder(), build_xlmr_adapter())
+    return build_xlmr_sentencepiece_encoder()
 
 
 def _mock_transformer() -> Model[List[Ragged], TransformerModelOutput]:

@@ -27,13 +27,13 @@ from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
-from ..tokenization.sentencepiece_adapters import (
-    build_camembert_adapter,
-    build_xlmr_adapter,
+from ..tokenization.sentencepiece_encoder import (
+    build_camembert_sentencepiece_encoder,
+    build_sentencepiece_encoder,
+    build_xlmr_sentencepiece_encoder,
 )
-from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
 from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
-from ..tokenization.types import Tok2PiecesModelT, PieceAdapterModelT
+from ..tokenization.types import Tok2PiecesModelT
 from .types import (
     TorchTransformerInT,
     TorchTransformerModelT,
@@ -312,8 +312,6 @@ def build_camembert_transformer_model_v1(
     grad_scaler_config (dict):
         Configuration passed to the PyTorch gradient scaler.
     """
-    piece_adapter = build_camembert_adapter()
-
     config = RobertaConfig(
         hidden_width=hidden_width,
         intermediate_width=intermediate_width,
@@ -338,12 +336,11 @@ def build_camembert_transformer_model_v1(
         encoder = RobertaEncoder(config)
         transformer = _pytorch_encoder(encoder)
 
-    piece_encoder = build_sentencepiece_encoder()
+    piece_encoder = build_camembert_sentencepiece_encoder()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
-        piece_adapter=piece_adapter,
         transformer=transformer,
     )
 
@@ -509,8 +506,6 @@ def build_xlmr_transformer_model_v1(
     grad_scaler_config (dict):
         Configuration passed to the PyTorch gradient scaler.
     """
-    piece_adapter = build_xlmr_adapter()
-
     config = RobertaConfig(
         hidden_width=hidden_width,
         intermediate_width=intermediate_width,
@@ -539,12 +534,11 @@ def build_xlmr_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_sentencepiece_encoder()
+    piece_encoder = build_xlmr_sentencepiece_encoder()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
-        piece_adapter=piece_adapter,
         transformer=transformer,
     )
 
@@ -557,27 +551,14 @@ def build_transformer_model_v1(
     ],
     transformer: TorchTransformerModelT,
     piece_encoder: Tok2PiecesModelT,
-    piece_adapter: Optional[PieceAdapterModelT] = None,
 ) -> TransformerModelT:
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?
-    if piece_adapter:
-        layers = [
-            with_non_ws_tokens(
-                chain(
-                    piece_encoder,
-                    piece_adapter,
-                    with_spans(transformer),
-                    remove_bos_eos(),
-                )
-            )
-        ]
-    else:
-        layers = [
-            with_non_ws_tokens(
-                chain(piece_encoder, with_spans(transformer), remove_bos_eos())
-            )
-        ]
+    layers = [
+        with_non_ws_tokens(
+            chain(piece_encoder, with_spans(transformer), remove_bos_eos())
+        )
+    ]
     refs = {
         "piece_encoder": piece_encoder,
         "transformer": transformer,

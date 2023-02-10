@@ -32,7 +32,11 @@ from ..tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder,
     build_xlmr_sentencepiece_encoder,
 )
-from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
+from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
+from ..tokenization.wordpiece_encoder import (
+    build_bert_wordpiece_encoder,
+    build_wordpiece_encoder,
+)
 from ..tokenization.types import Tok2PiecesModelT
 from .types import (
     TorchTransformerInT,
@@ -243,7 +247,7 @@ def build_bert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_wordpiece_encoder()
+    piece_encoder = build_bert_wordpiece_encoder()
 
     return build_transformer_model_v1(
         with_spans=with_spans,

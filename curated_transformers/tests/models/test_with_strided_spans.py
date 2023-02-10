@@ -31,8 +31,12 @@ def _add_range() -> Model[Floats2d, Floats2d]:
 
 def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
     def forward(model: Model, X: List[Floats2d], is_train: bool):
+        model.attrs["last_input"] = X
+
         return (
-            TransformerModelOutput(outputs=[[x] for x in X], last_layer_only=True),
+            TransformerModelOutput(
+                outputs=[[x.copy()] for x in X], last_layer_only=True
+            ),
             lambda x: x,
         )
 
@@ -100,7 +104,7 @@ def test_with_strided_spans_averaging():
 
     ops.xp.testing.assert_equal(
         Y.all_outputs[0][0].dataXd,
-        [[0.0, 1.0], [2.0, 3.0], [6.0, 7.0], [8.0, 9.0], [14.0, 15.0], [16.0, 17.0]],
+        [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0], [9.0, 10.0], [11.0, 12.0], [13.0, 14.0]],
     )
 
     ones = data + 1
@@ -114,13 +118,79 @@ def test_with_strided_spans_averaging():
         [
             [1.0, 1.0],
             [1.0, 1.0],
-            [0.25, 0.25],
+            [1.0, 1.0],
             [0.25, 0.25],
             [0.25, 0.25],
             [0.25, 0.25],
         ],
     )
     ops.xp.testing.assert_array_equal(dX[0].lengths, lengths)
+
+
+def test_with_strided_spans_respects_token_boundaries():
+    ops = NumpyOps()
+    data = ops.xp.arange(8, dtype="f").reshape(8, 1)
+    lengths = ops.asarray1i([2, 2, 2, 2])
+    X = [Ragged(data, lengths)]
+
+    transformer = _mock_transformer()
+
+    # We test three different scenarios: (1) the stride/window are on token
+    # boundaries; (2) the stride/window are not on token boundares; and (3) the
+    # stride/window are larger than the doc. We can verify correctness by
+    # checking the gradients, since they use both the stride and the window. But
+    # incorrect gradients are hard to debug, so we also check that the wrapped
+    # model sees the right windows.
+
+    # Stride and window correspond to token boundaries (except for the
+    # last window).
+    model_on_bounds = with_strided_spans(transformer, stride=2, window=4)
+    model_on_bounds.initialize(X)
+    _, backprop = model_on_bounds(X, is_train=True)
+    transformer_input = transformer.attrs["last_input"]
+    assert len(transformer_input) == 4
+    ops.xp.testing.assert_equal(transformer_input[0], data[:4])
+    ops.xp.testing.assert_equal(transformer_input[1], data[2:6])
+    ops.xp.testing.assert_equal(transformer_input[2], data[4:])
+    ops.xp.testing.assert_equal(transformer_input[3], data[6:])
+    dX = backprop(_copy_ragged(X))
+    assert len(dX) == 1
+    ops.xp.testing.assert_equal(
+        dX[0].dataXd,
+        ops.asarray2f([[0.0], [1.0], [0.5], [0.75], [1.0], [1.25], [1.5], [1.75]]),
+    )
+    ops.xp.testing.assert_equal(dX[0].lengths, lengths)
+
+    # Stride and window do not correspond to token boundaries.
+    model_in_tokens = with_strided_spans(transformer, stride=3, window=5)
+    model_in_tokens.initialize(X)
+    _, backprop = model_in_tokens(X, is_train=True)
+    transformer_input = transformer.attrs["last_input"]
+    assert len(transformer_input) == 2
+    ops.xp.testing.assert_equal(transformer_input[0], data[:6])
+    ops.xp.testing.assert_equal(transformer_input[1], data[4:])
+    dX = backprop(_copy_ragged(X))
+    assert len(dX) == 1
+    ops.xp.testing.assert_equal(
+        dX[0].dataXd,
+        ops.asarray2f([[0.0], [1.0], [2.0], [3.0], [1.0], [1.25], [6.0], [7.0]]),
+    )
+    ops.xp.testing.assert_equal(dX[0].lengths, lengths)
+
+    # Stride and window are longer than the doc.
+    model_large_span = with_strided_spans(transformer, stride=10, window=20)
+    model_large_span.initialize(X)
+    _, backprop = model_large_span(X, is_train=True)
+    transformer_input = transformer.attrs["last_input"]
+    assert len(transformer_input) == 1
+    ops.xp.testing.assert_equal(transformer_input[0], data)
+    dX = backprop(_copy_ragged(X))
+    assert len(dX) == 1
+    ops.xp.testing.assert_equal(
+        dX[0].dataXd,
+        X[0].dataXd,
+    )
+    ops.xp.testing.assert_equal(dX[0].lengths, lengths)
 
 
 def test_incorrect_strides_are_rejected():
@@ -137,3 +207,7 @@ def test_batch_sizes_are_rejected():
         with_strided_spans(relu, batch_size=-1)
     with pytest.raises(ValueError):
         with_strided_spans(relu, batch_size=0)
+
+
+def _copy_ragged(Xl: List[Ragged]) -> List[Ragged]:
+    return [Ragged(X.dataXd.copy(), X.lengths.copy()) for X in Xl]

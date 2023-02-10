@@ -1,5 +1,6 @@
 from typing import Callable, Optional, Tuple
 from pathlib import Path
+import unicodedata
 
 from cutlery import WordPieceProcessor
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
@@ -26,6 +27,27 @@ def deserialize_my_custom_class(
     return WordPieceProcessor(value.decode("utf8").split("\n"))
 
 
+def build_bert_wordpiece_encoder() -> Tok2PiecesModelT:
+    """Construct a WordPiece piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
+    return Model(
+        "wordpiece_encoder",
+        forward=wordpiece_encoder_forward,
+        attrs={
+            "wordpiece_processor": WordPieceProcessor([]),
+            "unk_piece": "[UNK]",
+            "bos_piece": "[CLS]",
+            "eos_piece": "[SEP]",
+            "preprocess": _bert_preprocess,
+        },
+    )
+
+
 def build_wordpiece_encoder() -> Tok2PiecesModelT:
     """Construct a WordPiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
@@ -42,6 +64,7 @@ def build_wordpiece_encoder() -> Tok2PiecesModelT:
             "unk_piece": "[UNK]",
             "bos_piece": "[CLS]",
             "eos_piece": "[SEP]",
+            "preprocess": lambda t: [t],
         },
     )
 
@@ -53,6 +76,7 @@ def wordpiece_encoder_forward(
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
     unk_piece: str = model.attrs["unk_piece"]
+    preprocess: Callable[[str], str] = model.attrs["preprocess"]
     bos_id = wpp.get_initial(bos_piece)
     eos_id = wpp.get_initial(eos_piece)
     unk_id = wpp.get_initial(unk_piece)
@@ -68,7 +92,8 @@ def wordpiece_encoder_forward(
         for token in doc:
             piece_ids = [
                 unk_id if token_id == -1 else token_id
-                for token_id in wpp.encode(token.text)[0]
+                for t in preprocess(token.text)
+                for token_id in wpp.encode(t)[0]
             ]
             doc_pieces.extend(piece_ids)
             lens.append(len(piece_ids))
@@ -103,3 +128,39 @@ def build_wordpiece_encoder_loader_v1(
         return model
 
     return load
+
+
+def _bert_preprocess(token: str) -> [str]:
+    """Split a token on punctuation characters. For instance,
+    'AWO-Mitarbeiter' is split into ['AWO', '-', 'Mitarbeiter']"""
+    tokens = []
+    in_word = False
+    while token:
+        char = token[0]
+        token = token[1:]
+        if _is_bert_punctuation(char):
+            tokens.append([char])
+            in_word = False
+        else:
+            if in_word:
+                tokens[-1].append(char)
+            else:
+                tokens.append([char])
+                in_word = True
+    return ["".join(t) for t in tokens]
+
+
+def _is_bert_punctuation(char: str) -> bool:
+    """Checks whether `char` is a punctuation character."""
+    # ASCII punctuation from HF tranformers, since we need to split
+    # in the same way.
+    cp = ord(char)
+    if (
+        (cp >= 33 and cp <= 47)
+        or (cp >= 58 and cp <= 64)
+        or (cp >= 91 and cp <= 96)
+        or (cp >= 123 and cp <= 126)
+    ):
+        return True
+
+    return unicodedata.category(char).startswith("P")

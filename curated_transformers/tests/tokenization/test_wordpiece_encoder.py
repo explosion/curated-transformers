@@ -1,9 +1,14 @@
 import numpy.testing
 import pytest
+import spacy
 from thinc.api import Ragged
 
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
-from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import (
+    build_bert_wordpiece_encoder,
+    build_wordpiece_encoder,
+    _bert_preprocess,
+)
 from curated_transformers._compat import has_hf_transformers
 
 
@@ -37,6 +42,37 @@ def test_wordpiece_encoder_hf_model(sample_docs):
     )
 
 
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_wordpiece_encoder_hf_model_german():
+    encoder = build_bert_wordpiece_encoder()
+    encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-german-cased")
+    encoder.initialize()
+
+    nlp = spacy.blank("de")
+    sample_docs = [
+        nlp.make_doc("Wir sehen ein AWO-Mitarbeiter."),
+        nlp.make_doc("Die Mw.-St. beträgt 19 Prozent."),
+    ]
+
+    encoding = encoder.predict(sample_docs)
+
+    assert isinstance(encoding, list)
+    assert len(encoding) == 2
+
+    assert isinstance(encoding[0], Ragged)
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 5, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[0].dataXd, [3, 655, 2265, 39, 32, 26939, 26962, 26935, 2153, 26914, 4]
+    )
+
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 5, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[1].dataXd,
+        [3, 125, 56, 26915, 26914, 26935, 130, 26914, 4490, 141, 1028, 26914, 4],
+    )
+
+
 def test_serialize(wordpiece_toy_encoder):
     encoder_bytes = wordpiece_toy_encoder.to_bytes()
     toy_encoder2 = build_wordpiece_encoder()
@@ -60,6 +96,15 @@ def test_serialize_hf_model():
         encoder.attrs["wordpiece_processor"].to_list()
         == encoder2.attrs["wordpiece_processor"].to_list()
     )
+
+
+def test_bert_preprocess():
+    assert _bert_preprocess("AWO-Mitarbeiter") == ["AWO", "-", "Mitarbeiter"]
+    assert _bert_preprocess("-Mitarbeiter") == ["-", "Mitarbeiter"]
+    assert _bert_preprocess("AWO-") == ["AWO", "-"]
+    assert _bert_preprocess("-") == ["-"]
+    assert _bert_preprocess("") == []
+    assert _bert_preprocess("Mw.-St.") == ["Mw", ".", "-", "St", "."]
 
 
 def _check_toy_encoder(encoding):

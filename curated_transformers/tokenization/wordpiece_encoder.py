@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 from pathlib import Path
 import unicodedata
 
@@ -130,7 +130,7 @@ def build_wordpiece_encoder_loader_v1(
     return load
 
 
-def _bert_preprocess(token: str) -> [str]:
+def _bert_preprocess(token: str) -> List[str]:
     """Split a token on punctuation characters. For instance,
     'AWO-Mitarbeiter' is split into ['AWO', '-', 'Mitarbeiter']"""
     tokens = []

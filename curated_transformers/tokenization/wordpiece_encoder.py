@@ -30,7 +30,8 @@ def deserialize_my_custom_class(
 def build_bert_wordpiece_encoder() -> Tok2PiecesModelT:
     """Construct a WordPiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
-    of piece identifiers.
+    of piece identifiers. This encoder also splits each token
+    on punctuation characters, as expected by most BERT models.
 
     This model must be separately initialized using an appropriate
     loader.

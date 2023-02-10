@@ -373,8 +373,9 @@ def _find_spans_with_token_boundaries(
         #    splitting on the stride wouldn't split up a token.
         # 2. No token has a cumulative length of 128, but there is a token
         #    with a cumulative length >128. The binary search will return the
-        #    index of the first token with length >128, say 130. We
-        #    will then use a stride of 130 to include the full token.
+        #    index of the first token with length >128, say 130. We will then
+        #    use a stride of 130 to include the full token (in the current
+        #    span and exclude it in the next one).
         # 3. There is no token with a cumulative length >=128. Binary search
         #    will return the length of the array. In this case, we use the
         #    remaining sequence.

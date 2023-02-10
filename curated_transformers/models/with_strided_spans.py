@@ -100,11 +100,11 @@ def with_strided_spans_forward(
     window: int = model.attrs["window"]
     batch_size: int = model.attrs["batch_size"]
 
-    spans = _ragged_to_strided_arrays(Xlr=X, stride=stride, window=window)
+    span_data = _ragged_to_strided_arrays(Xlr=X, stride=stride, window=window)
 
     backprops = []
     outputs = []
-    for batch in _split_spans(spans.spans, batch_size):
+    for batch in _split_spans(span_data.spans, batch_size):
         output, bp = transformer(cast(TorchTransformerInT, batch), is_train=is_train)
         if not isinstance(output, TransformerModelOutput):
             raise ValueError(f"Unsupported input of type '{type(output)}'")
@@ -124,37 +124,40 @@ def with_strided_spans_forward(
     # average them in both representations.
     _apply_to_overlaps(
         trf_output.all_outputs,
-        docs_strides=spans.docs_strides,
-        docs_windows=spans.docs_windows,
+        docs_strides=span_data.docs_strides,
+        docs_windows=span_data.docs_windows,
         func=_average_arrays,
     )
 
     model_output = _strided_arrays_to_ragged(
-        model, trf_output.all_outputs, spans.doc_lens, docs_strides=spans.docs_strides
+        model,
+        trf_output.all_outputs,
+        span_data.doc_lens,
+        docs_strides=span_data.docs_strides,
     )
     trf_output.all_outputs = cast(List[List[Ragged]], model_output)
 
     def backprop(dY: RaggedInOutT):
-        dY_spans = _ragged_to_strided_arrays(dY, stride=stride, window=window)
+        dY_span_data = _ragged_to_strided_arrays(dY, stride=stride, window=window)
 
         # Both overlaps will have dY. However, the proper gradient is 0.5 * dY
         # since we averaged the overlaps in the forward pass.
         _apply_to_overlaps(
-            dY_spans.spans,
-            docs_strides=dY_spans.docs_strides,
-            docs_windows=dY_spans.docs_windows,
+            dY_span_data.spans,
+            docs_strides=dY_span_data.docs_strides,
+            docs_windows=dY_span_data.docs_windows,
             func=_normalize_gradients,
         )
 
         dXlf = []
-        split_dY_spans = list(_split_spans(dY_spans.spans, batch_size))
+        split_dY_spans = list(_split_spans(dY_span_data.spans, batch_size))
         assert len(split_dY_spans) == len(backprops)
         for dY_batch, bp_trf in zip(split_dY_spans, backprops):
             dXlf_batch = bp_trf(dY_batch)
             dXlf.extend(dXlf_batch)
 
         return _strided_arrays_to_ragged(
-            model, dXlf, dY_spans.doc_lens, docs_strides=dY_spans.docs_strides
+            model, dXlf, dY_span_data.doc_lens, docs_strides=dY_span_data.docs_strides
         )
 
     return trf_output, backprop

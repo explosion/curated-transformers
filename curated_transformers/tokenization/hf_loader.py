@@ -93,9 +93,19 @@ def _convert_wordpiece_encoder(
     vocab = [None] * tokenizer.vocab_size  # type: ignore
     for piece, idx in tokenizer.vocab.items():  # type: ignore
         vocab[idx] = piece
+
+    strip_accents = tokenizer.backend_tokenizer.normalizer.strip_accents
+    lowercase = tokenizer.do_lower_case
     model.attrs["wordpiece_processor"] = WordPieceProcessor(vocab)
     model.attrs["bos_piece"] = tokenizer.cls_token  # type: ignore
     model.attrs["eos_piece"] = tokenizer.sep_token  # type: ignore
     model.attrs["unk_piece"] = tokenizer.unk_token  # type: ignore
+    model.attrs["lowercase"] = lowercase
+
+    # Huggingface BERT also strips accents when lowercasing is enabled
+    # and accent stripping is not defined.
+    model.attrs["strip_accents"] = strip_accents or (
+        strip_accents is not False and lowercase
+    )
 
     return model

@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 import json
 
+
 from .._compat import has_hf_transformers, transformers
 from .bbpe_encoder import ByteBPEProcessor
 from .sentencepiece_encoder import SentencePieceProcessor
@@ -48,6 +49,8 @@ def _convert_encoder(
         (transformers.XLMRobertaTokenizerFast, transformers.CamembertTokenizerFast),
     ):
         return _convert_sentencepiece_encoder(model, tokenizer)  # type: ignore
+    elif isinstance(tokenizer, transformers.BertJapaneseTokenizer):
+        return _convert_bert_japanese_encoder(model, tokenizer)
 
     raise ValueError(
         f"Loading from the '{type(tokenizer)}' huggingface tokenizer is not supported"
@@ -97,5 +100,29 @@ def _convert_wordpiece_encoder(
     model.attrs["bos_piece"] = tokenizer.cls_token  # type: ignore
     model.attrs["eos_piece"] = tokenizer.sep_token  # type: ignore
     model.attrs["unk_piece"] = tokenizer.unk_token  # type: ignore
+
+    return model
+
+
+def _convert_bert_japanese_encoder(
+    model: Tok2PiecesModelT, tokenizer: "transformers.BertJapaneseTokenizer"
+) -> Tok2PiecesModelT:
+    if not isinstance(
+        tokenizer.subword_tokenizer,
+        transformers.models.bert_japanese.CharacterTokenizer,
+    ):
+        raise ValueError(
+            "Only character subword encoding is currently supported for Japanese BERT models"
+        )
+    if model.name != "char_encoder":
+        raise ValueError(f"Character encoder cannot be loaded into model: {model.name}")
+
+    model.attrs["bos_piece"] = tokenizer.cls_token
+    model.attrs["eos_piece"] = tokenizer.sep_token
+    model.attrs["unk_piece"] = tokenizer.unk_token
+    model.attrs["normalize"] = (
+        "NFKC" if tokenizer.subword_tokenizer.normalize_text else None
+    )
+    model.attrs["vocab"] = tokenizer.vocab.copy()
 
     return model

@@ -32,7 +32,7 @@ def debug_pieces_cli(
 ):
     """
     Analyze word- or sentencepiece statistics.
-    DOCS: https://spacy.io/api/cli#debug-data
+    DOCS: https://spacy.io/api/cli#debug-pieces
     """
     overrides = parse_config_overrides(ctx.args)
     import_code(code_path)

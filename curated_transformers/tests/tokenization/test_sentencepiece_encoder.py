@@ -3,7 +3,7 @@ import pytest
 from thinc.api import Ragged, registry
 
 from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_sentencepiece_encoder,
+    build_sentencepiece_encoder_v1,
 )
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers
@@ -16,7 +16,7 @@ def toy_model_path(test_dir):
 
 @pytest.fixture
 def toy_encoder(toy_model_path):
-    encoder = build_sentencepiece_encoder()
+    encoder = build_sentencepiece_encoder_v1()
     encoder.init = registry.model_loaders.get(
         "curated-transformers.SentencepieceLoader.v1"
     )(path=toy_model_path)
@@ -32,7 +32,7 @@ def test_sentencepiece_encoder(toy_encoder, sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_sentencepiece_encoder_hf_model(sample_docs):
-    encoder = build_sentencepiece_encoder()
+    encoder = build_sentencepiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")
     encoder.initialize()
 
@@ -55,7 +55,7 @@ def test_sentencepiece_encoder_hf_model(sample_docs):
 
 def test_serialize(toy_encoder, sample_docs):
     encoder_bytes = toy_encoder.to_bytes()
-    encoder2 = build_sentencepiece_encoder()
+    encoder2 = build_sentencepiece_encoder_v1()
     encoder2.from_bytes(encoder_bytes)
     encoding = encoder2.predict(sample_docs)
     _check_toy_encoder(encoding)

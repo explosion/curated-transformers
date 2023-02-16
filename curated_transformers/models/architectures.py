@@ -26,16 +26,12 @@ from .pytorch.hf_util import convert_pretrained_model_for_encoder
 from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
 from .with_non_ws_tokens import with_non_ws_tokens
-from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
-from ..tokenization.sentencepiece_encoder import (
-    build_camembert_sentencepiece_encoder,
-    build_sentencepiece_encoder,
-    build_xlmr_sentencepiece_encoder,
-)
-from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from ..tokenization.wordpiece_encoder import (
-    build_bert_wordpiece_encoder,
-    build_wordpiece_encoder,
+from ..tokenization.bbpe_encoder import build_byte_bpe_encoder_v1
+from ..tokenization import (
+    build_bert_wordpiece_encoder_v1,
+    build_camembert_sentencepiece_encoder_v1,
+    build_sentencepiece_encoder_v1,
+    build_xlmr_sentencepiece_encoder_v1,
 )
 from ..tokenization.types import Tok2PiecesModelT
 from .types import (
@@ -148,7 +144,7 @@ def build_albert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_sentencepiece_encoder()
+    piece_encoder = build_sentencepiece_encoder_v1()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -247,7 +243,7 @@ def build_bert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_bert_wordpiece_encoder()
+    piece_encoder = build_bert_wordpiece_encoder_v1()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -340,7 +336,7 @@ def build_camembert_transformer_model_v1(
         encoder = RobertaEncoder(config)
         transformer = _pytorch_encoder(encoder)
 
-    piece_encoder = build_camembert_sentencepiece_encoder()
+    piece_encoder = build_camembert_sentencepiece_encoder_v1()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -439,7 +435,7 @@ def build_roberta_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_byte_bpe_encoder()
+    piece_encoder = build_byte_bpe_encoder_v1()
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -538,7 +534,7 @@ def build_xlmr_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_xlmr_sentencepiece_encoder()
+    piece_encoder = build_xlmr_sentencepiece_encoder_v1()
 
     return build_transformer_model_v1(
         with_spans=with_spans,

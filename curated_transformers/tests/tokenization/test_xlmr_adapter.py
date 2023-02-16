@@ -6,13 +6,15 @@ from thinc.api import NumpyOps, Ragged, chain, Model
 
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization.sentencepiece_encoder import (
-    build_sentencepiece_encoder,
-    build_xlmr_sentencepiece_encoder,
+    build_sentencepiece_encoder_v1,
+    build_xlmr_sentencepiece_encoder_v1,
 )
 from curated_transformers.tokenization.sentencepiece_adapters import (
     build_xlmr_adapter,
 )
-from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import (
+    build_wordpiece_encoder_v1,
+)
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.remove_eos_bos import remove_bos_eos
@@ -25,14 +27,14 @@ def toy_model(test_dir):
 
 @pytest.fixture
 def toy_encoder(toy_model):
-    encoder = build_xlmr_sentencepiece_encoder()
+    encoder = build_xlmr_sentencepiece_encoder_v1()
     encoder.get_ref("encoder").attrs["sentencepiece_processor"] = toy_model
     return encoder
 
 
 @pytest.fixture
 def empty_encoder():
-    return build_xlmr_sentencepiece_encoder()
+    return build_xlmr_sentencepiece_encoder_v1()
 
 
 def _mock_transformer() -> Model[List[Ragged], TransformerModelOutput]:
@@ -70,7 +72,7 @@ def test_sentencepiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
-    encoder = build_sentencepiece_encoder()
+    encoder = build_sentencepiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="xlm-roberta-base")
     encoder.initialize()
     model = chain(encoder, build_xlmr_adapter(), _mock_transformer(), remove_bos_eos())
@@ -87,7 +89,7 @@ def test_sentencepiece_encoder_against_hf(sample_docs):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_against_hf(sample_docs):
     ops = NumpyOps()
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")

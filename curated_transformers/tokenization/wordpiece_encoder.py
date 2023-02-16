@@ -27,7 +27,7 @@ def deserialize_my_custom_class(
     return WordPieceProcessor(value.decode("utf8").split("\n"))
 
 
-def build_bert_wordpiece_encoder() -> Tok2PiecesModelT:
+def build_bert_wordpiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a WordPiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers. This encoder also splits each token
@@ -51,7 +51,7 @@ def build_bert_wordpiece_encoder() -> Tok2PiecesModelT:
     )
 
 
-def build_wordpiece_encoder() -> Tok2PiecesModelT:
+def build_wordpiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a WordPiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.

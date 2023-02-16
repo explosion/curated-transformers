@@ -2,7 +2,9 @@ from pathlib import Path
 import pytest
 import spacy
 
-from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import (
+    build_wordpiece_encoder_v1,
+)
 from curated_transformers.util import registry
 
 
@@ -64,7 +66,7 @@ def wordpiece_toy_model_path():
 
 @pytest.fixture
 def wordpiece_toy_encoder(wordpiece_toy_model_path):
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     encoder.init = registry.model_loaders.get(
         "curated-transformers.WordpieceLoader.v1"
     )(path=wordpiece_toy_model_path)

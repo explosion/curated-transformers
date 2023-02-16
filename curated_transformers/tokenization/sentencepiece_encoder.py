@@ -27,7 +27,7 @@ def deserialize_my_custom_class(
     return SentencePieceProcessor.from_protobuf(value)
 
 
-def build_camembert_sentencepiece_encoder() -> Tok2PiecesModelT:
+def build_camembert_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a SentencePiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers with CamemBERT post-processing applied.
@@ -35,13 +35,13 @@ def build_camembert_sentencepiece_encoder() -> Tok2PiecesModelT:
     This model must be separately initialized using an appropriate
     loader.
     """
-    encoder = build_sentencepiece_encoder()
+    encoder = build_sentencepiece_encoder_v1()
     model = chain(encoder, build_camembert_adapter())
     model.set_ref("encoder", encoder)
     return model
 
 
-def build_sentencepiece_encoder() -> Tok2PiecesModelT:
+def build_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a SentencePiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.
@@ -58,7 +58,7 @@ def build_sentencepiece_encoder() -> Tok2PiecesModelT:
     return model
 
 
-def build_xlmr_sentencepiece_encoder() -> Tok2PiecesModelT:
+def build_xlmr_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a SentencePiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers with XLM-RoBERTa post-processing applied.
@@ -66,7 +66,7 @@ def build_xlmr_sentencepiece_encoder() -> Tok2PiecesModelT:
     This model must be separately initialized using an appropriate
     loader.
     """
-    encoder = build_sentencepiece_encoder()
+    encoder = build_sentencepiece_encoder_v1()
     model = chain(encoder, build_xlmr_adapter())
     model.set_ref("encoder", encoder)
     return model

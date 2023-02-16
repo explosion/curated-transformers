@@ -158,6 +158,11 @@ def evaluate_tagger_on_train_data(model):
     assert [t.tag_ for t in docs[1]] == ["N", "V", "J", "N"]
 
 
+def test_default_pipe_config_can_be_constructed():
+    nlp = spacy.blank("en")
+    nlp.add_pipe("curated_transformer", config={"model": {"vocab_size": 32}})
+
+
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize(

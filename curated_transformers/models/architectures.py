@@ -53,6 +53,7 @@ def build_albert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Optional[Tok2PiecesModelT] = None,
     attention_probs_dropout_prob: float = 0.0,
     embedding_width: int = 128,
     hidden_act: str = "gelu_new",
@@ -77,6 +78,8 @@ def build_albert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Optional[Model])
+        Piece encoder, uses the default encoder for the model type when absent.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     embedding_width (int):
@@ -144,7 +147,9 @@ def build_albert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_sentencepiece_encoder_v1()
+    piece_encoder = (
+        build_sentencepiece_encoder_v1() if piece_encoder is None else piece_encoder
+    )
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -160,6 +165,7 @@ def build_bert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Optional[Tok2PiecesModelT] = None,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -182,6 +188,8 @@ def build_bert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Optional[Model])
+        Piece encoder, uses the default encoder for the model type when absent.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -243,7 +251,9 @@ def build_bert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_bert_wordpiece_encoder_v1()
+    piece_encoder = (
+        build_bert_wordpiece_encoder_v1() if piece_encoder is None else piece_encoder
+    )
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -259,6 +269,7 @@ def build_camembert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Optional[Tok2PiecesModelT] = None,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -279,6 +290,8 @@ def build_camembert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Optional[Model])
+        Piece encoder, uses the default encoder for the model type when absent.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -336,7 +349,11 @@ def build_camembert_transformer_model_v1(
         encoder = RobertaEncoder(config)
         transformer = _pytorch_encoder(encoder)
 
-    piece_encoder = build_camembert_sentencepiece_encoder_v1()
+    piece_encoder = (
+        build_camembert_sentencepiece_encoder_v1()
+        if piece_encoder is None
+        else piece_encoder
+    )
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -352,6 +369,7 @@ def build_roberta_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Optional[Tok2PiecesModelT] = None,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -374,6 +392,8 @@ def build_roberta_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Optional[Model])
+        Piece encoder, uses the default encoder for the model type when absent.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -435,7 +455,9 @@ def build_roberta_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_byte_bpe_encoder_v1()
+    piece_encoder = (
+        build_byte_bpe_encoder_v1() if piece_encoder is None else piece_encoder
+    )
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -451,6 +473,7 @@ def build_xlmr_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Optional[Tok2PiecesModelT] = None,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -473,6 +496,8 @@ def build_xlmr_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Optional[Model])
+        Piece encoder, uses the default encoder for the model type when absent.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -534,7 +559,11 @@ def build_xlmr_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_xlmr_sentencepiece_encoder_v1()
+    piece_encoder = (
+        build_xlmr_sentencepiece_encoder_v1()
+        if piece_encoder is None
+        else piece_encoder
+    )
 
     return build_transformer_model_v1(
         with_spans=with_spans,

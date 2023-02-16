@@ -1,6 +1,7 @@
 import numpy.testing
 import pytest
 import spacy
+from tempfile import TemporaryDirectory
 from thinc.api import Ragged
 
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
@@ -8,8 +9,9 @@ from curated_transformers.tokenization.wordpiece_encoder import (
     build_bert_wordpiece_encoder,
     build_wordpiece_encoder,
     _bert_preprocess,
+    build_wordpiece_encoder_loader_v1,
 )
-from curated_transformers._compat import has_hf_transformers
+from curated_transformers._compat import has_hf_transformers, transformers
 
 
 def test_wordpiece_encoder_local_model(wordpiece_toy_encoder, sample_docs):
@@ -44,6 +46,30 @@ def test_wordpiece_encoder_hf_model(sample_docs):
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_wordpiece_encoder_hf_model_uncased(sample_docs):
+    encoder = build_wordpiece_encoder()
+    encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-uncased")
+    encoder.initialize()
+
+    encoding = encoder.predict(sample_docs)
+
+    assert isinstance(encoding, list)
+    assert len(encoding) == 2
+
+    assert isinstance(encoding[0], Ragged)
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[0].dataXd, [101, 1045, 2387, 1037, 2611, 2007, 1037, 12772, 1012, 102]
+    )
+
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[1].dataXd, [101, 2651, 2057, 2097, 4521, 26202, 4605, 1012, 102]
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_hf_model_german():
     encoder = build_bert_wordpiece_encoder()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-german-cased")
@@ -70,6 +96,63 @@ def test_wordpiece_encoder_hf_model_german():
     numpy.testing.assert_equal(
         encoding[1].dataXd,
         [3, 125, 56, 26915, 26914, 26935, 130, 26914, 4490, 141, 1028, 26914, 4],
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_wordpiece_encoder_loader(sample_docs):
+    encoder = build_wordpiece_encoder()
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
+    with TemporaryDirectory() as d:
+        vocab_path = hf_tokenizer.save_vocabulary(d)[0]
+        encoder.init = build_wordpiece_encoder_loader_v1(path=vocab_path)
+        encoder.initialize()
+
+    encoding = encoder.predict(sample_docs)
+
+    assert isinstance(encoding, list)
+    assert len(encoding) == 2
+
+    assert isinstance(encoding[0], Ragged)
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[0].dataXd, [101, 146, 1486, 170, 1873, 1114, 170, 16737, 119, 102]
+    )
+
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 3, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[1].dataXd,
+        [101, 3570, 1195, 1209, 3940, 185, 5926, 2744, 7329, 119, 102],
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_wordpiece_encoder_loader_uncased(sample_docs):
+    encoder = build_wordpiece_encoder()
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-uncased")
+    with TemporaryDirectory() as d:
+        vocab_path = hf_tokenizer.save_vocabulary(d)[0]
+        encoder.init = build_wordpiece_encoder_loader_v1(
+            path=vocab_path, lowercase=True, strip_accents=True
+        )
+        encoder.initialize()
+
+    encoding = encoder.predict(sample_docs)
+
+    assert isinstance(encoding, list)
+    assert len(encoding) == 2
+
+    assert isinstance(encoding[0], Ragged)
+    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[0].dataXd, [101, 1045, 2387, 1037, 2611, 2007, 1037, 12772, 1012, 102]
+    )
+
+    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1])
+    numpy.testing.assert_equal(
+        encoding[1].dataXd, [101, 2651, 2057, 2097, 4521, 26202, 4605, 1012, 102]
     )
 
 

@@ -44,7 +44,9 @@ def build_bert_wordpiece_encoder() -> Tok2PiecesModelT:
             "unk_piece": "[UNK]",
             "bos_piece": "[CLS]",
             "eos_piece": "[SEP]",
+            "lowercase": False,
             "preprocess": _bert_preprocess,
+            "strip_accents": False,
         },
     )
 
@@ -65,7 +67,9 @@ def build_wordpiece_encoder() -> Tok2PiecesModelT:
             "unk_piece": "[UNK]",
             "bos_piece": "[CLS]",
             "eos_piece": "[SEP]",
+            "lowercase": False,
             "preprocess": lambda t: [t],
+            "strip_accents": False,
         },
     )
 
@@ -77,7 +81,9 @@ def wordpiece_encoder_forward(
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
     unk_piece: str = model.attrs["unk_piece"]
+    lowercase: bool = model.attrs["lowercase"]
     preprocess: Callable[[str], str] = model.attrs["preprocess"]
+    strip_accents: bool = model.attrs["strip_accents"]
     bos_id = wpp.get_initial(bos_piece)
     eos_id = wpp.get_initial(eos_piece)
     unk_id = wpp.get_initial(unk_piece)
@@ -91,11 +97,16 @@ def wordpiece_encoder_forward(
         lens = [1]
 
         for token in doc:
+            text = token.lower_ if lowercase else token.text
+            if strip_accents:
+                text = _strip_accents(text)
+
             piece_ids = [
                 unk_id if token_id == -1 else token_id
-                for t in preprocess(token.text)
+                for t in preprocess(text)
                 for token_id in wpp.encode(t)[0]
             ]
+
             doc_pieces.extend(piece_ids)
             lens.append(len(piece_ids))
 
@@ -112,7 +123,13 @@ def wordpiece_encoder_forward(
 
 
 def build_wordpiece_encoder_loader_v1(
-    *, path: Path
+    *,
+    path: Path,
+    bos_piece="[CLS]",
+    eos_piece="[SEP]",
+    unk_piece="[UNK]",
+    lowercase: bool = False,
+    strip_accents: bool = False,
 ) -> Callable[
     [Tok2PiecesModelT, Optional[Tok2PiecesInT], Optional[Tok2PiecesInT]],
     Tok2PiecesModelT,
@@ -126,6 +143,11 @@ def build_wordpiece_encoder_loader_v1(
 
     def load(model, X=None, Y=None):
         model.attrs["wordpiece_processor"] = WordPieceProcessor.from_file(str(path))
+        model.attrs["bos_piece"] = bos_piece
+        model.attrs["eos_piece"] = eos_piece
+        model.attrs["unk_piece"] = unk_piece
+        model.attrs["lowercase"] = lowercase
+        model.attrs["strip_accents"] = strip_accents
         return model
 
     return load
@@ -165,3 +187,8 @@ def _is_bert_punctuation(char: str) -> bool:
         return True
 
     return unicodedata.category(char).startswith("P")
+
+
+def _strip_accents(token: str) -> str:
+    token = unicodedata.normalize("NFD", token)
+    return "".join([char for char in token if unicodedata.category(char) != "Mn"])

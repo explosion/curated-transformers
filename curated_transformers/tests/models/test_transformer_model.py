@@ -13,7 +13,13 @@ from curated_transformers.models.architectures import (
 from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
-from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
+from curated_transformers.tokenization import (
+    build_bert_wordpiece_encoder_v1,
+    build_byte_bpe_encoder_v1,
+    build_hf_piece_encoder_loader_v1,
+    build_sentencepiece_encoder_v1,
+    build_xlmr_sentencepiece_encoder_v1,
+)
 from curated_transformers._compat import (
     has_hf_transformers,
     has_huggingface_hub,
@@ -40,6 +46,7 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
     hf_model_name, hidden_width, vocab_size = hf_model
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
+        piece_encoder=build_xlmr_sentencepiece_encoder_v1(),
         with_spans=with_spans,
         vocab_size=vocab_size,
         hidden_width=hidden_width,
@@ -87,6 +94,7 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
     hidden_width = 768
     with_spans = build_with_strided_spans_v1(stride=stride, window=window)
     model = build_xlmr_transformer_model_v1(
+        piece_encoder=build_xlmr_sentencepiece_encoder_v1(),
         with_spans=with_spans,
         vocab_size=250005,
         hidden_width=hidden_width,
@@ -131,23 +139,36 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
 @pytest.mark.parametrize(
     "test_config",
     [
-        ("albert-base-v2", build_albert_transformer_model_v1, 30000),
+        (
+            "albert-base-v2",
+            build_albert_transformer_model_v1,
+            build_sentencepiece_encoder_v1(),
+            30000,
+        ),
         (
             "bert-base-cased",
             build_bert_transformer_model_v1,
+            build_bert_wordpiece_encoder_v1(),
             28996,
         ),
-        ("roberta-base", build_roberta_transformer_model_v1, 50265),
+        (
+            "roberta-base",
+            build_roberta_transformer_model_v1,
+            build_byte_bpe_encoder_v1(),
+            50265,
+        ),
     ],
 )
 def test_pytorch_checkpoint_loader(test_config):
     from huggingface_hub import hf_hub_download
 
-    model_name, model_factory, vocab_size = test_config
+    model_name, model_factory, piece_encoder, vocab_size = test_config
 
     checkpoint_path = hf_hub_download(repo_id=model_name, filename="pytorch_model.bin")
     with_spans = build_with_strided_spans_v1(stride=96, window=128)
-    model = model_factory(vocab_size=vocab_size, with_spans=with_spans)
+    model = model_factory(
+        piece_encoder=piece_encoder, vocab_size=vocab_size, with_spans=with_spans
+    )
     model.get_ref("transformer").init = registry.model_loaders.get(
         "curated-transformers.PyTorchCheckpointLoader.v1"
     )(path=checkpoint_path)

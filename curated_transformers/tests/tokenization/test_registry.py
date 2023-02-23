@@ -32,5 +32,5 @@ def test_encoder_from_registry(encoder_name):
     ],
 )
 def test_encoder_loader_from_registry(loader_name):
-    # Can't be contstructed, since most loaders have mandatory arguments.
+    # Can't be constructed, since most loaders have mandatory arguments.
     registry.model_loaders.get(loader_name)

@@ -27,7 +27,7 @@ def deserialize_byte_bpe_processor(
     return ByteBPEProcessor(data["vocab"], data["merges"])
 
 
-def build_byte_bpe_encoder() -> Tok2PiecesModelT:
+def build_byte_bpe_encoder_v1() -> Tok2PiecesModelT:
     """Construct a Byte-BPE piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.

@@ -2,14 +2,14 @@ import numpy.testing
 import pytest
 from thinc.api import Ragged, registry
 
-from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder
+from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers._compat import has_hf_transformers
 
 
 @pytest.fixture
 def toy_encoder(test_dir):
-    encoder = build_byte_bpe_encoder()
+    encoder = build_byte_bpe_encoder_v1()
     encoder.init = registry.model_loaders.get("curated-transformers.ByteBPELoader.v1")(
         vocab_path=test_dir / "toy-vocab.json", merges_path=test_dir / "toy-merges.txt"
     )
@@ -20,7 +20,7 @@ def toy_encoder(test_dir):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_bbpe_encoder_hf_model(sample_docs):
-    encoder = build_byte_bpe_encoder()
+    encoder = build_byte_bpe_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     encoding = encoder.predict(sample_docs)
@@ -34,7 +34,7 @@ def test_bbpe_encoder(toy_encoder, sample_docs):
 
 def test_serialize(toy_encoder):
     encoder_bytes = toy_encoder.to_bytes()
-    toy_encoder2 = build_byte_bpe_encoder()
+    toy_encoder2 = build_byte_bpe_encoder_v1()
     toy_encoder2.from_bytes(encoder_bytes)
     assert (
         toy_encoder.attrs["byte_bpe_processor"].vocab
@@ -49,11 +49,11 @@ def test_serialize(toy_encoder):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_serialize_hf_model(sample_docs):
-    encoder = build_byte_bpe_encoder()
+    encoder = build_byte_bpe_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="roberta-base")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
-    encoder2 = build_byte_bpe_encoder()
+    encoder2 = build_byte_bpe_encoder_v1()
     encoder2.from_bytes(encoder_bytes)
     encoding = encoder2.predict(sample_docs)
     _check_roberta_base_encoder(encoding)

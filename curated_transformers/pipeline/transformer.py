@@ -29,6 +29,9 @@ DEFAULT_CONFIG_STR = """
     [transformer.model]
     @architectures = "curated-transformers.XlmrTransformer.v1"
 
+    [transformer.model.piece_encoder]
+    @architectures = "curated-transformers.XlmrSentencepieceEncoder.v1"
+
     [transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
 """

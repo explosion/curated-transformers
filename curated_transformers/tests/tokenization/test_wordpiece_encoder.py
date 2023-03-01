@@ -6,8 +6,8 @@ from thinc.api import Ragged
 
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
 from curated_transformers.tokenization.wordpiece_encoder import (
-    build_bert_wordpiece_encoder,
-    build_wordpiece_encoder,
+    build_bert_wordpiece_encoder_v1,
+    build_wordpiece_encoder_v1,
     _bert_preprocess,
     build_wordpiece_encoder_loader_v1,
 )
@@ -22,7 +22,7 @@ def test_wordpiece_encoder_local_model(wordpiece_toy_encoder, sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_hf_model(sample_docs):
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
 
@@ -47,7 +47,7 @@ def test_wordpiece_encoder_hf_model(sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_hf_model_uncased(sample_docs):
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-uncased")
     encoder.initialize()
 
@@ -71,7 +71,7 @@ def test_wordpiece_encoder_hf_model_uncased(sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_hf_model_german():
-    encoder = build_bert_wordpiece_encoder()
+    encoder = build_bert_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-german-cased")
     encoder.initialize()
 
@@ -102,7 +102,7 @@ def test_wordpiece_encoder_hf_model_german():
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_loader(sample_docs):
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
     with TemporaryDirectory() as d:
         vocab_path = hf_tokenizer.save_vocabulary(d)[0]
@@ -130,7 +130,7 @@ def test_wordpiece_encoder_loader(sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_loader_uncased(sample_docs):
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-uncased")
     with TemporaryDirectory() as d:
         vocab_path = hf_tokenizer.save_vocabulary(d)[0]
@@ -158,7 +158,7 @@ def test_wordpiece_encoder_loader_uncased(sample_docs):
 
 def test_serialize(wordpiece_toy_encoder):
     encoder_bytes = wordpiece_toy_encoder.to_bytes()
-    toy_encoder2 = build_wordpiece_encoder()
+    toy_encoder2 = build_wordpiece_encoder_v1()
     toy_encoder2.from_bytes(encoder_bytes)
     assert (
         wordpiece_toy_encoder.attrs["wordpiece_processor"].to_list()
@@ -169,11 +169,11 @@ def test_serialize(wordpiece_toy_encoder):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_serialize_hf_model():
-    encoder = build_wordpiece_encoder()
+    encoder = build_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
     encoder_bytes = encoder.to_bytes()
-    encoder2 = build_wordpiece_encoder()
+    encoder2 = build_wordpiece_encoder_v1()
     encoder2.from_bytes(encoder_bytes)
     assert (
         encoder.attrs["wordpiece_processor"].to_list()

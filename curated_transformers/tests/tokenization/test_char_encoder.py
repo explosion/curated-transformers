@@ -2,21 +2,22 @@ import numpy
 import pytest
 from thinc.api import Ragged
 import spacy
-import curated_transformers
-from curated_transformers.tests.conftest import sample_docs
 
-from curated_transformers.tokenization.char_encoder import build_char_encoder_v1
+from curated_transformers.tokenization.char_encoder import (
+    build_char_encoder_loader_v1,
+    build_char_encoder_v1,
+)
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
-from curated_transformers.tokenization.wordpiece_encoder import build_wordpiece_encoder
+from curated_transformers.tokenization.wordpiece_encoder import (
+    build_wordpiece_encoder_v1,
+)
 from curated_transformers.util import registry
 from curated_transformers._compat import has_fugashi, has_hf_transformers, has_sudachi
 
 
 def test_char_encoder(test_dir):
     encoder = build_char_encoder_v1()
-    encoder.init = registry.model_loaders.get(
-        "curated-transformers.CharEncoderLoader.v1"
-    )(path=test_dir / "toy-chars.txt")
+    encoder.init = build_char_encoder_loader_v1(path=test_dir / "toy-chars.txt")
     encoder.initialize()
 
     nlp = spacy.blank("nl")
@@ -74,10 +75,10 @@ def test_char_encoder_hf_model():
 @pytest.mark.skipif(not has_fugashi, reason="requires fugashi")
 @pytest.mark.skipif(not has_sudachi, reason="requires SudachiPy and SudachiDict-core")
 def test_hf_loader_rejects_incorrect_encoder():
-    encoder = build_wordpiece_encoder()
-    encoder.init = registry.model_loaders.get(
-        "curated-transformers.HFPieceEncoderLoader.v1"
-    )(name="cl-tohoku/bert-base-japanese-char-v2")
+    encoder = build_wordpiece_encoder_v1()
+    encoder.init = build_hf_piece_encoder_loader_v1(
+        name="cl-tohoku/bert-base-japanese-char-v2"
+    )
     with pytest.raises(ValueError, match="Character encoder cannot"):
         encoder.initialize()
 
@@ -88,18 +89,16 @@ def test_hf_loader_rejects_incorrect_encoder():
 @pytest.mark.skipif(not has_sudachi, reason="requires SudachiPy and SudachiDict-core")
 def test_hf_loader_rejects_incorrect_model():
     encoder = build_char_encoder_v1()
-    encoder.init = registry.model_loaders.get(
-        "curated-transformers.HFPieceEncoderLoader.v1"
-    )(name="cl-tohoku/bert-base-japanese-v2")
+    encoder.init = build_hf_piece_encoder_loader_v1(
+        name="cl-tohoku/bert-base-japanese-v2"
+    )
     with pytest.raises(ValueError, match="Only character subword.*supported"):
         encoder.initialize()
 
 
 @pytest.mark.slow
 def test_loader_rejects_incorrect_encoder(test_dir):
-    encoder = build_wordpiece_encoder()
-    encoder.init = registry.model_loaders.get(
-        "curated-transformers.CharEncoderLoader.v1"
-    )(path=test_dir / "toy-chars.txt")
+    encoder = build_wordpiece_encoder_v1()
+    encoder.init = build_char_encoder_loader_v1(path=test_dir / "toy-chars.txt")
     with pytest.raises(ValueError, match="Character encoder cannot"):
         encoder.initialize()

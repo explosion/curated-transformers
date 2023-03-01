@@ -24,9 +24,8 @@ cfg_string_transformer_layers_listener = """
     vocab_size = 28996
     num_hidden_layers = 2
     hidden_width = 60
-
-    [components.transformer.model.with_spans]
-    @architectures = "curated-transformers.WithStridedSpans.v1"
+    piece_encoder = {"@architectures":"curated-transformers.BertWordpieceEncoder.v1"}
+    with_spans = {"@architectures":"curated-transformers.WithStridedSpans.v1"}
 
     [initialize]
 

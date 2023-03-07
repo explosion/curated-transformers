@@ -48,6 +48,7 @@ jobs:
 
       - name: Delete source directory
         run: |
+          cp curated_transformers/tests/conftest.py .
           rm -rf curated_transformers
         shell: bash
 

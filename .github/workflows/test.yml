@@ -32,16 +32,14 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --upgrade pip setuptools wheel
+          pip install --upgrade pip setuptools wheel build
           pip install -r requirements.txt
 
       - name: Install optional dependencies for Japanese models
         run: pip install fugashi[unidic-lite] spacy[ja]
 
       - name: Build sdist
-        run: |
-          python setup.py build_ext --inplace
-          python setup.py sdist --formats=gztar
+        run: python -m build --sdist
 
       - name: Run mypy
         run: mypy curated_transformers

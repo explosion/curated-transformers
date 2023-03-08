@@ -45,8 +45,8 @@ class Errors(metaclass=ErrorsWithCodes):
     E012 = ("`{listener_name}` requires the upstream transformer pipe to output "
             "all hidden layer outputs. This can be enabled by setting the pipe's "
             "`all_layer_outputs` parameter to `True` in the pipeline config")
-    E013 = ("Attempting to select a transformer output tensor using an invalid "
-            "layer index ({invalid_idx}). Expected range: 0<= idx < {num_layers}")
+    E013 = ("The target pipe names for gradual transformer unfreezing contain both the "
+            "wild-card operator ('*') and individual names. Use either of the two but not both")
     E014 = ("Model '{model_name}' received an unexpected input of type '{input_type}'. "
             "It can only wrap/be chained with models whose outputs are of type  "
             "`TransformerModelOutput` (in almost all cases, models of type `TorchTransformerModelT`)")
@@ -70,9 +70,7 @@ class Errors(metaclass=ErrorsWithCodes):
     E024 = ("Attempting to initialize an incompatible piece encoder ('{model_name}') "
             "with the Hugging Face Japanese BERT tokenizer. It can only be used with the "
             "`CharEncoder` piece encoder")
-    E024 = ("Attempting to perform gradual unfreezing of a non-transformer pipe "
+    E025 = ("Attempting to perform gradual unfreezing of a non-transformer pipe "
             "('{pipe_name}'}. Only transformer pipes support this feature")
-    E025 = ("The target pipe names for gradual transformer unfreezing contain both the "
-            "wild-card operator ('*') and individual names. Use either of the two but not both")
 
 # fmt: on

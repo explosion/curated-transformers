@@ -3,6 +3,7 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
+from ....errors import Errors
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
 from ...output import PyTorchTransformerOutput
@@ -24,7 +25,10 @@ class AlbertEncoder(Module):
 
         if self.num_hidden_layers % num_hidden_groups != 0:
             raise ValueError(
-                f"Number of hidden layers ({self.num_hidden_layers}) must be divisable by number of hidden groups ({num_hidden_groups})"
+                Errors.E002.format(
+                    num_hidden_layers=self.num_hidden_layers,
+                    num_hidden_groups=num_hidden_groups,
+                )
             )
 
         self.embeddings = BertEmbeddings(config.embedding, config.layer)

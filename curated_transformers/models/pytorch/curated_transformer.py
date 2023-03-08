@@ -25,6 +25,10 @@ class CuratedTransformer(Generic[CuratedEncoderT], Module):
         super().__init__()
         self.curated_encoder = encoder
 
+        assert isinstance(
+            encoder, (AlbertEncoder, BertEncoder, RobertaEncoder)
+        ), f"Unexpected curated encoder type '{type(encoder)}'"
+
     def forward(
         self,
         input_ids: Tensor,

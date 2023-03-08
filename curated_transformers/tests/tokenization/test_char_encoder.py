@@ -79,7 +79,7 @@ def test_hf_loader_rejects_incorrect_encoder():
     encoder.init = build_hf_piece_encoder_loader_v1(
         name="cl-tohoku/bert-base-japanese-char-v2"
     )
-    with pytest.raises(ValueError, match="Character encoder cannot"):
+    with pytest.raises(ValueError, match="incompatible model"):
         encoder.initialize()
 
 
@@ -92,7 +92,7 @@ def test_hf_loader_rejects_incorrect_model():
     encoder.init = build_hf_piece_encoder_loader_v1(
         name="cl-tohoku/bert-base-japanese-v2"
     )
-    with pytest.raises(ValueError, match="Only character subword.*supported"):
+    with pytest.raises(ValueError, match="only support character piece"):
         encoder.initialize()
 
 
@@ -100,5 +100,5 @@ def test_hf_loader_rejects_incorrect_model():
 def test_loader_rejects_incorrect_encoder(test_dir):
     encoder = build_wordpiece_encoder_v1()
     encoder.init = build_char_encoder_loader_v1(path=test_dir / "toy-chars.txt")
-    with pytest.raises(ValueError, match="Character encoder cannot"):
+    with pytest.raises(ValueError, match="incompatible model"):
         encoder.initialize()

@@ -7,7 +7,7 @@ from typing import (
     Tuple,
 )
 
-from spacy import Errors
+from spacy import Errors as SpacyErrors
 from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
@@ -28,6 +28,7 @@ from .types import (
     WithRaggedLastLayerModelT,
     PoolingModelT,
 )
+from ..errors import Errors
 
 
 def build_transformer_layers_listener_v1(
@@ -192,11 +193,13 @@ class TransformerListener(Model):
         prediction for.
         """
         if self._batch_id is None and self._outputs is None:
-            raise ValueError(Errors.E954)
+            raise ValueError(SpacyErrors.E954)
         else:
             batch_id = self.get_batch_id(inputs)
             if batch_id != self._batch_id:
-                raise ValueError(Errors.E953.format(id1=batch_id, id2=self._batch_id))
+                raise ValueError(
+                    SpacyErrors.E953.format(id1=batch_id, id2=self._batch_id)
+                )
             else:
                 return True
 
@@ -264,15 +267,12 @@ def tranformer_layers_listener_forward(
     grad_factor: float = model.attrs["grad_factor"]
     n_layers: int = model.attrs["layers"]
 
-    invalid_outputs_err_msg = (
-        "The layer listener requires all transformer layer outputs to function - "
-        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
-    )
-
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="TransformerLayersListener")
+            )
 
         model.verify_inputs(docs)
 
@@ -308,7 +308,9 @@ def tranformer_layers_listener_forward(
             ], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="TransformerLayersListener")
+            )
 
         return pooling.predict(docs), lambda dY: []
 
@@ -456,15 +458,12 @@ def scalar_weighting_listener_forward(
     pooling: WithRaggedLastLayerModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
-    invalid_outputs_err_msg = (
-        "Scalar layer weighting requires all transformer layer outputs to function - "
-        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
-    )
-
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="ScalarWeightingListener")
+            )
 
         model.verify_inputs(docs)
 
@@ -500,7 +499,9 @@ def scalar_weighting_listener_forward(
             return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="ScalarWeightingListener")
+            )
 
         Y_weigthing = weighting.predict([doc._.trf_data.all_outputs for doc in docs])
         Y = pooling.predict(Y_weigthing)

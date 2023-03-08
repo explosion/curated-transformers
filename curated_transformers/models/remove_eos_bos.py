@@ -8,6 +8,7 @@ from .types import (
     SentMarkerRemoverModelT,
     RaggedInOutT,
 )
+from ..errors import Errors
 
 
 def remove_bos_eos() -> SentMarkerRemoverModelT:
@@ -19,7 +20,7 @@ def remove_bos_eos_forward(
     model: Model, X: SentMarkerRemoverInOutT, is_train: bool
 ) -> Tuple[SentMarkerRemoverInOutT, SentMarkerRemoverBackpropT]:
     if not isinstance(X, TransformerModelOutput):
-        raise ValueError(f"Unsupported input of type '{type(X)}'")
+        raise ValueError(Errors.E014.format(model_name=model.name, input_type=type(X)))
 
     X.all_outputs = [[Xr[1:-1] for Xr in inner] for inner in X.all_outputs]
 

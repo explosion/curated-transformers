@@ -15,6 +15,7 @@ from .types import (
     TorchTransformerModelT,
     TorchTransformerOutT,
 )
+from ..errors import Errors
 
 
 def build_with_strided_spans_v1(
@@ -45,10 +46,12 @@ def with_strided_spans(
 ) -> Model[List[Ragged], TransformerModelOutput]:
     if not (window // 2 <= stride <= window):
         raise ValueError(
-            f"Stride must be within [window / 2, window] ([{window // 2}, {window}]), was: {stride}"
+            Errors.E017.format(
+                stride=stride, half_window_size=window // 2, window_size=window
+            )
         )
     if batch_size <= 0:
-        raise ValueError(f"Span batch size must greater than zero")
+        raise ValueError(Errors.E018)
 
     attrs = {
         "stride": stride,
@@ -104,7 +107,9 @@ def with_strided_spans_forward(
     for batch in _split_spans(spans, batch_size):
         output, bp = transformer(cast(TorchTransformerInT, batch), is_train=is_train)
         if not isinstance(output, TransformerModelOutput):
-            raise ValueError(f"Unsupported input of type '{type(output)}'")
+            raise ValueError(
+                Errors.E014.format(model_name=model.name, input_type=type(output))
+            )
         outputs.append(output)
         backprops.append(bp)
 

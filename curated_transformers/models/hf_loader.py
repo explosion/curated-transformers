@@ -4,6 +4,7 @@ from spacy.tokens import Doc
 from .._compat import transformers, has_hf_transformers
 from .pytorch.hf_util import convert_hf_pretrained_model_parameters
 from .types import TorchTransformerModelT
+from ..errors import Errors
 
 
 def build_hf_transformer_encoder_loader_v1(
@@ -25,7 +26,9 @@ def build_hf_transformer_encoder_loader_v1(
 
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
-            raise ValueError("requires huggingface transformers")
+            raise ValueError(
+                Errors.E011.format(loader_name="HFTransformerEncoderLoader")
+            )
 
         encoder = model.shims[0]._model
 

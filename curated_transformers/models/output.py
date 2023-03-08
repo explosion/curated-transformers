@@ -5,6 +5,7 @@ from torch import Tensor
 
 from thinc.types import Floats2d, Ragged
 
+from ..errors import Errors
 
 TrfOutputT = TypeVar("TrfOutputT", Floats2d, Ragged)
 
@@ -32,8 +33,10 @@ class PyTorchTransformerOutput:
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
         else:
+            # This error needs to be inlined as due to torch.jit.script limitations.
             raise ValueError(
-                f"Index must be >= 0 and < {len(self.all_outputs) - 1}, got {idx}"
+                "Attempting to select a transformer output tensor using an invalid "
+                f"layer index ({idx}). Expected range: 0<= idx < {(len(self.all_outputs) - 1)}"
             )
 
     @property

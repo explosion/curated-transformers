@@ -10,7 +10,7 @@ from curated_transformers.models.architectures import (
     build_roberta_transformer_model_v1,
     build_xlmr_transformer_model_v1,
 )
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
+from curated_transformers.models.hf_loader import build_hf_transformer_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
 from curated_transformers.tokenization import (
@@ -51,7 +51,9 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
         vocab_size=vocab_size,
         hidden_width=hidden_width,
     )
-    model.get_ref("transformer").init = build_hf_encoder_loader_v1(name=hf_model_name)
+    model.get_ref("transformer").init = build_hf_transformer_encoder_loader_v1(
+        name=hf_model_name
+    )
     model.get_ref("piece_encoder").init = build_hf_piece_encoder_loader_v1(
         name=hf_model_name
     )

@@ -6,7 +6,7 @@ from .pytorch.hf_util import convert_hf_pretrained_model_parameters
 from .types import TorchTransformerModelT
 
 
-def build_hf_encoder_loader_v1(
+def build_hf_transformer_encoder_loader_v1(
     *,
     name: str,
     revision: str = "main",

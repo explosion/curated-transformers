@@ -6,7 +6,7 @@ from torch.nn import Module
 
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.models.architectures import _pytorch_encoder
-from curated_transformers.models.hf_loader import build_hf_encoder_loader_v1
+from curated_transformers.models.hf_loader import build_hf_transformer_encoder_loader_v1
 from curated_transformers.models.pytorch.albert import AlbertEncoder
 from curated_transformers.models.pytorch.albert.config import AlbertConfig
 from curated_transformers.models.pytorch.attention import AttentionMask
@@ -33,7 +33,7 @@ TEST_MODELS = [
 def encoder_from_config(config: ModelConfig):
     encoder = config.encoder(config.config)
     model = _pytorch_encoder(encoder)
-    model.init = build_hf_encoder_loader_v1(name=config.hf_model_name)
+    model.init = build_hf_transformer_encoder_loader_v1(name=config.hf_model_name)
     return model
 
 

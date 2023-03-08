@@ -24,7 +24,7 @@ def test_encoder_from_registry(encoder_name):
     [
         "curated-transformers.ByteBPELoader.v1",
         "curated-transformers.CharEncoderLoader.v1",
-        "curated-transformers.HFEncoderLoader.v1",
+        "curated-transformers.HFTransformerEncoderLoader.v1",
         "curated-transformers.HFPieceEncoderLoader.v1",
         "curated-transformers.PyTorchCheckpointLoader.v1",
         "curated-transformers.SentencepieceLoader.v1",

@@ -92,7 +92,7 @@ def test_hf_loader_rejects_incorrect_model():
     encoder.init = build_hf_piece_encoder_loader_v1(
         name="cl-tohoku/bert-base-japanese-v2"
     )
-    with pytest.raises(ValueError, match="only support character piece"):
+    with pytest.raises(ValueError, match="incompatible piece encoder"):
         encoder.initialize()
 
 

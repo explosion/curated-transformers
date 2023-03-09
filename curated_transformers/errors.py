@@ -66,7 +66,7 @@ class Errors(metaclass=ErrorsWithCodes):
     E022 = ("Attempting to load an unsupported Hugging Face tokenizer "
             "({unsupported_tokenizer}). Currently supported tokenizers: "
             "{supported_tokenizers}")
-    E023 = ("Japanese BERT models currently only support character piece encoding")
+    E023 = ("Japanese BERT models currently only support character subword encoding")
     E024 = ("Attempting to initialize an incompatible piece encoder ('{model_name}') "
             "with the Hugging Face Japanese BERT tokenizer. It can only be used with the "
             "`CharEncoder` piece encoder")

@@ -31,19 +31,44 @@ jobs:
           cache: "pip" # caching pip dependencies
 
       - name: Install requirements
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip setuptools wheel build
+          pip install -r requirements.txt
 
       - name: Install optional dependencies for Japanese models
         run: pip install fugashi[unidic-lite] spacy[ja]
 
-      - name: Install package
-        run: pip install .
+      - name: Build sdist
+        run: python -m build --sdist
 
       - name: Run mypy
         run: mypy curated_transformers
 
+      - name: Delete source directory
+        run: |
+          cp curated_transformers/tests/conftest.py .
+          rm -rf curated_transformers
+        shell: bash
+
+      - name: Uninstall all packages
+        run: |
+          pip freeze
+          pip freeze --exclude pywin32 > installed.txt
+          pip uninstall -y -r installed.txt
+
+      - name: Install from sdist
+        run: |
+          SDIST=$(python -c "import os;print(os.listdir('./dist')[-1])" 2>&1)
+          pip install dist/$SDIST
+        shell: bash
+
+      - name: Install test dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install fugashi[unidic-lite] spacy[ja]
+
       - name: Run pytest
-        run: pytest curated_transformers --slow
+        run: python -m pytest --pyargs curated_transformers --slow
 
       - name: Install HF transformers
         id: init-hf-transformers
@@ -63,4 +88,4 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Run pytest (w/t HF transformers)
-        run: pytest curated_transformers --slow
+        run: python -m pytest --pyargs curated_transformers --slow

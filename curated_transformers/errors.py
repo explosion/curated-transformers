@@ -72,5 +72,8 @@ class Errors(metaclass=ErrorsWithCodes):
             "`CharEncoder` piece encoder")
     E025 = ("Attempting to perform gradual unfreezing of a non-transformer pipe "
             "('{pipe_name}'}. Only transformer pipes support this feature")
+    E026 = ("Attempting to load the weights of a Hugging Face `transformers` model "
+            "into an unsupported curated encoder ({unsupported_encoder}). Currently "
+            "supported encoders: {supported_encoders}")
 
 # fmt: on

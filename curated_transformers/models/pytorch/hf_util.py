@@ -11,6 +11,7 @@ from ..._compat import transformers
 from ...errors import Errors
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
+SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder, RobertaEncoder)
 
 
 def _check_supported_hf_models(model_type: str):
@@ -42,11 +43,12 @@ def convert_pretrained_model_for_encoder(
     elif isinstance(encoder, RobertaEncoder):
         converted = _convert_roberta_base_state(params)
     else:
-        # We don't need to handle the exceptional case
-        # here as the relevant checks are already performed
-        # during the construction of the CuratedTransformer
-        # instance.
-        pass
+        raise TypeError(
+            Errors.E026.format(
+                unsupported_encoder=type(encoder),
+                supported_encoders=SUPPORTED_CURATED_ENCODERS,
+            )
+        )
 
     return _add_curated_encoder_prefix(converted)
 

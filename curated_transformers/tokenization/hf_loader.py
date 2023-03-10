@@ -13,6 +13,15 @@ from .types import (
 from ..errors import Errors
 
 
+SUPPORTED_TOKENIZERS = (
+    transformers.BertTokenizerFast,
+    transformers.RobertaTokenizerFast,
+    transformers.XLMRobertaTokenizerFast,
+    transformers.CamembertTokenizerFast,
+    transformers.BertJapaneseTokenizer,
+)
+
+
 def build_hf_piece_encoder_loader_v1(
     *, name: str, revision: str = "main"
 ) -> Callable[
@@ -53,17 +62,10 @@ def _convert_encoder(
     elif isinstance(tokenizer, transformers.BertJapaneseTokenizer):
         return _convert_bert_japanese_encoder(model, tokenizer)
     else:
-        supported_tokenizers = (
-            transformers.BertTokenizerFast,
-            transformers.RobertaTokenizerFast,
-            transformers.XLMRobertaTokenizerFast,
-            transformers.CamembertTokenizerFast,
-            transformers.BertJapaneseTokenizer,
-        )
         raise ValueError(
             Errors.E022.format(
                 unsupported_tokenizer=type(tokenizer),
-                supported_tokenizers=supported_tokenizers,
+                supported_tokenizers=SUPPORTED_TOKENIZERS,
             )
         )
 

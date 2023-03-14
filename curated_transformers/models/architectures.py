@@ -37,6 +37,7 @@ from .types import (
     TransformerModelT,
     SpanExtractorModelT,
 )
+from ..errors import Errors
 
 
 def build_albert_transformer_model_v1(
@@ -650,7 +651,7 @@ def _convert_inputs(
     max_seq_len = max(x.size for x in X)
     if max_seq_len > max_model_seq_len:
         raise ValueError(
-            f"Span window size of '{max_seq_len}' exceeds maximum allowed sequence length of '{max_model_seq_len}'"
+            Errors.E009.format(seq_len=max_seq_len, max_seq_len=max_model_seq_len)
         )
 
     # Transform the list of strided spans to a padded array.
@@ -711,11 +712,11 @@ def _convert_outputs(
 
 
 def _replace_listener(trf_model):
-    raise ValueError("Listener replacement is not currently supported")
+    raise ValueError(Errors.E010)
 
 
 def _replace_listener_cfg(trf_model_cfg, listener_model_cfg):
-    raise ValueError("Listener replacement is not currently supported")
+    raise ValueError(Errors.E010)
 
 
 def build_pytorch_checkpoint_loader_v1(

@@ -4,6 +4,8 @@ from spacy.language import Language
 import itertools
 import thinc
 
+from .errors import Errors
+
 if TYPE_CHECKING:
     from .pipeline.transformer import Transformer
 
@@ -33,9 +35,7 @@ def gradual_transformer_unfreezing_per_pipe(
         if unfreeze_step is None:
             continue
         elif not isinstance(pipe, Transformer):
-            raise TypeError(
-                "Gradual unfreezing cannot be performed on non-Transformer component '{name}'"
-            )
+            raise TypeError(Errors.E025.format(pipe_name=name))
 
         pipe.frozen = current_step < unfreeze_step
 
@@ -68,9 +68,7 @@ def create_gradual_transformer_unfreezing(
     """
     unfreeze_step_all_pipes = target_pipes.get("*")
     if unfreeze_step_all_pipes is not None and len(target_pipes) > 1:
-        raise ValueError(
-            "Wildcard operator cannot be used in conjunction with individual pipe names"
-        )
+        raise ValueError(Errors.E013)
 
     if unfreeze_step_all_pipes is not None:
         return partial(

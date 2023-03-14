@@ -5,6 +5,7 @@ from torch import Tensor
 from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
+from ....errors import Errors
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
@@ -16,7 +17,9 @@ class BertSelfAttention(Module):
         self.num_heads = config.num_attention_heads
         if self.model_dim % self.num_heads != 0:
             raise ValueError(
-                f"model dimension '{self.model_dim}' not divisible by number of heads '{self.num_heads}'"
+                Errors.E003.format(
+                    hidden_width=self.model_dim, num_heads=self.num_heads
+                )
             )
 
         self.dims_per_head = self.model_dim // self.num_heads
@@ -87,7 +90,9 @@ class BertFeedForward(Module):
             # transformers.
             self.activation = GeluNew()  # type: ignore
         else:
-            raise ValueError(f"unsupported activation function '{config.hidden_act}")
+            raise ValueError(
+                Errors.E004.format(activation_funcs=("relu", "gelu", "gelu_new"))
+            )
 
     def forward(self, x: Tensor) -> Tensor:
         """

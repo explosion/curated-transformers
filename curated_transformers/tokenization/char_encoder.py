@@ -4,10 +4,11 @@ from thinc.api import Model, Ragged
 import unicodedata
 
 from .types import Tok2PiecesBackpropT, Tok2PiecesInT, Tok2PiecesModelT, Tok2PiecesOutT
+from ..errors import Errors
 
 
 def build_char_encoder_v1() -> Tok2PiecesModelT:
-    """Construct a WordPiece piece encoder model that accepts a list
+    """Construct a character piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.
 
@@ -34,7 +35,7 @@ def build_char_encoder_v1() -> Tok2PiecesModelT:
 def char_encoder_forward(
     model: Model, X: Tok2PiecesInT, is_train: bool
 ) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:
-    """Construct a character encoder model that accepts a list
+    """Construct a character piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.
 
@@ -43,9 +44,7 @@ def char_encoder_forward(
     """
     vocab: Optional[Dict[str, int]] = model.attrs["vocab"]
     if vocab is None:
-        raise ValueError(
-            "Character encoder vocab is not available, use a loader to initialize the encoder."
-        )
+        raise ValueError(Errors.E020)
 
     bos_piece: str = model.attrs["bos_piece"]
     eos_piece: str = model.attrs["eos_piece"]
@@ -102,9 +101,7 @@ def build_char_encoder_loader_v1(
 
     def load(model, X=None, Y=None):
         if model.name != "char_encoder":
-            raise ValueError(
-                f"Character encoder cannot be loaded into model: {model.name}"
-            )
+            raise ValueError(Errors.E021.format(model_name=model.name))
 
         model.attrs["bos_piece"] = bos_piece
         model.attrs["eos_piece"] = eos_piece

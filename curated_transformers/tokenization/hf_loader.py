@@ -10,6 +10,18 @@ from .types import (
     Tok2PiecesInT,
     Tok2PiecesModelT,
 )
+from ..errors import Errors
+
+if has_hf_transformers:
+    SUPPORTED_TOKENIZERS = (
+        transformers.BertTokenizerFast,
+        transformers.RobertaTokenizerFast,
+        transformers.XLMRobertaTokenizerFast,
+        transformers.CamembertTokenizerFast,
+        transformers.BertJapaneseTokenizer,
+    )
+else:
+    SUPPORTED_TOKENIZERS = ()  # type: ignore
 
 
 def build_hf_piece_encoder_loader_v1(
@@ -29,7 +41,7 @@ def build_hf_piece_encoder_loader_v1(
 
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
-            raise ValueError("requires transformers package")
+            raise ValueError(Errors.E011.format(loader_name="HFPieceEncoderLoader"))
 
         tokenizer = transformers.AutoTokenizer.from_pretrained(name, revision=revision)
         return _convert_encoder(model, tokenizer)
@@ -51,10 +63,13 @@ def _convert_encoder(
         return _convert_sentencepiece_encoder(model, tokenizer)  # type: ignore
     elif isinstance(tokenizer, transformers.BertJapaneseTokenizer):
         return _convert_bert_japanese_encoder(model, tokenizer)
-
-    raise ValueError(
-        f"Loading from the '{type(tokenizer)}' huggingface tokenizer is not supported"
-    )
+    else:
+        raise ValueError(
+            Errors.E022.format(
+                unsupported_tokenizer=type(tokenizer),
+                supported_tokenizers=SUPPORTED_TOKENIZERS,
+            )
+        )
 
 
 def _convert_byte_bpe_encoder(
@@ -121,11 +136,9 @@ def _convert_bert_japanese_encoder(
         tokenizer.subword_tokenizer,
         transformers.models.bert_japanese.CharacterTokenizer,
     ):
-        raise ValueError(
-            "Only character subword encoding is currently supported for Japanese BERT models"
-        )
+        raise ValueError(Errors.E023)
     if model.name != "char_encoder":
-        raise ValueError(f"Character encoder cannot be loaded into model: {model.name}")
+        raise ValueError(Errors.E024.format(model_name=model.name))
 
     model.attrs["bos_piece"] = tokenizer.cls_token
     model.attrs["eos_piece"] = tokenizer.sep_token

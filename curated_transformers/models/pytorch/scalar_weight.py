@@ -2,6 +2,8 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ...errors import Errors
+
 
 # From syntaxdot:
 # https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/scalar_weighting.rs#L62
@@ -25,7 +27,10 @@ class ScalarWeight(Module):
         """
         if layer_outputs.shape[2] != self.layer_weights.shape[0]:
             raise ValueError(
-                f"Expected {self.layer_weights.shape[0]} layers, got {layer_outputs.shape[1]} instead"
+                Errors.E008.format(
+                    num_layers_scalar_weight=self.layer_weights.shape[0],
+                    num_layers_transformer=layer_outputs.shape[1],
+                )
             )
 
         if self.training:

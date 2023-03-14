@@ -5,6 +5,8 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ...errors import Errors
+
 
 @dataclass
 class AttentionMask:
@@ -13,9 +15,7 @@ class AttentionMask:
 
     def __post_init__(self):
         if self.bool_mask.dtype != torch.bool:
-            raise ValueError(
-                f"attention mask of dtype torch.bool expected, was {self.bool_mask.dtype}"
-            )
+            raise ValueError(Errors.E005.format(dtype=self.bool_mask.dtype))
 
     @property
     def logit_mask(self) -> Tensor:
@@ -44,13 +44,12 @@ class ScaledDotProductAttention(Module):
     ) -> Tensor:
         """
         Shapes:
-            k, q, v, attn_mask - (batch, heads, seq_len, width)
+            k, q, v - (batch, heads, seq_len, width)
+            attn_mask - (batch, seq_len)
         """
 
         if attn_mask.dim() != 2:
-            raise ValueError(
-                f"attention mask dim mismatch, expected '2' but received {attn_mask.dim()}"
-            )
+            raise ValueError(Errors.E006)
 
         model_dim = k.shape[-1]
         attn_scores = q @ k.transpose(-2, -1)

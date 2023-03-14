@@ -12,14 +12,16 @@ from .types import (
 )
 from ..errors import Errors
 
-
-SUPPORTED_TOKENIZERS = (
-    transformers.BertTokenizerFast,
-    transformers.RobertaTokenizerFast,
-    transformers.XLMRobertaTokenizerFast,
-    transformers.CamembertTokenizerFast,
-    transformers.BertJapaneseTokenizer,
-)
+if has_hf_transformers:
+    SUPPORTED_TOKENIZERS = (
+        transformers.BertTokenizerFast,
+        transformers.RobertaTokenizerFast,
+        transformers.XLMRobertaTokenizerFast,
+        transformers.CamembertTokenizerFast,
+        transformers.BertJapaneseTokenizer,
+    )
+else:
+    SUPPORTED_TOKENIZERS = ()
 
 
 def build_hf_piece_encoder_loader_v1(

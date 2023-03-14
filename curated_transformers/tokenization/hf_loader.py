@@ -21,7 +21,7 @@ if has_hf_transformers:
         transformers.BertJapaneseTokenizer,
     )
 else:
-    SUPPORTED_TOKENIZERS = ()
+    SUPPORTED_TOKENIZERS = ()  # type: ignore
 
 
 def build_hf_piece_encoder_loader_v1(

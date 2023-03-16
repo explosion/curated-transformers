@@ -48,6 +48,10 @@ def build_byte_bpe_encoder_v1() -> Tok2PiecesModelT:
     )
 
 
+def is_byte_bpe_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return encoder.name == "byte_bpe_encoder"
+
+
 def byte_bpe_encoder_forward(
     model: Model, X: Tok2PiecesInT, is_train: bool
 ) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:

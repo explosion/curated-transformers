@@ -38,6 +38,7 @@ def build_camembert_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     encoder = build_sentencepiece_encoder_v1()
     model = chain(encoder, build_camembert_adapter())
     model.set_ref("encoder", encoder)
+    model.attrs["adapter"] = "camembert"
     return model
 
 
@@ -55,6 +56,7 @@ def build_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
         attrs={"sentencepiece_processor": SentencePieceProcessor()},
     )
     model.set_ref("encoder", model)
+    model.attrs["adapter"] = None
     return model
 
 
@@ -69,7 +71,22 @@ def build_xlmr_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     encoder = build_sentencepiece_encoder_v1()
     model = chain(encoder, build_xlmr_adapter())
     model.set_ref("encoder", encoder)
+    model.attrs["adapter"] = "xlmr"
     return model
+
+
+def is_sentencepiece_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return encoder.name == "sentencepiece_encoder" or encoder.name.startswith(
+        "sentencepiece_encoder>>"
+    )
+
+
+def is_xlmr_sentencepiece_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return is_sentencepiece_encoder(encoder) and encoder.attrs["adapter"] == "xlmr"
+
+
+def is_camembert_sentencepiece_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return is_sentencepiece_encoder(encoder) and encoder.attrs["adapter"] == "camembert"
 
 
 def sentencepiece_encoder_forward(

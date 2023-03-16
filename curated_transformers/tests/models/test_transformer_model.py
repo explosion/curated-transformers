@@ -9,16 +9,20 @@ from curated_transformers.models.architectures import (
     build_bert_transformer_model_v1,
     build_roberta_transformer_model_v1,
     build_xlmr_transformer_model_v1,
+    build_camembert_transformer_model_v1,
 )
 from curated_transformers.models.hf_loader import build_hf_transformer_encoder_loader_v1
 from curated_transformers.models.output import TransformerModelOutput
 from curated_transformers.models.with_strided_spans import build_with_strided_spans_v1
 from curated_transformers.tokenization import (
+    build_wordpiece_encoder_v1,
     build_bert_wordpiece_encoder_v1,
     build_byte_bpe_encoder_v1,
     build_hf_piece_encoder_loader_v1,
     build_sentencepiece_encoder_v1,
     build_xlmr_sentencepiece_encoder_v1,
+    build_camembert_sentencepiece_encoder_v1,
+    build_char_encoder_v1,
 )
 from curated_transformers._compat import (
     has_hf_transformers,
@@ -175,3 +179,107 @@ def test_pytorch_checkpoint_loader(test_config):
         "curated-transformers.PyTorchCheckpointLoader.v1"
     )(path=checkpoint_path)
     model.initialize()
+
+
+def test_transformer_builder_rejects_incorrect_piece_encoder():
+    with_spans = build_with_strided_spans_v1(stride=96, window=128)
+
+    # AlBERT
+    model = build_albert_transformer_model_v1(
+        piece_encoder=build_sentencepiece_encoder_v1(),
+        with_spans=with_spans,
+        vocab_size=250005,
+    )
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_albert_transformer_model_v1(
+            piece_encoder=build_bert_wordpiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_albert_transformer_model_v1(
+            piece_encoder=build_xlmr_sentencepiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    # BERT
+    model = build_bert_transformer_model_v1(
+        piece_encoder=build_bert_wordpiece_encoder_v1(),
+        with_spans=with_spans,
+        vocab_size=250005,
+    )
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_bert_transformer_model_v1(
+            piece_encoder=build_wordpiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_bert_transformer_model_v1(
+            piece_encoder=build_sentencepiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    # CamemBERT
+    model = build_camembert_transformer_model_v1(
+        piece_encoder=build_camembert_sentencepiece_encoder_v1(),
+        with_spans=with_spans,
+        vocab_size=250005,
+    )
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_camembert_transformer_model_v1(
+            piece_encoder=build_wordpiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_camembert_transformer_model_v1(
+            piece_encoder=build_sentencepiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    # RoBERTa
+    model = build_roberta_transformer_model_v1(
+        piece_encoder=build_byte_bpe_encoder_v1(),
+        with_spans=with_spans,
+        vocab_size=250005,
+    )
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_roberta_transformer_model_v1(
+            piece_encoder=build_wordpiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_roberta_transformer_model_v1(
+            piece_encoder=build_char_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    # XlMR
+    model = build_xlmr_transformer_model_v1(
+        piece_encoder=build_xlmr_sentencepiece_encoder_v1(),
+        with_spans=with_spans,
+        vocab_size=250005,
+    )
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_xlmr_transformer_model_v1(
+            piece_encoder=build_sentencepiece_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )
+
+    with pytest.raises(ValueError, match="only compatible with"):
+        build_xlmr_transformer_model_v1(
+            piece_encoder=build_char_encoder_v1(),
+            with_spans=with_spans,
+            vocab_size=250005,
+        )

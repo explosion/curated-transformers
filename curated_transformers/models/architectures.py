@@ -27,6 +27,13 @@ from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
 from .with_non_ws_tokens import with_non_ws_tokens
 from ..tokenization.types import Tok2PiecesModelT
+from ..tokenization.bbpe_encoder import is_byte_bpe_encoder
+from ..tokenization.sentencepiece_encoder import (
+    is_sentencepiece_encoder,
+    is_xlmr_sentencepiece_encoder,
+    is_camembert_sentencepiece_encoder,
+)
+from ..tokenization.wordpiece_encoder import is_bert_wordpiece_encoder
 from .types import (
     TorchTransformerInT,
     TorchTransformerModelT,
@@ -141,6 +148,18 @@ def build_albert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
+    if not (
+        is_sentencepiece_encoder(piece_encoder)
+        and not is_camembert_sentencepiece_encoder(piece_encoder)
+        and not is_xlmr_sentencepiece_encoder(piece_encoder)
+    ):
+        raise ValueError(
+            Errors.E027.format(
+                curated_encoder="AlbertTransformer",
+                piece_encoder="SentencepieceEncoder",
+            )
+        )
+
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -241,6 +260,14 @@ def build_bert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
+    if not is_bert_wordpiece_encoder(piece_encoder):
+        raise ValueError(
+            Errors.E027.format(
+                curated_encoder="BertTransformer",
+                piece_encoder="BertWordpieceEncoder",
+            )
+        )
+
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -334,6 +361,14 @@ def build_camembert_transformer_model_v1(
     else:
         encoder = RobertaEncoder(config)
         transformer = _pytorch_encoder(encoder)
+
+    if not is_camembert_sentencepiece_encoder(piece_encoder):
+        raise ValueError(
+            Errors.E027.format(
+                curated_encoder="CamembertTransformer",
+                piece_encoder="CamembertSentencepieceEncoder",
+            )
+        )
 
     return build_transformer_model_v1(
         with_spans=with_spans,
@@ -435,6 +470,14 @@ def build_roberta_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
+    if not is_byte_bpe_encoder(piece_encoder):
+        raise ValueError(
+            Errors.E027.format(
+                curated_encoder="RobertaTransformer",
+                piece_encoder="ByteBPEEncoder",
+            )
+        )
+
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -533,6 +576,14 @@ def build_xlmr_transformer_model_v1(
             encoder,
             mixed_precision=mixed_precision,
             grad_scaler_config=grad_scaler_config,
+        )
+
+    if not is_xlmr_sentencepiece_encoder(piece_encoder):
+        raise ValueError(
+            Errors.E027.format(
+                curated_encoder="XlmrTransformer",
+                piece_encoder="XlmrSentencepieceEncoder",
+            )
         )
 
     return build_transformer_model_v1(

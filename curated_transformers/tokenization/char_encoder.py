@@ -32,6 +32,10 @@ def build_char_encoder_v1() -> Tok2PiecesModelT:
     )
 
 
+def is_char_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return encoder.name == "char_encoder"
+
+
 def char_encoder_forward(
     model: Model, X: Tok2PiecesInT, is_train: bool
 ) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:

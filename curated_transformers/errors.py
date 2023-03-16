@@ -75,5 +75,7 @@ class Errors(metaclass=ErrorsWithCodes):
     E026 = ("Attempting to load the weights of a Hugging Face `transformers` model "
             "into an unsupported curated encoder ({unsupported_encoder}). Currently "
             "supported encoders: {supported_encoders}")
+    E027 = ("The `{curated_encoder}` encoder is only compatible with the "
+            "`{piece_encoder}` piece enoder")
 
 # fmt: on

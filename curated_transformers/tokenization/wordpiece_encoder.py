@@ -74,6 +74,17 @@ def build_wordpiece_encoder_v1() -> Tok2PiecesModelT:
     )
 
 
+def is_wordpiece_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return encoder.name == "wordpiece_encoder"
+
+
+def is_bert_wordpiece_encoder(encoder: Tok2PiecesModelT) -> bool:
+    return (
+        is_wordpiece_encoder(encoder)
+        and encoder.attrs["preprocess"] == _bert_preprocess
+    )
+
+
 def wordpiece_encoder_forward(
     model: Model, X: Tok2PiecesInT, is_train: bool
 ) -> Tuple[Tok2PiecesOutT, Tok2PiecesBackpropT]:

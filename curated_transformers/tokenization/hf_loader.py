@@ -112,8 +112,8 @@ def _convert_wordpiece_encoder(
     for piece, idx in tokenizer.vocab.items():  # type: ignore
         vocab[idx] = piece
 
-    strip_accents = tokenizer.backend_tokenizer.normalizer.strip_accents
-    lowercase = tokenizer.do_lower_case
+    strip_accents = tokenizer.backend_tokenizer.normalizer.strip_accents  # type: ignore
+    lowercase = tokenizer.do_lower_case  # type: ignore
     model.attrs["wordpiece_processor"] = WordPieceProcessor(vocab)
     model.attrs["bos_piece"] = tokenizer.cls_token  # type: ignore
     model.attrs["eos_piece"] = tokenizer.sep_token  # type: ignore

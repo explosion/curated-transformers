@@ -1,6 +1,7 @@
 from typing import Callable
 from dataclasses import dataclass
 import pytest
+from thinc.api import get_torch_default_device
 import torch
 from torch.nn import Module
 
@@ -49,11 +50,15 @@ def test_hf_load_weights(model_config):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("model_config", TEST_MODELS)
 def test_model_against_hf_transformers(model_config):
+    torch_device = get_torch_default_device()
+
     model = encoder_from_config(model_config)
     model.initialize()
     encoder = model.shims[0]._model
     encoder.eval()
-    hf_encoder = transformers.AutoModel.from_pretrained(model_config.hf_model_name)
+    hf_encoder = transformers.AutoModel.from_pretrained(model_config.hf_model_name).to(
+        torch_device
+    )
     hf_encoder.eval()
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -61,7 +66,7 @@ def test_model_against_hf_transformers(model_config):
     )
     tokenization = hf_tokenizer(
         ["This is a test.", "Let's match outputs"], padding=True, return_tensors="pt"
-    )
+    ).to(torch_device)
     X = tokenization["input_ids"]
     attention_mask = tokenization["attention_mask"]
 

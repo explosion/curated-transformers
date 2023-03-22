@@ -5,6 +5,7 @@ from torch import Tensor
 from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
+from ..linear import Linear
 from ....errors import Errors
 
 
@@ -24,8 +25,8 @@ class BertSelfAttention(Module):
 
         self.dims_per_head = self.model_dim // self.num_heads
         self.attention = ScaledDotProductAttention(dropout_prob=config.dropout_prob)
-        self.input = torch.nn.Linear(self.model_dim, self.model_dim * 3)
-        self.output = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.input = Linear(self.model_dim, self.model_dim * 3)
+        self.output = Linear(self.model_dim, self.model_dim)
 
     def _split_heads(self, x: Tensor) -> Tensor:
         """
@@ -75,10 +76,8 @@ class BertFeedForward(Module):
     def __init__(self, config: BertLayerConfig):
         super().__init__()
 
-        self.intermediate = torch.nn.Linear(
-            config.hidden_width, config.intermediate_width
-        )
-        self.output = torch.nn.Linear(config.intermediate_width, config.hidden_width)
+        self.intermediate = Linear(config.hidden_width, config.intermediate_width)
+        self.output = Linear(config.intermediate_width, config.hidden_width)
         if config.hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif config.hidden_act == "gelu":

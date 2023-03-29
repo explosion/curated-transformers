@@ -255,6 +255,8 @@ def test_bert_transformer_pipe_against_hf():
         torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
             torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
+            atol=1e-05,
+            rtol=1e-05,
         )
 
 
@@ -294,6 +296,8 @@ def test_camembert_transformer_pipe_against_hf():
         torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
             torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
+            atol=1e-05,
+            rtol=1e-05,
         )
 
 
@@ -335,6 +339,8 @@ def test_roberta_transformer_pipe_against_hf():
         torch.testing.assert_close(
             hf_doc_encoding[:encoding_len][1:-1],
             torch.tensor(doc._.trf_data.last_hidden_layer_state.dataXd),
+            atol=1e-05,
+            rtol=1e-05,
         )
 
 

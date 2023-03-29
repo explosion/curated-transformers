@@ -66,7 +66,7 @@ class BertSelfAttention(Module):
         q = self._split_heads(q)
         v = self._split_heads(v)
 
-        # attn: (batch, seq_len, width)
+        # attn: (batch, head, seq_len, with_per_head)
         if has_torch_sdp_attention:
             batch, seq_len = attn_mask.shape
             mask = attn_mask.bool_mask.view(batch, 1, 1, seq_len)
@@ -76,6 +76,7 @@ class BertSelfAttention(Module):
         else:
             attn = self.attention(k, q, v, attn_mask)
 
+        # attn: (batch, seq_len, width)
         attn = self._combine_heads(attn)
 
         out = self.output(attn)

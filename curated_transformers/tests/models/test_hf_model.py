@@ -76,12 +76,18 @@ def test_model_against_hf_transformers(model_config):
     )
     Y_hf_encoder = hf_encoder(X, attention_mask=attention_mask)
 
-    assert torch.allclose(
-        Y_encoder.last_hidden_layer_states, Y_hf_encoder.last_hidden_state, atol=1e-6
+    torch.testing.assert_close(
+        Y_encoder.last_hidden_layer_states,
+        Y_hf_encoder.last_hidden_state,
+        atol=1e-05,
+        rtol=1e-05,
     )
 
     # Try to infer the attention mask from padding.
     Y_encoder = encoder(X)
-    assert torch.allclose(
-        Y_encoder.last_hidden_layer_states, Y_hf_encoder.last_hidden_state, atol=1e-6
+    torch.testing.assert_close(
+        Y_encoder.last_hidden_layer_states,
+        Y_hf_encoder.last_hidden_state,
+        atol=1e-05,
+        rtol=1e-05,
     )

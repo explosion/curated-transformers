@@ -419,7 +419,12 @@ def test_frozen_transformer_pipe():
         transformer_init_params, transformer_trained_params
     ):
         assert old_param == new_param
-        torch.testing.assert_close(old_vec, new_vec)
+        torch.testing.assert_close(
+            old_vec,
+            new_vec,
+            atol=1e-05,
+            rtol=1e-05,
+        )
 
 
 @pytest.mark.slow

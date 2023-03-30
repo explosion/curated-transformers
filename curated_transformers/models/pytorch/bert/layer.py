@@ -72,9 +72,9 @@ class BertSelfAttention(Module):
             mask = attn_mask.bool_mask.view(batch, 1, 1, seq_len)
             # Ignore because we still support torch<2.0.0 and older versions
             # do not have this attribute.
-            attn = torch.nn.functional.scaled_dot_product_attention(
+            attn = torch.nn.functional.scaled_dot_product_attention(  # type: ignore[attr-defined]
                 q, k, v, mask, self.dropout_prob if self.training else 0.0
-            )  # type: ignore[attr-defined]
+            )
         else:
             attn = self.attention(k, q, v, attn_mask)
 

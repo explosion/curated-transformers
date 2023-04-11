@@ -1,6 +1,5 @@
-import numpy.testing
 import pytest
-from thinc.api import Ragged, registry
+from thinc.api import Ragged, registry, get_current_ops
 
 from curated_transformers.tokenization.sentencepiece_encoder import (
     build_sentencepiece_encoder_v1,
@@ -42,13 +41,16 @@ def test_sentencepiece_encoder_hf_model(sample_docs):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2, 1])
-    numpy.testing.assert_equal(
+    ops = get_current_ops()
+    ops.xp.testing.assert_array_equal(
+        encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2, 1]
+    )
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd, [1, 86, 24123, 9, 23039, 677, 9, 5500, 70819, 5, 4, 2]
     )
 
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 2, 1, 2, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 2, 1, 2, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd, [1, 38395, 641, 1220, 73202, 159, 7663, 120323, 5, 4, 2]
     )
 
@@ -66,15 +68,18 @@ def _check_toy_encoder(encoding):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
-    numpy.testing.assert_equal(
+    ops = get_current_ops()
+    ops.xp.testing.assert_array_equal(
+        encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1]
+    )
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd,
         [1, 8, 465, 10, 947, 41, 10, 170, 168, 110, 28, 20, 143, 7, 4, 2],
     )
 
     assert isinstance(encoding[1], Ragged)
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd,
         [1, 483, 546, 112, 171, 567, 62, 20, 45, 0, 84, 115, 27, 7, 4, 2],
     )

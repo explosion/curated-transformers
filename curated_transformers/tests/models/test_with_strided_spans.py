@@ -1,7 +1,7 @@
 from typing import List
 from curated_transformers.models.output import TransformerModelOutput
 import pytest
-from thinc.api import Model, NumpyOps, Ragged, with_array, chain
+from thinc.api import Model, get_current_ops, Ragged, with_array, chain
 from thinc.types import Floats2d
 
 from curated_transformers.models.with_strided_spans import with_strided_spans
@@ -41,7 +41,7 @@ def _mock_transformer() -> Model[List[Floats2d], TransformerModelOutput]:
 
 @pytest.mark.parametrize("batch_size", [1, 2, 3, 5])
 def test_with_strided_spans(batch_size):
-    ops = NumpyOps()
+    ops = get_current_ops()
     trf = chain(with_array(relu_activation()), _mock_transformer())
     model = with_strided_spans(trf, stride=4, window=4, batch_size=batch_size)
 
@@ -86,7 +86,7 @@ def test_with_strided_spans(batch_size):
 
 
 def test_with_strided_spans_averaging():
-    ops = NumpyOps()
+    ops = get_current_ops()
     stateful = chain(with_array(_add_range()), _mock_transformer())
     model = with_strided_spans(stateful, stride=2, window=4)
 
@@ -98,7 +98,7 @@ def test_with_strided_spans_averaging():
 
     Y, backprop = model(X, is_train=False)
 
-    ops.xp.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(
         Y.all_outputs[0][0].dataXd,
         [[0.0, 1.0], [2.0, 3.0], [6.0, 7.0], [8.0, 9.0], [14.0, 15.0], [16.0, 17.0]],
     )

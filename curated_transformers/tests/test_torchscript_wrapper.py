@@ -6,11 +6,11 @@ from thinc.layers import (
     TorchScriptWrapper_v1,
     pytorch_to_torchscript_wrapper,
 )
+from thinc.api import get_array_module
 
 
 @pytest.mark.parametrize("nN,nI,nO", [(2, 3, 4)])
 def test_pytorch_script(nN, nI, nO):
-
     model = PyTorchWrapper_v2(Linear(nI, nO)).initialize()
 
     script_model = pytorch_to_torchscript_wrapper(model)
@@ -18,10 +18,11 @@ def test_pytorch_script(nN, nI, nO):
     X = numpy.random.randn(nN, nI).astype("f")
     Y = model.predict(X)
     Y_script = script_model.predict(X)
-    numpy.testing.assert_allclose(Y, Y_script)
+    xp = get_array_module(Y)
+    xp.testing.assert_array_equal(Y, Y_script)
 
     serialized = script_model.to_bytes()
     script_model2 = TorchScriptWrapper_v1()
     script_model2.from_bytes(serialized)
 
-    numpy.testing.assert_allclose(Y, script_model2.predict(X))
+    xp.testing.assert_array_equal(Y, script_model2.predict(X))

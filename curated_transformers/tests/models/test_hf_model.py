@@ -2,7 +2,6 @@ from typing import Callable
 from dataclasses import dataclass
 import pytest
 from thinc.api import get_torch_default_device
-import torch
 from torch.nn import Module
 
 from curated_transformers._compat import has_hf_transformers, transformers
@@ -14,6 +13,8 @@ from curated_transformers.models.pytorch.attention import AttentionMask
 from curated_transformers.models.pytorch.bert import BertConfig, BertEncoder
 from curated_transformers.models.pytorch.roberta.config import RobertaConfig
 from curated_transformers.models.pytorch.roberta.encoder import RobertaEncoder
+
+from ..util import torch_assertclose
 
 
 @dataclass
@@ -76,12 +77,14 @@ def test_model_against_hf_transformers(model_config):
     )
     Y_hf_encoder = hf_encoder(X, attention_mask=attention_mask)
 
-    assert torch.allclose(
-        Y_encoder.last_hidden_layer_states, Y_hf_encoder.last_hidden_state, atol=1e-5
+    torch_assertclose(
+        Y_encoder.last_hidden_layer_states,
+        Y_hf_encoder.last_hidden_state,
     )
 
     # Try to infer the attention mask from padding.
     Y_encoder = encoder(X)
-    assert torch.allclose(
-        Y_encoder.last_hidden_layer_states, Y_hf_encoder.last_hidden_state, atol=1e-5
+    torch_assertclose(
+        Y_encoder.last_hidden_layer_states,
+        Y_hf_encoder.last_hidden_state,
     )

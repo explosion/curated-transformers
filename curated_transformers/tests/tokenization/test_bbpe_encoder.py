@@ -1,6 +1,5 @@
-import numpy.testing
 import pytest
-from thinc.api import Ragged, registry
+from thinc.api import Ragged, registry, get_current_ops
 
 from curated_transformers.tokenization.bbpe_encoder import build_byte_bpe_encoder_v1
 from curated_transformers.tokenization.hf_loader import build_hf_piece_encoder_loader_v1
@@ -64,14 +63,17 @@ def _check_toy_encoder(encoding):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 3, 1, 1, 6, 1, 1])
-    numpy.testing.assert_equal(
+    ops = get_current_ops()
+    ops.xp.testing.assert_array_equal(
+        encoding[0].lengths, [1, 1, 1, 1, 3, 1, 1, 6, 1, 1]
+    )
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd,
         [0, 44, 997, 262, 305, 334, 79, 342, 262, 388, 79, 302, 70, 472, 72, 17, 2],
     )
 
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 3, 1, 1, 2, 4, 3, 1, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 3, 1, 1, 2, 4, 3, 1, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd,
         [0, 55, 841, 321, 362, 579, 324, 294, 291, 494, 131, 106, 270, 307, 79, 17, 2],
     )
@@ -82,12 +84,15 @@ def _check_roberta_base_encoder(encoding):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-    numpy.testing.assert_equal(
+    ops = get_current_ops()
+    ops.xp.testing.assert_array_equal(
+        encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    )
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd, [0, 100, 794, 10, 1816, 19, 10, 27608, 4, 2]
     )
 
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 2, 1, 1, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 1, 1, 1, 1, 2, 1, 1, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd, [0, 5625, 52, 40, 3529, 181, 48344, 5749, 4, 2]
     )

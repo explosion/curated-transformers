@@ -1,4 +1,3 @@
-import numpy
 import pytest
 from cutlery import SentencePieceProcessor
 from thinc.api import CupyOps, NumpyOps, Ragged, registry
@@ -63,9 +62,9 @@ def test_xlmr_model(sample_docs, stride, window, hf_model):
     num_ouputs = Y.num_outputs
     Y = Y.last_hidden_layer_states
     assert len(Y) == 2
-    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
+    model.ops.xp.testing.assert_array_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 2, 2])
     assert Y[0].dataXd.shape == (10, hidden_width)
-    numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 2, 1, 2])
+    model.ops.xp.testing.assert_array_equal(Y[1].lengths, [1, 1, 1, 1, 2, 1, 2])
     assert Y[1].dataXd.shape == (9, hidden_width)
 
     # Backprop zeros to verify that backprop doesn't fail.
@@ -111,9 +110,11 @@ def test_input_with_spaces(sample_docs_with_spaces, stride, window, hf_model):
     num_ouputs = Y.num_outputs
     Y = Y.last_hidden_layer_states
     assert len(Y) == 2
-    numpy.testing.assert_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2])
+    model.ops.xp.testing.assert_array_equal(Y[0].lengths, [1, 1, 1, 1, 1, 1, 1, 2, 2])
     assert Y[0].dataXd.shape == (11, hidden_width)
-    numpy.testing.assert_equal(Y[1].lengths, [1, 1, 1, 1, 1, 1, 2, 1, 2, 1])
+    model.ops.xp.testing.assert_array_equal(
+        Y[1].lengths, [1, 1, 1, 1, 1, 1, 2, 1, 2, 1]
+    )
     assert Y[1].dataXd.shape == (12, hidden_width)
 
     # Backprop zeros to verify that backprop doesn't fail.

@@ -42,14 +42,14 @@ def test_with_non_ws_tokens(sample_docs_with_spaces, wordpiece_toy_encoder):
     yl0 = Y.all_outputs[0][0]
     y1_check = model.ops.xp.ones((15, 2))
     y1_check[6, :] = 0.0
-    model.ops.xp.testing.assert_equal(yl0.dataXd, y1_check)
+    model.ops.xp.testing.assert_array_equal(yl0.dataXd, y1_check)
 
     yl1 = Y.all_outputs[1][0]
     y2_check = model.ops.xp.ones((17, 2))
     y2_check[4, :] = 0.0
     y2_check[8, :] = 0.0
     y2_check[16, :] = 0.0
-    model.ops.xp.testing.assert_equal(yl1.dataXd, y2_check)
+    model.ops.xp.testing.assert_array_equal(yl1.dataXd, y2_check)
 
     dY = [
         [
@@ -69,7 +69,7 @@ def test_with_non_ws_tokens(sample_docs_with_spaces, wordpiece_toy_encoder):
     backprop(dY)
 
     transformer_dY = mock_transformer.attrs["last_dY"]
-    model.ops.xp.testing.assert_equal(
+    model.ops.xp.testing.assert_array_equal(
         transformer_dY[0][0].dataXd,
         [
             [0.0, 0.0],
@@ -90,7 +90,7 @@ def test_with_non_ws_tokens(sample_docs_with_spaces, wordpiece_toy_encoder):
             [0.0, 0.0],
         ],
     )
-    model.ops.xp.testing.assert_equal(
+    model.ops.xp.testing.assert_array_equal(
         transformer_dY[1][0].dataXd,
         [
             [0.0, 0.0],

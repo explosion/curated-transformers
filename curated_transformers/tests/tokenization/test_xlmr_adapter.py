@@ -1,8 +1,8 @@
 from typing import List
 from cutlery import SentencePieceProcessor
-import numpy.testing
 import pytest
-from thinc.api import NumpyOps, Ragged, chain, Model
+from thinc.api import Ragged, chain, Model, get_current_ops, NumpyOps
+from thinc.util import convert_recursive, is_cupy_array
 
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization.sentencepiece_encoder import (
@@ -61,15 +61,22 @@ def test_serialize(toy_encoder, empty_encoder, sample_docs):
 
 
 def _compare_model_hf_output(ops, Y, Y_hf):
+    numpy = NumpyOps().xp
     # Get inputs, removing BOS/EOS from every token.
-    Y_hf = [e[1:-1] for e in Y_hf["input_ids"]]
-    numpy.testing.assert_equal(ops.unflatten(Y.dataXd, Y.lengths), Y_hf)
+    Y_hf = [numpy.array(e[1:-1]) for e in Y_hf["input_ids"]]
+
+    # Since cupy balks at comparing sequences that mix CPU lists and GPU arrays,
+    # we'll need to convert them to numpy (CPU) arrays first.
+    Y = convert_recursive(
+        is_cupy_array, lambda a: a.get(), ops.unflatten(Y.dataXd, Y.lengths)
+    )
+    numpy.testing.assert_equal(Y, Y_hf)
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_sentencepiece_encoder_against_hf(sample_docs):
-    ops = NumpyOps()
+    ops = get_current_ops()
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
     encoder = build_sentencepiece_encoder_v1()
@@ -88,7 +95,7 @@ def test_sentencepiece_encoder_against_hf(sample_docs):
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_wordpiece_encoder_against_hf(sample_docs):
-    ops = NumpyOps()
+    ops = get_current_ops()
     encoder = build_wordpiece_encoder_v1()
     encoder.init = build_hf_piece_encoder_loader_v1(name="bert-base-cased")
     encoder.initialize()
@@ -108,15 +115,18 @@ def _check_encoder(encoding):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1])
-    numpy.testing.assert_equal(
+    ops = get_current_ops()
+    ops.xp.testing.assert_array_equal(
+        encoding[0].lengths, [1, 1, 1, 1, 1, 1, 1, 6, 2, 1]
+    )
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd,
         [0, 9, 466, 11, 948, 42, 11, 171, 169, 111, 29, 21, 144, 8, 5, 2],
     )
 
     assert isinstance(encoding[1], Ragged)
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 4, 3, 2, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd,
         [0, 484, 547, 113, 172, 568, 63, 21, 46, 3, 85, 116, 28, 8, 5, 2],
     )

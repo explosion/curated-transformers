@@ -1,6 +1,5 @@
-import numpy
 import pytest
-from thinc.api import Ragged
+from thinc.api import Ragged, get_current_ops
 import spacy
 
 from curated_transformers.tokenization.char_encoder import (
@@ -16,6 +15,7 @@ from curated_transformers._compat import has_fugashi, has_hf_transformers, has_s
 
 
 def test_char_encoder(test_dir):
+    ops = get_current_ops()
     encoder = build_char_encoder_v1()
     encoder.init = build_char_encoder_loader_v1(path=test_dir / "toy-chars.txt")
     encoder.initialize()
@@ -29,14 +29,14 @@ def test_char_encoder(test_dir):
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 5, 3, 4, 1, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[0].lengths, [1, 5, 3, 4, 1, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[0].dataXd, [2, 56, 9, 9, 57, 18, 26, 5, 18, 24, 13, 14, 8, 1, 3]
     )
 
     assert isinstance(encoding[1], Ragged)
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 5, 4, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 5, 4, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd, [2, 37, 9, 1, 18, 8, 11, 9, 16, 8, 3]
     )
 
@@ -46,6 +46,7 @@ def test_char_encoder(test_dir):
 @pytest.mark.skipif(not has_fugashi, reason="requires fugashi")
 @pytest.mark.skipif(not has_sudachi, reason="requires SudachiPy and SudachiDict-core")
 def test_char_encoder_hf_model():
+    ops = get_current_ops()
     encoder = build_char_encoder_v1()
     encoder.init = registry.model_loaders.get(
         "curated-transformers.HFPieceEncoderLoader.v1"
@@ -61,11 +62,13 @@ def test_char_encoder_hf_model():
     assert len(encoding) == 2
 
     assert isinstance(encoding[0], Ragged)
-    numpy.testing.assert_equal(encoding[0].lengths, [1, 2, 1, 1, 1, 1])
-    numpy.testing.assert_equal(encoding[0].dataXd, [2, 2719, 2828, 4923, 882, 922, 3])
+    ops.xp.testing.assert_array_equal(encoding[0].lengths, [1, 2, 1, 1, 1, 1])
+    ops.xp.testing.assert_array_equal(
+        encoding[0].dataXd, [2, 2719, 2828, 4923, 882, 922, 3]
+    )
 
-    numpy.testing.assert_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 2, 1, 1])
-    numpy.testing.assert_equal(
+    ops.xp.testing.assert_array_equal(encoding[1].lengths, [1, 2, 1, 1, 1, 2, 1, 1])
+    ops.xp.testing.assert_array_equal(
         encoding[1].dataXd, [2, 1583, 5159, 897, 3574, 889, 852, 925, 829, 3]
     )
 

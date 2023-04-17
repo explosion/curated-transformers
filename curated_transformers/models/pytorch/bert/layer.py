@@ -6,6 +6,7 @@ from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
 from ..linear import Linear
+from ...._compat import has_torch_sdp_attention
 from ....errors import Errors
 
 
@@ -14,6 +15,7 @@ class BertSelfAttention(Module):
     def __init__(self, config: BertAttentionConfig):
         super().__init__()
 
+        self.dropout_prob = config.dropout_prob
         self.model_dim = config.hidden_width
         self.num_heads = config.num_attention_heads
         if self.model_dim % self.num_heads != 0:
@@ -56,7 +58,6 @@ class BertSelfAttention(Module):
             x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
         """
-
         proj = self.input(x)
         q, k, v = proj.chunk(3, dim=-1)
 
@@ -65,8 +66,21 @@ class BertSelfAttention(Module):
         q = self._split_heads(q)
         v = self._split_heads(v)
 
-        # (batch, seq_len, width)
-        attn = self._combine_heads(self.attention(k, q, v, attn_mask))
+        # attn: (batch, head, seq_len, with_per_head)
+        if has_torch_sdp_attention:
+            batch, seq_len = attn_mask.shape
+            mask = attn_mask.bool_mask.view(batch, 1, 1, seq_len)
+            # Ignore because we still support torch<2.0.0 and older versions
+            # do not have this attribute.
+            attn = torch.nn.functional.scaled_dot_product_attention(  # type: ignore[attr-defined]
+                q, k, v, mask, self.dropout_prob if self.training else 0.0
+            )
+        else:
+            attn = self.attention(k, q, v, attn_mask)
+
+        # attn: (batch, seq_len, width)
+        attn = self._combine_heads(attn)
+
         out = self.output(attn)
 
         return out

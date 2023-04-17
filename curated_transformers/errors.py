@@ -26,9 +26,6 @@ class Errors(metaclass=ErrorsWithCodes):
             "divisible by the number of self-attention heads ({num_heads})")
     E004 = ("The point-wise feed-forward network in the transformer only "
             "supports the following activation functions: {activation_funcs}")
-    E005 = ("Expected the attention mask to be of dtype 'torch.bool' but "
-            "found it be '{dtype}' instead")
-    E006 = ("The attention mask must be a 2D-tensor of shape [batch, seq_len]")
     E007 = ("Attempting to load the weights of an unsupported Hugging "
             "Face `transformers` model ({unsupported_model}). Currently "
             "supported models: {supported_models}")

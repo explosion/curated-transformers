@@ -8,14 +8,19 @@ from torch.nn import Module
 from ...errors import Errors
 
 
-@dataclass
 class AttentionMask:
     bool_mask: Tensor
-    _logit_mask: Optional[Tensor] = None
+    _logit_mask: Optional[Tensor]
 
-    def __post_init__(self):
-        if self.bool_mask.dtype != torch.bool:
-            raise ValueError(Errors.E005.format(dtype=self.bool_mask.dtype))
+    def __init__(self, bool_mask: Tensor):
+        if bool_mask.dtype != torch.bool:
+            raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
+        self.bool_mask = bool_mask
+
+        # Clarify to TorchScript JIT that we are not narrowing the type
+        # to `None`.
+        logit_mask: Optional[Tensor] = None
+        self._logit_mask = logit_mask
 
     @property
     def logit_mask(self) -> Tensor:
@@ -23,13 +28,17 @@ class AttentionMask:
             # The value is `torch.finfo(attn_scores.dype).min`. Unfortunately,
             # we cannot use `torch.finfo` in TorchScript.
             self._logit_mask = (1.0 - self.bool_mask.int()) * -3.4028234663852886e38
-        return self._logit_mask
+
+        # Narrow type for TorchScript.
+        logit_mask = self._logit_mask
+        assert logit_mask is not None
+        return logit_mask
 
     def dim(self) -> int:
         return self.bool_mask.dim()
 
     @property
-    def shape(self) -> Tuple:
+    def shape(self):
         return self.bool_mask.shape
 
 
@@ -49,7 +58,9 @@ class ScaledDotProductAttention(Module):
         """
 
         if attn_mask.dim() != 2:
-            raise ValueError(Errors.E006)
+            raise ValueError(
+                "The attention mask must be a 2D-tensor of shape [batch, seq_len]"
+            )
 
         model_dim = k.shape[-1]
         attn_scores = q @ k.transpose(-2, -1)

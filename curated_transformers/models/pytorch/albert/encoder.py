@@ -63,11 +63,10 @@ class AlbertEncoder(Module):
         layers_per_group = self.num_hidden_layers // len(self.groups)
 
         layer_outputs = []
-        for i in range(self.num_hidden_layers):
-            layer_output = self.groups[i // layers_per_group](
-                layer_output, attn_mask=attention_mask
-            )
-            layer_outputs.append(layer_output)
+        for group in self.groups:
+            for _ in range(layers_per_group):
+                layer_output = group(layer_output, attn_mask=attention_mask)
+                layer_outputs.append(layer_output)
 
         return PyTorchTransformerOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs

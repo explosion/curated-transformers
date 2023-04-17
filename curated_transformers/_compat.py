@@ -1,10 +1,4 @@
-from os import environ
 from spacy.lang.ja import try_sudachi_import
-import torch
-
-has_torch_sdp_attention = hasattr(
-    torch.nn.functional, "scaled_dot_product_attention"
-) and environ.get("CURATED_TORCH_SDPA")
 
 try:
     import transformers

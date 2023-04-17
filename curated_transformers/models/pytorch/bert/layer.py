@@ -1,11 +1,10 @@
 import torch
-from torch.nn import Module
+from torch.nn import Linear, Module
 from torch import Tensor
 
 from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
-from ..linear import Linear
 from ...._compat import has_torch_sdp_attention
 from ....errors import Errors
 

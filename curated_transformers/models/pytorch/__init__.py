@@ -3,4 +3,3 @@ from .attention import AttentionMask
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
 from .roberta.encoder import RobertaEncoder
-from .linear import Linear

@@ -16,11 +16,7 @@ class AttentionMask:
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
         self.bool_mask = bool_mask
-
-        # Clarify to TorchScript JIT that we are not narrowing the type
-        # to `None`.
-        logit_mask: Optional[Tensor] = None
-        self._logit_mask = logit_mask
+        self._logit_mask = torch.jit.annotate(Optional[Tensor], None)
 
     @property
     def logit_mask(self) -> Tensor:

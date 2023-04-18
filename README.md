@@ -25,7 +25,7 @@ change in incompatible ways.
 ## ⏳ Install
 
 ```bash
-pip install git+https://github.com/explosion/curated-transformers.git
+pip install curated-transformers
 ```
 
 ## 🚀 Quickstart

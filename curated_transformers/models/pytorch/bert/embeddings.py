@@ -49,6 +49,10 @@ class BertEmbeddings(Module):
         token_type_ids: Optional[Tensor] = None,
         position_ids: Optional[Tensor] = None,
     ) -> Tensor:
+        """
+        Shapes:
+            input_ids, token_type_ids, position_ids - (batch, seq_len)
+        """
         if token_type_ids is None:
             token_type_ids = self._get_token_type_ids(input_ids)
         if position_ids is None:

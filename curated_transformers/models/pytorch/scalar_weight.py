@@ -1,7 +1,8 @@
-from typing import List, Tuple, Callable
 import torch
 from torch import Tensor
 from torch.nn import Module
+
+from ...errors import Errors
 
 
 # From syntaxdot:
@@ -20,13 +21,16 @@ class ScalarWeight(Module):
     ) -> Tensor:
         """
         Shapes:
-            layer_outputs - (batch_size, seq_len, num_layers, layer_size)
+            layer_outputs - (batch_size, seq_len, num_layers, width)
 
-        Returns a weighted tensor of the input with shape (batch_size, seq_len, layer_size).
+        Returns a weighted tensor of the input with shape (batch_size, seq_len, width).
         """
         if layer_outputs.shape[2] != self.layer_weights.shape[0]:
             raise ValueError(
-                f"Expected {self.layer_weights.shape[0]} layers, got {layer_outputs.shape[1]} instead"
+                Errors.E008.format(
+                    num_layers_scalar_weight=self.layer_weights.shape[0],
+                    num_layers_transformer=layer_outputs.shape[1],
+                )
             )
 
         if self.training:

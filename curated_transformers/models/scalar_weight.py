@@ -10,6 +10,7 @@ from spacy.util import SimpleFrozenDict
 from ..util import all_equal
 from .types import ScalarWeightInT, ScalarWeightOutT, ScalarWeightModelT
 from .pytorch.scalar_weight import ScalarWeight
+from ..errors import Errors
 
 
 def build_scalar_weight_v1(
@@ -64,12 +65,10 @@ def _convert_inputs(
     max_seq_len = max(seq_lens)
     num_layers = [len(x) for x in X]
     if not all_equal(num_layers):
-        raise ValueError(f"Not all inputs have the same number of layers")
+        raise ValueError(Errors.E015.format(layer_counts=set(num_layers)))
     layer_widths = [layer.data.shape[1] for x in X for layer in x]
     if not all_equal(layer_widths):
-        raise ValueError(
-            f"Not all hidden widths are equal in input passed to scalar weight"
-        )
+        raise ValueError(Errors.E016.format(hidden_widths=set(layer_widths)))
 
     # [batch_size, max_seq_len, num_layers, layer_width]
     Xops = ops.alloc4f(batch_size, max_seq_len, num_layers[0], layer_widths[0])
@@ -80,7 +79,7 @@ def _convert_inputs(
     Xt = xp2torch(Xops, requires_grad=True)
 
     def convert_from_torch_backward(d_inputs: ArgsKwargs):
-        # [batch, seq, num_layers, hidden]
+        # [batch, seq, num_layers, layer_width]
         dt_inputs: Tensor = cast(Tensor, d_inputs.args[0])
 
         dX = []
@@ -110,7 +109,7 @@ def _convert_outputs(
     for doc_idx in range(len(X)):
         seq_len = X[doc_idx][0].data.shape[0]
         lengths = X[doc_idx][0].lengths
-        # [batch, seq, hidden]
+        # [batch, seq, width]
         Y_layer = Yt[doc_idx, :seq_len, :]  # type: ignore
         Y.append(Ragged(torch2xp(Y_layer, ops=model.ops), lengths=lengths))
 

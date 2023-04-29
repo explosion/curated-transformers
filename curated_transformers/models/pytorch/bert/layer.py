@@ -1,10 +1,11 @@
 import torch
-from torch.nn import Module
+from torch.nn import Linear, Module
 from torch import Tensor
 
 from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
+from ....errors import Errors
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
@@ -16,19 +17,21 @@ class BertSelfAttention(Module):
         self.num_heads = config.num_attention_heads
         if self.model_dim % self.num_heads != 0:
             raise ValueError(
-                f"model dimension '{self.model_dim}' not divisible by number of heads '{self.num_heads}'"
+                Errors.E003.format(
+                    hidden_width=self.model_dim, num_heads=self.num_heads
+                )
             )
 
         self.dims_per_head = self.model_dim // self.num_heads
         self.attention = ScaledDotProductAttention(dropout_prob=config.dropout_prob)
-        self.input = torch.nn.Linear(self.model_dim, self.model_dim * 3)
-        self.output = torch.nn.Linear(self.model_dim, self.model_dim)
+        self.input = Linear(self.model_dim, self.model_dim * 3)
+        self.output = Linear(self.model_dim, self.model_dim)
 
     def _split_heads(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, emd_dim)
-            output - (batch, head, seq_len, dims_per_head)
+            x - (batch, seq_len, width)
+            output - (batch, head, seq_len, width_per_head)
         """
         batch_size, seq_len, model_dim = x.size()
         return x.view(
@@ -38,8 +41,8 @@ class BertSelfAttention(Module):
     def _combine_heads(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, head, seq_len, dims_per_head)
-            output - (batch, seq_len, emd_dim)
+            x - (batch, head, seq_len, width_per_head)
+            output - (batch, seq_len, width)
         """
         batch_size, head, seq_len, model_dim = x.size()
         return (
@@ -49,19 +52,19 @@ class BertSelfAttention(Module):
     def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
         """
 
         proj = self.input(x)
         q, k, v = proj.chunk(3, dim=-1)
 
-        # (batch, head, seq_len, dims_per_head)
+        # (batch, head, seq_len, width_per_head)
         k = self._split_heads(k)
         q = self._split_heads(q)
         v = self._split_heads(v)
 
-        # (batch, seq_len, model_dim)
+        # (batch, seq_len, width)
         attn = self._combine_heads(self.attention(k, q, v, attn_mask))
         out = self.output(attn)
 
@@ -72,10 +75,8 @@ class BertFeedForward(Module):
     def __init__(self, config: BertLayerConfig):
         super().__init__()
 
-        self.intermediate = torch.nn.Linear(
-            config.hidden_width, config.intermediate_width
-        )
-        self.output = torch.nn.Linear(config.intermediate_width, config.hidden_width)
+        self.intermediate = Linear(config.hidden_width, config.intermediate_width)
+        self.output = Linear(config.intermediate_width, config.hidden_width)
         if config.hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif config.hidden_act == "gelu":
@@ -87,12 +88,14 @@ class BertFeedForward(Module):
             # transformers.
             self.activation = GeluNew()  # type: ignore
         else:
-            raise ValueError(f"unsupported activation function '{config.hidden_act}")
+            raise ValueError(
+                Errors.E004.format(activation_funcs=("relu", "gelu", "gelu_new"))
+            )
 
     def forward(self, x: Tensor) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
         """
         out = self.intermediate(x)
         out = self.activation(out)
@@ -120,7 +123,7 @@ class BertEncoderLayer(Module):
     def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
         """
         Shapes:
-            x - (batch, seq_len, model_dim)
+            x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
         """
         attn_out = self.mha(x, attn_mask)

@@ -1,6 +1,9 @@
 name: Test
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_call]
+
+env:
+  hf-transformers-pip: transformers>=3.4.0,<4.27.0
 
 jobs:
   test:
@@ -9,15 +12,80 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.10']
+        python-version: ["3.7", "3.10"]
+        include:
+          - os: ubuntu-latest
+            hf-path: ~/.cache/huggingface/hub
+          - os: macos-latest
+            hf-path: ~/.cache/huggingface/hub
+          # - os: windows-latest
+          #   hf-path: $HOME\\.cache\\huggingface\\hub
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: true
-      - uses: actions/setup-python@v2
+
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install tox
-        run: pip install tox tox-gh-actions
-      - name: Test 
-        run: tox
+          cache: "pip" # caching pip dependencies
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip setuptools wheel build
+          python -m pip install -r requirements.txt
+
+      - name: Install optional dependencies for Japanese models
+        run: python -m pip install fugashi[unidic-lite] spacy[ja]
+
+      - name: Build sdist
+        run: python -m build --sdist
+
+      - name: Run mypy
+        run: mypy curated_transformers
+
+      - name: Delete source directory
+        run: |
+          cp curated_transformers/tests/conftest.py .
+          rm -rf curated_transformers
+        shell: bash
+
+      - name: Uninstall all packages
+        run: |
+          python -m pip freeze
+          python -m pip freeze --exclude pywin32 > installed.txt
+          python -m pip uninstall -y -r installed.txt
+
+      - name: Install from sdist
+        run: |
+          SDIST=$(python -c "import os;print(os.listdir('./dist')[-1])" 2>&1)
+          python -m pip install dist/$SDIST
+        shell: bash
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install fugashi[unidic-lite] spacy[ja]
+
+      - name: Run pytest
+        run: python -m pytest --pyargs curated_transformers --slow
+
+      - name: Install HF transformers
+        id: init-hf-transformers
+        run: |
+          python -m pip install '${{ env.hf-transformers-pip }}'
+          echo "version=$(python -m pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      # Disabled for Windows as the models appear to
+      # be stored at a non-standard location.
+      - name: Cache HF pre-trained models
+        uses: actions/cache@v3
+        if: startsWith(runner.os, 'Windows') == false
+        with:
+          path: ${{ matrix.hf-path }}
+          key: hf-cache-${{ steps.init-hf-transformers.outputs.version }}
+          enableCrossOsArchive: true
+
+      - name: Run pytest (w/t HF transformers)
+        run: python -m pytest --pyargs curated_transformers --slow

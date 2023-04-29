@@ -1,46 +1,16 @@
-from typing import Any, Callable, Any, List, Set, Iterable, Dict, TYPE_CHECKING
+from typing import Any, Callable, Any, Iterable, Dict, TYPE_CHECKING
 from functools import partial
 from spacy.language import Language
 import itertools
 import thinc
 
+from .errors import Errors
+
 if TYPE_CHECKING:
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
 thinc.registry.create("model_loaders", entry_points=True)
 registry = thinc.registry
-
-
-def batch_by_length(seqs, max_words: int) -> List[List[int]]:
-    """Given a list of sequences, return a batched list of indices into the
-    list, where the batches are grouped by length, in descending order.
-    Batches may be at most max_words in size, defined as max sequence length * size.
-    """
-    # Use negative index so we can get sort by position ascending.
-    lengths_indices = [(len(seq), i) for i, seq in enumerate(seqs)]
-    lengths_indices.sort()
-    batches: List[List[int]] = []
-    batch: List[int] = []
-    for length, i in lengths_indices:
-        if not batch:
-            batch.append(i)
-        elif length * (len(batch) + 1) <= max_words:
-            batch.append(i)
-        else:
-            batches.append(batch)
-            batch = [i]
-    if batch:
-        batches.append(batch)
-    # Check lengths match
-    assert sum(len(b) for b in batches) == len(seqs)
-    # Check no duplicates
-    seen: Set[int] = set()
-    for b in batches:
-        seen.update(id(item) for item in b)
-    assert len(seen) == len(seqs)
-    batches = [list(sorted(batch)) for batch in batches]
-    batches.reverse()
-    return batches
 
 
 def all_equal(iterable: Iterable[Any]) -> bool:
@@ -58,16 +28,14 @@ def gradual_transformer_unfreezing_per_pipe(
     current_step = callback_args["step"]
 
     # Scoped import to avoid import cycles.
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
     for name, pipe in nlp.components:
         unfreeze_step = freeze_params.get(name)
         if unfreeze_step is None:
             continue
         elif not isinstance(pipe, Transformer):
-            raise TypeError(
-                "Gradual unfreezing cannot be performed on non-Transformer component '{name}'"
-            )
+            raise TypeError(Errors.E025.format(pipe_name=name))
 
         pipe.frozen = current_step < unfreeze_step
 
@@ -78,7 +46,7 @@ def gradual_transformer_unfreezing_all_pipes(
     current_step = callback_args["step"]
 
     # Scoped import to avoid import cycles.
-    from .pipe import Transformer
+    from .pipeline.transformer import Transformer
 
     for _, pipe in nlp.components:
         if not isinstance(pipe, Transformer):
@@ -100,9 +68,7 @@ def create_gradual_transformer_unfreezing(
     """
     unfreeze_step_all_pipes = target_pipes.get("*")
     if unfreeze_step_all_pipes is not None and len(target_pipes) > 1:
-        raise ValueError(
-            "Wildcard operator cannot be used in conjunction with individual pipe names"
-        )
+        raise ValueError(Errors.E013)
 
     if unfreeze_step_all_pipes is not None:
         return partial(

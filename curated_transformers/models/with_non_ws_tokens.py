@@ -54,10 +54,17 @@ class Alignment:
 def with_non_ws_tokens(
     layer: Model[Tok2PiecesInT, WsTokenAdapterOutT]
 ) -> WsTokenAdapterModelT:
-    return Model("with_non_ws_tokens", forward, init=init, layers=[layer])
+    """Removes non-whitespace tokens from the input before
+    passing it to the inner model."""
+    return Model(
+        "with_non_ws_tokens",
+        with_non_ws_tokens_forward,
+        init=with_non_ws_tokens_init,
+        layers=[layer],
+    )
 
 
-def forward(
+def with_non_ws_tokens_forward(
     model: Model, X: WsTokenAdapterInT, is_train: bool
 ) -> Tuple[WsTokenAdapterOutT, WsTokenAdapterBackpropT]:
     inner: Model[Tok2PiecesInT, WsTokenAdapterOutT] = model.layers[0]
@@ -80,7 +87,7 @@ def forward(
     return Y_no_ws, backprop
 
 
-def init(
+def with_non_ws_tokens_init(
     model: WsTokenAdapterModelT,
     X: Optional[WsTokenAdapterInT] = None,
     Y: Optional[WsTokenAdapterInT] = None,
@@ -211,9 +218,10 @@ def _remove_whitespace_tokens(
                     continue
 
                 assert alignment.no_ws_piece_offset is not None
+                # Extra type ignore to accomodate two MyPy versions :(.
                 new_layer[  # type: ignore
                     alignment.no_ws_piece_offset : alignment.no_ws_piece_offset
-                    + alignment.n_pieces,
+                    + alignment.n_pieces,  # type: ignore
                     :,
                 ] = layer.dataXd[  # type: ignore
                     alignment.ws_piece_offset : alignment.ws_piece_offset

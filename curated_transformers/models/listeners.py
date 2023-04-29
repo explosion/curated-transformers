@@ -7,30 +7,24 @@ from typing import (
     Tuple,
 )
 
-from spacy import Errors
+from spacy import Errors as SpacyErrors
 from spacy.tokens import Doc
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d
 
-from .models.output import TransformerModelOutput
-from .models.pooling import with_ragged_layers, with_ragged_last_layer
-from .models.types import (
+from .output import TransformerModelOutput
+from .pooling import with_ragged_layers, with_ragged_last_layer
+from .types import (
     WithRaggedLayersModelT,
     WithRaggedLastLayerModelT,
     PoolingModelT,
     ScalarWeightOutT,
     ScalarWeightModelT,
 )
-from .models.output import DocTransformerOutput, TransformerModelOutput
-from .models.pooling import with_ragged_layers, with_ragged_last_layer
-from .models.types import (
-    WithRaggedLayersModelT,
-    WithRaggedLastLayerModelT,
-    PoolingModelT,
-)
+from ..errors import Errors
 
 
-def build_transformer_layer_listener_v1(
+def build_transformer_layers_listener_v1(
     layers: int,
     width: int,
     pooling: PoolingModelT,
@@ -42,23 +36,27 @@ def build_transformer_layer_listener_v1(
     pooling over the individual pieces of each Doc token, returning their corresponding
     representations.
 
-    upstream_name (str):
-        A string to identify the 'upstream' Transformer component
-        to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
     layers (int):
         The the number of layers produced by the upstream transformer component,
         excluding the embedding layer.
     width (int):
         The width of the vectors produced by the upstream transformer component.
-    pooling (Model):
+    pooling (PoolingModelT):
         Model that is used to perform pooling over the piece representations.
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
-    transformer = TransformerLayerListener(
+    transformer = TransformerLayersListener(
         upstream_name=upstream,
         pooling=pooling,
         layers=layers,
@@ -79,16 +77,20 @@ def build_last_transformer_layer_listener_v1(
     pooling over the individual pieces of each Doc token, returning their corresponding
     representations.
 
-    upstream_name (str):
-        A string to identify the 'upstream' Transformer component
-        to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
     width (int):
         The width of the vectors produced by the upstream transformer component.
     pooling (Model):
         Model that is used to perform pooling over the piece representations.
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
@@ -113,18 +115,22 @@ def build_scalar_weighting_listener_v1(
     Requires its upstream Transformer components to return all layer outputs from
     their models.
 
-    upstream_name (str):
-        A string to identify the 'upstream' Transformer component
-        to communicate with. The upstream name should either be the wildcard
-        string '*', or the name of the Transformer component. You'll almost
-        never have multiple upstream Transformer components, so the wildcard
-        string will almost always be fine.
     width (int):
         The width of the vectors produced by the upstream transformer component.
     weighting (Model):
         Model that is used to perform the weighting of the different layer outputs.
     pooling (Model):
         Model that is used to perform pooling over the piece representations.
+    upstream_name (str):
+        A string to identify the 'upstream' Transformer component
+        to communicate with. The upstream name should either be the wildcard
+        string '*', or the name of the Transformer component.
+
+        In almost all cases, the wildcard string will suffice as there'll only be one
+        upstream Transformer component. But in certain situations, e.g: you have disjoint
+        datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+        downstream task requires its own token representations, you could end up with
+        more than one Transformer component in the pipeline.
     grad_factor (float):
         Factor to multiply gradients with.
     """
@@ -180,23 +186,25 @@ class TransformerListener(Model):
         prediction for.
         """
         if self._batch_id is None and self._outputs is None:
-            raise ValueError(Errors.E954)
+            raise ValueError(SpacyErrors.E954)
         else:
             batch_id = self.get_batch_id(inputs)
             if batch_id != self._batch_id:
-                raise ValueError(Errors.E953.format(id1=batch_id, id2=self._batch_id))
+                raise ValueError(
+                    SpacyErrors.E953.format(id1=batch_id, id2=self._batch_id)
+                )
             else:
                 return True
 
 
-class TransformerLayerListener(TransformerListener):
-    """Passes through the pooled representations of all layers.
+class TransformerLayersListener(TransformerListener):
+    """Passes through the pooled representations of all transformer layers.
 
     Requires its upstream Transformer component to return all layer outputs from
     its model.
     """
 
-    name = "transformer_layer_listener"
+    name = "transformer_layers_listener"
 
     def __init__(
         self,
@@ -210,23 +218,27 @@ class TransformerLayerListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
+        pooling (PoolingModelT):
+            Model that is used to perform pooling over the piece representations.
         width (int):
             The width of the vectors produced by the upstream transformer component.
         layers (int):
             The the number of layers produced by the upstream transformer component,
             excluding the embedding layer.
-        pooling (Model):
-            Model that is used to perform pooling over the piece representations.
         grad_factor (float):
             Factor to multiply gradients with.
         """
         Model.__init__(
             self,
             name=self.name,
-            forward=tranformer_layer_listener_forward,
+            forward=tranformer_layers_listener_forward,
             dims={"nO": width},
             layers=[with_ragged_layers(pooling)],
             attrs={
@@ -241,22 +253,19 @@ class TransformerLayerListener(TransformerListener):
         self._backprop = None
 
 
-def tranformer_layer_listener_forward(
-    model: TransformerLayerListener, docs: Iterable[Doc], is_train: bool
+def tranformer_layers_listener_forward(
+    model: TransformerLayersListener, docs: Iterable[Doc], is_train: bool
 ) -> Tuple[List[List[Floats2d]], Callable[[Any], Any]]:
     pooling: WithRaggedLayersModelT = model.layers[0]
     grad_factor: float = model.attrs["grad_factor"]
     n_layers: int = model.attrs["layers"]
 
-    invalid_outputs_err_msg = (
-        "The layer listener requires all transformer layer outputs to function - "
-        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
-    )
-
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="TransformerLayersListener")
+            )
 
         model.verify_inputs(docs)
 
@@ -287,11 +296,14 @@ def tranformer_layer_listener_forward(
         if any(no_trf_data):
             assert all(no_trf_data)
             return [
-                n_layers * [model.ops.alloc2f(len(doc), width)] for doc in docs
+                [model.ops.alloc2f(len(doc), width) for _ in range(n_layers)]
+                for doc in docs
             ], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="TransformerLayersListener")
+            )
 
         return pooling.predict(docs), lambda dY: []
 
@@ -314,9 +326,13 @@ class LastTransformerLayerListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
         width (int):
             The width of the vectors produced by the upstream transformer component.
         pooling (Model):
@@ -396,15 +412,19 @@ class ScalarWeightingListener(TransformerListener):
         upstream_name (str):
             A string to identify the 'upstream' Transformer component
             to communicate with. The upstream name should either be the wildcard
-            string '*', or the name of the Transformer component. You'll almost
-            never have multiple upstream Transformer components, so the wildcard
-            string will almost always be fine.
-        width (int):
-            The width of the vectors produced by the upstream transformer component.
+            string '*', or the name of the Transformer component.
+
+            In almost all cases, the wildcard string will suffice as there'll only be one
+            upstream Transformer component. But in certain situations, e.g: you have disjoint
+            datasets for certain tasks, or you'd like to use a pre-trained pipeline but a
+            downstream task requires its own token representations, you could end up with
+            more than one Transformer component in the pipeline.
         weighting (Model):
             Model that is used to perform the weighting of the different layer outputs.
         pooling (Model):
             Model that is used to perform pooling over the piece representations.
+        width (int):
+            The width of the vectors produced by the upstream transformer component.
         grad_factor (float):
             Factor to multiply gradients with.
         """
@@ -431,15 +451,12 @@ def scalar_weighting_listener_forward(
     pooling: WithRaggedLastLayerModelT = model.layers[1]
     grad_factor: float = model.attrs["grad_factor"]
 
-    invalid_outputs_err_msg = (
-        "Scalar layer weighting requires all transformer layer outputs to function - "
-        "the upstream transformer's 'all_layer_outputs' property must be set to 'True'"
-    )
-
     if is_train:
         assert model._outputs is not None
         if model._outputs.last_layer_only:
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="ScalarWeightingListener")
+            )
 
         model.verify_inputs(docs)
 
@@ -475,7 +492,9 @@ def scalar_weighting_listener_forward(
             return [model.ops.alloc2f(len(doc), width) for doc in docs], lambda dY: []
 
         if any(doc._.trf_data.last_layer_only for doc in docs):
-            raise ValueError(invalid_outputs_err_msg)
+            raise ValueError(
+                Errors.E012.format(listener_name="ScalarWeightingListener")
+            )
 
         Y_weigthing = weighting.predict([doc._.trf_data.all_outputs for doc in docs])
         Y = pooling.predict(Y_weigthing)

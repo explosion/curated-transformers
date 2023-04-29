@@ -1,21 +1,21 @@
-from typing import Optional, Tuple
-from dataclasses import dataclass
+from typing import Optional
 import math
 import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ...errors import Errors
 
-@dataclass
+
 class AttentionMask:
     bool_mask: Tensor
-    _logit_mask: Optional[Tensor] = None
+    _logit_mask: Optional[Tensor]
 
-    def __post_init__(self):
-        if self.bool_mask.dtype != torch.bool:
-            raise ValueError(
-                f"attention mask of dtype torch.bool expected, was {self.bool_mask.dtype}"
-            )
+    def __init__(self, bool_mask: Tensor):
+        if bool_mask.dtype != torch.bool:
+            raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
+        self.bool_mask = bool_mask
+        self._logit_mask = torch.jit.annotate(Optional[Tensor], None)
 
     @property
     def logit_mask(self) -> Tensor:
@@ -23,13 +23,17 @@ class AttentionMask:
             # The value is `torch.finfo(attn_scores.dype).min`. Unfortunately,
             # we cannot use `torch.finfo` in TorchScript.
             self._logit_mask = (1.0 - self.bool_mask.int()) * -3.4028234663852886e38
-        return self._logit_mask
+
+        # Narrow type for TorchScript.
+        logit_mask = self._logit_mask
+        assert logit_mask is not None
+        return logit_mask
 
     def dim(self) -> int:
         return self.bool_mask.dim()
 
     @property
-    def shape(self) -> Tuple:
+    def shape(self):
         return self.bool_mask.shape
 
 
@@ -44,12 +48,13 @@ class ScaledDotProductAttention(Module):
     ) -> Tensor:
         """
         Shapes:
-            k, q, v, attn_mask - (batch, heads, seq, model_dim)
+            k, q, v - (batch, heads, seq_len, width)
+            attn_mask - (batch, seq_len)
         """
 
         if attn_mask.dim() != 2:
             raise ValueError(
-                f"attention mask dim mismatch, expected '2' but received {attn_mask.dim()}"
+                "The attention mask must be a 2D-tensor of shape [batch, seq_len]"
             )
 
         model_dim = k.shape[-1]

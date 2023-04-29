@@ -1,8 +1,9 @@
 from typing import Optional
 import torch
-from torch.nn import Linear, Module
+from torch.nn import Module
 from torch import Tensor
 
+from ....errors import Errors
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
 from ...output import PyTorchTransformerOutput
@@ -24,7 +25,10 @@ class AlbertEncoder(Module):
 
         if self.num_hidden_layers % num_hidden_groups != 0:
             raise ValueError(
-                f"Number of hidden layers ({self.num_hidden_layers}) must be divisable by number of hidden groups ({num_hidden_groups})"
+                Errors.E002.format(
+                    num_hidden_layers=self.num_hidden_layers,
+                    num_hidden_groups=num_hidden_groups,
+                )
             )
 
         self.embeddings = BertEmbeddings(config.embedding, config.layer)
@@ -48,7 +52,7 @@ class AlbertEncoder(Module):
     ) -> PyTorchTransformerOutput:
         """
         Shapes:
-            input_ids, token_type_ids - (batch, seq_len)
+            input_ids, attention_mask, token_type_ids - (batch, seq_len)
         """
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input_ids)
@@ -59,11 +63,10 @@ class AlbertEncoder(Module):
         layers_per_group = self.num_hidden_layers // len(self.groups)
 
         layer_outputs = []
-        for i in range(self.num_hidden_layers):
-            layer_output = self.groups[i // layers_per_group](
-                layer_output, attn_mask=attention_mask
-            )
-            layer_outputs.append(layer_output)
+        for group in self.groups:
+            for _ in range(layers_per_group):
+                layer_output = group(layer_output, attn_mask=attention_mask)
+                layer_outputs.append(layer_output)
 
         return PyTorchTransformerOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs

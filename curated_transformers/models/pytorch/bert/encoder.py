@@ -39,7 +39,7 @@ class BertEncoder(Module):
     ) -> PyTorchTransformerOutput:
         """
         Shapes:
-            input_ids, token_type_ids - (batch, seq_len)
+            input_ids, attention_mask, token_type_ids - (batch, seq_len)
         """
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input_ids)

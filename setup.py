@@ -1,5 +1,4 @@
-from setuptools import setup, Extension, find_packages
-from distutils.command.build_ext import build_ext
+from setuptools import setup, find_packages
 
 
 def setup_package():

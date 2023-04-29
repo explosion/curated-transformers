@@ -5,16 +5,17 @@ from torch import Tensor
 
 from thinc.types import Floats2d, Ragged
 
+from ..errors import Errors
 
 TrfOutputT = TypeVar("TrfOutputT", Floats2d, Ragged)
 
 
 @torch.jit.script
 class PyTorchTransformerOutput:
-    """Output of the PyTorch Transformer Encoders"""
+    """Padded output of the PyTorch Transformer encoders."""
 
-    # The first element is the output of the embedding layer with shape [batch, seq, emb_dim].
-    # The rest of the elements are the states of each encoder hidden layer respectively with shape [batch, seq, model_hidden].
+    # The first element is the output of the embedding layer with shape [batch, seq, width].
+    # The rest of the elements are the states of each encoder hidden layer respectively with shape [batch, seq, width].
     all_outputs: List[Tensor]
 
     def __init__(
@@ -32,8 +33,10 @@ class PyTorchTransformerOutput:
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
         else:
+            # This error needs to be inlined as due to torch.jit.script limitations.
             raise ValueError(
-                f"Index must be >= 0 and < {len(self.all_outputs) - 1}, got {idx}"
+                "Attempting to select a transformer output tensor using an invalid "
+                f"layer index ({idx}). Expected range: 0<= idx < {(len(self.all_outputs) - 1)}"
             )
 
     @property
@@ -91,7 +94,7 @@ class TransformerModelOutput(Generic[TrfOutputT]):
 @dataclass
 class DocTransformerOutput:
     """Stored on Doc instances. Each Ragged element corresponds to a layer in
-    original TransformerModelOutput, containing piece identifiers."""
+    original TransformerModelOutput, containing representations of piece identifiers."""
 
     all_outputs: List[Ragged]
 

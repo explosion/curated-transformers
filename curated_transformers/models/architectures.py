@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional, Tuple, Callable, Any, cast
+from typing import List, Optional, Tuple, Callable, Any, cast
 from pathlib import Path
 from functools import partial
 from spacy.tokens import Doc
@@ -21,18 +21,12 @@ import torch
 from .output import TransformerModelOutput, PyTorchTransformerOutput
 from .pytorch.albert import AlbertConfig, AlbertEncoder
 from .pytorch.bert import BertConfig, BertEncoder
-from .pytorch.hf_util import SupportedEncoders, convert_pretrained_model_for_encoder
+from .pytorch.curated_transformer import CuratedTransformer, CuratedEncoderT
+from .pytorch.hf_util import convert_pretrained_model_for_encoder
 from .pytorch.roberta import RobertaConfig, RobertaEncoder
 from .remove_eos_bos import remove_bos_eos
 from .with_non_ws_tokens import with_non_ws_tokens
-from ..tokenization.bbpe_encoder import build_byte_bpe_encoder
-from ..tokenization.sentencepiece_adapters import (
-    build_camembert_adapter,
-    build_xlmr_adapter,
-)
-from ..tokenization.sentencepiece_encoder import build_sentencepiece_encoder
-from ..tokenization.wordpiece_encoder import build_wordpiece_encoder
-from ..tokenization.types import Tok2PiecesModelT, PieceAdapterModelT
+from ..tokenization.types import Tok2PiecesModelT
 from .types import (
     TorchTransformerInT,
     TorchTransformerModelT,
@@ -43,6 +37,7 @@ from .types import (
     TransformerModelT,
     SpanExtractorModelT,
 )
+from ..errors import Errors
 
 
 def build_albert_transformer_model_v1(
@@ -52,6 +47,7 @@ def build_albert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Tok2PiecesModelT,
     attention_probs_dropout_prob: float = 0.0,
     embedding_width: int = 128,
     hidden_act: str = "gelu_new",
@@ -76,6 +72,8 @@ def build_albert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Model)
+        The piece encoder to segment input tokens.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     embedding_width (int):
@@ -143,8 +141,6 @@ def build_albert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_sentencepiece_encoder()
-
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -159,6 +155,7 @@ def build_bert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Tok2PiecesModelT,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -181,6 +178,8 @@ def build_bert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Model)
+        The piece encoder to segment input tokens.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -242,8 +241,6 @@ def build_bert_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_wordpiece_encoder()
-
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -258,6 +255,7 @@ def build_camembert_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Tok2PiecesModelT,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -278,6 +276,8 @@ def build_camembert_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Model)
+        The piece encoder to segment input tokens.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -311,8 +311,6 @@ def build_camembert_transformer_model_v1(
     grad_scaler_config (dict):
         Configuration passed to the PyTorch gradient scaler.
     """
-    piece_adapter = build_camembert_adapter()
-
     config = RobertaConfig(
         hidden_width=hidden_width,
         intermediate_width=intermediate_width,
@@ -337,12 +335,9 @@ def build_camembert_transformer_model_v1(
         encoder = RobertaEncoder(config)
         transformer = _pytorch_encoder(encoder)
 
-    piece_encoder = build_sentencepiece_encoder()
-
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
-        piece_adapter=piece_adapter,
         transformer=transformer,
     )
 
@@ -354,6 +349,7 @@ def build_roberta_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Tok2PiecesModelT,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -376,6 +372,8 @@ def build_roberta_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Model)
+        The piece encoder to segment input tokens.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -437,8 +435,6 @@ def build_roberta_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_byte_bpe_encoder()
-
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
@@ -453,6 +449,7 @@ def build_xlmr_transformer_model_v1(
         [TorchTransformerModelT],
         SpanExtractorModelT,
     ],
+    piece_encoder: Tok2PiecesModelT,
     attention_probs_dropout_prob: float = 0.1,
     hidden_act: str = "gelu",
     hidden_dropout_prob: float = 0.1,
@@ -475,6 +472,8 @@ def build_xlmr_transformer_model_v1(
         Vocabulary size.
     with_spans (Callable):
         Callback that constructs a span generator model.
+    piece_encoder (Model)
+        The piece encoder to segment input tokens.
     attention_probs_dropout_prob (float):
         Dropout probabilty of the self-attention layers.
     hidden_act (str):
@@ -508,8 +507,6 @@ def build_xlmr_transformer_model_v1(
     grad_scaler_config (dict):
         Configuration passed to the PyTorch gradient scaler.
     """
-    piece_adapter = build_xlmr_adapter()
-
     config = RobertaConfig(
         hidden_width=hidden_width,
         intermediate_width=intermediate_width,
@@ -538,12 +535,9 @@ def build_xlmr_transformer_model_v1(
             grad_scaler_config=grad_scaler_config,
         )
 
-    piece_encoder = build_sentencepiece_encoder()
-
     return build_transformer_model_v1(
         with_spans=with_spans,
         piece_encoder=piece_encoder,
-        piece_adapter=piece_adapter,
         transformer=transformer,
     )
 
@@ -556,27 +550,14 @@ def build_transformer_model_v1(
     ],
     transformer: TorchTransformerModelT,
     piece_encoder: Tok2PiecesModelT,
-    piece_adapter: PieceAdapterModelT = None,
 ) -> TransformerModelT:
     # FIXME: do we want to make `remove_bos_eos` configurable as well or
     #        is it always the same post-processing?
-    if piece_adapter:
-        layers = [
-            with_non_ws_tokens(
-                chain(
-                    piece_encoder,
-                    piece_adapter,
-                    with_spans(transformer),
-                    remove_bos_eos(),
-                )
-            )
-        ]
-    else:
-        layers = [
-            with_non_ws_tokens(
-                chain(piece_encoder, with_spans(transformer), remove_bos_eos())
-            )
-        ]
+    layers = [
+        with_non_ws_tokens(
+            chain(piece_encoder, with_spans(transformer), remove_bos_eos())
+        )
+    ]
     refs = {
         "piece_encoder": piece_encoder,
         "transformer": transformer,
@@ -617,20 +598,20 @@ def transformer_model_init(
 
 
 def _pytorch_encoder(
-    encoder: SupportedEncoders,
+    encoder: CuratedEncoderT,
     *,
     mixed_precision: bool = False,
     grad_scaler_config: dict = SimpleFrozenDict(),
 ) -> TorchTransformerModelT:
     if isinstance(grad_scaler_config, SimpleFrozenDict):
-        # Crate a new, mutable dict instance.
+        # Create a new, mutable dict instance.
         grad_scaler_config = {}
 
     if "enabled" not in grad_scaler_config:
         grad_scaler_config["enabled"] = mixed_precision
 
     model = PyTorchWrapper_v2(
-        encoder,
+        CuratedTransformer(encoder),
         convert_inputs=partial(
             _convert_inputs,
             max_model_seq_len=encoder.max_seq_len,
@@ -670,7 +651,7 @@ def _convert_inputs(
     max_seq_len = max(x.size for x in X)
     if max_seq_len > max_model_seq_len:
         raise ValueError(
-            f"Span window size of '{max_seq_len}' exceeds maximum allowed sequence length of '{max_model_seq_len}'"
+            Errors.E009.format(seq_len=max_seq_len, max_seq_len=max_model_seq_len)
         )
 
     # Transform the list of strided spans to a padded array.
@@ -731,11 +712,11 @@ def _convert_outputs(
 
 
 def _replace_listener(trf_model):
-    raise ValueError("Listener replacement is not currently supported")
+    raise ValueError(Errors.E010)
 
 
 def _replace_listener_cfg(trf_model_cfg, listener_model_cfg):
-    raise ValueError("Listener replacement is not currently supported")
+    raise ValueError(Errors.E010)
 
 
 def build_pytorch_checkpoint_loader_v1(

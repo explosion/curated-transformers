@@ -1,7 +1,9 @@
 from typing import Callable, Optional, Tuple
 from pathlib import Path
-from cutlery import SentencePieceProcessor  # type: ignore
-from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
+from cutlery import SentencePieceProcessor
+from thinc.api import Model, Ragged, chain, deserialize_attr, serialize_attr
+
+from .sentencepiece_adapters import build_camembert_adapter, build_xlmr_adapter
 
 from .types import (
     Tok2PiecesBackpropT,
@@ -25,7 +27,21 @@ def deserialize_my_custom_class(
     return SentencePieceProcessor.from_protobuf(value)
 
 
-def build_sentencepiece_encoder() -> Tok2PiecesModelT:
+def build_camembert_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
+    """Construct a SentencePiece piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers with CamemBERT post-processing applied.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
+    encoder = build_sentencepiece_encoder_v1()
+    model = chain(encoder, build_camembert_adapter())
+    model.set_ref("encoder", encoder)
+    return model
+
+
+def build_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
     """Construct a SentencePiece piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.
@@ -33,11 +49,27 @@ def build_sentencepiece_encoder() -> Tok2PiecesModelT:
     This model must be separately initialized using an appropriate
     loader.
     """
-    return Model(
+    model: Tok2PiecesModelT = Model(
         "sentencepiece_encoder",
         forward=sentencepiece_encoder_forward,
         attrs={"sentencepiece_processor": SentencePieceProcessor()},
     )
+    model.set_ref("encoder", model)
+    return model
+
+
+def build_xlmr_sentencepiece_encoder_v1() -> Tok2PiecesModelT:
+    """Construct a SentencePiece piece encoder model that accepts a list
+    of token sequences or documents and returns a corresponding list
+    of piece identifiers with XLM-RoBERTa post-processing applied.
+
+    This model must be separately initialized using an appropriate
+    loader.
+    """
+    encoder = build_sentencepiece_encoder_v1()
+    model = chain(encoder, build_xlmr_adapter())
+    model.set_ref("encoder", encoder)
+    return model
 
 
 def sentencepiece_encoder_forward(

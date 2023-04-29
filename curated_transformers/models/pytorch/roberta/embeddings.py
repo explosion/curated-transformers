@@ -32,6 +32,10 @@ class RobertaEmbeddings(Module):
         token_type_ids: Optional[Tensor] = None,
         position_ids: Optional[Tensor] = None,
     ) -> Tensor:
+        """
+        Shapes:
+            input_ids, token_type_ids, position_ids - (batch, seq_len)
+        """
         if position_ids is None:
             position_ids = self._get_position_ids(input_ids)
 

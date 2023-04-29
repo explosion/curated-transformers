@@ -1,8 +1,8 @@
 from typing import Callable, Optional, Tuple
 from pathlib import Path
 
-from cutlery import ByteBPEProcessor  # type: ignore
-import srsly  # type: ignore
+from cutlery import ByteBPEProcessor
+import srsly
 from thinc.api import Model, Ragged, deserialize_attr, serialize_attr
 
 from .types import (
@@ -11,6 +11,7 @@ from .types import (
     Tok2PiecesModelT,
     Tok2PiecesOutT,
 )
+from ..errors import Errors
 
 
 @serialize_attr.register(ByteBPEProcessor)
@@ -27,7 +28,7 @@ def deserialize_byte_bpe_processor(
     return ByteBPEProcessor(data["vocab"], data["merges"])
 
 
-def build_byte_bpe_encoder() -> Tok2PiecesModelT:
+def build_byte_bpe_encoder_v1() -> Tok2PiecesModelT:
     """Construct a Byte-BPE piece encoder model that accepts a list
     of token sequences or documents and returns a corresponding list
     of piece identifiers.
@@ -56,13 +57,13 @@ def byte_bpe_encoder_forward(
     unk_piece: str = model.attrs["unk_piece"]
     bos_id = bbp.piece_id(bos_piece)
     if bos_id is None:
-        raise ValueError("Vocabulary does not have BOS piece")
+        raise ValueError(Errors.E019.format(piece="BOS"))
     eos_id = bbp.piece_id(eos_piece)
     if eos_id is None:
-        raise ValueError("Vocabulary does not have EOS piece")
+        raise ValueError(Errors.E019.format(piece="EOS"))
     unk_id = bbp.piece_id(unk_piece)
     if unk_id is None:
-        raise ValueError("Vocabulary does not have UNK piece")
+        raise ValueError(Errors.E019.format(piece="UNK"))
 
     pieces = []
     for doc in X:

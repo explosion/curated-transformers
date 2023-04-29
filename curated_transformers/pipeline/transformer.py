@@ -25,16 +25,17 @@ from thinc.api import Config, Optimizer, set_dropout_rate
 from thinc.model import Model
 from thinc.types import Ragged
 
-from .models.output import DocTransformerOutput, TransformerModelOutput
-from .listener import TransformerListener
-from .util import batch_by_length
+from ..models.output import DocTransformerOutput, TransformerModelOutput
+from ..models.listeners import TransformerListener
 
 DEFAULT_CONFIG_STR = """
     [transformer]
-    max_batch_items = 4096
 
     [transformer.model]
-    @architectures = "curated-transformers.XLMRTransformer.v1"
+    @architectures = "curated-transformers.XlmrTransformer.v1"
+
+    [transformer.model.piece_encoder]
+    @architectures = "curated-transformers.XlmrSentencepieceEncoder.v1"
 
     [transformer.model.with_spans]
     @architectures = "curated-transformers.WithStridedSpans.v1"
@@ -55,7 +56,6 @@ def make_transformer(
     name: str,
     model: Model,
     *,
-    max_batch_items: int = 4096,
     frozen: bool = False,
     all_layer_outputs: bool = False,
 ) -> "Transformer":
@@ -64,12 +64,12 @@ def make_transformer(
     more subsequent spaCy components can use the transformer outputs as features
     in its model, with gradients backpropagated to the single shared weights.
 
-    vocab (Vocab):
-        The shared vocabulary.
-    model (Model):
-        One of the supported pre-trained transformer models.
+    nlp (Language):
+        The pipeline.
     name (str):
         The component instance name.
+    model (Model):
+        One of the supported pre-trained transformer models.
     frozen (bool):
         If `True`, the model's weights are frozen and no backpropagation is performed.
     all_layer_outputs (bool):
@@ -83,7 +83,6 @@ def make_transformer(
         name=name,
         frozen=frozen,
         all_layer_outputs=all_layer_outputs,
-        max_batch_items=max_batch_items,
     )
 
 
@@ -105,7 +104,6 @@ class Transformer(TrainablePipe):
         name: str = "transformer",
         frozen: bool = False,
         all_layer_outputs: bool = False,
-        max_batch_items: int = 4096,
     ) -> None:
         """
         vocab (Vocab):
@@ -125,7 +123,7 @@ class Transformer(TrainablePipe):
         self.model = model
         self.name = name
         self.listener_map: Dict[str, List[TransformerListener]] = {}
-        self.cfg = {"max_batch_items": max_batch_items}
+        self.cfg: Dict[str, Any] = {}
 
         _install_extensions()
         self.frozen = frozen
@@ -219,12 +217,10 @@ class Transformer(TrainablePipe):
             Processed documents in order.
         """
         _install_extensions()
-        for outer_batch in minibatch(stream, batch_size):
-            outer_batch = list(outer_batch)
-            for indices in batch_by_length(outer_batch, self.cfg["max_batch_items"]):
-                subbatch = [outer_batch[i] for i in indices]
-                self.set_annotations(subbatch, self.predict(subbatch))
-            yield from outer_batch
+        for batch in minibatch(stream, batch_size):
+            preds = self.predict(batch)
+            self.set_annotations(batch, preds)
+            yield from batch
 
     def predict(self, docs: Iterable[Doc]) -> TransformerModelOutput:
         """Apply the pipeline's model to a batch of docs, without modifying them.
@@ -320,74 +316,9 @@ class Transformer(TrainablePipe):
         # To ensure that the model's internal state is always consistent with the pipe's.
         self._set_model_all_layer_outputs(self.all_layer_outputs)
 
-        if self.frozen:
-            # Ensures that the inner torch model is executed in a `no_grad` context.
-            outputs = self.model.predict(docs)
-            bp_outputs = None
-            d_outputs = None
-        else:
-            outputs, bp_outputs = self.model.begin_update(docs)
-            d_outputs = [
-                [
-                    Ragged(self.model.ops.alloc_f(t2v.dataXd.shape), t2v.lengths)
-                    for t2v in doc_layers
-                ]
-                for doc_layers in outputs.all_outputs
-            ]
-
-        def accumulate_gradient(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
-        ) -> None:
-            """Accumulate transformer loss and gradient. This is passed as a callback
-            to all but the last listener. Only the last one does the backprop.
-
-            `outputs_to_backprop` is a tuple of indices indicating to which layers/outputs
-            the gradients are to be propagated.
-            """
-            nonlocal d_outputs
-            assert d_outputs is not None
-            assert losses is not None
-            for i in range(len(one_d_outputs)):
-                for j in outputs_to_backprop:
-                    d_outputs[i][j].data += one_d_outputs[i][j].data
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
-
-        def accumulate_gradient_noop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
-        ) -> None:
-            assert losses is not None
-            for i in range(len(one_d_outputs)):
-                for j in outputs_to_backprop:
-                    losses[self.name] += float((one_d_outputs[i][j].data ** 2).sum())  # type: ignore
-
-        def backprop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
-        ) -> Any:
-            """Callback to actually do the backprop. Passed to last listener."""
-            nonlocal d_outputs
-            assert bp_outputs is not None
-            accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
-            d_docs = bp_outputs(d_outputs)
-            if sgd is not None:
-                self.finish_update(sgd)
-            return d_docs
-
-        def backprop_noop(
-            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
-        ) -> Any:
-            accumulate_gradient_noop(
-                one_d_outputs, outputs_to_backprop=outputs_to_backprop
-            )
-            if sgd is not None:
-                self.finish_update(sgd)
-            return []
-
-        if self.frozen:
-            accum_func = accumulate_gradient_noop
-            backprop_func = backprop_noop
-        else:
-            accum_func = accumulate_gradient
-            backprop_func = backprop
+        outputs, accum_func, backprop_func = self._create_backprops(
+            docs, losses, sgd=sgd
+        )
 
         batch_id = TransformerListener.get_batch_id(docs)
         for listener in self.listeners[:-1]:
@@ -396,7 +327,7 @@ class Transformer(TrainablePipe):
             self.listeners[-1].receive(batch_id, outputs, backprop_func)
         return losses
 
-    def get_loss(self, examples: Iterable[Example], scores: Any) -> Any:
+    def get_loss(self, examples: Iterable[Example], scores: Any) -> None:
         """A noop function, for compatibility with the Pipe API. See the `update`
         method for an explanation of the loss mechanics of the component.
         """
@@ -416,6 +347,10 @@ class Transformer(TrainablePipe):
             Optional function that returns gold-standard Example objects.
         nlp (Language):
             The current nlp object.
+        encoder_loader (Optional[Callable]):
+            Initialization callback for the transformer model.
+        piece_loader (Optional[Callable]):
+            Initialization callback for the input piece encoder.
         """
         validate_get_examples(get_examples, "Transformer.initialize")
 
@@ -433,9 +368,6 @@ class Transformer(TrainablePipe):
     def add_label(self, label: Any):
         raise NotImplementedError
 
-    def _set_model_all_layer_outputs(self, new_value: bool):
-        self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
-
     def finish_update(self, sgd: Optimizer) -> None:
         """Update parameters using the current parameter gradients.
         The Optimizer instance contains the functionality to perform
@@ -449,6 +381,88 @@ class Transformer(TrainablePipe):
         """
         if not self.frozen:
             self.model.finish_update(sgd)
+
+    def _create_backprops(
+        self,
+        docs: Iterable[Doc],
+        losses: Dict[str, float],
+        *,
+        sgd: Optional[Optimizer] = None,
+    ) -> Tuple[TransformerModelOutput, Callable, Callable]:
+        ops = self.model.ops
+        # Accumulate the pipe's loss on the GPU at first.
+        cum_loss = ops.xp.full(1, losses[self.name])
+
+        if self.frozen:
+            # Ensures that the inner torch model is executed in a `no_grad` context.
+            outputs = self.model.predict(docs)
+            bp_outputs = None
+        else:
+            outputs, bp_outputs = self.model.begin_update(docs)
+
+        # We'll use this as a buffer for loss accumulation over individual gradients.
+        d_outputs = [
+            [Ragged(ops.alloc_f(t2v.dataXd.shape), t2v.lengths) for t2v in doc_layers]
+            for doc_layers in outputs.all_outputs
+        ]
+
+        # The loss of the transformer is calculated in a different manner than that of the
+        # tok2vec component. Instead of updating the loss value with each downstream component's
+        # gradient, we accumulate the gradients and and update it just once. This reduces the overhead
+        # of launching the associated kernels on the GPU as this operation would otherwise be
+        # performed on a per-document, per-layer basis. The resultant loss value, while potentially
+        # (slightly) different, still communicates the same information as before w.r.t the training
+        # progress: how large were the gradients of the downstream components in this step compared
+        # to the previous steps.
+
+        def accumulate_gradient(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
+        ) -> None:
+            """Accumulate transformer loss and gradient. This is passed as a callback
+            to all but the last listener. Only the last one does the backprop.
+
+            `outputs_to_backprop` is a tuple of indices indicating to which layers/outputs
+            the gradients are to be propagated.
+            """
+            nonlocal d_outputs
+            for i in range(len(one_d_outputs)):
+                for j in outputs_to_backprop:
+                    d_outputs[i][j].data += one_d_outputs[i][j].data
+
+        def update_loss():
+            """Reduce the gradient buffer and update the losses dict."""
+            nonlocal cum_loss
+            for i in range(len(d_outputs)):
+                for j in range(len(d_outputs[i])):
+                    cum_loss += (d_outputs[i][j].data ** 2).sum()
+            losses[self.name] = float(cum_loss)
+
+        def backprop(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
+        ) -> Any:
+            """Callback to actually do the backprop. Passed to last listener."""
+            nonlocal d_outputs
+            assert bp_outputs is not None
+            accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
+            update_loss()
+            d_docs = bp_outputs(d_outputs)
+            if sgd is not None:
+                self.finish_update(sgd)
+            return d_docs
+
+        def backprop_noop(
+            one_d_outputs: List[List[Ragged]], outputs_to_backprop: Tuple[int, ...]
+        ) -> Any:
+            accumulate_gradient(one_d_outputs, outputs_to_backprop=outputs_to_backprop)
+            update_loss()
+            if sgd is not None:
+                self.finish_update(sgd)
+            return []
+
+        return outputs, accumulate_gradient, backprop_noop if self.frozen else backprop
+
+    def _set_model_all_layer_outputs(self, new_value: bool):
+        self.model.get_ref("transformer").attrs["_all_layer_outputs"] = new_value
 
 
 def _install_extensions() -> None:

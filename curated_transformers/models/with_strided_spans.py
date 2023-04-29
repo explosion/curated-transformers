@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union, cast
 from functools import partial
 from thinc.model import Model
 from thinc.types import Ragged, Floats2d, Ints1d
@@ -13,11 +13,13 @@ from .types import (
     SpanExtractorModelT,
     TorchTransformerInT,
     TorchTransformerModelT,
+    TorchTransformerOutT,
 )
+from ..errors import Errors
 
 
 def build_with_strided_spans_v1(
-    stride: int = 96, window: int = 128
+    stride: int = 96, window: int = 128, batch_size: int = 384
 ) -> Callable[[TorchTransformerModelT, int, int], SpanExtractorModelT]:
     """Construct a model that can be used to convert a list of ragged
     piece identifiers to strided spans and vice-versa.
@@ -26,8 +28,13 @@ def build_with_strided_spans_v1(
         The stride of the span generator.
     window (int):
         The (maximum) size of each span.
+    batch_size (int):
+        The maximum number of spans that are processed
+        by the transformer model at a time.
     """
-    return partial(with_strided_spans, stride=stride, window=window)
+    return partial(
+        with_strided_spans, stride=stride, window=window, batch_size=batch_size
+    )
 
 
 def with_strided_spans(
@@ -35,15 +42,21 @@ def with_strided_spans(
     *,
     stride: int = 96,
     window: int = 128,
+    batch_size: int = 384,
 ) -> Model[List[Ragged], TransformerModelOutput]:
     if not (window // 2 <= stride <= window):
         raise ValueError(
-            f"Stride must be within [window / 2, window] ([{window // 2}, {window}]), was: {stride}"
+            Errors.E017.format(
+                stride=stride, half_window_size=window // 2, window_size=window
+            )
         )
+    if batch_size <= 0:
+        raise ValueError(Errors.E018)
 
     attrs = {
         "stride": stride,
         "window": window,
+        "batch_size": batch_size,
     }
     return Model(
         "with_strided_spans",
@@ -83,16 +96,24 @@ def with_strided_spans_forward(
     transformer: TorchTransformerModelT = model.layers[0]
     stride: int = model.attrs["stride"]
     window: int = model.attrs["window"]
+    batch_size: int = model.attrs["batch_size"]
 
     spans, doc_lens = _ragged_to_strided_arrays(Xlr=X, stride=stride, window=window)
     # Calculate once and use for all layer outputs.
     doc_len_sums = [int(x.sum()) for x in doc_lens]
 
-    trf_output, bp_trf = transformer(
-        cast(TorchTransformerInT, spans), is_train=is_train
-    )
-    if not isinstance(trf_output, TransformerModelOutput):
-        raise ValueError(f"Unsupported input of type '{type(trf_output)}'")
+    backprops = []
+    outputs = []
+    for batch in _split_spans(spans, batch_size):
+        output, bp = transformer(cast(TorchTransformerInT, batch), is_train=is_train)
+        if not isinstance(output, TransformerModelOutput):
+            raise ValueError(
+                Errors.E014.format(model_name=model.name, input_type=type(output))
+            )
+        outputs.append(output)
+        backprops.append(bp)
+
+    trf_output = _unsplit_outputs(outputs)
 
     # Suppose we have:
     #
@@ -133,12 +154,37 @@ def with_strided_spans_forward(
             func=_normalize_gradients,
         )
 
-        dXlf = bp_trf(dY_spans)
+        dXlf = []
+        split_dY_spans = list(_split_spans(dY_spans, batch_size))
+        assert len(split_dY_spans) == len(backprops)
+        for dY_batch, bp_trf in zip(split_dY_spans, backprops):
+            dXlf_batch = bp_trf(dY_batch)
+            dXlf.extend(dXlf_batch)
+
         return _strided_arrays_to_ragged(
             model, dXlf, dY_lengths, dY_length_sums, stride=stride
         )
 
     return trf_output, backprop
+
+
+def _split_spans(spans: Floats2dInOutT, batch_size: int) -> Iterable[Floats2dInOutT]:
+    while len(spans):
+        batch = spans[:batch_size]
+        yield batch
+        spans = spans[batch_size:]
+
+
+def _unsplit_outputs(outputs: List[TorchTransformerOutT]) -> TorchTransformerOutT:
+    last_layer_only = outputs[0].last_layer_only
+    merged = TransformerModelOutput(
+        outputs=cast(
+            List[List[Floats2d]],
+            [inner for outer in outputs for inner in outer.all_outputs],
+        ),
+        last_layer_only=last_layer_only,
+    )
+    return merged
 
 
 def _apply_to_overlaps(
@@ -149,8 +195,8 @@ def _apply_to_overlaps(
     window: int,
     func: Callable[[Any, Any], None],
 ):
-    """Average representations of overlapping windows. This function
-    modifies the arrays in Xlf in-place."""
+    """Applies a function to overlapping windows, modifying the arrays
+    in Xlf in-place."""
 
     def _apply_to_layer(input: Union[Tuple[Floats2d, ...], List[Floats2d]]):
         for doc_len in len_sums:

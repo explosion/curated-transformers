@@ -10,8 +10,10 @@ import torch.nn.quantized as nnq
 from torch.nn import Embedding, Linear, Module, MSELoss
 from torch.quantization import qconfig
 from typer import Argument as Arg, Option
+import warnings
 
-from ..pipe import Transformer  # type: ignore
+from ..errors import Warnings, Errors
+from ..pipeline.transformer import Transformer
 
 
 MODULE_QUANTIZERS = {
@@ -35,7 +37,7 @@ def quantize_cli(
     ),
 ):
     """
-    Quantize a curated-transformers model.
+    Quantize a curated transformers model to reduce its size.
     """
     nlp = spacy.load(model_path)
     nlp_quantize_dynamic(
@@ -66,6 +68,7 @@ def nlp_quantize_dynamic(
         model = pipe.model.get_ref("transformer")
 
         if model.name == "pytorch_script":  # Probably already quantized.
+            warnings.warn(Warnings.W001)
             continue
 
         before_size = size_of_model(pytorch_model(model))
@@ -145,10 +148,7 @@ def requantize_with_max_loss(
 
 
 def pytorch_model(model: Model) -> Module:
-    if model.name != "pytorch":
-        raise ValueError("Cannot extract PyTorch model from f{model.name}")
-
-    if not isinstance(model.shims[0], PyTorchShim):
-        raise ValueError("Model does not hold a PyTorchShim")
+    if model.name != "pytorch" or not isinstance(model.shims[0], PyTorchShim):
+        raise ValueError(Errors.E001.format(model_name=model.name))
 
     return model.shims[0]._model

@@ -7,7 +7,7 @@ from curated_transformers.util import registry
     "encoder_name",
     [
         "curated-transformers.BertWordpieceEncoder.v1",
-        "curated-transformers.ByteBPEEncoder.v1",
+        "curated-transformers.ByteBpeEncoder.v1",
         "curated-transformers.CamembertSentencepieceEncoder.v1",
         "curated-transformers.CharEncoder.v1",
         "curated-transformers.SentencepieceEncoder.v1",
@@ -22,7 +22,7 @@ def test_encoder_from_registry(encoder_name):
 @pytest.mark.parametrize(
     "loader_name",
     [
-        "curated-transformers.ByteBPELoader.v1",
+        "curated-transformers.ByteBpeLoader.v1",
         "curated-transformers.CharEncoderLoader.v1",
         "curated-transformers.HFTransformerEncoderLoader.v1",
         "curated-transformers.HFPieceEncoderLoader.v1",

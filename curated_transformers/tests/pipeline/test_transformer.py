@@ -74,7 +74,7 @@ cfg_string_last_layer_listener = """
     [initialize.components.transformer]
 
     [initialize.components.transformer.piecer_loader]
-    @model_loaders = "curated-transformers.HfPieceEncoderLoader.v1"
+    @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
     name = "bert-base-cased"
 """
 
@@ -122,7 +122,7 @@ cfg_string_scalar_weighting_layer_listener = """
     [initialize.components.transformer]
 
     [initialize.components.transformer.piecer_loader]
-    @model_loaders = "curated-transformers.HfPieceEncoderLoader.v1"
+    @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
     name = "bert-base-cased"
 """
 

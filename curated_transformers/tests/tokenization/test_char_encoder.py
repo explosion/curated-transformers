@@ -49,7 +49,7 @@ def test_char_encoder_hf_model():
     ops = get_current_ops()
     encoder = build_char_encoder_v1()
     encoder.init = registry.model_loaders.get(
-        "curated-transformers.HfPieceEncoderLoader.v1"
+        "curated-transformers.HFPieceEncoderLoader.v1"
     )(name="cl-tohoku/bert-base-japanese-char-v2")
     encoder.initialize()
 

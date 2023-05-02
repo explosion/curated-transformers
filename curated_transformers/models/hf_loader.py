@@ -27,7 +27,7 @@ def build_hf_transformer_encoder_loader_v1(
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
             raise ValueError(
-                Errors.E011.format(loader_name="HfTransformerEncoderLoader")
+                Errors.E011.format(loader_name="HFTransformerEncoderLoader")
             )
 
         encoder = model.shims[0]._model

@@ -9,7 +9,7 @@ from curated_transformers._compat import has_hf_transformers
 @pytest.fixture
 def toy_encoder(test_dir):
     encoder = build_byte_bpe_encoder_v1()
-    encoder.init = registry.model_loaders.get("curated-transformers.ByteBPELoader.v1")(
+    encoder.init = registry.model_loaders.get("curated-transformers.ByteBpeLoader.v1")(
         vocab_path=test_dir / "toy-vocab.json", merges_path=test_dir / "toy-merges.txt"
     )
     encoder.initialize()

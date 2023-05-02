@@ -41,7 +41,7 @@ def build_hf_piece_encoder_loader_v1(
 
     def load(model, X=None, Y=None):
         if not has_hf_transformers:
-            raise ValueError(Errors.E011.format(loader_name="HFPieceEncoderLoader"))
+            raise ValueError(Errors.E011.format(loader_name="HfPieceEncoderLoader"))
 
         tokenizer = transformers.AutoTokenizer.from_pretrained(name, revision=revision)
         return _convert_encoder(model, tokenizer)

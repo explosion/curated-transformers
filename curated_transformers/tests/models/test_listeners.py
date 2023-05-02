@@ -34,7 +34,7 @@ cfg_string_transformer_layers_listener = """
     [initialize.components.transformer]
 
     [initialize.components.transformer.piecer_loader]
-    @model_loaders = "curated-transformers.HFPieceEncoderLoader.v1"
+    @model_loaders = "curated-transformers.HfPieceEncoderLoader.v1"
     name = "bert-base-cased"
 """
 

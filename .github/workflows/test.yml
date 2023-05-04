@@ -36,9 +36,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel build
           python -m pip install -r requirements.txt
 
-      - name: Install optional dependencies for Japanese models
-        run: python -m pip install fugashi[unidic-lite] spacy[ja]
-
       - name: Build sdist
         run: python -m build --sdist
 
@@ -66,7 +63,6 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install -r requirements.txt
-          python -m pip install fugashi[unidic-lite] spacy[ja]
 
       - name: Run pytest
         run: python -m pytest --pyargs curated_transformers --slow

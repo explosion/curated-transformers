@@ -3,10 +3,10 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
-from ....errors import Errors
+from ...errors import Errors
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
-from ...output import PyTorchTransformerOutput
+from ..output import PyTorchTransformerOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
 

@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ...errors import Errors
+from ..errors import Errors
 
 
 class AttentionMask:

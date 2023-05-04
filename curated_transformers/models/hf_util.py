@@ -7,8 +7,8 @@ from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
 from .curated_transformer import CuratedTransformer, CuratedEncoderT
 from .roberta.encoder import RobertaEncoder
-from ..._compat import transformers
-from ...errors import Errors
+from .._compat import transformers
+from ..errors import Errors
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
 SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder, RobertaEncoder)

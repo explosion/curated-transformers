@@ -12,7 +12,7 @@ following model types:
 
 ## ⚠️ Warning: experimental package
 
-This package is experimental and it is possible that models and APIs wil
+This package is experimental and it is possible that models and APIs will
 change in incompatible ways.
 
 ## ⏳ Install

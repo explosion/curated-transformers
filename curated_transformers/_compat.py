@@ -1,5 +1,3 @@
-from spacy.lang.ja import try_sudachi_import
-
 try:
     import transformers
 
@@ -15,18 +13,3 @@ try:
 except ImportError:
     huggingface_hub = None  # type: ignore
     has_huggingface_hub = False
-
-
-try:
-    import fugashi
-
-    has_fugashi = True
-except ImportError:
-    fugashi = None
-    has_fugashi = False
-
-try:
-    try_sudachi_import()
-    has_sudachi = True
-except ImportError:
-    has_sudachi = False

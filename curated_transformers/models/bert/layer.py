@@ -5,7 +5,7 @@ from torch import Tensor
 from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
-from ....errors import Errors
+from ...errors import Errors
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention

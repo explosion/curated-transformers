@@ -1,6 +1,6 @@
 import pytest
 
-from curated_transformers.models.pytorch.albert import AlbertConfig, AlbertEncoder
+from curated_transformers.models.albert import AlbertConfig, AlbertEncoder
 
 
 def test_rejects_incorrect_number_of_groups():

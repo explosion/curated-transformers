@@ -1,3 +1,5 @@
-from spacy import require_gpu
+import torch
 
-require_gpu()
+from .conftest import TORCH_DEVICES
+
+TORCH_DEVICES.append(torch.device("cuda"))

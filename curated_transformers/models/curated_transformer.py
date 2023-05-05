@@ -8,7 +8,7 @@ from .bert.encoder import BertEncoder
 from .roberta.encoder import RobertaEncoder
 
 from .attention import AttentionMask
-from ..output import PyTorchTransformerOutput
+from .output import PyTorchTransformerOutput
 
 CuratedEncoderT = TypeVar("CuratedEncoderT", AlbertEncoder, BertEncoder, RobertaEncoder)
 

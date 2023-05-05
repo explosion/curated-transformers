@@ -3,6 +3,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class SinusoidalPositionalEmbedding(Module):
     def __init__(self, dim: int, max_len: int, *, normalize=True):

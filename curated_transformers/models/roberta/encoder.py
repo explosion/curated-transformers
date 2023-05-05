@@ -6,7 +6,7 @@ from torch import Tensor
 
 from ..attention import AttentionMask
 from ..bert.layer import BertEncoderLayer
-from ...output import PyTorchTransformerOutput
+from ..output import PyTorchTransformerOutput
 from .embeddings import RobertaEmbeddings
 from .config import RobertaConfig
 

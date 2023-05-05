@@ -1,18 +1,19 @@
 from typing import Callable
 from dataclasses import dataclass
 import pytest
-from thinc.api import get_torch_default_device
 from torch.nn import Module
 
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.models.architectures import _pytorch_encoder
-from curated_transformers.models.hf_loader import build_hf_transformer_encoder_loader_v1
-from curated_transformers.models.pytorch.albert import AlbertEncoder
-from curated_transformers.models.pytorch.albert.config import AlbertConfig
-from curated_transformers.models.pytorch.attention import AttentionMask
-from curated_transformers.models.pytorch.bert import BertConfig, BertEncoder
-from curated_transformers.models.pytorch.roberta.config import RobertaConfig
-from curated_transformers.models.pytorch.roberta.encoder import RobertaEncoder
+from curated_transformers.models.curated_transformer import CuratedTransformer
+from curated_transformers.models.hf_util import convert_pretrained_model_for_encoder
+from curated_transformers.models.albert import AlbertEncoder
+from curated_transformers.models.albert.config import AlbertConfig
+from curated_transformers.models.attention import AttentionMask
+from curated_transformers.models.bert import BertConfig, BertEncoder
+from curated_transformers.models.roberta.config import RobertaConfig
+from curated_transformers.models.roberta.encoder import RobertaEncoder
+
+from ..conftest import TORCH_DEVICES
 
 from ..util import torch_assertclose
 
@@ -32,35 +33,28 @@ TEST_MODELS = [
 ]
 
 
-def encoder_from_config(config: ModelConfig):
+def encoder_from_config(config: ModelConfig, hf_encoder: Module):
     encoder = config.encoder(config.config)
-    model = _pytorch_encoder(encoder)
-    model.init = build_hf_transformer_encoder_loader_v1(name=config.hf_model_name)
-    return model
+    transformer = CuratedTransformer(encoder)
+    transformer.load_state_dict(
+        convert_pretrained_model_for_encoder(transformer, hf_encoder.state_dict())
+    )
+    return transformer
 
 
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("model_config", TEST_MODELS)
-def test_hf_load_weights(model_config):
-    model = encoder_from_config(model_config)
-    assert model
-
-
-@pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.parametrize("model_config", TEST_MODELS)
-def test_model_against_hf_transformers(model_config):
-    torch_device = get_torch_default_device()
-
-    model = encoder_from_config(model_config)
-    model.initialize()
-    encoder = model.shims[0]._model
-    encoder.eval()
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_model_against_hf_transformers(model_config, torch_device):
     hf_encoder = transformers.AutoModel.from_pretrained(model_config.hf_model_name).to(
         torch_device
     )
     hf_encoder.eval()
+
+    encoder = encoder_from_config(model_config, hf_encoder)
+    encoder.to(torch_device)
+    encoder.eval()
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_config.hf_model_name

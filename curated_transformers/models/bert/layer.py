@@ -6,6 +6,7 @@ from .. import GeluNew
 from ..attention import AttentionMask, ScaledDotProductAttention
 from .config import BertAttentionConfig, BertLayerConfig
 from ...errors import Errors
+from ..feedforward import PointwiseFeedForward
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
@@ -114,7 +115,11 @@ class BertEncoderLayer(Module):
             layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
-        self.ffn = BertFeedForward(layer_config)
+        self.ffn = PointwiseFeedForward(
+            hidden_act=layer_config.hidden_act,
+            hidden_width=layer_config.hidden_width,
+            intermediate_width=layer_config.intermediate_width,
+        )
         self.ffn_output_layernorm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )

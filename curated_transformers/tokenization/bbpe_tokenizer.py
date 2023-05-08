@@ -19,6 +19,7 @@ class ByteBPETokenizer(Tokenizer):
         processor: ByteBPEProcessor,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
+        pad_piece: str = "<pad>",
         unk_piece: str = "<unk>",
     ):
         """Construct a tokenizer from a cutlery byte-level BPE processor.
@@ -26,11 +27,13 @@ class ByteBPETokenizer(Tokenizer):
         processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
+        pad_piece (str): Padding piece.
         unk_piece (str): The piece to use to mark unknowns.
         """
         self.unk_piece = unk_piece
         self.bos_piece = bos_piece
         self.eos_piece = eos_piece
+        self.pad_piece = pad_piece
         self.processor = processor
 
     @classmethod
@@ -41,6 +44,7 @@ class ByteBPETokenizer(Tokenizer):
         merges_path: Path,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
+        pad_piece: str = "<pad>",
         unk_piece: str = "<unk>",
     ) -> Self:
         """Construct a tokenizer from vocabulary and merge files.
@@ -49,6 +53,7 @@ class ByteBPETokenizer(Tokenizer):
         merges_path (Path): path to the merges file.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
+        pad_piece (str): Padding piece.
         unk_piece (str): The piece to use to mark unknowns.
         """
         processor = ByteBPEProcessor.load_from_files(
@@ -58,6 +63,7 @@ class ByteBPETokenizer(Tokenizer):
             processor=processor,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
+            pad_piece=pad_piece,
             unk_piece=unk_piece,
         )
 
@@ -69,6 +75,12 @@ class ByteBPETokenizer(Tokenizer):
             )
 
         eos_id = self.processor.piece_id(self.eos_piece)
+        if eos_id is None:
+            raise ValueError(
+                f"Byte BPE piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
+            )
+
+        pad_id = self.processor.piece_id(self.pad_piece)
         if eos_id is None:
             raise ValueError(
                 f"Byte BPE piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
@@ -99,7 +111,7 @@ class ByteBPETokenizer(Tokenizer):
             pieces.append(text_pieces)
             lens.append(text_lens)
 
-        return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+        return PiecesWithIds(pad_id=pad_id, ids=ids, lens=lens, pieces=pieces)
 
     @classmethod
     def _convert_hf_tokenizer(cls: Type[Self], tokenizer) -> Self:

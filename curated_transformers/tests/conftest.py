@@ -42,4 +42,7 @@ def test_dir(request):
 
 @pytest.fixture
 def sample_texts():
-    return ["I saw a girl with a telescope.", "Today we will eat poké bowl."]
+    return [
+        "I saw a girl with a telescope.",
+        "Today we will eat poké bowl, lots of it!",
+    ]

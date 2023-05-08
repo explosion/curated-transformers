@@ -1,6 +1,7 @@
 from typing import List, Type, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import torch
 
 from .._compat import has_hf_transformers, transformers
 
@@ -10,9 +11,32 @@ Self = TypeVar("Self", bound="Tokenizer")
 
 @dataclass
 class PiecesWithIds:
+    pad_id: int
     ids: List[List[int]]
     lens: List[List[int]]
     pieces: List[List[str]]
+
+    @property
+    def attention_mask(self):
+        """CPU tensor with attention masks.
+
+        The mask is equivalent to `ids.padded_tensor != padding_idx`."""
+        n_seqs = len(self.ids)
+        max_len = max(len(seq_ids) for seq_ids in self.ids)
+        mask = torch.full((n_seqs, max_len), False)
+        for idx, seq_ids in enumerate(self.ids):
+            mask[idx, : len(seq_ids)] = True
+        return mask
+
+    @property
+    def padded_tensor(self):
+        """Padded CPU tensor of the piece identifiers."""
+        n_seqs = len(self.ids)
+        max_len = max(len(seq_ids) for seq_ids in self.ids)
+        padded = torch.full((n_seqs, max_len), self.pad_id)
+        for idx, seq_ids in enumerate(self.ids):
+            padded[idx, : len(seq_ids)] = torch.tensor(seq_ids)
+        return padded
 
 
 class Tokenizer(ABC):

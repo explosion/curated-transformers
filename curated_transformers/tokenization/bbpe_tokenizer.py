@@ -1,4 +1,4 @@
-from typing import List, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 from cutlery import ByteBPEProcessor
 import json
 from pathlib import Path

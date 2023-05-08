@@ -183,7 +183,8 @@ def _check_toy_tokenizer(pieces):
                     4,
                     2,
                 ],
-            ]
+            ],
+            dtype=torch.int32,
         ),
     )
     torch_assertclose(
@@ -280,7 +281,8 @@ def _check_roberta_base_tokenizer(pieces):
             [
                 [0, 100, 794, 10, 1816, 19, 10, 27608, 4, 2, 1, 1, 1, 1],
                 [0, 5625, 52, 40, 3529, 181, 48344, 5749, 6, 3739, 9, 24, 328, 2],
-            ]
+            ],
+            dtype=torch.int32,
         ),
     )
     torch_assertclose(

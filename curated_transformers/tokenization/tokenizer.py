@@ -33,7 +33,7 @@ class PiecesWithIds:
         """Padded CPU tensor of the piece identifiers."""
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
-        padded = torch.full((n_seqs, max_len), self.pad_id)
+        padded = torch.full((n_seqs, max_len), self.pad_id, dtype=torch.int32)
         for idx, seq_ids in enumerate(self.ids):
             padded[idx, : len(seq_ids)] = torch.tensor(seq_ids)
         return padded

@@ -3,73 +3,10 @@ from torch.nn import Linear, Module
 from torch import Tensor
 
 from .. import GeluNew
-from ..attention import AttentionMask, ScaledDotProductAttention
+from ..attention import AttentionMask, SelfAttention
 from .config import BertAttentionConfig, BertLayerConfig
 from ...errors import Errors
 from ..feedforward import PointwiseFeedForward
-
-
-# https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
-class BertSelfAttention(Module):
-    def __init__(self, config: BertAttentionConfig):
-        super().__init__()
-
-        self.model_dim = config.hidden_width
-        self.num_heads = config.num_attention_heads
-        if self.model_dim % self.num_heads != 0:
-            raise ValueError(
-                Errors.E003.format(
-                    hidden_width=self.model_dim, num_heads=self.num_heads
-                )
-            )
-
-        self.dims_per_head = self.model_dim // self.num_heads
-        self.attention = ScaledDotProductAttention(dropout_prob=config.dropout_prob)
-        self.input = Linear(self.model_dim, self.model_dim * 3)
-        self.output = Linear(self.model_dim, self.model_dim)
-
-    def _split_heads(self, x: Tensor) -> Tensor:
-        """
-        Shapes:
-            x - (batch, seq_len, width)
-            output - (batch, head, seq_len, width_per_head)
-        """
-        batch_size, seq_len, model_dim = x.size()
-        return x.view(
-            batch_size, seq_len, self.num_heads, self.dims_per_head
-        ).transpose(1, 2)
-
-    def _combine_heads(self, x: Tensor) -> Tensor:
-        """
-        Shapes:
-            x - (batch, head, seq_len, width_per_head)
-            output - (batch, seq_len, width)
-        """
-        batch_size, head, seq_len, model_dim = x.size()
-        return (
-            x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
-        )
-
-    def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
-        """
-        Shapes:
-            x - (batch, seq_len, width)
-            attn_mask - (batch, seq_len)
-        """
-
-        proj = self.input(x)
-        q, k, v = proj.chunk(3, dim=-1)
-
-        # (batch, head, seq_len, width_per_head)
-        k = self._split_heads(k)
-        q = self._split_heads(q)
-        v = self._split_heads(v)
-
-        # (batch, seq_len, width)
-        attn = self._combine_heads(self.attention(k, q, v, attn_mask))
-        out = self.output(attn)
-
-        return out
 
 
 class BertFeedForward(Module):
@@ -110,7 +47,11 @@ class BertEncoderLayer(Module):
     ):
         super().__init__()
 
-        self.mha = BertSelfAttention(attention_config)
+        self.mha = SelfAttention(
+            dropout_prob=attention_config.dropout_prob,
+            hidden_width=attention_config.hidden_width,
+            num_attention_heads=attention_config.num_attention_heads,
+        )
         self.attn_output_layernorm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )

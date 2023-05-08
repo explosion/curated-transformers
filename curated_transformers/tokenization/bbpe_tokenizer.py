@@ -3,7 +3,7 @@ from cutlery import ByteBPEProcessor
 import json
 from pathlib import Path
 
-from . import PiecesWithIds, Tokenizer
+from .tokenizer import PiecesWithIds, Tokenizer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="ByteBPETokenizer")
@@ -81,9 +81,9 @@ class ByteBPETokenizer(Tokenizer):
             )
 
         pad_id = self.processor.piece_id(self.pad_piece)
-        if eos_id is None:
+        if pad_id is None:
             raise ValueError(
-                f"Byte BPE piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
+                f"Byte BPE piece encoder vocabulary doesn't contain '{self.pad_piece}' piece"
             )
 
         ids = []
@@ -114,7 +114,7 @@ class ByteBPETokenizer(Tokenizer):
         return PiecesWithIds(pad_id=pad_id, ids=ids, lens=lens, pieces=pieces)
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer) -> Self:
+    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
         serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
         deserialized = json.loads(serialized)
         vocab_merges = deserialized["model"]

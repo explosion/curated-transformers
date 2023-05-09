@@ -33,13 +33,13 @@ class RobertaPostTokenizer(PostTokenizer):
         bos_id = self.processor.piece_id(self.bos_piece)
         if bos_id is None:
             raise ValueError(
-                f"Byte BPE piece encoder vocabulary doesn't contain '{self.bos_piece}' piece"
+                f"RoBERTa piece encoder vocabulary doesn't contain '{self.bos_piece}' piece"
             )
 
         eos_id = self.processor.piece_id(self.eos_piece)
         if eos_id is None:
             raise ValueError(
-                f"Byte BPE piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
+                f"RoBERTa piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
             )
 
         ids = []

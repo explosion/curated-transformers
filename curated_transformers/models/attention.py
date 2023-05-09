@@ -4,8 +4,6 @@ import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from ..errors import Errors
-
 
 class AttentionMask:
     bool_mask: Tensor
@@ -107,9 +105,8 @@ class SelfAttention(Module):
         self.num_heads = num_attention_heads
         if self.model_dim % self.num_heads != 0:
             raise ValueError(
-                Errors.E003.format(
-                    hidden_width=self.model_dim, num_heads=self.num_heads
-                )
+                f"The hidden width of the transformer ({self.model_dim}) must be "
+                "divisible by the number of self-attention heads ({self.num_heads})"
             )
 
         self.dims_per_head = self.model_dim // self.num_heads

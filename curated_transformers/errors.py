@@ -22,8 +22,6 @@ class Errors(metaclass=ErrorsWithCodes):
     E002 = ("The number of hidden layers ({num_hidden_layers}) in the "
             "ALBERT encoder must be divisable by number of hidden groups "
             "({num_hidden_groups})")
-    E003 = ("The hidden width of the transformer ({hidden_width}) must be "
-            "divisible by the number of self-attention heads ({num_heads})")
     E004 = ("The point-wise feed-forward network in the transformer only "
             "supports the following activation functions: {activation_funcs}")
     E007 = ("Attempting to load the weights of an unsupported Hugging "

@@ -3,7 +3,7 @@ name: Test
 on: [push, pull_request, workflow_call]
 
 env:
-  hf-transformers-pip: transformers>=4.28.0,<4.29.0
+  hf-transformers-pip: transformers>=3.4.0,<4.27.0
 
 jobs:
   test:

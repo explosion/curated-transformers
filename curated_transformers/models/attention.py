@@ -149,19 +149,6 @@ class SelfAttention(Module):
         return out
 
 
-def combine_heads(x: Tensor) -> Tensor:
-    """
-    Combine the attention head representations. The inverse of
-    'split_heads'.
-
-    Shapes:
-        x - (batch, head, seq_len, width_per_head)
-        output - (batch, seq_len, width)
-    """
-    batch_size, head, seq_len, model_dim = x.size()
-    return x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
-
-
 def split_heads(x: Tensor, num_heads: int) -> Tensor:
     """
     Split the input by attention head. The caller must validate
@@ -182,3 +169,16 @@ def split_heads(x: Tensor, num_heads: int) -> Tensor:
     dims_per_head = model_dim // num_heads
 
     return x.view(batch_size, seq_len, num_heads, dims_per_head).transpose(1, 2)
+
+
+def combine_heads(x: Tensor) -> Tensor:
+    """
+    Combine the attention head representations. The inverse of
+    'split_heads'.
+
+    Shapes:
+        x - (batch, head, seq_len, width_per_head)
+        output - (batch, seq_len, width)
+    """
+    batch_size, head, seq_len, model_dim = x.size()
+    return x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)

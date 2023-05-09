@@ -11,7 +11,7 @@ following model types:
 - XLM-RoBERTa
 
 spaCy integration for curated transformers is provided by the
-[`spacy-curated-transformers`](https://github.com/explosion/spacy-curated-transformers/pull/1)
+[`spacy-curated-transformers`](https://github.com/explosion/spacy-curated-transformers)
 package.
 
 ## ⚠️ Warning: experimental package

@@ -27,7 +27,7 @@ def test_roberta_tokenizer_hf_tokenizer(sample_texts):
     assert pieces.ids == hf_pieces["input_ids"]
 
 
-def test_bbpe_tokenizer_toy_tokenizer(toy_tokenizer, short_sample_texts):
+def test_roberta_toy_tokenizer(toy_tokenizer, short_sample_texts):
     encoding = toy_tokenizer(short_sample_texts)
     _check_toy_tokenizer(encoding)
 

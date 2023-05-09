@@ -1,10 +1,14 @@
-from typing import Any, Self, Type
+from typing import Any, Type, TypeVar
 from cutlery import ByteBPEProcessor
 import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
 from .tokenizer import PiecesWithIds, PostTokenizer
+
+
+# Only provided as typing.Self in Python 3.11+.
+Self = TypeVar("Self", bound="RobertaTokenizer")
 
 
 class RobertaPostTokenizer(PostTokenizer):

@@ -22,7 +22,7 @@ class GPTNeoXTokenizer(ByteBPETokenizer):
         vocab_path: Path,
         merges_path: Path,
     ) -> Self:
-        """Construct a tokenizer from vocabulary and merge files.
+        """Construct a tokenizer from the vocabulary and merges files.
 
         vocab_path (Path): path to the vocabulary file.
         merges_path (Path): path to the merges file.

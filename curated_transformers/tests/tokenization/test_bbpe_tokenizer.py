@@ -16,13 +16,13 @@ def toy_tokenizer(test_dir):
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
-def test_bbpe_encoder_hf_model(sample_texts):
+def test_bbpe_tokenizer_hf_model(sample_texts):
     tokenizer = ByteBPETokenizer.from_hf_hub(name="roberta-base")
     pieces = tokenizer(sample_texts)
     _check_roberta_base_tokenizer(pieces)
 
 
-def test_bbpe_encoder(toy_tokenizer, sample_texts):
+def test_bbpe_tokenizer(toy_tokenizer, sample_texts):
     encoding = toy_tokenizer(sample_texts)
     _check_toy_tokenizer(encoding)
 

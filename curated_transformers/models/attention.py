@@ -54,7 +54,7 @@ class ScaledDotProductAttention(Module):
         q (Tensor): query.
         v (Tensor): value.
         attn_mask (Optional[AttentionMask]): attention mask.
-        
+
         Shapes:
             k, q, v - (batch, heads, seq_len, width)
             attn_mask - (batch, seq_len)
@@ -131,6 +131,9 @@ class SelfAttention(Module):
             output - (batch, seq_len, width)
         """
 
+        # Project query, key, value all at once and then split. We do the
+        # projection this way to keep the option of switching to fused
+        # PyTorch kernels in the future.
         proj = self.input(x)
         q, k, v = proj.chunk(3, dim=-1)
 

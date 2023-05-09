@@ -58,6 +58,7 @@ class ScaledDotProductAttention(Module):
         Shapes:
             k, q, v - (batch, heads, seq_len, width)
             attn_mask - (batch, seq_len)
+            output - (batch, heads, seq_len, width)
         """
 
         if attn_mask is not None and attn_mask.dim() != 2:
@@ -127,6 +128,7 @@ class SelfAttention(Module):
         Shapes:
             x - (batch, seq_len, width)
             attn_mask - (batch, seq_len)
+            output - (batch, seq_len, width)
         """
 
         proj = self.input(x)

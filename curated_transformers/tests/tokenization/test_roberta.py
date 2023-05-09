@@ -1,29 +1,34 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers
-from curated_transformers.tokenization import ByteBPETokenizer, PiecesWithIds
+from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers.tokenization import PiecesWithIds
+from curated_transformers.tokenization import RobertaTokenizer
 
 from ..util import torch_assertclose
 
 
 @pytest.fixture
 def toy_tokenizer(test_dir):
-    return ByteBPETokenizer.from_files(
+    return RobertaTokenizer.from_files(
         vocab_path=test_dir / "toy-vocab.json", merges_path=test_dir / "toy-merges.txt"
     )
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
-def test_bbpe_tokenizer_hf_model(sample_texts):
-    tokenizer = ByteBPETokenizer.from_hf_hub(name="roberta-base")
+def test_roberta_tokenizer_hf_tokenizer(sample_texts):
+    tokenizer = RobertaTokenizer.from_hf_hub(name="roberta-base")
     pieces = tokenizer(sample_texts)
-    _check_roberta_base_tokenizer(pieces)
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("roberta-base")
+    hf_pieces = hf_tokenizer(sample_texts)
+
+    assert pieces.ids == hf_pieces["input_ids"]
 
 
-def test_bbpe_tokenizer(toy_tokenizer, sample_texts):
-    encoding = toy_tokenizer(sample_texts)
+def test_bbpe_tokenizer_toy_tokenizer(toy_tokenizer, short_sample_texts):
+    encoding = toy_tokenizer(short_sample_texts)
     _check_toy_tokenizer(encoding)
 
 
@@ -130,7 +135,7 @@ def _check_toy_tokenizer(pieces):
     ]
 
     torch_assertclose(
-        pieces.padded_tensor,
+        pieces.padded_tensor(padding_id=1),
         torch.tensor(
             [
                 [
@@ -226,86 +231,6 @@ def _check_toy_tokenizer(pieces):
                     True,
                     True,
                     True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                ],
-            ]
-        ),
-    )
-
-
-def _check_roberta_base_tokenizer(pieces):
-    assert isinstance(pieces, PiecesWithIds)
-    assert pieces.lens == [
-        [1, 1, 1, 1, 1, 1, 1, 2, 1],
-        [1, 1, 1, 1, 1, 2, 2, 1, 1, 2, 1],
-    ]
-    assert pieces.ids == [
-        [0, 100, 794, 10, 1816, 19, 10, 27608, 4, 2],
-        [0, 5625, 52, 40, 3529, 181, 48344, 5749, 6, 3739, 9, 24, 328, 2],
-    ]
-    assert pieces.pieces == [
-        ["<s>", "I", "Ġsaw", "Ġa", "Ġgirl", "Ġwith", "Ġa", "Ġtelescope", ".", "</s>"],
-        [
-            "<s>",
-            "Today",
-            "Ġwe",
-            "Ġwill",
-            "Ġeat",
-            "Ġp",
-            "okÃ©",
-            "Ġbowl",
-            ",",
-            "Ġlots",
-            "Ġof",
-            "Ġit",
-            "!",
-            "</s>",
-        ],
-    ]
-    torch_assertclose(
-        pieces.padded_tensor,
-        torch.tensor(
-            [
-                [0, 100, 794, 10, 1816, 19, 10, 27608, 4, 2, 1, 1, 1, 1],
-                [0, 5625, 52, 40, 3529, 181, 48344, 5749, 6, 3739, 9, 24, 328, 2],
-            ],
-            dtype=torch.int32,
-        ),
-    )
-    torch_assertclose(
-        pieces.attention_mask,
-        torch.tensor(
-            [
-                [
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    False,
-                    False,
-                    False,
-                    False,
-                ],
-                [
                     True,
                     True,
                     True,

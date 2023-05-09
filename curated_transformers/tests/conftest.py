@@ -37,5 +37,12 @@ def pytest_runtest_setup(item):
 
 @pytest.fixture
 def test_dir(request):
-    print(request.fspath)
     return Path(request.fspath).parent
+
+
+@pytest.fixture
+def sample_texts():
+    return [
+        "I saw a girl with a telescope.",
+        "Today we will eat poké bowl, lots of it!",
+    ]

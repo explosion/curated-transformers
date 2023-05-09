@@ -56,6 +56,7 @@ class ScaledDotProductAttention(Module):
         q (Tensor): query.
         v (Tensor): value.
         attn_mask (Optional[AttentionMask]): attention mask.
+        
         Shapes:
             k, q, v - (batch, heads, seq_len, width)
             attn_mask - (batch, seq_len)
@@ -84,7 +85,7 @@ class ScaledDotProductAttention(Module):
 
 # https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
 class SelfAttention(Module):
-    """Transformer self-attention layer (Vaswani et al., 2016)."""
+    """Transformer self-attention layer (Vaswani et al., 2017)."""
 
     def __init__(
         self,
@@ -98,7 +99,7 @@ class SelfAttention(Module):
         dropout_prob (float): dropout to apply between the self-attention
             and output layers (default: 0.1).
         hidden_width (int): hidden width of the layer (default: 768).
-        num_attention_heads (int): number of attenion heads (default: 12).
+        num_attention_heads (int): number of attention heads (default: 12).
         """
         super().__init__()
 

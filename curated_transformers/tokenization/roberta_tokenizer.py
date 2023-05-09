@@ -18,16 +18,13 @@ class RobertaPostTokenizer(PostTokenizer):
         processor: ByteBPEProcessor,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
-        unk_piece: str = "<unk>",
     ):
         """Construct a RoBERTa post-tokenizer.
 
         processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
-        unk_piece (str): The piece to use to mark unknowns.
         """
-        self.unk_piece = unk_piece
         self.bos_piece = bos_piece
         self.eos_piece = eos_piece
         self.processor = processor
@@ -65,14 +62,12 @@ class RobertaTokenizer(ByteBPETokenizer):
         processor: ByteBPEProcessor,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
-        unk_piece: str = "<unk>",
     ):
         """Construct a RoBERTa tokenizer from a cutlery byte-level BPE processor.
 
         processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
-        unk_piece (str): The piece to use to mark unknowns.
         """
         super().__init__(processor=processor)
 
@@ -81,7 +76,6 @@ class RobertaTokenizer(ByteBPETokenizer):
         self.post_tokenizer = RobertaPostTokenizer(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
-            unk_piece=unk_piece,
             processor=processor,
         )
 
@@ -93,7 +87,6 @@ class RobertaTokenizer(ByteBPETokenizer):
         merges_path: Path,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
-        unk_piece: str = "<unk>",
     ) -> Self:
         """Construct a tokenizer from vocabulary and merge files.
 
@@ -101,7 +94,6 @@ class RobertaTokenizer(ByteBPETokenizer):
         merges_path (Path): path to the merges file.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
-        unk_piece (str): The piece to use to mark unknowns.
         """
         processor = ByteBPEProcessor.load_from_files(
             vocab=vocab_path, merges=merges_path
@@ -110,7 +102,6 @@ class RobertaTokenizer(ByteBPETokenizer):
             processor=processor,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
-            unk_piece=unk_piece,
         )
 
     @classmethod
@@ -122,10 +113,8 @@ class RobertaTokenizer(ByteBPETokenizer):
         processor = ByteBPEProcessor(vocab_merges["vocab"], merges)
         bos_piece = tokenizer.bos_token  # type: ignore
         eos_piece = tokenizer.eos_token  # type: ignore
-        unk_piece = tokenizer.unk_token  # type: ignore
         return cls(
             processor=processor,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
-            unk_piece=unk_piece,
         )

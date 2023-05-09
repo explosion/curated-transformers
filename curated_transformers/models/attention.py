@@ -131,8 +131,8 @@ class SelfAttention(Module):
             output - (batch, seq_len, width)
         """
 
-        # Project query, key, value all at once and then split. We do the
-        # projection this way to keep the option of switching to fused
+        # Project query, key, and value all at once and then split. We do
+        # the projection this way to have the option of switching to fused
         # PyTorch kernels in the future.
         proj = self.input(x)
         q, k, v = proj.chunk(3, dim=-1)

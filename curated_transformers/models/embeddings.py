@@ -61,7 +61,7 @@ class RotaryEmbeddings(Module):
 
     def _create_rotary_embed(self, *, width: int, length: int):
         # mΘ
-        position = torch.arange(length).unsqueeze(1)
+        position = torch.arange(length, device=self.theta.device).unsqueeze(1)
         m_theta = position * self.theta.unsqueeze(0)
 
         # We apply both sin and cos twice (see Eq 15, 34), but the ordering

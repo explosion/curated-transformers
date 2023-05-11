@@ -3,20 +3,23 @@ import torch
 
 from curated_transformers._compat import has_hf_transformers
 from curated_transformers.models.embeddings import RotaryEmbeddings
-from curated_transformers.tests.util import torch_assertclose
+
+from ..conftest import TORCH_DEVICES
+from ..util import torch_assertclose
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_rotary_embeddings_against_hf():
+@pytest.mark.parametrize("device", TORCH_DEVICES)
+def test_rotary_embeddings_against_hf(device):
     from transformers.models.llama.modeling_llama import (
         LlamaRotaryEmbedding,
         rotate_half,
     )
 
-    re = RotaryEmbeddings(768)
-    hf_re = LlamaRotaryEmbedding(768)
+    re = RotaryEmbeddings(768).to(device)
+    hf_re = LlamaRotaryEmbedding(768, device=device)
 
-    X = torch.rand(16, 12, 64, 768)
+    X = torch.rand(16, 12, 64, 768, device=device)
     Y = re(X)
     hf_re_cos, hf_re_sin = hf_re(X, seq_len=X.shape[-2])
     Y_hf = hf_re_cos * X + hf_re_sin * rotate_half(X)
@@ -29,19 +32,21 @@ def test_rotary_embeddings_rejects_uneven_width():
         RotaryEmbeddings(5, seq_len=8)
 
 
-def test_rotary_embeddings_resize():
-    re = RotaryEmbeddings(4, seq_len=8)
+@pytest.mark.parametrize("device", TORCH_DEVICES)
+def test_rotary_embeddings_resize(device):
+    re = RotaryEmbeddings(4, seq_len=8).to(device)
     assert re.cos.shape == (8, 4)
     assert re.sin.shape == (8, 4)
-    X = torch.rand(4, 8, 16, 4)
+    X = torch.rand(4, 8, 16, 4, device=device)
     re(X)
     assert re.cos.shape == (16, 4)
     assert re.sin.shape == (16, 4)
 
 
-def test_rotary_embeddings_small():
-    re = RotaryEmbeddings(4)
-    X = torch.ones(1, 2, 3, 4)
+@pytest.mark.parametrize("device", TORCH_DEVICES)
+def test_rotary_embeddings_small(device):
+    re = RotaryEmbeddings(4).to(device)
+    X = torch.ones(1, 2, 3, 4, device=device)
     Y = re(X)
     torch_assertclose(
         Y,
@@ -59,6 +64,7 @@ def test_rotary_embeddings_small():
                         [-1.325444, 0.979801, 0.493151, 1.019799],
                     ],
                 ]
-            ]
+            ],
+            device=device,
         ),
     )

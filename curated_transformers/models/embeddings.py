@@ -100,20 +100,18 @@ class RotaryEmbeddings(Module):
         RETURNS (Tensor): Array with the rotary embeddings applied.
 
         Shapes:
-            input - (..., seq_len, width_per_head)
-            positions - (..., seq_len)
-            output - pair of (..., seq_len, width_per_head)
+            input - (batch_size, num_heads, seq_len, width_per_head)
+            positions - (batch_size, seq_len)
+            output - (batch_size, num_heads, seq_len, width_per_head)
         """
-        width = self.cos.size(-1)
+        batch_size, _, seq_len, width = input.shape
 
         if positions is None:
             # Fastpath: positions from [0..seq_len), avoid indexing.
-            seq_len = input.size(-2)
             if self.cos.size(-2) < seq_len:
                 self._create_rotary_embed(width=width, length=seq_len)
-            shape = ((1,) * (input.ndim - self.cos.ndim)) + (seq_len, width)
-            rot_cos = self.cos[:seq_len, :].view(shape)
-            rot_sin = self.sin[:seq_len, :].view(shape)
+            rot_cos = self.cos[:seq_len, :].view(1, 1, seq_len, width)
+            rot_sin = self.sin[:seq_len, :].view(1, 1, seq_len, width)
         else:
             max_len = int(positions.max()) + 1
             if self.cos.size(-2) < max_len:
@@ -127,8 +125,8 @@ class RotaryEmbeddings(Module):
             #   self.cos - (max_len, width)
             #   rot_cos - (batch_size, seq_len, width)
             positions_flat = positions.view(-1)
-            rot_cos = self.cos[positions_flat].view(*positions.shape, width)
-            rot_sin = self.sin[positions_flat].view(*positions.shape, width)
+            rot_cos = self.cos[positions_flat].view(batch_size, 1, seq_len, width)
+            rot_sin = self.sin[positions_flat].view(batch_size, 1, seq_len, width)
 
         # Eq 34 with ordering changed for compatibility.
         return rot_cos * input + rot_sin * self._rotate(input)

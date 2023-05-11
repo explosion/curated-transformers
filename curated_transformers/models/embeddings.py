@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 import torch
 from torch import Tensor
 from torch.nn import Module
@@ -89,24 +90,45 @@ class RotaryEmbeddings(Module):
         input_2 = input[..., :half_idx]
         return torch.cat([input_1, input_2], dim=-1)
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: torch.Tensor, *, positions: Optional[Tensor] = None):
         """
         Apply rotary embeddings to an array.
 
         input (Tensor): Array to apply the rotary embeddings to.
-        RETURNS (Tensor]: Array with the rotary embeddings applied.
+        positions (Optional[Tensor]): positions of the inputs. If no
+            positions are provided, they are assumed to be [0, seq_len).
+        RETURNS (Tensor): Array with the rotary embeddings applied.
 
         Shapes:
             input - (..., seq_len, width_per_head)
+            positions - (..., seq_len)
             output - pair of (..., seq_len, width_per_head)
         """
-        seq_len = input.size(-2)
         width = self.cos.size(-1)
-        if self.cos.size(-2) < seq_len:
-            self._create_rotary_embed(width=width, length=seq_len)
-        shape = ((1,) * (input.ndim - self.cos.ndim)) + (seq_len, width)
-        rot_cos = self.cos[:seq_len, :].view(shape)
-        rot_sin = self.sin[:seq_len, :].view(shape)
+
+        if positions is None:
+            # Fastpath: positions from [0..seq_len), avoid indexing.
+            seq_len = input.size(-2)
+            if self.cos.size(-2) < seq_len:
+                self._create_rotary_embed(width=width, length=seq_len)
+            shape = ((1,) * (input.ndim - self.cos.ndim)) + (seq_len, width)
+            rot_cos = self.cos[:seq_len, :].view(shape)
+            rot_sin = self.sin[:seq_len, :].view(shape)
+        else:
+            max_len = int(positions.max()) + 1
+            if self.cos.size(-2) < max_len:
+                self._create_rotary_embed(width=width, length=max_len)
+
+            # Flatten positions to index cos/sin arrays, then unflatten.
+            #
+            # Example shapes:
+            #
+            #   positions_flat - (batch_size * seq_len)
+            #   self.cos - (max_len, width)
+            #   rot_cos - (batch_size, seq_len, width)
+            positions_flat = positions.view(-1)
+            rot_cos = self.cos[positions_flat].view(*positions.shape, width)
+            rot_sin = self.sin[positions_flat].view(*positions.shape, width)
 
         # Eq 34 with ordering changed for compatibility.
         return rot_cos * input + rot_sin * self._rotate(input)

@@ -5,7 +5,6 @@ from torch import Tensor
 from .. import GeluNew
 from ..attention import AttentionMask, SelfAttention
 from .config import BertAttentionConfig, BertLayerConfig
-from ...errors import Errors
 from ..feedforward import PointwiseFeedForward
 
 
@@ -26,8 +25,10 @@ class BertFeedForward(Module):
             # transformers.
             self.activation = GeluNew()  # type: ignore
         else:
+            supported_activations = ("relu", "gelu", "gelu_new")
             raise ValueError(
-                Errors.E004.format(activation_funcs=("relu", "gelu", "gelu_new"))
+                "The point-wise feed-forward network in the transformer only "
+                f"supports the following activation functions: {supported_activations}"
             )
 
     def forward(self, x: Tensor) -> Tensor:

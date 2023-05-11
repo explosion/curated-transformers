@@ -107,7 +107,7 @@ class SelfAttention(Module):
         if self.model_dim % self.num_heads != 0:
             raise ValueError(
                 f"The hidden width of the transformer ({self.model_dim}) must be "
-                "divisible by the number of self-attention heads ({self.num_heads})"
+                f"divisible by the number of self-attention heads ({self.num_heads})"
             )
 
         self.dims_per_head = self.model_dim // self.num_heads

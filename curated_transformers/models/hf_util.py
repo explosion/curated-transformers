@@ -8,7 +8,6 @@ from .bert.encoder import BertEncoder
 from .curated_transformer import CuratedTransformer, CuratedEncoderT
 from .roberta.encoder import RobertaEncoder
 from .._compat import transformers
-from ..errors import Errors
 
 SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
 SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder, RobertaEncoder)
@@ -17,9 +16,9 @@ SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder, RobertaEncoder)
 def _check_supported_hf_models(model_type: str):
     if model_type not in SUPPORTED_MODEL_TYPES:
         raise ValueError(
-            Errors.E007.format(
-                unsupported_model=model_type, supported_models=SUPPORTED_MODEL_TYPES
-            )
+            "Attempting to load the weights of an unsupported Hugging "
+            f"Face `transformers` model ({model_type}). Currently "
+            f"supported models: {SUPPORTED_MODEL_TYPES}"
         )
 
 
@@ -44,10 +43,9 @@ def convert_pretrained_model_for_encoder(
         converted = _convert_roberta_base_state(params)
     else:
         raise TypeError(
-            Errors.E026.format(
-                unsupported_encoder=type(encoder),
-                supported_encoders=SUPPORTED_CURATED_ENCODERS,
-            )
+            "Attempting to load the weights of a Hugging Face `transformers` model "
+            f"into an unsupported curated encoder ({type(encoder)}). Currently "
+            f"supported encoders: {SUPPORTED_CURATED_ENCODERS}"
         )
 
     return _add_curated_encoder_prefix(converted)

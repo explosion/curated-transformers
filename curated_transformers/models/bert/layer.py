@@ -8,40 +8,6 @@ from .config import BertAttentionConfig, BertLayerConfig
 from ..feedforward import PointwiseFeedForward
 
 
-class BertFeedForward(Module):
-    def __init__(self, config: BertLayerConfig):
-        super().__init__()
-
-        self.intermediate = Linear(config.hidden_width, config.intermediate_width)
-        self.output = Linear(config.intermediate_width, config.hidden_width)
-        if config.hidden_act == "relu":
-            self.activation = torch.nn.ReLU()  # type: ignore
-        elif config.hidden_act == "gelu":
-            self.activation = torch.nn.GELU()  # type: ignore
-        elif config.hidden_act == "gelu_new":
-            # Ideally, we would use torch.nn.GELU(approximate="tanh"). However,
-            # the differences between that and the manual Torch implementation
-            # are large enough to fail tests comparing output to HF
-            # transformers.
-            self.activation = GeluNew()  # type: ignore
-        else:
-            supported_activations = ("relu", "gelu", "gelu_new")
-            raise ValueError(
-                "The point-wise feed-forward network in the transformer only "
-                f"supports the following activation functions: {supported_activations}"
-            )
-
-    def forward(self, x: Tensor) -> Tensor:
-        """
-        Shapes:
-            x - (batch, seq_len, width)
-        """
-        out = self.intermediate(x)
-        out = self.activation(out)
-        out = self.output(out)
-        return out
-
-
 class BertEncoderLayer(Module):
     def __init__(
         self, layer_config: BertLayerConfig, attention_config: BertAttentionConfig

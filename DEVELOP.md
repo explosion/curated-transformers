@@ -10,26 +10,8 @@ In this section we will give some rules of thumb to avoid conversion errors.
 
 ### Do not use global state
 
-TorchScript cannot use global state. One form of global state that we have
-in this project is the `Errors` class. Consequently, we cannot use `Errors`
-in `Module`s. The following is therefore invalid:
-
-```python
-class Foo(nn.Module):
-    def forward(X: Tensor) -> Tensor:
-        # Problem: Errors fields are global state.
-        raise ValueError(Errors.E042)
-```
-
-In these cases we have to use an inline string instead:
-
-```python
-class Foo(nn.Module):
-    def forward(X: Tensor) -> Tensor:
-        raise ValueError("This module does not do anything yet.")
-```
-
-For the same reason we can also not rely on `has_*` bools in a module:
+TorchScript cannot use global state. So, we can also not rely on `has_*` bools
+in a module:
 
 ```python
 class Foo(nn.Module):

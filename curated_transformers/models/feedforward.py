@@ -3,7 +3,6 @@ from torch import Tensor
 from torch.nn import Linear, Module
 
 from .activations import GeluNew
-from ..errors import Errors
 
 
 class PointwiseFeedForward(Module):
@@ -23,6 +22,7 @@ class PointwiseFeedForward(Module):
     intermediate_width (int): the width of the projection to which the
         non-linearity is applied. (default: 3072)
     """
+
     def __init__(
         self,
         *,
@@ -45,8 +45,10 @@ class PointwiseFeedForward(Module):
             # transformers.
             self.activation = GeluNew()  # type: ignore
         else:
+            supported_activations = ("relu", "gelu", "gelu_new")
             raise ValueError(
-                Errors.E004.format(activation_funcs=("relu", "gelu", "gelu_new"))
+                "The point-wise feed-forward network in the transformer only "
+                f"supports the following activation functions: {supported_activations}"
             )
 
     def forward(self, x: Tensor) -> Tensor:

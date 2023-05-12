@@ -28,8 +28,6 @@ class ModelConfig:
 TEST_MODELS = [
     ModelConfig(AlbertConfig(vocab_size=30000), AlbertEncoder, "albert-base-v2"),
     ModelConfig(BertConfig(vocab_size=28996), BertEncoder, "bert-base-cased"),
-    ModelConfig(RobertaConfig(), RobertaEncoder, "roberta-base"),
-    ModelConfig(RobertaConfig(vocab_size=250002), RobertaEncoder, "xlm-roberta-base"),
 ]
 
 

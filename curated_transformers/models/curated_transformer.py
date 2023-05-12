@@ -5,12 +5,11 @@ from torch.nn import Module
 
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
-from .roberta.encoder import RobertaEncoder
 
 from .attention import AttentionMask
 from .output import PyTorchTransformerOutput
 
-CuratedEncoderT = TypeVar("CuratedEncoderT", AlbertEncoder, BertEncoder, RobertaEncoder)
+CuratedEncoderT = TypeVar("CuratedEncoderT", AlbertEncoder, BertEncoder)
 
 
 class CuratedTransformer(Generic[CuratedEncoderT], Module):

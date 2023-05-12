@@ -42,8 +42,8 @@ def test_rotary_embeddings_resize(device):
     assert re.cos.shape == (16, 4)
     assert re.sin.shape == (16, 4)
 
-    positions = torch.tensor([[2, 1, 32], [1, 2, 0]], device=device).view([1, 2, 3])
-    X = torch.rand(1, 2, 3, 4, device=device)
+    positions = torch.tensor([[2, 1, 32], [1, 2, 0]], device=device).view([2, 1, 3])
+    X = torch.rand(2, 2, 3, 4, device=device)
     re(X, positions=positions)
     assert re.cos.shape == (33, 4)
     assert re.sin.shape == (33, 4)
@@ -79,8 +79,8 @@ def test_rotary_embeddings_small(device):
 @pytest.mark.parametrize("device", TORCH_DEVICES)
 def test_rotary_embeddings_positions_small(device):
     re = RotaryEmbeddings(4).to(device)
-    X = torch.ones(1, 2, 3, 4, device=device)
-    positions = torch.tensor([[2, 1, 0], [1, 2, 0]], device=device).view([1, 2, 3])
+    X = torch.ones(2, 5, 3, 4, device=device)
+    positions = torch.tensor([[2, 1, 0], [1, 2, 0]], device=device).view([2, 3])
     Y = re(X, positions=positions)
     torch_assertclose(
         Y,
@@ -92,13 +92,15 @@ def test_rotary_embeddings_positions_small(device):
                         [-0.301169, 0.989950, 1.381773, 1.009950],
                         [1.000000, 1.000000, 1.000000, 1.000000],
                     ],
+                ],
+                [
                     [
                         [-0.301169, 0.989950, 1.381773, 1.009950],
                         [-1.325444, 0.979801, 0.493151, 1.019799],
                         [1.000000, 1.000000, 1.000000, 1.000000],
                     ],
-                ]
+                ],
             ],
             device=device,
-        ),
+        ).expand([2, 5, 3, 4]),
     )

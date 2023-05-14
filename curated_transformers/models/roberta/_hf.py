@@ -10,23 +10,23 @@ from ..hf_util import _merge_qkv
 def convert_hf_config(hf_config: Any) -> RobertaConfig:
     # WARNING: seem like we cannot get the max length from the model? Maybe
     # we should do the max position embeddings minus 2?
-    padding_id = hf_config.pad_token_id
+    padding_id = hf_config["pad_token_id"]
     return RobertaConfig(
-        attention_probs_dropout_prob=hf_config.attention_probs_dropout_prob,
-        embedding_width=hf_config.hidden_size,
-        hidden_act=hf_config.hidden_act,
-        hidden_dropout_prob=hf_config.hidden_dropout_prob,
-        hidden_width=hf_config.hidden_size,
-        intermediate_width=hf_config.intermediate_size,
-        layer_norm_eps=hf_config.layer_norm_eps,
+        attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],
+        embedding_width=hf_config["hidden_size"],
+        hidden_act=hf_config["hidden_act"],
+        hidden_dropout_prob=hf_config["hidden_dropout_prob"],
+        hidden_width=hf_config["hidden_size"],
+        intermediate_width=hf_config["intermediate_size"],
+        layer_norm_eps=hf_config["layer_norm_eps"],
         # Positions embeddings for 0..padding_id are reserved.
-        model_max_length=hf_config.max_position_embeddings - (padding_id + 1),
-        max_position_embeddings=hf_config.max_position_embeddings,
-        num_attention_heads=hf_config.num_attention_heads,
-        num_hidden_layers=hf_config.num_hidden_layers,
+        model_max_length=hf_config["max_position_embeddings"] - (padding_id + 1),
+        max_position_embeddings=hf_config["max_position_embeddings"],
+        num_attention_heads=hf_config["num_attention_heads"],
+        num_hidden_layers=hf_config["num_hidden_layers"],
         padding_idx=padding_id,
-        type_vocab_size=hf_config.type_vocab_size,
-        vocab_size=hf_config.vocab_size,
+        type_vocab_size=hf_config["type_vocab_size"],
+        vocab_size=hf_config["vocab_size"],
     )
 
 

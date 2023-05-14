@@ -1,11 +1,13 @@
+import json
 from typing import Any, Mapping, Type, TypeVar
 from abc import ABC, abstractmethod
+from huggingface_hub import hf_hub_download
+import torch
 from torch import Tensor
 from torch.nn import Parameter
 
-from .._compat import has_hf_transformers, transformers
-from .module import CausalLMModule, DecoderModule, EncoderModule
-
+HF_MODEL_CONFIG = "config.json"
+HF_MODEL_CHECKPOINT = "pytorch_model.bin"
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromPretrainedHFModel")
@@ -35,8 +37,8 @@ class FromPretrainedHFModel(ABC):
     @classmethod
     @abstractmethod
     def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
-        """Create the module from a Hugging Face model configuration.
-        state dict for the module.
+        """Create the module from a Hugging Face model JSON-deserialized
+        model configuration.
 
         hf_config (Any): Hugging Face model configuration.
         RETURNS (Self): module constructed using the configuration.
@@ -51,24 +53,31 @@ class FromPretrainedHFModel(ABC):
         revsion (str): Model revision.
         RETURNS (Self): Module with the parameters loaded.
         """
-        if not has_hf_transformers:
-            raise ValueError(
-                "`Loading models from Hugging Face Hub requires `transformers` package to be installed"
-            )
+        # Download configuration and construct model.
+        config_filename = hf_hub_download(
+            repo_id=name, filename=HF_MODEL_CONFIG, revision=revision
+        )
+        with open(config_filename, "r") as f:
+            config = json.load(f)
+        model = cls.from_hf_config(hf_config=config)
 
-        if issubclass(cls, CausalLMModule):
-            hf_model = transformers.AutoModelForCausalLM.from_pretrained(
-                name, revision=revision
-            )
-        elif issubclass(cls, (DecoderModule, EncoderModule)):
-            hf_model = transformers.AutoModel.from_pretrained(name, revision=revision)
-        else:
-            raise ValueError(
-                "Loading from Hugging Face Hub is not supported for this module"
-            )
+        # Download model and convert HF parameter names to ours.
+        model_filename = hf_hub_download(
+            repo_id=name, filename=HF_MODEL_CHECKPOINT, revision=revision
+        )
+        state_dict = torch.load(model_filename, weights_only=True)
+        state_dict = cls.convert_hf_state_dict(state_dict)
 
-        model = cls.from_hf_config(hf_config=hf_model.config)
-        state_dict = cls.convert_hf_state_dict(hf_model.state_dict())
         model.load_state_dict(state_dict)
 
         return model
+
+    @abstractmethod
+    def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
+        """Load a state dictionary.
+
+        This method is automatically impemented by also deriving from
+        `torch.nn.Module`. This mixin does not derive from `Module` in
+        order to be an abstract base class.
+        """
+        ...

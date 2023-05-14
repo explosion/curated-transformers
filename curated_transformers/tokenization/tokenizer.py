@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TypeVar, Union
+from typing import Iterable, List, Optional, Type, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import torch
@@ -37,35 +37,80 @@ class PiecesWithIds:
         return padded
 
 
-class PreTokenizer(ABC):
+class PreDecoder(ABC):
+    """Callable applied before decoding."""
+
     @abstractmethod
-    def __call__(self, input: List[str]) -> List[str]:
+    def __call__(self, input: Iterable[Iterable[int]]) -> List[List[int]]:
         ...
 
 
-class PostTokenizer(ABC):
+class PostDecoder(ABC):
+    """Callable applied after decoding."""
+
+    @abstractmethod
+    def __call__(self, pieces: Iterable[str]) -> List[str]:
+        ...
+
+
+class PreEncoder(ABC):
+    """Callable applied before encoding."""
+
+    @abstractmethod
+    def __call__(self, input: Iterable[str]) -> List[str]:
+        ...
+
+
+class PostEncoder(ABC):
+    """Callable applied after encoding."""
+
     @abstractmethod
     def __call__(self, pieces: PiecesWithIds) -> PiecesWithIds:
         ...
 
 
 class Tokenizer(ABC):
-    pre_tokenizer: Optional[PreTokenizer] = None
-    post_tokenizer: Optional[PostTokenizer] = None
+    pre_decoder: Optional[PreDecoder] = None
+    post_decoder: Optional[PostDecoder] = None
+    pre_encoder: Optional[PreEncoder] = None
+    post_encoder: Optional[PostEncoder] = None
 
-    def __call__(self, input: Union[str, List[str]]) -> PiecesWithIds:
+    def __call__(self, input: Union[str, Iterable[str]]) -> PiecesWithIds:
         """Split one or more texts into pieces.
 
-        input (Union[str, List[str]]): text (str) or texts (List[str])
+        input (Union[str, Iterable[str]]): text (str) or texts (Iterable[str])
             to split."""
-        input = input if isinstance(input, list) else [input]
-        if self.pre_tokenizer is not None:
-            input = self.pre_tokenizer(input)
+        return self.encode(input)
 
-        pieces = self._tokenize(input)
+    def decode(self, input: Iterable[Iterable[int]]):
+        """Reconstruct a string from piece identifiers.
 
-        if self.post_tokenizer is not None:
-            pieces = self.post_tokenizer(pieces)
+        input (Iterable[Iterable[int]]): the piece identifiers
+            to reconstruct the string from.
+        """
+        if self.pre_decoder is not None:
+            input = self.pre_decoder(input)
+
+        strings = self._decode(input)
+
+        if self.post_decoder is not None:
+            strings = self.post_decoder(strings)
+
+        return strings
+
+    def encode(self, input: Union[str, Iterable[str]]) -> PiecesWithIds:
+        """Split one or more texts into pieces.
+
+        input (Union[str, Iterable[str]]): text (str) or texts (Iterable[str])
+            to split."""
+        input = [input] if isinstance(input, str) else input
+        if self.pre_encoder is not None:
+            input = self.pre_encoder(input)
+
+        pieces = self._encode(input)
+
+        if self.post_encoder is not None:
+            pieces = self.post_encoder(pieces)
 
         return pieces
 
@@ -89,5 +134,9 @@ class Tokenizer(ABC):
         ...
 
     @abstractmethod
-    def _tokenize(self, input: List[str]) -> PiecesWithIds:
+    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+        ...
+
+    @abstractmethod
+    def _encode(self, input: Iterable[str]) -> PiecesWithIds:
         ...

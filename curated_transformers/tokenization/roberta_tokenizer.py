@@ -1,17 +1,17 @@
-from typing import Any, Type, TypeVar
+from typing import Any, Iterable, List, Type, TypeVar
 from cutlery import ByteBPEProcessor
 import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .tokenizer import PiecesWithIds, PostTokenizer
+from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
 
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="RobertaTokenizer")
 
 
-class RobertaPostTokenizer(PostTokenizer):
+class RobertaPreDecoder(PreDecoder):
     def __init__(
         self,
         *,
@@ -19,7 +19,41 @@ class RobertaPostTokenizer(PostTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a RoBERTa post-tokenizer.
+        """Construct a RoBERTa pre-decoder.
+
+        processor (ByteBPEProcessor): The processor to wrap.
+        bos_piece (str): The piece to use to mark the beginning of a sequence.
+        eos_piece (str): The piece to use to mark the end of a sequence.
+        """
+        self.bos_piece = bos_piece
+        self.eos_piece = eos_piece
+        self.processor = processor
+
+    def __call__(self, input: Iterable[Iterable[int]]) -> List[List[int]]:
+        bos_id = self.processor.piece_id(self.bos_piece)
+        if bos_id is None:
+            raise ValueError(
+                f"RoBERTa piece encoder vocabulary doesn't contain '{self.bos_piece}' piece"
+            )
+
+        eos_id = self.processor.piece_id(self.eos_piece)
+        if eos_id is None:
+            raise ValueError(
+                f"RoBERTa piece encoder vocabulary doesn't contain '{self.eos_piece}' piece"
+            )
+
+        return [[id for id in ids if id not in (bos_id, eos_id)] for ids in input]
+
+
+class RobertaPostEncoder(PostEncoder):
+    def __init__(
+        self,
+        *,
+        processor: ByteBPEProcessor,
+        bos_piece: str = "<s>",
+        eos_piece: str = "</s>",
+    ):
+        """Construct a RoBERTa post-encoder.
 
         processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
@@ -73,7 +107,11 @@ class RobertaTokenizer(ByteBPETokenizer):
 
         self.processor = processor
 
-        self.post_tokenizer = RobertaPostTokenizer(
+        self.pre_decoder = RobertaPreDecoder(
+            bos_piece=bos_piece, eos_piece=eos_piece, processor=processor
+        )
+
+        self.post_encoder = RobertaPostEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             processor=processor,

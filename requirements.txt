@@ -4,3 +4,6 @@ mypy>=0.990,<1.1.0; platform_machine != "aarch64" and python_version >= "3.7"
 
 # Development dependencies
 pytest
+
+# Documentation
+sphinx_rtd_theme

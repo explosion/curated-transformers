@@ -143,5 +143,7 @@ def _load_state_dict_checkpoints(
 ) -> Mapping[str, Any]:
     state_dict = {}
     for filename in checkpoint_filenames:
-        state_dict.update(torch.load(filename, weights_only=True))
+        state_dict.update(
+            torch.load(filename, map_location=torch.device("cpu"), weights_only=True)
+        )
     return state_dict

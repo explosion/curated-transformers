@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 from cutlery import ByteBPEProcessor
 
 from .tokenizer import PiecesWithIds, Tokenizer
@@ -19,7 +19,10 @@ class ByteBPETokenizer(Tokenizer):
         """
         self.processor = processor
 
-    def _tokenize(self, input: List[str]) -> PiecesWithIds:
+    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+        return [self.processor.decode_from_ids(ids) for ids in input]
+
+    def _encode(self, input: Iterable[str]) -> PiecesWithIds:
         ids = []
         pieces = []
         lens = []

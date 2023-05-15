@@ -65,7 +65,12 @@ class FromPretrainedHFModel(ABC):
         model_filename = hf_hub_download(
             repo_id=name, filename=HF_MODEL_CHECKPOINT, revision=revision
         )
-        state_dict = torch.load(model_filename, weights_only=True)
+        state_dict = torch.load(
+            model_filename,
+            # Map to CPU first to support all devices.
+            map_location=torch.device("cpu"),
+            weights_only=True,
+        )
         state_dict = cls.convert_hf_state_dict(state_dict)
 
         model.load_state_dict(state_dict)

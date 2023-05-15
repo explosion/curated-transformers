@@ -1,4 +1,4 @@
-from typing import Dict, OrderedDict
+from typing import Mapping
 import torch
 import re
 
@@ -6,11 +6,10 @@ import re
 from .albert.encoder import AlbertEncoder
 from .bert.encoder import BertEncoder
 from .curated_transformer import CuratedTransformer, CuratedEncoderT
-from .roberta.encoder import RobertaEncoder
 from .._compat import transformers
 
-SUPPORTED_MODEL_TYPES = ["albert", "bert", "camembert", "roberta", "xlm-roberta"]
-SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder, RobertaEncoder)
+SUPPORTED_MODEL_TYPES = ["albert", "bert"]
+SUPPORTED_CURATED_ENCODERS = (AlbertEncoder, BertEncoder)
 
 
 def _check_supported_hf_models(model_type: str):
@@ -24,8 +23,8 @@ def _check_supported_hf_models(model_type: str):
 
 def convert_pretrained_model_for_encoder(
     transformer: CuratedTransformer[CuratedEncoderT],
-    params: OrderedDict[str, torch.Tensor],
-) -> Dict[str, torch.Tensor]:
+    params: Mapping[str, torch.Tensor],
+) -> Mapping[str, torch.Tensor]:
     """Converts parameters from a compatible pre-trained model to
     parameters that can be consumed by the given curated transformer.
 
@@ -39,8 +38,6 @@ def convert_pretrained_model_for_encoder(
         converted = _convert_albert_base_state(params)
     elif isinstance(encoder, BertEncoder):
         converted = _convert_bert_base_state(params)
-    elif isinstance(encoder, RobertaEncoder):
-        converted = _convert_roberta_base_state(params)
     else:
         raise TypeError(
             "Attempting to load the weights of a Hugging Face `transformers` model "
@@ -53,7 +50,7 @@ def convert_pretrained_model_for_encoder(
 
 def convert_hf_pretrained_model_parameters(
     hf_model: "transformers.PreTrainedModel",
-) -> Dict[str, torch.Tensor]:
+) -> Mapping[str, torch.Tensor]:
     """Converts HF model parameters to parameters that can be consumed by
     our implementation of the Transformer.
 
@@ -65,9 +62,6 @@ def convert_hf_pretrained_model_parameters(
     converters = {
         "albert": _convert_albert_base_state,
         "bert": _convert_bert_base_state,
-        "camembert": _convert_roberta_base_state,
-        "roberta": _convert_roberta_base_state,
-        "xlm-roberta": _convert_roberta_base_state,
     }
 
     converted = converters[hf_model.config.model_type](hf_model.state_dict())  # type: ignore
@@ -76,15 +70,15 @@ def convert_hf_pretrained_model_parameters(
 
 
 def _add_curated_encoder_prefix(
-    converted: Dict[str, torch.Tensor]
-) -> Dict[str, torch.Tensor]:
+    converted: Mapping[str, torch.Tensor]
+) -> Mapping[str, torch.Tensor]:
     return {f"curated_encoder.{k}": v for k, v in converted.items()}
 
 
 def _rename_old_hf_names(
-    params: OrderedDict[str, torch.Tensor],
-) -> OrderedDict[str, torch.Tensor]:
-    out = OrderedDict()
+    params: Mapping[str, torch.Tensor],
+) -> Mapping[str, torch.Tensor]:
+    out = {}
     for name, parameter in params.items():
         name = re.sub(r"\.gamma$", ".weight", name)
         name = re.sub(r"\.beta$", ".bias", name)
@@ -93,8 +87,8 @@ def _rename_old_hf_names(
 
 
 def _convert_albert_base_state(
-    params: OrderedDict[str, torch.Tensor],
-) -> Dict[str, torch.Tensor]:
+    params: Mapping[str, torch.Tensor],
+) -> Mapping[str, torch.Tensor]:
     # Strip the `albert` prefix from ALBERT model parameters.
     stripped_params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
 
@@ -162,8 +156,8 @@ def _convert_albert_base_state(
 
 
 def _convert_bert_base_state(
-    params: OrderedDict[str, torch.Tensor],
-) -> Dict[str, torch.Tensor]:
+    params: Mapping[str, torch.Tensor],
+) -> Mapping[str, torch.Tensor]:
     out = {}
 
     # Strip the `bert` prefix from BERT model parameters.
@@ -208,58 +202,7 @@ def _convert_bert_base_state(
     return _merge_qkv(out)
 
 
-def _convert_roberta_base_state(
-    params: OrderedDict[str, torch.Tensor],
-) -> Dict[str, torch.Tensor]:
-    out = {}
-
-    # Strip the `roberta` prefix from XLM-Roberta model parameters.
-    stripped_params = {re.sub(r"^roberta\.", "", k): v for k, v in params.items()}
-
-    for name, parameter in stripped_params.items():
-        if "encoder.layer." not in name:
-            continue
-
-        # TODO: Make these substitutions less ugly.
-
-        # Remove the prefix and rename the internal 'layers' variable.
-        name = re.sub(r"^encoder\.", "", name)
-        name = re.sub(r"^layer", "layers", name)
-
-        # The HF model has one more level of indirection for the output layers in their
-        # attention heads and the feed-forward network layers.
-        name = re.sub(r"\.attention\.self\.(query|key|value)", r".mha.\1", name)
-        name = re.sub(r"\.attention\.(output)\.dense", r".mha.\1", name)
-        name = re.sub(
-            r"\.attention\.output\.LayerNorm", r".attn_output_layernorm", name
-        )
-        name = re.sub(r"\.(intermediate)\.dense", r".ffn.\1", name)
-        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_output_layernorm", name)
-        name = re.sub(r"(\.\d+)\.(output)\.dense", r"\1.ffn.\2", name)
-
-        out[name] = parameter
-
-    # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.inner.word_embeddings.weight"] = stripped_params[
-        "embeddings.word_embeddings.weight"
-    ]
-    out["embeddings.inner.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.inner.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
-    out["embeddings.inner.layer_norm.weight"] = stripped_params[
-        "embeddings.LayerNorm.weight"
-    ]
-    out["embeddings.inner.layer_norm.bias"] = stripped_params[
-        "embeddings.LayerNorm.bias"
-    ]
-
-    return _merge_qkv(out)
-
-
-def _merge_qkv(params: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+def _merge_qkv(params: Mapping[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
     out = {}
     for name, parameter in params.items():
         m = re.match(
@@ -282,7 +225,7 @@ def _merge_qkv(params: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
     return out
 
 
-def _merge_qkv_albert(params: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+def _merge_qkv_albert(params: Mapping[str, torch.Tensor]) -> Mapping[str, torch.Tensor]:
     out = {}
     for name, parameter in params.items():
         m = re.match(

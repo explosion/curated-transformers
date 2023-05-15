@@ -1,17 +1,23 @@
-from typing import Optional
+from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, Parameter
 from torch import Tensor
 
 from .config import BertConfig
 from .embeddings import BertEmbeddings
+from ..hf_hub import FromPretrainedHFModel
 from .layer import BertEncoderLayer
 from ..attention import AttentionMask
 from ..output import PyTorchTransformerOutput
+from ._hf import convert_hf_config, convert_hf_state_dict
 
 
-class BertEncoder(Module):
+# Only provided as typing.Self in Python 3.11+.
+Self = TypeVar("Self", bound="BertEncoder")
+
+
+class BertEncoder(Module, FromPretrainedHFModel):
     def __init__(
         self,
         config: BertConfig,
@@ -55,3 +61,12 @@ class BertEncoder(Module):
         return PyTorchTransformerOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
+
+    @classmethod
+    def convert_hf_state_dict(cls, params: Mapping[str, Parameter]):
+        return convert_hf_state_dict(params)
+
+    @classmethod
+    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+        config = convert_hf_config(hf_config)
+        return cls(config)

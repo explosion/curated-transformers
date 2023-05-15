@@ -8,8 +8,6 @@ from ..hf_util import _merge_qkv
 
 
 def convert_hf_config(hf_config: Any) -> RobertaConfig:
-    # WARNING: seem like we cannot get the max length from the model? Maybe
-    # we should do the max position embeddings minus 2?
     padding_id = hf_config["pad_token_id"]
     return RobertaConfig(
         attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],

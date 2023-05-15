@@ -76,7 +76,7 @@ class FromPretrainedHFModel(ABC):
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         """Load a state dictionary.
 
-        This method is automatically impemented by also deriving from
+        This method is automatically implemented by also deriving from
         `torch.nn.Module`. This mixin does not derive from `Module` in
         order to be an abstract base class.
         """

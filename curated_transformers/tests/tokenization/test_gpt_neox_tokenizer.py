@@ -26,6 +26,16 @@ def test_gptneox_tokenizer_against_hf_tokenizer(sample_texts):
     assert pieces.ids == hf_pieces["input_ids"]
 
 
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.slow
+def test_gptneox_tokenizer_roundtrip(sample_texts):
+    tokenizer = GPTNeoXTokenizer.from_hf_hub(name="EleutherAI/gpt-neox-20b")
+    pieces = tokenizer(sample_texts)
+    decoded = tokenizer.decode(pieces.ids)
+
+    assert decoded == sample_texts
+
+
 def test_gpt_neox_toy_tokenizer(toy_tokenizer, short_sample_texts):
     encoding = toy_tokenizer(short_sample_texts)
     _check_toy_tokenizer(encoding)

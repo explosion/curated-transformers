@@ -6,7 +6,7 @@ from torch import Tensor
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
 from ..hf_hub import FromPretrainedHFModel
-from ..output import PyTorchTransformerOutput
+from ..output import ModelOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -52,7 +52,7 @@ class AlbertEncoder(Module, FromPretrainedHFModel):
         input_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
-    ) -> PyTorchTransformerOutput:
+    ) -> ModelOutput:
         """
         Shapes:
             input_ids, attention_mask, token_type_ids - (batch, seq_len)
@@ -71,7 +71,7 @@ class AlbertEncoder(Module, FromPretrainedHFModel):
                 layer_output = group(layer_output, attn_mask=attention_mask)
                 layer_outputs.append(layer_output)
 
-        return PyTorchTransformerOutput(
+        return ModelOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
 

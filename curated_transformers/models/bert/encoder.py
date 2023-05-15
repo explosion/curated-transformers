@@ -9,8 +9,8 @@ from .embeddings import BertEmbeddings
 from ..hf_hub import FromPretrainedHFModel
 from .layer import BertEncoderLayer
 from ..attention import AttentionMask
-from ..output import PyTorchTransformerOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
+from ..output import ModelOutput
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -42,7 +42,7 @@ class BertEncoder(Module, FromPretrainedHFModel):
         input_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
-    ) -> PyTorchTransformerOutput:
+    ) -> ModelOutput:
         """
         Shapes:
             input_ids, attention_mask, token_type_ids - (batch, seq_len)
@@ -58,7 +58,7 @@ class BertEncoder(Module, FromPretrainedHFModel):
             layer_output = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
-        return PyTorchTransformerOutput(
+        return ModelOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
 

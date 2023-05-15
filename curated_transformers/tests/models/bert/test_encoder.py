@@ -2,25 +2,18 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.models.albert import AlbertConfig, AlbertEncoder
-
+from curated_transformers.models.bert.encoder import BertEncoder
 
 from ...util import torch_assertclose
-
-
-def test_rejects_incorrect_number_of_groups():
-    config = AlbertConfig(num_hidden_groups=5)
-    with pytest.raises(ValueError, match=r"must be divisable"):
-        AlbertEncoder(config)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_encoder():
-    hf_model = transformers.AutoModel.from_pretrained("albert-base-v2")
+    hf_model = transformers.AutoModel.from_pretrained("bert-base-cased")
     hf_model.eval()
 
-    model = AlbertEncoder.from_hf_hub("albert-base-v2")
+    model = BertEncoder.from_hf_hub("bert-base-cased")
     model.eval()
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10))

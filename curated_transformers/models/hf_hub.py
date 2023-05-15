@@ -2,7 +2,7 @@ import json
 from typing import Any, Iterable, Mapping, Type, TypeVar
 from abc import ABC, abstractmethod
 from huggingface_hub import hf_hub_download
-from requests import HTTPError
+from requests import HTTPError  # type: ignore
 import torch
 from torch import Tensor
 from torch.nn import Parameter

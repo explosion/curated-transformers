@@ -29,8 +29,8 @@ class FromPretrainedHFModel(ABC):
         """Convert a state dict of a Hugging Face model to a valid
         state dict for the module.
 
-        params (Mapping[str, Parameter]): the state dict to convert.
-        RETURNS (Mapping[str, Tensor]): the converted state dict.
+        params (Mapping[str, Parameter]): The state dict to convert.
+        RETURNS (Mapping[str, Tensor]): The converted state dict.
         """
         raise NotImplementedError
 
@@ -41,7 +41,7 @@ class FromPretrainedHFModel(ABC):
         model configuration.
 
         hf_config (Any): Hugging Face model configuration.
-        RETURNS (Self): module constructed using the configuration.
+        RETURNS (Self): Module constructed using the configuration.
         """
         raise NotImplementedError
 

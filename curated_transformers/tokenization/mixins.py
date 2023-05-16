@@ -1,5 +1,6 @@
 from typing import Any, Type, TypeVar
 from abc import ABC, abstractmethod
+
 from .._compat import has_hf_transformers, transformers
 
 

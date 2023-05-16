@@ -94,10 +94,10 @@ class RotaryEmbeddings(Module):
         """
         Apply rotary embeddings to an array.
 
-        input (Tensor): Array to apply the rotary embeddings to.
-        positions (Optional[Tensor]): positions of the inputs. If no
-            positions are provided, they are assumed to be [0, seq_len).
-        RETURNS (Tensor): Array with the rotary embeddings applied.
+        :param input: Array to apply the rotary embeddings to.
+        :param positions: positions of the inputs. If no positions are
+            provided, they are assumed to be [0, seq_len).
+        :return: Array with the rotary embeddings applied.
 
         Shapes:
             input - (batch_size, num_heads, seq_len, width_per_head)

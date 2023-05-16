@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
+from .hf_hub import FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
 
 
@@ -73,7 +74,7 @@ class RobertaPostEncoder(PostEncoder):
         return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
 
 
-class RobertaTokenizer(ByteBPETokenizer):
+class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
     def __init__(
         self,
         *,
@@ -132,7 +133,7 @@ class RobertaTokenizer(ByteBPETokenizer):
         )
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
+    def convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
         serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
         deserialized = json.loads(serialized)
         vocab_merges = deserialized["model"]

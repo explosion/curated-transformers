@@ -1,9 +1,8 @@
-from typing import Iterable, List, Optional, Type, TypeVar, Union
+from typing import Iterable, List, Optional, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import torch
 
-from .._compat import has_hf_transformers, transformers
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="Tokenizer")
@@ -113,25 +112,6 @@ class Tokenizer(ABC):
             pieces = self.post_encoder(pieces)
 
         return pieces
-
-    @classmethod
-    def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:
-        """Load the tokenizer from Hugging Face hub.
-
-        name (str): name of the tokenizer to load.
-        revision: (str): revision of the tokenizer to load."""
-        if not has_hf_transformers:
-            raise ValueError(
-                "`Loading models from Hugging Face Hub requires `transformers` package to be installed"
-            )
-
-        tokenizer = transformers.AutoTokenizer.from_pretrained(name, revision=revision)
-        return cls._convert_hf_tokenizer(tokenizer)
-
-    @classmethod
-    @abstractmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer) -> Self:
-        ...
 
     @abstractmethod
     def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:

@@ -4,12 +4,13 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
+from .hf_hub import FromPretrainedHFTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="GPTNeoXTokenizer")
 
 
-class GPTNeoXTokenizer(ByteBPETokenizer):
+class GPTNeoXTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
     """GPT-NeoX tokenizer (Black et al., 2022).
 
     The GPT-NeoX tokenizer uses byte-level byte pair encoding.
@@ -33,7 +34,7 @@ class GPTNeoXTokenizer(ByteBPETokenizer):
         return cls(processor=processor)
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
+    def convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
         serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
         deserialized = json.loads(serialized)
         vocab_merges = deserialized["model"]

@@ -24,6 +24,7 @@ def assert_encoder_output_equals_hf(
     model.to(torch_device)
     model.eval()
 
+    torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
 
     with torch.no_grad():

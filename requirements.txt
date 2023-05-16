@@ -8,3 +8,4 @@ pytest
 
 # Documentation
 sphinx_rtd_theme
+sphinx-autodoc-typehints

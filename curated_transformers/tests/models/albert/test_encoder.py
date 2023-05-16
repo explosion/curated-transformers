@@ -1,6 +1,6 @@
 import pytest
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.models.albert import AlbertConfig, AlbertEncoder
 
 
@@ -16,6 +16,7 @@ def test_rejects_incorrect_number_of_groups():
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-@pytest.mark.slow
 def test_encoder(torch_device):
-    assert_encoder_output_equals_hf(AlbertEncoder, "albert-base-v2", torch_device)
+    assert_encoder_output_equals_hf(
+        AlbertEncoder, "explosion-testing/albert-test", torch_device
+    )

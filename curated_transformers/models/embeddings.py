@@ -42,11 +42,11 @@ class RotaryEmbeddings(Module):
         will be precomputed for up to 'seq _len' positions. The embedding
         will be recomputed when a longer sequence is found in the input.
 
-        width (int):
+        :param width:
             Rotary embedding dimensionality, must be even.
-        seq_len (int):
+        :param seq_len:
             Number of positons to initially precompute.
-        base (int):
+        :param base:
             The base used for Θ_i, determines the cycle length of the
             embeddings."""
         super().__init__()
@@ -94,10 +94,10 @@ class RotaryEmbeddings(Module):
         """
         Apply rotary embeddings to an array.
 
-        input (Tensor): Array to apply the rotary embeddings to.
-        positions (Optional[Tensor]): positions of the inputs. If no
-            positions are provided, they are assumed to be [0, seq_len).
-        RETURNS (Tensor): Array with the rotary embeddings applied.
+        :param input: Array to apply the rotary embeddings to.
+        :param positions: positions of the inputs. If no positions are
+            provided, they are assumed to be [0, seq_len).
+        :return: Array with the rotary embeddings applied.
 
         Shapes:
             input - (batch_size, num_heads, seq_len, width_per_head)

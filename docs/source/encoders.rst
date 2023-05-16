@@ -1,5 +1,5 @@
-Models
-======
+Encoders
+========
 
 .. autoclass:: curated_transformers.models.AlbertEncoder
    :members:

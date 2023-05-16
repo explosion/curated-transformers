@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .mixins import FromPretrainedHFTokenizer
+from .hf_hub import FromPretrainedHFTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="GPTNeoXTokenizer")

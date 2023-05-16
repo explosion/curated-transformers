@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .mixins import FromPretrainedHFTokenizer
+from .hf_hub import FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
 
 

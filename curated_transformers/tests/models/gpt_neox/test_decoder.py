@@ -19,6 +19,7 @@ def test_decoder():
     )
     model.eval()
 
+    torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
 
     with torch.no_grad():
@@ -41,6 +42,7 @@ def test_decoder_with_cache():
     )
     model.eval()
 
+    torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
     X_rest = torch.randint(0, hf_model.config.vocab_size, (2, 10))
 
@@ -66,6 +68,7 @@ def test_decoder_with_positions():
     )
     model.eval()
 
+    torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
     positions = torch.randint(0, hf_model.config.max_position_embeddings, (2, 10))
 

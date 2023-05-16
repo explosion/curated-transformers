@@ -19,10 +19,11 @@ def test_causal_lm_against_hf():
     )
     model.eval()
 
+    torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
 
     with torch.no_grad():
         Y = model(X).logits
         Y_hf = hf_model(X).logits
 
-    torch_assertclose(Y, Y_hf, atol=5e-4)
+    torch_assertclose(Y, Y_hf)

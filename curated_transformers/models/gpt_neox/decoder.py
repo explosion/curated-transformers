@@ -78,6 +78,8 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         layer_cache = None
         for layer in self.layers:
             if cache is not None:
+                # The key-value cache is stored per layer, so peel off one
+                # layer at a time.
                 layer_cache = cache[0]
                 cache = cache[1:]
             layer_output, new_layer_cache = layer(

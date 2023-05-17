@@ -13,9 +13,7 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
     # Handle config options that are not set in all models.
-    extra_kwargs = {
-        k: hf_config[EXTRA_KWARG_KEYS] for k in EXTRA_KWARG_KEYS if k in hf_config
-    }
+    extra_kwargs = {k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config}
 
     return GPTNeoXConfig(
         hidden_act=hf_config["hidden_act"],

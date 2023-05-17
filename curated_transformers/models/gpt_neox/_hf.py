@@ -6,12 +6,19 @@ from torch.nn import Parameter
 from .config import GPTNeoXConfig
 from ..module import DecoderModule
 
+ATTENTION_DROPOUT = "attention_probs_dropout_prob"
+HIDDEN_DROPOUT = "hidden_dropout_prob"
+EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
+
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
+    # Handle config options that are not set in all models.
+    extra_kwargs = {
+        k: hf_config[EXTRA_KWARG_KEYS] for k in EXTRA_KWARG_KEYS if k in hf_config
+    }
+
     return GPTNeoXConfig(
-        attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],
         hidden_act=hf_config["hidden_act"],
-        hidden_dropout_prob=hf_config["hidden_dropout_prob"],
         hidden_width=hf_config["hidden_size"],
         intermediate_width=hf_config["intermediate_size"],
         layer_norm_eps=hf_config["layer_norm_eps"],
@@ -22,6 +29,7 @@ def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
         rotary_embedding_base=hf_config["rotary_emb_base"],
         rotary_embedding_fraction=hf_config["rotary_pct"],
         vocab_size=hf_config["vocab_size"],
+        **extra_kwargs
     )
 
 

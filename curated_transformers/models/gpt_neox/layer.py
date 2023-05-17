@@ -32,6 +32,7 @@ class GPTNeoXDecoderLayer(Module):
             rotary_base=attention_config.rotary_base,
             split_heads_before_chunk=True,
         )
+        self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
         self.mha_layer_norm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )
@@ -44,6 +45,7 @@ class GPTNeoXDecoderLayer(Module):
         self.ffn_layer_norm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps
         )
+        self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
     def forward(
         self,
@@ -82,7 +84,9 @@ class GPTNeoXDecoderLayer(Module):
             positions=positions,
             use_causal_mask=True,
         )
+        attn_out = self.attn_output_dropout(attn_out)
         ffn_out = self.ffn(self.ffn_layer_norm(x))
+        ffn_out = self.ffn_output_dropout(ffn_out)
 
         # Parallel attention & feed-forward, Section 2.1.2
         return x + attn_out + ffn_out, cache

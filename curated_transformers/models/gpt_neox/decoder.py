@@ -1,6 +1,6 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
 from torch import Tensor
-from torch.nn import Embedding, LayerNorm, ModuleList, Parameter
+from torch.nn import Dropout, Embedding, LayerNorm, ModuleList, Parameter
 
 
 from ..hf_hub import FromPretrainedHFModel
@@ -28,6 +28,7 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         self.embeddings = Embedding(
             config.embedding.vocab_size, config.embedding.embedding_width
         )
+        self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         self.layers = ModuleList(
             [
@@ -69,6 +70,7 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
             input_ids, attention_mask, positions - (batch, seq_len)
         """
         embeddings = self.embeddings(input_ids)
+        embeddings = self.dropout(embeddings)
         layer_output = embeddings
 
         layer_outputs = []

@@ -9,7 +9,9 @@ from ..module import DecoderModule
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
     return GPTNeoXConfig(
+        attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],
         hidden_act=hf_config["hidden_act"],
+        hidden_dropout_prob=hf_config["hidden_dropout_prob"],
         hidden_width=hf_config["hidden_size"],
         intermediate_width=hf_config["intermediate_size"],
         layer_norm_eps=hf_config["layer_norm_eps"],

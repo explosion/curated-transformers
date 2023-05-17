@@ -20,12 +20,12 @@ class AlbertLayerGroup(Module):
             ]
         )
 
-    def forward(self, input: Tensor, attn_mask: AttentionMask) -> Tensor:
+    def forward(self, input: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
         Shapes:
             input - (batch, seq_len, width)
         """
         layer_output = input
         for layer in self.group_layers:
-            layer_output = layer(layer_output, attn_mask)
+            layer_output = layer(layer_output, attention_mask)
         return layer_output

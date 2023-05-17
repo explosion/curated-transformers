@@ -225,7 +225,8 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         :param rotary_base: Base in signifying the rotary embedding period.
         :param split_heads_before_chunk: Split the hidden representation
             into heads before splitting query/key/value representations when
-            ``True``.
+            ``True``. This option is required for some newer transformer
+            architectures that split heads before chunking.
         """
 
         super().__init__()

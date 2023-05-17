@@ -5,5 +5,7 @@ API
    :maxdepth: 1
 
    building-blocks
+   causal-lm
    encoders
+   decoders
    tokenizers

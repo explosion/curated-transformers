@@ -6,11 +6,11 @@ from torch.nn import Parameter
 
 from ..attention import AttentionMask
 from ..bert.layer import BertEncoderLayer
-from ..output import PyTorchTransformerOutput
 from .config import RobertaConfig
 from .embeddings import RobertaEmbeddings
 from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
+from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
 
 # Only provided as typing.Self in Python 3.11+.
@@ -43,7 +43,7 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
         input_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
-    ) -> PyTorchTransformerOutput:
+    ) -> ModelOutput:
         """
         Shapes:
             input_ids, attention_mask, token_type_ids - (batch, seq_len)
@@ -59,7 +59,7 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
             layer_output = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
-        return PyTorchTransformerOutput(
+        return ModelOutput(
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
 

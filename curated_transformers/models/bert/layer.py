@@ -2,7 +2,6 @@ import torch
 from torch.nn import Linear, Module
 from torch import Tensor
 
-from .. import GeluNew
 from ..attention import AttentionMask, SelfAttention
 from .config import BertAttentionConfig, BertLayerConfig
 from ..feedforward import PointwiseFeedForward

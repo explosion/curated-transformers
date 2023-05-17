@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Tuple, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Type, TypeVar
 from torch import Tensor
 from torch.nn import Embedding, LayerNorm, ModuleList, Parameter
 
@@ -6,7 +6,7 @@ from torch.nn import Embedding, LayerNorm, ModuleList, Parameter
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
 from ..attention import AttentionMask, KeyValueCache
-from ..output import ModelOutput, ModelOutputWithCache
+from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .layer import GPTNeoXDecoderLayer
@@ -52,9 +52,9 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         Apply the GPT-NeoX decoder to the given piece identifiers.
 
         :param input_ids: Piece identifiers to apply the decoder to.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
-            in attention.
+            during attention calculation.
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -66,7 +66,7 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         :returns: Decoder representations of the given pieces.
 
         Shapes:
-            input_ids, attention_mask, token_type_ids - (batch, seq_len)
+            input_ids, attention_mask, positions - (batch, seq_len)
         """
         embeddings = self.embeddings(input_ids)
         layer_output = embeddings

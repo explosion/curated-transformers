@@ -131,8 +131,8 @@ class GPTNeoXConfig:
         :param layer_norm_eps: Epsilon for layer normalization.
         :param num_attention_heads: Number of attention heads.
         :param num_hidden_layers: Number of hidden layers.
-        :param rotary_base: Base in signifying the rotary embedding period.
-        :param rotary_fraction: fraction of hidden width to apply rotary
+        :param rotary_embedding_base: Base in signifying the rotary embedding period.
+        :param rotary_embedding_fraction: Fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
         :param vocab_size: Vocabulary size (number of embeddings).
         """

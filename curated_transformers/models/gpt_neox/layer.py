@@ -1,8 +1,7 @@
 from typing import Optional, Tuple
-from dataclasses import dataclass
 from torch import Tensor
 import torch
-from torch.nn import Linear, Module
+from torch.nn import Module
 
 from ..feedforward import PointwiseFeedForward
 from ..attention import (
@@ -49,7 +48,7 @@ class GPTNeoXDecoderLayer(Module):
     def forward(
         self,
         x: Tensor,
-        attn_mask: AttentionMask,
+        attention_mask: AttentionMask,
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -58,9 +57,9 @@ class GPTNeoXDecoderLayer(Module):
         Apply the GPT-NeoX layer to the given piece hidden representations.
 
         :param x: Hidden representations to apply the layer to.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
-            in attention.
+            during attention calculation.
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -77,7 +76,7 @@ class GPTNeoXDecoderLayer(Module):
         """
         attn_out, cache = self.mha(
             self.mha_layer_norm(x),
-            attn_mask,
+            attention_mask,
             cache=cache,
             store_cache=store_cache,
             positions=positions,

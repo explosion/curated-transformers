@@ -52,7 +52,7 @@ class ModelOutput:
 class ModelOutputWithCache(Generic[CacheT], ModelOutput):
     """Output of causal language models.
 
-    :cache: Model cache. The cache can be used by future calls to
+    :cache: Model cache. The cache can be used with future calls to
         a model to reuse computations for efficiency.
     """
 
@@ -90,16 +90,16 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
     def __init__(
         self,
         *,
-        cache: Optional[List[CacheT]],
         embedding_output: Tensor,
         layer_hidden_states: List[Tensor],
         logits: Tensor,
+        cache: Optional[List[CacheT]],
     ) -> None:
         """
         :param embedding_output: Output of the embedding layer.
         :param layer_hidden_states: Outputs of the hidden layers.
-        :param cache: Model cache.
         :param logits: Logits of the distributions of predicted tokens.
+        :param cache: Model cache.
         """
 
         super().__init__(

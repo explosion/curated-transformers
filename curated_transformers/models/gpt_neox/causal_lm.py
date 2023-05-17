@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Tuple, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Type, TypeVar
 from torch import Tensor
 from torch.nn import Linear, Parameter
 
@@ -38,14 +38,14 @@ class GPTNeoXCausalLM(CausalLMModule, FromPretrainedHFModel):
         cache: Optional[List[KeyValueCache]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
-    ) -> ModelOutput:
+    ) -> CausalLMOutputWithCache[KeyValueCache]:
         """
         Apply the GPT-NeoX causal language model to the given piece identifiers.
 
         :param input_ids: Piece identifiers to apply the language model to.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
-            in attention.
+            during attention calculation.
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -58,7 +58,7 @@ class GPTNeoXCausalLM(CausalLMModule, FromPretrainedHFModel):
             the predicted token distribution.
 
         Shapes:
-            input_ids, attention_mask, token_type_ids - (batch, seq_len)
+            input_ids, attention_mask, positions - (batch, seq_len)
         """
         decoder_output = self.decoder(
             input_ids,

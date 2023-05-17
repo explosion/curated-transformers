@@ -24,9 +24,9 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
         super().__init__()
 
         self.embeddings = RobertaEmbeddings(
-            config.embedding, config.layer, padding_idx=config.padding_idx
+            config.embedding, config.layer, padding_id=config.padding_id
         )
-        self.padding_idx = config.padding_idx
+        self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
@@ -36,7 +36,7 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
         )
 
     def _create_attention_mask(self, x: Tensor) -> AttentionMask:
-        return AttentionMask(x.ne(self.padding_idx))
+        return AttentionMask(x.ne(self.padding_id))
 
     def forward(
         self,

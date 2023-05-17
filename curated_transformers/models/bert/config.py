@@ -83,7 +83,7 @@ class BertConfig:
     attention: BertAttentionConfig
     layer: BertLayerConfig
     model_max_length: int
-    padding_idx: int
+    padding_id: int
 
     def __init__(
         self,
@@ -101,7 +101,7 @@ class BertConfig:
         max_position_embeddings: int = 512,
         model_max_length: int = 512,
         layer_norm_eps: float = 1e-12,
-        padding_idx: int = 0,
+        padding_id: int = 0,
     ):
         self.embedding = BertEmbeddingConfig(
             embedding_width=embedding_width,
@@ -125,4 +125,4 @@ class BertConfig:
             dropout_prob=hidden_dropout_prob,
         )
         self.model_max_length = model_max_length
-        self.padding_idx = padding_idx
+        self.padding_id = padding_id

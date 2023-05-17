@@ -24,7 +24,7 @@ def convert_hf_config(hf_config: Any) -> AlbertConfig:
         num_attention_heads=hf_config["num_attention_heads"],
         num_hidden_groups=hf_config["num_hidden_groups"],
         num_hidden_layers=hf_config["num_hidden_layers"],
-        padding_idx=padding_id,
+        padding_id=padding_id,
         type_vocab_size=hf_config["type_vocab_size"],
         vocab_size=hf_config["vocab_size"],
     )

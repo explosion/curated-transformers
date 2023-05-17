@@ -21,7 +21,7 @@ def convert_hf_config(hf_config: Any) -> BertConfig:
         max_position_embeddings=hf_config["max_position_embeddings"],
         num_attention_heads=hf_config["num_attention_heads"],
         num_hidden_layers=hf_config["num_hidden_layers"],
-        padding_idx=padding_id,
+        padding_id=padding_id,
         type_vocab_size=hf_config["type_vocab_size"],
         vocab_size=hf_config["vocab_size"],
     )

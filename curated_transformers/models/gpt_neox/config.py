@@ -49,7 +49,7 @@ class GPTNeoXEmbeddingConfig:
         *,
         embedding_width: int = 2560,
         layer_norm_eps: float = 1e-5,
-        vocab_size: int = 50280,
+        vocab_size: int = 50432,
     ) -> None:
         """
         :param embedding_width: Width of the embeddings.

@@ -31,7 +31,8 @@ def convert_hf_state_dict(cls, params: Mapping[str, Parameter]) -> Mapping[str, 
         stripped_params = {
             re.sub(r"^gpt_neox\.", "", k): v
             for k, v in params.items()
-            if "embed_out" not in k
+            # The decoder does not the output embeddings, avoid unexpected key.
+            if k != "embed_out.weight"
         }
     else:
         # Rewrap as dict if necessay to make MyPy happy.

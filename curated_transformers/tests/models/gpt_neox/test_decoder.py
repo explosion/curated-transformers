@@ -7,7 +7,6 @@ from curated_transformers.tests.util import torch_assertclose
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
 def test_decoder():
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
@@ -30,7 +29,6 @@ def test_decoder():
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
 def test_decoder_with_cache():
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
@@ -56,7 +54,6 @@ def test_decoder_with_cache():
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
 def test_decoder_with_positions():
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"

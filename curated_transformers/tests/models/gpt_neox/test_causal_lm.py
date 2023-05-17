@@ -6,7 +6,6 @@ from curated_transformers.models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from curated_transformers.tests.util import torch_assertclose
 
 
-@pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_causal_lm_against_hf():
     hf_model = transformers.AutoModelForCausalLM.from_pretrained(

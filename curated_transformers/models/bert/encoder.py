@@ -25,7 +25,7 @@ class BertEncoder(Module, FromPretrainedHFModel):
         super().__init__()
 
         self.embeddings = BertEmbeddings(config.embedding, config.layer)
-        self.padding_idx = config.padding_idx
+        self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
@@ -35,7 +35,7 @@ class BertEncoder(Module, FromPretrainedHFModel):
         )
 
     def _create_attention_mask(self, x: Tensor) -> AttentionMask:
-        return AttentionMask(bool_mask=x.ne(self.padding_idx))
+        return AttentionMask(bool_mask=x.ne(self.padding_id))
 
     def forward(
         self,

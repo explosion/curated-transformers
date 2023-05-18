@@ -18,7 +18,7 @@ class PiecesWithIds:
     def attention_mask(self):
         """CPU tensor with attention masks.
 
-        The mask is equivalent to `ids.padded_tensor != padding_idx`."""
+        The mask is equivalent to `ids.padded_tensor != padding_id`."""
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
         mask = torch.full((n_seqs, max_len), False)

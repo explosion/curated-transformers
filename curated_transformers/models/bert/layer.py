@@ -32,13 +32,13 @@ class BertEncoderLayer(Module):
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
-    def forward(self, x: Tensor, attn_mask: AttentionMask) -> Tensor:
+    def forward(self, x: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
         Shapes:
             x - (batch, seq_len, width)
-            attn_mask - (batch, seq_len)
+            attention_mask - (batch, seq_len)
         """
-        attn_out = self.mha(x, attn_mask)
+        attn_out = self.mha(x, attention_mask)
         attn_out = self.attn_output_dropout(attn_out)
         attn_out = self.attn_output_layernorm(x + attn_out)
 

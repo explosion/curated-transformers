@@ -10,7 +10,7 @@ class RobertaConfig(BertConfig):
         *args,
         layer_norm_eps=1e-05,
         max_position_embeddings=514,
-        padding_idx=1,
+        padding_id=1,
         type_vocab_size=1,
         vocab_size=50265,
         **kwargs
@@ -19,7 +19,7 @@ class RobertaConfig(BertConfig):
             *args,
             layer_norm_eps=layer_norm_eps,
             max_position_embeddings=max_position_embeddings,
-            padding_idx=padding_idx,
+            padding_id=padding_id,
             type_vocab_size=type_vocab_size,
             vocab_size=vocab_size,
             **kwargs

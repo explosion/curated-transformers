@@ -67,8 +67,8 @@ Instead we have to spell out all arguments, eg.:
 class Foo(nn.Module):
     ...
 
-    def forward(X: Tensor, attn_mask: AttentionMask) -> Tensor:
+    def forward(X: Tensor, attention_mask: AttentionMask) -> Tensor:
         hidden = self.inner1(X)
-        return self.inner2(hidden, attn_mask=attn_mask)
+        return self.inner2(hidden, attention_mask=attention_mask)
 
 ```

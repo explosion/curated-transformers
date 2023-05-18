@@ -74,7 +74,7 @@ class GPTNeoXDecoderLayer(Module):
 
         Shapes:
             x - (batch, seq_len, width)
-            attn_mask - (batch, seq_len)
+            attention_mask - (batch, seq_len)
         """
         attn_out, cache = self.mha(
             self.mha_layer_norm(x),

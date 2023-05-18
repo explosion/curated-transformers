@@ -63,7 +63,7 @@ class ScaledDotProductAttention(Module):
         k: Tensor,
         q: Tensor,
         v: Tensor,
-        attn_mask: Optional[AttentionMask],
+        attention_mask: Optional[AttentionMask],
         use_causal_mask: bool,
     ) -> Tensor:
         """
@@ -75,7 +75,7 @@ class ScaledDotProductAttention(Module):
         :param k: Key.
         :param q: Query.
         :param v: Value.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
         :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
@@ -83,11 +83,11 @@ class ScaledDotProductAttention(Module):
 
         Shapes:
             k, q, v - (batch, heads, seq_len, width)
-            attn_mask - (batch, seq_len)
+            attention_mask - (batch, seq_len)
             output - (batch, heads, seq_len, width)
         """
 
-        if attn_mask is not None and attn_mask.dim() != 2:
+        if attention_mask is not None and attention_mask.dim() != 2:
             raise ValueError(
                 "The attention mask must be a 2D-tensor of shape [batch, seq_len]"
             )
@@ -114,11 +114,11 @@ class ScaledDotProductAttention(Module):
             causal_mask = causal_mask[:, :, k_len - q_len : k_len, :k_len]
             attn_scores += causal_mask
 
-        if attn_mask is not None:
+        if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large
             # negative value to zero them out during softmax normalization.
-            batch, seq_len = attn_mask.shape
-            attn_scores += attn_mask.logit_mask.view(batch, 1, 1, seq_len)
+            batch, seq_len = attention_mask.shape
+            attn_scores += attention_mask.logit_mask.view(batch, 1, 1, seq_len)
 
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ v)
@@ -162,14 +162,14 @@ class SelfAttention(Module):
     def forward(
         self,
         x: Tensor,
-        attn_mask: Optional[AttentionMask],
+        attention_mask: Optional[AttentionMask],
         use_causal_mask: bool = False,
     ) -> Tensor:
         """
         Apply self-attention layer to the input.
 
         :param x: Input to apply self-attention to.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
         :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
@@ -177,7 +177,7 @@ class SelfAttention(Module):
 
         Shapes:
             x - (batch, seq_len, width)
-            attn_mask - (batch, seq_len)
+            attention_mask - (batch, seq_len)
             output - (batch, seq_len, width)
         """
 
@@ -193,7 +193,7 @@ class SelfAttention(Module):
         v = split_heads(v, self.num_heads)
 
         # (batch, seq_len, width)
-        attn = combine_heads(self.attention(k, q, v, attn_mask, use_causal_mask))
+        attn = combine_heads(self.attention(k, q, v, attention_mask, use_causal_mask))
         out = self.output(attn)
 
         return out
@@ -256,7 +256,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
     def forward(
         self,
         x: Tensor,
-        attn_mask: AttentionMask,
+        attention_mask: AttentionMask,
         use_causal_mask: bool = False,
         cache: Optional[KeyValueCache] = None,
         store_cache: bool = False,
@@ -269,7 +269,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         are ignored by the attention mechanism (if a mask is provided).
 
         :param x: Input to apply self-attention to.
-        :param attn_mask: Attention mask. Sequence elements for which the
+        :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
         :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
@@ -285,7 +285,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
 
         Shapes:
             x - (batch, seq_len, width)
-            attn_mask - (batch, seq_len)
+            attention_mask - (batch, seq_len)
             positions - (batch, seq_len)
         """
 
@@ -341,7 +341,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             k = torch.cat([cache_k, k], dim=-2)
             v = torch.cat([cache_v, v], dim=-2)
 
-        attn = combine_heads(self.attention(k, q, v, attn_mask, use_causal_mask))
+        attn = combine_heads(self.attention(k, q, v, attention_mask, use_causal_mask))
 
         output = self.output(attn)
 

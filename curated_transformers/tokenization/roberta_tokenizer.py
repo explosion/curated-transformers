@@ -17,19 +17,16 @@ class RobertaPreDecoder(PreDecoder):
     def __init__(
         self,
         *,
-        processor: ByteBPEProcessor,
         bos_id: int,
         eos_id: int,
     ):
         """Construct a RoBERTa pre-decoder.
 
-        processor (ByteBPEProcessor): The processor to wrap.
         bos_id (int): The piece id used to mark the beginning of a sequence.
         eos_id (int): The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
-        self.processor = processor
 
     def __call__(self, input: Iterable[Iterable[int]]) -> List[List[int]]:
         return [
@@ -42,7 +39,6 @@ class RobertaPostEncoder(PostEncoder):
     def __init__(
         self,
         *,
-        processor: ByteBPEProcessor,
         bos_piece: str,
         eos_piece: str,
         bos_id: int,
@@ -50,7 +46,6 @@ class RobertaPostEncoder(PostEncoder):
     ):
         """Construct a RoBERTa post-encoder.
 
-        processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece used to mark the beginning of a sequence.
         eos_piece (str): The piece used to mark the end of a sequence.
         bos_id (int): The piece id used to mark the beginning of a sequence.
@@ -60,7 +55,6 @@ class RobertaPostEncoder(PostEncoder):
         self.eos_piece = eos_piece
         self.bos_id = bos_id
         self.eos_id = eos_id
-        self.processor = processor
 
     def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
         return add_bos_eos_to_encoding(
@@ -94,7 +88,8 @@ class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
         eos_id = _get_piece_id_or_fail(processor, eos_piece)
 
         self.pre_decoder = RobertaPreDecoder(
-            bos_id=bos_id, eos_id=eos_id, processor=processor
+            bos_id=bos_id,
+            eos_id=eos_id,
         )
 
         self.post_encoder = RobertaPostEncoder(
@@ -102,7 +97,6 @@ class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
             eos_piece=eos_piece,
             bos_id=bos_id,
             eos_id=eos_id,
-            processor=processor,
         )
 
     @classmethod

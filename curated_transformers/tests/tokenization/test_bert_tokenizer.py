@@ -32,6 +32,11 @@ def test_bert_toy_tokenizer(toy_tokenizer, short_sample_texts):
     encoding = toy_tokenizer(short_sample_texts)
     _check_toy_tokenizer(encoding)
 
+    assert toy_tokenizer.decode(encoding.ids) == [
+        "I saw a girl with a telescope .",
+        "Today we will eat pok [UNK] bowl , lots of it !",
+    ]
+
 
 def _check_toy_tokenizer(pieces):
     assert isinstance(pieces, PiecesWithIds)

@@ -6,6 +6,7 @@ from pathlib import Path
 from .bbpe_tokenizer import ByteBPETokenizer
 from .hf_hub import FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
+from .util import remove_pieces_from_sequence, add_bos_eos_to_encoding
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -32,7 +33,8 @@ class RobertaPreDecoder(PreDecoder):
 
     def __call__(self, input: Iterable[Iterable[int]]) -> List[List[int]]:
         return [
-            [id for id in ids if id not in (self.bos_id, self.eos_id)] for ids in input
+            list(remove_pieces_from_sequence(ids, (self.bos_id, self.eos_id)))
+            for ids in input
         ]
 
 
@@ -61,17 +63,13 @@ class RobertaPostEncoder(PostEncoder):
         self.processor = processor
 
     def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
-        ids = []
-        for seq_ids in pieces_with_ids.ids:
-            ids.append([self.bos_id] + seq_ids + [self.eos_id])
-        pieces = []
-        for seq_pieces in pieces_with_ids.pieces:
-            pieces.append([self.bos_piece] + seq_pieces + [self.eos_piece])
-        lens = []
-        for seq_lens in pieces_with_ids.lens:
-            lens.append([1] + seq_lens + [1])
-
-        return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+        return add_bos_eos_to_encoding(
+            pieces_with_ids,
+            bos_piece=self.bos_piece,
+            eos_piece=self.eos_piece,
+            bos_id=self.bos_id,
+            eos_id=self.eos_id,
+        )
 
 
 class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):

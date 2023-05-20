@@ -8,13 +8,13 @@ from .hf_hub import FromPretrainedHFTokenizer
 
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="XlmrTokenizer")
+Self = TypeVar("Self", bound="CamembertTokenizer")
 
 
-_XLMR_FAIRSEQ_OFFSET = 1
+_CAMEMBERT_FAIRSEQ_OFFSET = 4
 
 
-class XlmrPostEncoder(FairSeqPostEncoder):
+class CamembertPostEncoder(FairSeqPostEncoder):
     def __init__(
         self,
         *,
@@ -23,66 +23,58 @@ class XlmrPostEncoder(FairSeqPostEncoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a XLM-R post-encoder.
+        """Construct a CAMEMBERT post-encoder.
 
         bos_piece (str): The piece used to mark the beginning of a sequence.
         eos_piece (str): The piece used to mark the end of a sequence.
         bos_id (int): The piece id used to mark the beginning of a sequence.
         eos_id (int): The piece id used to mark the end of a sequence.
         """
-        super(XlmrPostEncoder, self).__init__(
+        super(CamembertPostEncoder, self).__init__(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             bos_id=bos_id,
             eos_id=eos_id,
-            piece_updater=XlmrPostEncoder._sentencepiece_to_fairseq,
+            piece_updater=CamembertPostEncoder._sentencepiece_to_fairseq,
         )
 
     @staticmethod
     def _sentencepiece_to_fairseq(piece_id: int):
         if piece_id == FAIRSEQ_PIECE_IDS.SPP_UNK:
             return FAIRSEQ_PIECE_IDS.FAIRSEQ_UNK
-        elif piece_id == FAIRSEQ_PIECE_IDS.SPP_BOS:
-            return FAIRSEQ_PIECE_IDS.FAIRSEQ_BOS
-        elif piece_id == FAIRSEQ_PIECE_IDS.SPP_EOS:
-            return FAIRSEQ_PIECE_IDS.FAIRSEQ_EOS
         else:
-            return piece_id + _XLMR_FAIRSEQ_OFFSET
+            return piece_id + _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class XlmrPreDecoder(FairSeqPreDecoder):
+class CamembertPreDecoder(FairSeqPreDecoder):
     def __init__(
         self,
         *,
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a XLM-R pre-decoder.
+        """Construct a CAMEMBERT pre-decoder.
 
         bos_id (int): The piece id used to mark the beginning of a sequence.
         eos_id (int): The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
-        super(XlmrPreDecoder, self).__init__(
+        super(CamembertPreDecoder, self).__init__(
             bos_id=bos_id,
             eos_id=eos_id,
-            piece_updater=XlmrPreDecoder._fairseq_to_sentencepiece,
+            piece_updater=CamembertPreDecoder._fairseq_to_sentencepiece,
         )
 
     @staticmethod
     def _fairseq_to_sentencepiece(piece_id: int):
         if piece_id == FAIRSEQ_PIECE_IDS.FAIRSEQ_UNK:
             return FAIRSEQ_PIECE_IDS.SPP_UNK
-        elif piece_id == FAIRSEQ_PIECE_IDS.FAIRSEQ_BOS:
-            return FAIRSEQ_PIECE_IDS.SPP_BOS
-        elif piece_id == FAIRSEQ_PIECE_IDS.FAIRSEQ_EOS:
-            return FAIRSEQ_PIECE_IDS.SPP_EOS
         else:
-            return piece_id - _XLMR_FAIRSEQ_OFFSET
+            return piece_id - _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
+class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     def __init__(
         self,
         *,
@@ -90,7 +82,7 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a XLM-R tokenizer from a cutlery SentencePiece processor.
+        """Construct a CAMEMBERT tokenizer from a cutlery SentencePiece processor.
 
         processor (SentencePieceTokenizer): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
@@ -103,14 +95,14 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_id = _get_piece_id_or_fail(processor, bos_piece)
         eos_id = _get_piece_id_or_fail(processor, eos_piece)
 
-        self.post_encoder = XlmrPostEncoder(
+        self.post_encoder = CamembertPostEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             bos_id=bos_id,
             eos_id=eos_id,
         )
 
-        self.pre_decoder = XlmrPreDecoder(
+        self.pre_decoder = CamembertPreDecoder(
             bos_id=bos_id,
             eos_id=eos_id,
         )
@@ -158,6 +150,6 @@ def _get_piece_id_or_fail(processor: SentencePieceProcessor, piece: str) -> int:
     piece_id = processor.piece_to_id(piece)
     if piece_id == processor.unk_id():
         raise ValueError(
-            f"XLM-R piece encoder vocabulary doesn't contain '{piece}' piece"
+            f"CamemBERT piece encoder vocabulary doesn't contain '{piece}' piece"
         )
     return piece_id

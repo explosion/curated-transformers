@@ -8,14 +8,6 @@ class SentencePieceTokenizer(Tokenizer):
     """Piece tokenizer using SentencePiece encoding
     (Kudo et al., 2018)"""
 
-    _FAIRSEQ_BOS = 0
-    _FAIRSEQ_EOS = 2
-    _FAIRSEQ_UNK = 3
-
-    _SPP_BOS = 1
-    _SPP_EOS = 2
-    _SPP_UNK = 0
-
     def __init__(
         self,
         *,

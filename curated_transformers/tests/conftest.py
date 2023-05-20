@@ -37,5 +37,36 @@ def pytest_runtest_setup(item):
 
 @pytest.fixture
 def test_dir(request):
-    print(request.fspath)
     return Path(request.fspath).parent
+
+
+@pytest.fixture
+def short_sample_texts():
+    return [
+        "I saw a girl with a telescope.",
+        "Today we will eat poké bowl, lots of it!",
+    ]
+
+
+@pytest.fixture
+def sample_texts():
+    # Two short Wikipedia fragments from:
+    # https://en.wikipedia.org/wiki/Kinesis_(keyboard)#Contoured_/_Advantage
+    # https://en.wikipedia.org/wiki/Doom_(1993_video_game)#Engine
+    return [
+        "The original Model 100, released in 1992, featured a single-piece "
+        "contoured design similar to the Maltron keyboard, with the keys laid "
+        "out in a traditional QWERTY arrangement, separated into two clusters "
+        "for the left and right hands.[2] A 1993 article in PC Magazine "
+        "described the US$690 (equivalent to $1,300 in 2021) keyboard's "
+        'arrangement as having "the alphabet keys in precisely vertical '
+        "(not diagonal) columns in two concave depressions. The Kinesis "
+        "Keyboard also puts the Backspace, Delete, Enter, Space, Ctrl, Alt, "
+        "Home, End, Page Up, and Page Down keys under your thumbs in the "
+        'middle".[23]',
+        "Doom was programmed largely in the ANSI C programming language, with "
+        "a few elements in assembly language. Development was done on NeXT "
+        "computers running the NeXTSTEP operating system.[35] The data used by "
+        "the game engine, including level designs and graphics files, are "
+        'stored in WAD files, short for "Where\'s All the Data?".',
+    ]

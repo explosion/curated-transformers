@@ -11,20 +11,20 @@ class RobertaEmbeddings(Module):
         embedding_config: BertEmbeddingConfig,
         layer_config: BertLayerConfig,
         *,
-        padding_idx: int
+        padding_id: int
     ) -> None:
         super().__init__()
 
         self.inner = BertEmbeddings(embedding_config, layer_config)
-        self.padding_idx = padding_idx
+        self.padding_id = padding_id
 
     def _get_position_ids(self, x: Tensor) -> Tensor:
         # We need to generate the position IDs from the
         # input tensor to pass to the embedding layer and
         # handle padding, c.f https://github.com/huggingface/transformers/blob/330247ede2d8265aae9ab0b7a0d1a811c344960d/src/transformers/models/roberta/modeling_roberta.py#L1566
 
-        mask = x.ne(self.padding_idx).int()
-        return (mask.cumsum(dim=1) * mask) + self.padding_idx
+        mask = x.ne(self.padding_id).int()
+        return (mask.cumsum(dim=1) * mask) + self.padding_id
 
     def forward(
         self,

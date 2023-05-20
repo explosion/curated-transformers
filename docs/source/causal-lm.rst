@@ -1,0 +1,28 @@
+Causal Language Models
+======================
+
+Caching
+-------
+
+Causal language models apply causal attention, meaning that the attention
+mechanism only attends to preceding pieces. So, when the model predicts the next
+piece, the attention and hidden representations of the pieces before it do not
+change. This means we can avoid recomputing hidden representations of
+already-seen pieces by caching them. This allows us to generate text in
+:math:`\mathcal{O}(n^2)` time rather than :math:`\mathcal{O}(n^3)`.
+
+Caching works by calling the causal language model with the ``store_cache``
+argument.  The model will then return the cached representations as part of its
+output. The cached representations can then be passed in the next call to the
+language model with the ``cache`` argument::
+
+  cache = None
+  while not_done:
+      ...
+      output = lm(..., cache=cache, store_cache=True)
+      cache = output.cache
+      ...
+
+.. autoclass:: curated_transformers.models.GPTNeoXCausalLM
+   :members:
+   :show-inheritance:

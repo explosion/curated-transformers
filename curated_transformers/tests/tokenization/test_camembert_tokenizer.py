@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization.camembert_tokenizer import CamembertTokenizer
 
-from ..util import torch_assertclose
+from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture
@@ -18,20 +18,16 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_camemberttokenizer_hf_tokenizer(sample_texts):
-    tokenizer = CamembertTokenizer.from_hf_hub(name="camembert-base")
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("camembert-base")
-
-    pieces = tokenizer(sample_texts)
-    hf_pieces = hf_tokenizer(sample_texts)
-    assert pieces.ids == hf_pieces["input_ids"]
-
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "camembert-base", CamembertTokenizer
+    )
     sample_texts = [
         "J'ai vu une fille avec un télescope.",
         "Aujourd'hui, nous allons manger un poké bowl.",
     ]
-    pieces = tokenizer(sample_texts)
-    hf_pieces = hf_tokenizer(sample_texts)
-    assert pieces.ids == hf_pieces["input_ids"]
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "camembert-base", CamembertTokenizer
+    )
 
 
 def test_camemberttokenizer_toy_tokenizer(toy_tokenizer, short_sample_texts):

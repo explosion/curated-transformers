@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization.xlmr_tokenizer import XlmrTokenizer
 
-from ..util import torch_assertclose
+from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture
@@ -18,13 +18,9 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_xlmrtokenizer_hf_tokenizer(sample_texts):
-    tokenizer = XlmrTokenizer.from_hf_hub(name="xlm-roberta-base")
-    pieces = tokenizer(sample_texts)
-
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("xlm-roberta-base")
-    hf_pieces = hf_tokenizer(sample_texts)
-
-    assert pieces.ids == hf_pieces["input_ids"]
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "xlm-roberta-base", XlmrTokenizer
+    )
 
 
 def test_xlmr_toy_tokenizer(toy_tokenizer, short_sample_texts):

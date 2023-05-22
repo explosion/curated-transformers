@@ -16,7 +16,7 @@ def make_tempdir():
 
 # Wrapper around torch.testing.assert_close with custom tolerances.
 def torch_assertclose(
-    a: torch.tensor, b: torch.tensor, *, atol: float = 1e-05, rtol: float = 1e-05
+    a: torch.Tensor, b: torch.Tensor, *, atol: float = 1e-05, rtol: float = 1e-05
 ):
     torch.testing.assert_close(
         a,

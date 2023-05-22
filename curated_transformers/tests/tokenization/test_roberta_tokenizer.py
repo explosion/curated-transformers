@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization import RobertaTokenizer
 
-from ..util import torch_assertclose
+from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture
@@ -18,13 +18,9 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_roberta_tokenizer_hf_tokenizer(sample_texts):
-    tokenizer = RobertaTokenizer.from_hf_hub(name="roberta-base")
-    pieces = tokenizer(sample_texts)
-
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("roberta-base")
-    hf_pieces = hf_tokenizer(sample_texts)
-
-    assert pieces.ids == hf_pieces["input_ids"]
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "roberta-base", RobertaTokenizer
+    )
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

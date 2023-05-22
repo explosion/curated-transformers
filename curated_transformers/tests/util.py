@@ -4,6 +4,8 @@ import shutil
 import torch
 import tempfile
 
+from curated_transformers._compat import transformers
+
 
 @contextlib.contextmanager
 def make_tempdir():
@@ -22,3 +24,21 @@ def torch_assertclose(
         atol=atol,
         rtol=rtol,
     )
+
+
+def compare_tokenizer_outputs_with_hf_tokenizer(sample_texts, hf_name, tokenizer_cls):
+    tokenizer = tokenizer_cls.from_hf_hub(name=hf_name)
+    pieces = tokenizer(sample_texts)
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained(hf_name)
+    hf_pieces = hf_tokenizer(sample_texts)
+
+    assert pieces.ids == hf_pieces["input_ids"]
+
+    decoded = tokenizer.decode(pieces.ids)
+    hf_decoded = [
+        hf_tokenizer.decode(ids, skip_special_tokens=True)
+        for ids in hf_pieces["input_ids"]
+    ]
+
+    assert decoded == hf_decoded

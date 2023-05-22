@@ -48,7 +48,7 @@ class PostDecoder(ABC):
     """Callable applied after decoding."""
 
     @abstractmethod
-    def __call__(self, pieces: Iterable[str]) -> List[str]:
+    def __call__(self, output: Iterable[str]) -> List[str]:
         ...
 
 

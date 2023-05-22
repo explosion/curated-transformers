@@ -18,18 +18,15 @@ Self = TypeVar("Self", bound="BertEncoder")
 
 
 class BertEncoder(Module, FromPretrainedHFModel):
-    def __init__(
-        self,
-        config: BertConfig,
-    ):
+    def __init__(self, config: BertConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
-        self.embeddings = BertEmbeddings(config.embedding, config.layer)
+        self.embeddings = BertEmbeddings(config.embedding, config.layer, device=device)
         self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BertEncoderLayer(config.layer, config.attention)
+                BertEncoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
@@ -67,6 +64,11 @@ class BertEncoder(Module, FromPretrainedHFModel):
         return convert_hf_state_dict(params)
 
     @classmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         config = convert_hf_config(hf_config)
-        return cls(config)
+        return cls(config, device=device)

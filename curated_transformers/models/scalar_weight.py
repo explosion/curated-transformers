@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 from torch import Tensor
 from torch.nn import Module
@@ -6,11 +7,19 @@ from torch.nn import Module
 # From syntaxdot:
 # https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/scalar_weighting.rs#L62
 class ScalarWeight(Module):
-    def __init__(self, *, num_layers: int, dropout_prob: float = 0.1):
+    def __init__(
+        self,
+        *,
+        num_layers: int,
+        dropout_prob: float = 0.1,
+        device: Optional[torch.device] = None,
+    ):
         super().__init__()
 
-        self.layer_weights = torch.nn.parameter.Parameter(torch.zeros(num_layers))
-        self.scale = torch.nn.parameter.Parameter(torch.tensor((1.0,)))
+        self.layer_weights = torch.nn.parameter.Parameter(
+            torch.zeros(num_layers, device=device)
+        )
+        self.scale = torch.nn.parameter.Parameter(torch.tensor((1.0,), device=device))
         self.dropout_prob = dropout_prob
 
     def forward(

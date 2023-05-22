@@ -20,9 +20,11 @@ def assert_encoder_output_equals_hf(
     hf_model.to(torch_device)
     hf_model.eval()
 
-    model = model_class.from_hf_hub(model_name)
-    model.to(torch_device)
+    model = model_class.from_hf_hub(model_name, device=torch_device)
     model.eval()
+
+    for _, param in model.state_dict():
+        assert param.device == torch_device
 
     torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)

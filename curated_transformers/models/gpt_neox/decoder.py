@@ -1,4 +1,5 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
+import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList, Parameter
 
@@ -19,26 +20,29 @@ Self = TypeVar("Self", bound="GPTNeoXDecoder")
 class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
     """GPT-NeoX (Black et al, 2022) decoder."""
 
-    def __init__(self, config: GPTNeoXConfig) -> None:
+    def __init__(
+        self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
+    ) -> None:
         """
         :param config: Model configuration.
+        :param device: Device on which the module is to be initialized.
         """
         super().__init__()
 
         self.embeddings = Embedding(
-            config.embedding.vocab_size, config.embedding.embedding_width
+            config.embedding.vocab_size, config.embedding.embedding_width, device=device
         )
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         self.layers = ModuleList(
             [
-                GPTNeoXDecoderLayer(config.layer, config.attention)
+                GPTNeoXDecoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
 
         self.output_layer_norm = LayerNorm(
-            config.layer.hidden_width, config.layer.layer_norm_eps
+            config.layer.hidden_width, config.layer.layer_norm_eps, device=device
         )
 
     def forward(
@@ -106,6 +110,11 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         return convert_hf_state_dict(cls, params)
 
     @classmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         config = convert_hf_config(hf_config)
-        return cls(config)
+        return cls(config, device=device)

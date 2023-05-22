@@ -20,17 +20,17 @@ Self = TypeVar("Self", bound="RobertaEncoder")
 class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
     """RoBERTa encoder (Liu et al., 2019)"""
 
-    def __init__(self, config: RobertaConfig):
+    def __init__(self, config: RobertaConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
         self.embeddings = RobertaEmbeddings(
-            config.embedding, config.layer, padding_id=config.padding_id
+            config.embedding, config.layer, padding_id=config.padding_id, device=device
         )
         self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BertEncoderLayer(config.layer, config.attention)
+                BertEncoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
@@ -68,6 +68,11 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
         return convert_hf_state_dict(params)
 
     @classmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         config = convert_hf_config(hf_config)
-        return cls(config)
+        return cls(config, device=device)

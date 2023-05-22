@@ -1,5 +1,5 @@
 import json
-from typing import Any, Iterable, Mapping, Type, TypeVar
+from typing import Any, Iterable, Mapping, Optional, Type, TypeVar
 from abc import ABC, abstractmethod
 from huggingface_hub import hf_hub_download
 from requests import HTTPError  # type: ignore
@@ -39,28 +39,42 @@ class FromPretrainedHFModel(ABC):
 
     @classmethod
     @abstractmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         """Create the module from a Hugging Face model JSON-deserialized
         model configuration.
 
         hf_config (Any): Hugging Face model configuration.
+        device (torch.device): Device on which to initialize the model.
         RETURNS (Self): Module constructed using the configuration.
         """
         raise NotImplementedError
 
     @classmethod
-    def from_hf_hub(cls: Type[Self], name: str, revision: str = "main") -> Self:
+    def from_hf_hub(
+        cls: Type[Self],
+        name: str,
+        revision: str = "main",
+        *,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         """Construct a module and load its parameters from Hugging Face Hub.
 
         name (str): Model name.
         revsion (str): Model revision.
+        device (torch.device): Device on which to initialize the model.
         RETURNS (Self): Module with the parameters loaded.
         """
         # Download configuration and construct model.
         config_filename = _get_model_config_filepath(name, revision)
         with open(config_filename, "r") as f:
             config = json.load(f)
-        model = cls.from_hf_config(hf_config=config)
+        # Initialize the model on the torch `meta` device to avoid unnecessary allocations.
+        model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
 
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames = _get_model_checkpoint_filepaths(name, revision)
@@ -68,6 +82,8 @@ class FromPretrainedHFModel(ABC):
         state_dict = cls.convert_hf_state_dict(state_dict)
 
         model.load_state_dict(state_dict)
+        if device is not None:
+            model.to(device)
 
         return model
 

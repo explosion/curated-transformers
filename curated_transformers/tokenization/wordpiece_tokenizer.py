@@ -54,3 +54,25 @@ class WordPieceTokenizer(Tokenizer):
             lens.append(text_lens)
 
         return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+
+
+def clean_up_decoded_string_like_hf(text: str) -> str:
+    """This method is provided to ensure that the decoded string
+    is compatible with the decoded output of the corresponding HF
+    WordPiece tokenizer.
+
+    c.f https://github.com/huggingface/tokenizers/blob/b4fcc9ce6e4ad5806e82826f816acfdfdc4fcc67/tokenizers/src/decoders/wordpiece.rs#L31"""
+    cleaned_up = (
+        text.replace(" .", ".")
+        .replace(" ?", "?")
+        .replace(" !", "!")
+        .replace(" ,", ",")
+        .replace(" ' ", "'")
+        .replace(" n't", "n't")
+        .replace(" 'm", "'m")
+        .replace(" do not", " don't")
+        .replace(" 's", "'s")
+        .replace(" 've", "'ve")
+        .replace(" 're", "'re")
+    )
+    return cleaned_up

@@ -4,7 +4,7 @@ from cutlery import WordPieceProcessor
 import json
 from pathlib import Path
 
-from .wordpiece_tokenizer import WordPieceTokenizer
+from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
 from .hf_hub import FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PreEncoder, PostEncoder, PreDecoder, PostDecoder
 from .util import remove_pieces_from_sequence, add_bos_eos_to_encoding
@@ -159,9 +159,10 @@ class BertPostDecoder(PostDecoder):
         pass
 
     def __call__(self, output: Iterable[str]) -> List[str]:
-        # Not much else we can do as the transformations done in the pre-encoding
-        # stage are lossy/non-reversible.
-        return [string.strip() for string in output]
+        # The transformations done in the pre-encoding stage are lossy/non-reversible,
+        # we can only do a selected number of transformations to massage the output
+        # to look similar to the input text.
+        return [clean_up_decoded_string_like_hf(string.strip()) for string in output]
 
 
 class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):

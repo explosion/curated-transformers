@@ -1,10 +1,10 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import GPTNeoXTokenizer, PiecesWithIds
 
-from ..util import torch_assertclose
+from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture
@@ -17,13 +17,9 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_gptneox_tokenizer_against_hf_tokenizer(sample_texts):
-    tokenizer = GPTNeoXTokenizer.from_hf_hub(name="EleutherAI/gpt-neox-20b")
-    pieces = tokenizer(sample_texts)
-
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
-    hf_pieces = hf_tokenizer(sample_texts)
-
-    assert pieces.ids == hf_pieces["input_ids"]
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "EleutherAI/gpt-neox-20b", GPTNeoXTokenizer
+    )
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

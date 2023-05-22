@@ -1,12 +1,12 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization import BertTokenizer
 from curated_transformers.tokenization.bert_tokenizer import BertPreEncoder
 
-from ..util import torch_assertclose
+from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture
@@ -19,13 +19,9 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.slow
 def test_berttokenizer_hf_tokenizer(sample_texts):
-    tokenizer = BertTokenizer.from_hf_hub(name="bert-base-cased")
-    pieces = tokenizer(sample_texts)
-
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-cased")
-    hf_pieces = hf_tokenizer(sample_texts)
-
-    assert pieces.ids == hf_pieces["input_ids"]
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts, "bert-base-cased", BertTokenizer
+    )
 
 
 def test_bert_toy_tokenizer(toy_tokenizer, short_sample_texts):
@@ -33,8 +29,8 @@ def test_bert_toy_tokenizer(toy_tokenizer, short_sample_texts):
     _check_toy_tokenizer(encoding)
 
     assert toy_tokenizer.decode(encoding.ids) == [
-        "I saw a girl with a telescope .",
-        "Today we will eat pok [UNK] bowl , lots of it !",
+        "I saw a girl with a telescope.",
+        "Today we will eat pok [UNK] bowl, lots of it!",
     ]
 
 

@@ -25,10 +25,10 @@ class XlmrPostEncoder(FairSeqPostEncoder):
     ):
         """Construct a XLM-R post-encoder.
 
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_piece: The piece used to mark the beginning of a sequence.
+        :param eos_piece: The piece used to mark the end of a sequence.
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
         """
         super(XlmrPostEncoder, self).__init__(
             bos_piece=bos_piece,
@@ -59,8 +59,8 @@ class XlmrPreDecoder(FairSeqPreDecoder):
     ):
         """Construct a XLM-R pre-decoder.
 
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
@@ -92,9 +92,9 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     ):
         """Construct a XLM-R tokenizer from a cutlery SentencePiece processor.
 
-        processor (SentencePieceProcessor): The processor to wrap.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
+        :param processor: The processor to wrap.
+        :param bos_piece: The piece to use to mark the beginning of a sequence.
+        :param eos_piece: The piece to use to mark the end of a sequence.
         """
         super().__init__(processor=processor)
 
@@ -125,9 +125,9 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     ) -> Self:
         """Construct a tokenizer from vocabulary and merge files.
 
-        model_path (Path): Path to the SentencePiece model file.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
+        :param model_path: Path to the SentencePiece model file.
+        :param bos_piece: The piece to use to mark the beginning of a sequence.
+        :param eos_piece: The piece to use to mark the end of a sequence.
         """
         processor = SentencePieceProcessor.from_file(str(model_path))
         return cls(

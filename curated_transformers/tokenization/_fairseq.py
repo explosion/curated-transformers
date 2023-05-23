@@ -29,11 +29,11 @@ class FairSeqPostEncoder(PostEncoder):
     ):
         """Construct a fairseq post-encoder.
 
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
-        piece_updater (Callable[[int], int]): Function that tranforms a given
+        :param bos_piece: The piece used to mark the beginning of a sequence.
+        :param eos_piece: The piece used to mark the end of a sequence.
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
+        :param piece_updater: Function that tranforms a given
             SentencePiece piece identifier to a valid fairseq one.
         """
         self.bos_piece = bos_piece
@@ -69,9 +69,9 @@ class FairSeqPreDecoder(PreDecoder):
     ):
         """Construct a fairseq pre-decoder.
 
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
-        piece_updater (Callable[[int], int]): Function that tranforms a given
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
+        :param piece_updater: Function that tranforms a given
             fairseq piece identifier to the original SentencePiece one.
         """
         self.bos_id = bos_id

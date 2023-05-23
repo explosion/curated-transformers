@@ -25,10 +25,10 @@ class CamembertPostEncoder(FairSeqPostEncoder):
     ):
         """Construct a CamemBERT post-encoder.
 
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_piece: The piece used to mark the beginning of a sequence.
+        :param eos_piece: The piece used to mark the end of a sequence.
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
         """
         super(CamembertPostEncoder, self).__init__(
             bos_piece=bos_piece,
@@ -55,8 +55,8 @@ class CamembertPreDecoder(FairSeqPreDecoder):
     ):
         """Construct a CamemBERT pre-decoder.
 
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_id: The piece id used to mark the beginning of a sequence.
+        :param eos_id: The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
@@ -84,9 +84,9 @@ class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     ):
         """Construct a CamemBERT tokenizer from a cutlery SentencePiece processor.
 
-        processor (SentencePieceProcessor): The processor to wrap.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
+        :param processor: The processor to wrap.
+        :param bos_piece: The piece to use to mark the beginning of a sequence.
+        :param eos_piece: The piece to use to mark the end of a sequence.
         """
         super().__init__(processor=processor)
 
@@ -117,9 +117,9 @@ class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     ) -> Self:
         """Construct a tokenizer from vocabulary and merge files.
 
-        model_path (Path): Path to the SentencePiece model file.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
+        :params model_path: Path to the SentencePiece model file.
+        :params bos_piece: The piece to use to mark the beginning of a sequence.
+        :params eos_piece: The piece to use to mark the end of a sequence.
         """
         processor = SentencePieceProcessor.from_file(str(model_path))
         return cls(

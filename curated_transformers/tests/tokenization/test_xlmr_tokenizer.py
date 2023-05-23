@@ -40,8 +40,8 @@ def _check_toy_tokenizer(pieces):
     assert len(pieces.pieces) == 2
 
     assert pieces.lens == [
-        [1, 1, 1, 1, 1, 1, 1, 7, 1],
-        [1, 2, 1, 1, 1, 4, 4, 3, 1, 2, 1],
+        [1, 13, 1],
+        [1, 19, 1],
     ]
     assert pieces.ids == [
         [0, 9, 466, 11, 948, 42, 11, 171, 169, 111, 29, 21, 144, 5, 2],

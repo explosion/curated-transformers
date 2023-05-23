@@ -15,7 +15,7 @@ class SentencePieceTokenizer(Tokenizer):
     ):
         """Construct a tokenizer from a cutlery SentencePiece processor.
 
-        processor (SentencePieceProcessor): The processor to wrap.
+        :param processor: The processor to wrap.
         """
         self.processor = processor
 
@@ -28,15 +28,10 @@ class SentencePieceTokenizer(Tokenizer):
         lens = []
 
         for text in input:
-            text_ids = []
-            text_pieces = []
             text_lens = []
 
-            for token in text.split(" "):
-                token_ids, token_pieces = self.processor.encode(token)
-                text_ids.extend(token_ids)
-                text_pieces.extend(token_pieces)
-                text_lens.append(len(token_ids))
+            text_ids, text_pieces = self.processor.encode(text)
+            text_lens.append(len(text_ids))
 
             ids.append(text_ids)
             pieces.append(text_pieces)

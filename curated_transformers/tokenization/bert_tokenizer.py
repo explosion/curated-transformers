@@ -1,7 +1,6 @@
 from typing import Any, Iterable, List, Type, TypeVar
 import unicodedata
 from cutlery import WordPieceProcessor
-import json
 from pathlib import Path
 
 from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf

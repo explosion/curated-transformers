@@ -11,7 +11,6 @@ Self = TypeVar("Self", bound="Tokenizer")
 @dataclass
 class PiecesWithIds:
     ids: List[List[int]]
-    lens: List[List[int]]
     pieces: List[List[str]]
 
     @property

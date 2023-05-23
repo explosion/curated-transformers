@@ -22,8 +22,5 @@ def add_bos_eos_to_encoding(
     pieces = []
     for seq_pieces in pieces_with_ids.pieces:
         pieces.append([bos_piece] + seq_pieces + [eos_piece])
-    lens = []
-    for seq_lens in pieces_with_ids.lens:
-        lens.append([1] + seq_lens + [1])
 
-    return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+    return PiecesWithIds(ids=ids, pieces=pieces)

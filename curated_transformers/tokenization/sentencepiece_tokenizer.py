@@ -25,7 +25,6 @@ class SentencePieceTokenizer(Tokenizer):
     def _encode(self, input: Iterable[str]) -> PiecesWithIds:
         ids = []
         pieces = []
-        lens = []
 
         for text in input:
             text_lens = []
@@ -35,6 +34,5 @@ class SentencePieceTokenizer(Tokenizer):
 
             ids.append(text_ids)
             pieces.append(text_pieces)
-            lens.append(text_lens)
 
-        return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+        return PiecesWithIds(ids=ids, pieces=pieces)

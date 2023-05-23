@@ -34,12 +34,10 @@ class WordPieceTokenizer(Tokenizer):
     def _encode(self, input: Iterable[str]) -> PiecesWithIds:
         ids = []
         pieces = []
-        lens = []
 
         for text in input:
             text_ids = []
             text_pieces = []
-            text_lens = []
 
             # We expect all input texts to be whitespace-splittable at this
             # point. This includes punctuation.
@@ -47,13 +45,11 @@ class WordPieceTokenizer(Tokenizer):
                 token_ids, token_pieces = self.processor.encode(token)
                 text_ids.extend(token_ids)
                 text_pieces.extend(token_pieces)
-                text_lens.append(len(token_ids))
 
             ids.append(text_ids)
             pieces.append(text_pieces)
-            lens.append(text_lens)
 
-        return PiecesWithIds(ids=ids, lens=lens, pieces=pieces)
+        return PiecesWithIds(ids=ids, pieces=pieces)
 
 
 def clean_up_decoded_string_like_hf(text: str) -> str:

@@ -18,10 +18,30 @@ Tokenizers
    :members:
    :show-inheritance:
 
+.. autoclass:: curated_transformers.tokenization.WordPieceTokenizer
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.SentencePieceTokenizer
+   :members:
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.tokenization.GPTNeoXTokenizer
    :members:
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.RobertaTokenizer
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.BertTokenizer
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.CamembertTokenizer
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.XlmrTokenizer
    :members:
    :show-inheritance:

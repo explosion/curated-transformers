@@ -92,7 +92,7 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
     ):
         """Construct a XLM-R tokenizer from a cutlery SentencePiece processor.
 
-        processor (SentencePieceTokenizer): The processor to wrap.
+        processor (SentencePieceProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
         """

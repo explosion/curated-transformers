@@ -23,7 +23,7 @@ class CamembertPostEncoder(FairSeqPostEncoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a CAMEMBERT post-encoder.
+        """Construct a CamemBERT post-encoder.
 
         bos_piece (str): The piece used to mark the beginning of a sequence.
         eos_piece (str): The piece used to mark the end of a sequence.
@@ -53,7 +53,7 @@ class CamembertPreDecoder(FairSeqPreDecoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a CAMEMBERT pre-decoder.
+        """Construct a CamemBERT pre-decoder.
 
         bos_id (int): The piece id used to mark the beginning of a sequence.
         eos_id (int): The piece id used to mark the end of a sequence.
@@ -82,9 +82,9 @@ class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a CAMEMBERT tokenizer from a cutlery SentencePiece processor.
+        """Construct a CamemBERT tokenizer from a cutlery SentencePiece processor.
 
-        processor (SentencePieceTokenizer): The processor to wrap.
+        processor (SentencePieceProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.
         eos_piece (str): The piece to use to mark the end of a sequence.
         """

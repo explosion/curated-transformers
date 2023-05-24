@@ -1,0 +1,43 @@
+from typing import Optional
+from curated_transformers._compat import transformers
+
+from ..util import torch_assertclose
+
+
+def compare_tokenizer_outputs_with_hf_tokenizer(
+    sample_texts, hf_name, tokenizer_cls, pad_token: Optional[str] = None
+):
+    tokenizer = tokenizer_cls.from_hf_hub(name=hf_name)
+    pieces = tokenizer(sample_texts)
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained(hf_name)
+    if pad_token is not None:
+        hf_tokenizer.add_special_tokens({"pad_token": pad_token})
+
+    # Test encoding with right-padding.
+    hf_pieces = hf_tokenizer(sample_texts, padding=True, return_tensors="pt")
+    torch_assertclose(
+        pieces.padded_tensor(padding_id=hf_tokenizer.pad_token_id),
+        hf_pieces["input_ids"].int(),
+    )
+    torch_assertclose(pieces.attention_mask(), hf_pieces["attention_mask"].bool())
+
+    # Test decoding
+    decoded = tokenizer.decode(pieces.ids)
+    hf_decoded = [
+        hf_tokenizer.decode(ids, skip_special_tokens=True)
+        for ids in hf_pieces["input_ids"]
+    ]
+
+    assert decoded == hf_decoded
+
+    # Test encoding with left-padding.
+    hf_tokenizer.padding_side = "left"
+    hf_pieces = hf_tokenizer(sample_texts, padding=True, return_tensors="pt")
+    torch_assertclose(
+        pieces.padded_tensor(padding_id=hf_tokenizer.pad_token_id, pad_left=True),
+        hf_pieces["input_ids"].int(),
+    )
+    torch_assertclose(
+        pieces.attention_mask(pad_left=True), hf_pieces["attention_mask"].bool()
+    )

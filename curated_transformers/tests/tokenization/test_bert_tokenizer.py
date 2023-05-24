@@ -6,7 +6,8 @@ from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization import BertTokenizer
 from curated_transformers.tokenization.bert_tokenizer import BertPreEncoder
 
-from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
+from .util import compare_tokenizer_outputs_with_hf_tokenizer
+from ..util import torch_assertclose
 
 
 @pytest.fixture
@@ -168,7 +169,7 @@ def _check_toy_tokenizer(pieces):
         ),
     )
     torch_assertclose(
-        pieces.attention_mask,
+        pieces.attention_mask(),
         torch.tensor(
             [
                 [

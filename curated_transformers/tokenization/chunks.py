@@ -80,7 +80,7 @@ class InputChunks(List[ChunkT]):
                     new_chunks[-1].text += chunk.text  # type: ignore[union-attr]
                 else:
                     new_chunks.append(dataclasses.replace(chunk))
-            else:
+            elif isinstance(chunk, SpecialPieceChunk):
                 if chunk.before:
                     if last_is_text:
                         new_chunks[-1].text += chunk.before  # type: ignore[union-attr]
@@ -89,5 +89,7 @@ class InputChunks(List[ChunkT]):
                 new_chunks.append(MergedSpecialPieceChunk(chunk.piece))
                 if chunk.after:
                     new_chunks.append(TextChunk(chunk.after))
+            else:
+                raise ValueError(f"Unknown chunk type: {type(chunk).__name__}")
 
         return new_chunks

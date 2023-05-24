@@ -92,6 +92,21 @@ class FromPretrainedHFModel(ABC):
 
         return model
 
+    @abstractmethod
+    def to(
+        self,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+        non_blocking: bool = False,
+    ):
+        """Moves and/or casts the parameters and buffers.
+
+        This method is automatically implemented by also deriving from
+        `torch.nn.Module`. This mixin does not derive from `Module` in
+        order to be an abstract base class.
+        """
+        ...
+
 
 def _get_model_config_filepath(name: str, revision: str) -> str:
     try:

@@ -5,6 +5,11 @@ from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization import BertTokenizer
 from curated_transformers.tokenization.bert_tokenizer import BertPreEncoder
+from curated_transformers.tokenization.chunks import (
+    InputChunks,
+    SpecialPieceChunk,
+    TextChunk,
+)
 
 from .util import compare_tokenizer_outputs_with_hf_tokenizer
 from ..util import torch_assertclose
@@ -226,11 +231,61 @@ def _check_toy_tokenizer(pieces):
 
 
 def test_bert_tokenizer_preencoder():
-    preencoder = BertPreEncoder(lowercase=False, strip_accents=True)
-    assert preencoder(["AWO-Mitarbeiter"]) == ["AWO - Mitarbeiter"]
-    assert preencoder(["-Mitarbeiter"]) == ["- Mitarbeiter"]
-    assert preencoder(["AWO-"]) == ["AWO -"]
-    assert preencoder(["-"]) == ["-"]
-    assert preencoder([""]) == [""]
-    assert preencoder(["Brötchen"]) == ["Brotchen"]
-    assert preencoder(["Mw.-St."]) == ["Mw . - St ."]
+    preencoder = BertPreEncoder(
+        lowercase=False, strip_accents=True, bos_piece="[CLS]", eos_piece="[SEP]"
+    )
+    assert preencoder([InputChunks([TextChunk("AWO-Mitarbeiter")])]) == [
+        InputChunks(
+            [
+                SpecialPieceChunk("[CLS]"),
+                TextChunk("AWO - Mitarbeiter"),
+                SpecialPieceChunk("[SEP]"),
+            ]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("-Mitarbeiter")])]) == [
+        InputChunks(
+            [
+                SpecialPieceChunk("[CLS]"),
+                TextChunk("- Mitarbeiter"),
+                SpecialPieceChunk("[SEP]"),
+            ]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("AWO-")])]) == [
+        InputChunks(
+            [SpecialPieceChunk("[CLS]"), TextChunk("AWO -"), SpecialPieceChunk("[SEP]")]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("-")])]) == [
+        InputChunks(
+            [SpecialPieceChunk("[CLS]"), TextChunk("-"), SpecialPieceChunk("[SEP]")]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("")])]) == [
+        InputChunks(
+            [
+                SpecialPieceChunk("[CLS]"),
+                TextChunk(""),
+                SpecialPieceChunk("[SEP]"),
+            ]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("Brötchen")])]) == [
+        InputChunks(
+            [
+                SpecialPieceChunk("[CLS]"),
+                TextChunk("Brotchen"),
+                SpecialPieceChunk("[SEP]"),
+            ]
+        )
+    ]
+    assert preencoder([InputChunks([TextChunk("Mw.-St.")])]) == [
+        InputChunks(
+            [
+                SpecialPieceChunk("[CLS]"),
+                TextChunk("Mw . - St ."),
+                SpecialPieceChunk("[SEP]"),
+            ]
+        )
+    ]

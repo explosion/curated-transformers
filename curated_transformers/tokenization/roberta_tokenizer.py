@@ -5,8 +5,8 @@ from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
 from .hf_hub import FromPretrainedHFTokenizer
-from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
-from .util import remove_pieces_from_sequence, add_bos_eos_to_encoding
+from .tokenizer import AddBosEosPreEncoder, PreDecoder
+from .util import remove_pieces_from_sequence
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -35,37 +35,6 @@ class RobertaPreDecoder(PreDecoder):
         ]
 
 
-class RobertaPostEncoder(PostEncoder):
-    def __init__(
-        self,
-        *,
-        bos_piece: str,
-        eos_piece: str,
-        bos_id: int,
-        eos_id: int,
-    ):
-        """Construct a RoBERTa post-encoder.
-
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
-        """
-        self.bos_piece = bos_piece
-        self.eos_piece = eos_piece
-        self.bos_id = bos_id
-        self.eos_id = eos_id
-
-    def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
-        return add_bos_eos_to_encoding(
-            pieces_with_ids,
-            bos_piece=self.bos_piece,
-            eos_piece=self.eos_piece,
-            bos_id=self.bos_id,
-            eos_id=self.eos_id,
-        )
-
-
 class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
     def __init__(
         self,
@@ -92,12 +61,7 @@ class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
             eos_id=eos_id,
         )
 
-        self.post_encoder = RobertaPostEncoder(
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-            bos_id=bos_id,
-            eos_id=eos_id,
-        )
+        self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
 
     @classmethod
     def from_files(

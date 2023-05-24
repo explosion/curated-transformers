@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ._fairseq import FairSeqPostEncoder, FairSeqPreDecoder, FAIRSEQ_PIECE_IDS
 from .sentencepiece_tokenizer import SentencePieceTokenizer
+from .tokenizer import AddBosEosPreEncoder
 from .hf_hub import FromPretrainedHFTokenizer
 
 
@@ -17,24 +18,11 @@ _XLMR_FAIRSEQ_OFFSET = 1
 class XlmrPostEncoder(FairSeqPostEncoder):
     def __init__(
         self,
-        *,
-        bos_piece: str,
-        eos_piece: str,
-        bos_id: int,
-        eos_id: int,
     ):
-        """Construct a XLM-R post-encoder.
-
-        :param bos_piece: The piece used to mark the beginning of a sequence.
-        :param eos_piece: The piece used to mark the end of a sequence.
-        :param bos_id: The piece id used to mark the beginning of a sequence.
-        :param eos_id: The piece id used to mark the end of a sequence.
+        """
+        Construct a XLM-R post-encoder.
         """
         super(XlmrPostEncoder, self).__init__(
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-            bos_id=bos_id,
-            eos_id=eos_id,
             piece_updater=XlmrPostEncoder._sentencepiece_to_fairseq,
         )
 
@@ -103,12 +91,9 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_id = _get_piece_id_or_fail(processor, bos_piece)
         eos_id = _get_piece_id_or_fail(processor, eos_piece)
 
-        self.post_encoder = XlmrPostEncoder(
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-            bos_id=bos_id,
-            eos_id=eos_id,
-        )
+        self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
+
+        self.post_encoder = XlmrPostEncoder()
 
         self.pre_decoder = XlmrPreDecoder(
             bos_id=bos_id,

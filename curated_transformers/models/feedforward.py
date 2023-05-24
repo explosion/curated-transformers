@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .activations import GeluNew
+from .activations import GeluNew, GeluFast
 
 
 class PointwiseFeedForward(Module):
@@ -44,11 +44,13 @@ class PointwiseFeedForward(Module):
             # are large enough to fail tests comparing output to HF
             # transformers.
             self.activation = GeluNew()  # type: ignore
+        elif hidden_act == "gelu_fast":
+            self.activation = GeluFast()  # type: ignore
         else:
-            supported_activations = ("relu", "gelu", "gelu_new")
+            supported_activations = ("relu", "gelu", "gelu_new", "gelu_fast")
             raise ValueError(
-                "The point-wise feed-forward network in the transformer only "
-                f"supports the following activation functions: {supported_activations}"
+                f"Invalid activation function `{hidden_act}` for point-wise feed-forward "
+                f"network. Supported functions: {supported_activations}"
             )
 
     def forward(self, x: Tensor) -> Tensor:

@@ -4,9 +4,8 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .chunks import InputChunks, SpecialPieceChunk, TextChunk
 from .hf_hub import FromPretrainedHFTokenizer
-from .tokenizer import AddBosEosPreEncoder, PreEncoder, PreDecoder
+from .tokenizer import AddBosEosPreEncoder, PreDecoder
 from .util import remove_pieces_from_sequence
 
 

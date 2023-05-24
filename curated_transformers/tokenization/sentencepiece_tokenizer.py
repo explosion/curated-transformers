@@ -1,5 +1,5 @@
 from typing import Iterable, List
-from cutlery import SentencePieceProcessor
+from curated_tokenizers import SentencePieceProcessor
 
 from .tokenizer import PiecesWithIds, Tokenizer
 
@@ -13,7 +13,7 @@ class SentencePieceTokenizer(Tokenizer):
         *,
         processor: SentencePieceProcessor,
     ):
-        """Construct a tokenizer from a cutlery SentencePiece processor.
+        """Construct a tokenizer from a curated tokenizers SentencePiece processor.
 
         :param processor: The processor to wrap.
         """

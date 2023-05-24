@@ -1,5 +1,5 @@
 from typing import Any, Type, TypeVar
-from cutlery import SentencePieceProcessor
+from curated_tokenizers import SentencePieceProcessor
 from pathlib import Path
 
 from ._fairseq import FairSeqPostEncoder, FairSeqPreDecoder, FAIRSEQ_PIECE_IDS
@@ -82,7 +82,7 @@ class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a CamemBERT tokenizer from a cutlery SentencePiece processor.
+        """Construct a CamemBERT tokenizer from a curated tokenizers SentencePiece processor.
 
         :param processor: The processor to wrap.
         :param bos_piece: The piece to use to mark the beginning of a sequence.

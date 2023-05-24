@@ -1,6 +1,6 @@
 from typing import Any, Iterable, List, Type, TypeVar
 import unicodedata
-from cutlery import WordPieceProcessor
+from curated_tokenizers import WordPieceProcessor
 from pathlib import Path
 
 from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
@@ -175,7 +175,7 @@ class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
         lowercase: bool = False,
         strip_accents: bool = False,
     ):
-        """Construct a Bert tokenizer from a cutlery WordPiece processor.
+        """Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
 
         processor (WordPieceProcessor): The processor to wrap.
         bos_piece (str): The piece used to mark the beginning of a sequence.

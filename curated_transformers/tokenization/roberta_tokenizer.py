@@ -1,5 +1,5 @@
 from typing import Any, Iterable, List, Type, TypeVar
-from cutlery import ByteBPEProcessor
+from curated_tokenizers import ByteBPEProcessor
 import json
 from pathlib import Path
 
@@ -74,7 +74,7 @@ class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a RoBERTa tokenizer from a cutlery byte-level BPE processor.
+        """Construct a RoBERTa tokenizer from a curated tokenizers byte-level BPE processor.
 
         processor (ByteBPEProcessor): The processor to wrap.
         bos_piece (str): The piece to use to mark the beginning of a sequence.

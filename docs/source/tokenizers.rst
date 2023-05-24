@@ -1,6 +1,30 @@
 Tokenization
 ============
 
+Tokenizer inputs
+----------------
+
+Each tokenizer accepts a ``List[str]`` or a ``List[InputChunks]``. In
+most cases passing a list of strings suffices. However passing
+:class:`.InputChunks` can be useful when adding special pieces to the input is
+required.
+
+When the tokenizer is called with a list of strings, each string is
+automatically converted to a :class:`.TextChunk`, which represents a text chunk
+that should be tokenized. The other type of supported chunk is the
+:class:`.SpecialPieceChunk`. The piece stored by this type of chunk is not
+tokenized, but looked up directly.
+
+.. autoclass:: curated_transformers.tokenization.InputChunks
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.SpecialPieceChunk
+   :members:
+
+.. autoclass:: curated_transformers.tokenization.TextChunk
+   :members:
+
 Pieces
 ------
 
@@ -14,34 +38,55 @@ stored in a special container :class:`.PiecesWithIds`.
 Tokenizers
 ----------
 
+.. autoclass:: curated_transformers.tokenization.Tokenizer
+   :members:
+   :special-members: __call__
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.tokenization.ByteBPETokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.WordPieceTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.SentencePieceTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.GPTNeoXTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.RobertaTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.BertTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.CamembertTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.XlmrTokenizer
    :members:
+   :inherited-members:
+   :special-members: __call__
    :show-inheritance:

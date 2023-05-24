@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor
 
+from .chunks import InputChunks, MergedInputChunks, SpecialPieceChunk, TextChunk
+
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="Tokenizer")
@@ -77,7 +79,7 @@ class PreEncoder(ABC):
     """Callable applied before encoding."""
 
     @abstractmethod
-    def __call__(self, input: Iterable[str]) -> List[str]:
+    def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
         ...
 
 
@@ -90,23 +92,33 @@ class PostEncoder(ABC):
 
 
 class Tokenizer(ABC):
+    """Base class for all tokenizers."""
+
     pre_decoder: Optional[PreDecoder] = None
     post_decoder: Optional[PostDecoder] = None
     pre_encoder: Optional[PreEncoder] = None
     post_encoder: Optional[PostEncoder] = None
 
-    def __call__(self, input: Union[str, Iterable[str]]) -> PiecesWithIds:
+    def __call__(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> PiecesWithIds:
         """Split one or more texts into pieces.
 
-        input (Union[str, Iterable[str]]): text (str) or texts (Iterable[str])
-            to split."""
+        :param input:
+            Sequences to tokenize. If the sequences are strings, they are
+            automatically converted to chunks.
+        :returns:
+            Pieces in each sequence.
+        """
         return self.encode(input)
 
-    def decode(self, input: Iterable[Iterable[int]]):
-        """Reconstruct a string from piece identifiers.
+    def decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+        """Reconstruct string sequences from piece identifiers.
 
-        input (Iterable[Iterable[int]]): the piece identifiers
-            to reconstruct the string from.
+        :param input:
+            The piece identifiers to reconstruct the strings from.
+        :returns:
+            The decoded strings.
         """
         if self.pre_decoder is not None:
             input = self.pre_decoder(input)
@@ -118,26 +130,78 @@ class Tokenizer(ABC):
 
         return strings
 
-    def encode(self, input: Union[str, Iterable[str]]) -> PiecesWithIds:
+    def encode(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> PiecesWithIds:
         """Split one or more texts into pieces.
 
-        input (Union[str, Iterable[str]]): text (str) or texts (Iterable[str])
-            to split."""
-        input = [input] if isinstance(input, str) else input
-        if self.pre_encoder is not None:
-            input = self.pre_encoder(input)
+        :param input:
+            Sequences to tokenize. If the sequences are strings, they are
+            automatically converted to chunks.
+        :returns:
+            Pieces in each sequence.
+        """
+        chunks = self._convert_strings(input)
 
-        pieces = self._encode(input)
+        if self.pre_encoder is not None:
+            chunks = self.pre_encoder(chunks)
+
+        merged_chunks = [seq_chunks.merge_text_chunks() for seq_chunks in chunks]
+        pieces = self._encode(merged_chunks)
 
         if self.post_encoder is not None:
             pieces = self.post_encoder(pieces)
 
         return pieces
 
+    def _convert_strings(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> List[InputChunks]:
+        return [
+            InputChunks([TextChunk(seq)]) if isinstance(seq, str) else seq
+            for seq in input
+        ]
+
     @abstractmethod
     def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
         ...
 
     @abstractmethod
-    def _encode(self, input: Iterable[str]) -> PiecesWithIds:
+    def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
         ...
+
+
+class AddBosEosPreEncoder(PreEncoder):
+    """
+    Construct a decoder that adds beginning/end of sequence markers.
+    """
+
+    def __init__(
+        self,
+        *,
+        bos_piece: str,
+        eos_piece: str,
+    ):
+        """Construct a decoder that adds beginning/end of sequence markers..
+
+        :param bos_piece:
+            The piece used to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece used to mark the end of a sequence.
+        """
+        self.bos_piece = bos_piece
+        self.eos_piece = eos_piece
+
+    def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        bos_eos_chunks = []
+        for seq_chunks in chunks:
+            bos_eos_chunks.append(
+                InputChunks(
+                    [
+                        SpecialPieceChunk(self.bos_piece),
+                        *seq_chunks,
+                        SpecialPieceChunk(self.eos_piece),
+                    ]
+                )
+            )
+        return bos_eos_chunks

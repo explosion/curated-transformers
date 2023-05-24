@@ -1,6 +1,7 @@
 from typing import Iterable, List
 from curated_tokenizers import WordPieceProcessor
 
+from .chunks import MergedInputChunks, MergedSpecialPieceChunk
 from .tokenizer import PiecesWithIds, Tokenizer
 
 
@@ -31,23 +32,26 @@ class WordPieceTokenizer(Tokenizer):
             decoded.append("".join(tokens))
         return decoded
 
-    def _encode(self, input: Iterable[str]) -> PiecesWithIds:
+    def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
         ids = []
         pieces = []
 
-        for text in input:
-            text_ids = []
-            text_pieces = []
+        for seq in input:
+            seq_ids = []
+            seq_pieces = []
 
-            # We expect all input texts to be whitespace-splittable at this
-            # point. This includes punctuation.
-            for token in text.split(" "):
-                token_ids, token_pieces = self.processor.encode(token)
-                text_ids.extend(token_ids)
-                text_pieces.extend(token_pieces)
+            for chunk in seq:
+                if isinstance(chunk, MergedSpecialPieceChunk):
+                    seq_ids.append(self.processor.get_initial(chunk.piece))
+                    seq_pieces.append(chunk.piece)
+                else:
+                    for token in chunk.text.split(" "):
+                        token_ids, token_pieces = self.processor.encode(token)
+                        seq_ids.extend(token_ids)
+                        seq_pieces.extend(token_pieces)
 
-            ids.append(text_ids)
-            pieces.append(text_pieces)
+            ids.append(seq_ids)
+            pieces.append(seq_pieces)
 
         return PiecesWithIds(ids=ids, pieces=pieces)
 

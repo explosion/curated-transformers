@@ -1,7 +1,7 @@
 from typing import Callable, Iterable, List
 
 from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
-from .util import remove_pieces_from_sequence, add_bos_eos_to_encoding
+from .util import remove_pieces_from_sequence
 
 
 class FAIRSEQ_PIECE_IDS:
@@ -21,36 +21,16 @@ class FairSeqPostEncoder(PostEncoder):
     def __init__(
         self,
         *,
-        bos_piece: str,
-        eos_piece: str,
-        bos_id: int,
-        eos_id: int,
         piece_updater: Callable[[int], int],
     ):
         """Construct a fairseq post-encoder.
 
-        :param bos_piece: The piece used to mark the beginning of a sequence.
-        :param eos_piece: The piece used to mark the end of a sequence.
-        :param bos_id: The piece id used to mark the beginning of a sequence.
-        :param eos_id: The piece id used to mark the end of a sequence.
         :param piece_updater: Function that tranforms a given
             SentencePiece piece identifier to a valid fairseq one.
         """
-        self.bos_piece = bos_piece
-        self.eos_piece = eos_piece
-        self.bos_id = bos_id
-        self.eos_id = eos_id
         self.piece_updater = piece_updater
 
     def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
-        pieces_with_ids = add_bos_eos_to_encoding(
-            pieces_with_ids,
-            bos_piece=self.bos_piece,
-            eos_piece=self.eos_piece,
-            bos_id=self.bos_id,
-            eos_id=self.eos_id,
-        )
-
         # We need to align the IDs to the original fairseq vocabulary.
         for piece_ids in pieces_with_ids.ids:
             for i in range(len(piece_ids)):

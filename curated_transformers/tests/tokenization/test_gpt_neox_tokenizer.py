@@ -1,8 +1,13 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers
+from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization import GPTNeoXTokenizer, PiecesWithIds
+from curated_transformers.tokenization.chunks import (
+    InputChunks,
+    SpecialPieceChunk,
+    TextChunk,
+)
 
 from .util import compare_tokenizer_outputs_with_hf_tokenizer
 from ..util import torch_assertclose
@@ -21,6 +26,51 @@ def test_gptneox_tokenizer_against_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
         sample_texts, "EleutherAI/gpt-neox-20b", GPTNeoXTokenizer, pad_token="[PAD]"
     )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.slow
+def test_gptneox_tokenizer_against_hf_tokenizer_special_tokens():
+    texts_with_special_tokens = [
+        "### Instruction: foo ### Response: bar ### End",
+        "### Instruction: foo ### Response: bar",
+        "### Instruction:### Response:### End",
+    ]
+
+    chunks_with_special_tokens = [
+        InputChunks(
+            [
+                SpecialPieceChunk("### Instruction:", after=" "),
+                TextChunk("foo"),
+                SpecialPieceChunk("### Response:", after=" ", before=" "),
+                TextChunk("bar"),
+                SpecialPieceChunk("### End", before=" "),
+            ]
+        ),
+        InputChunks(
+            [
+                SpecialPieceChunk("### Instruction:", after=" "),
+                TextChunk("foo"),
+                SpecialPieceChunk("### Response:", after=" ", before=" "),
+                TextChunk("bar"),
+            ]
+        ),
+        InputChunks(
+            [
+                SpecialPieceChunk("### Instruction:"),
+                SpecialPieceChunk("### Response:"),
+                SpecialPieceChunk("### End"),
+            ]
+        ),
+    ]
+
+    tokenizer = GPTNeoXTokenizer.from_hf_hub(name="databricks/dolly-v2-3b")
+    pieces = tokenizer(chunks_with_special_tokens)
+
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained("databricks/dolly-v2-3b")
+    hf_pieces = hf_tokenizer(texts_with_special_tokens)
+
+    assert pieces.ids == hf_pieces["input_ids"]
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

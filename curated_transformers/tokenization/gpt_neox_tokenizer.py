@@ -39,7 +39,11 @@ class GPTNeoXTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
         deserialized = json.loads(serialized)
         vocab_merges = deserialized["model"]
         merges = [tuple(merge.split(" ")) for merge in vocab_merges["merges"]]
-        processor = ByteBPEProcessor(vocab_merges["vocab"], merges)
+        vocab = vocab_merges["vocab"]
+        for added_token in deserialized["added_tokens"]:
+            vocab[added_token["content"]] = added_token["id"]
+
+        processor = ByteBPEProcessor(vocab, merges)
         return cls(
             processor=processor,
         )

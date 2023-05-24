@@ -1,12 +1,13 @@
 from typing import Any, Iterable, List, Type, TypeVar
-import unicodedata
 from curated_tokenizers import WordPieceProcessor
 from pathlib import Path
+import unicodedata
 
-from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
+from .chunks import InputChunks, SpecialPieceChunk, TextChunk
 from .hf_hub import FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PreEncoder, PostEncoder, PreDecoder, PostDecoder
-from .util import remove_pieces_from_sequence, add_bos_eos_to_encoding
+from .util import remove_pieces_from_sequence
+from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -17,14 +18,24 @@ class BertPreEncoder(PreEncoder):
     def __init__(
         self,
         *,
+        bos_piece: str,
+        eos_piece: str,
         lowercase: bool,
         strip_accents: bool,
     ):
         """Construct a BERT pre-encoder.
 
-        lowercase (bool): Lowercase text.
-        strip_accents (bool): Strip accents from text.
+        :param bos_piece:
+            The piece used to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece used to mark the end of a sequence.
+        :param lowercase:
+            Lowercase text.
+        :param strip_accents:
+            Strip accents from text.
         """
+        self.bos_piece = bos_piece
+        self.eos_piece = eos_piece
         self.lowercase = lowercase
         self.strip_accents = strip_accents
 
@@ -67,18 +78,27 @@ class BertPreEncoder(PreEncoder):
         token = unicodedata.normalize("NFD", token)
         return "".join([char for char in token if unicodedata.category(char) != "Mn"])
 
-    def __call__(self, input: Iterable[str]) -> List[str]:
+    def __call__(self, input: Iterable[InputChunks]) -> List[InputChunks]:
         preprocessed = []
-        for text in input:
-            words = []
-            for word in text.split(" "):
-                if self.lowercase:
-                    word = word.lower()
-                if self.strip_accents:
-                    word = self.strip_token_accents(word)
-                word_with_punct = self.split_token_on_punctuation(word)
-                words.extend(word_with_punct)
-            preprocessed.append(" ".join(words))
+
+        for seq in input:
+            processed_seq = InputChunks([SpecialPieceChunk(self.bos_piece)])
+            for chunk in seq:
+                if isinstance(chunk, TextChunk):
+                    words = []
+                    for word in chunk.text.split(" "):
+                        if self.lowercase:
+                            word = word.lower()
+                        if self.strip_accents:
+                            word = self.strip_token_accents(word)
+                        word_with_punct = self.split_token_on_punctuation(word)
+                        words.extend(word_with_punct)
+                    processed_seq.append(TextChunk(" ".join(words)))
+                else:
+                    processed_seq.append(chunk)
+            processed_seq.append(SpecialPieceChunk(self.eos_piece))
+            preprocessed.append(processed_seq)
+
         return preprocessed
 
 
@@ -86,38 +106,18 @@ class BertPostEncoder(PostEncoder):
     def __init__(
         self,
         *,
-        bos_piece: str,
-        eos_piece: str,
         unk_piece: str,
-        bos_id: int,
-        eos_id: int,
         unk_id: int,
     ):
         """Construct a BERT post-encoder.
 
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
         unk_piece (int): The piece used to mark unknown tokens.
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
         unk_id (int): The piece id used to mark unknown tokens.
         """
-        self.bos_piece = bos_piece
-        self.eos_piece = eos_piece
         self.unk_piece = unk_piece
-        self.bos_id = bos_id
-        self.eos_id = eos_id
         self.unk_id = unk_id
 
     def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
-        pieces_with_ids = add_bos_eos_to_encoding(
-            pieces_with_ids,
-            bos_piece=self.bos_piece,
-            eos_piece=self.eos_piece,
-            bos_id=self.bos_id,
-            eos_id=self.eos_id,
-        )
-
         # Replace all unknown IDs and their corresponding pieces.
         for ids, pieces in zip(pieces_with_ids.ids, pieces_with_ids.pieces):
             for i in range(len(ids)):
@@ -193,14 +193,13 @@ class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
         unk_id = _get_piece_id_or_fail(processor, unk_piece)
 
         self.pre_encoder = BertPreEncoder(
-            lowercase=lowercase, strip_accents=strip_accents
-        )
-        self.post_encoder = BertPostEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
+            lowercase=lowercase,
+            strip_accents=strip_accents,
+        )
+        self.post_encoder = BertPostEncoder(
             unk_piece=unk_piece,
-            bos_id=bos_id,
-            eos_id=eos_id,
             unk_id=unk_id,
         )
         self.pre_decoder = BertPreDecoder(bos_id=bos_id, eos_id=eos_id)

@@ -14,7 +14,7 @@ class PiecesWithIds:
     ids: List[List[int]]
     pieces: List[List[str]]
 
-    def attention_mask(self, pad_left: bool = False) -> Tensor:
+    def attention_mask(self, *, pad_left: bool = False) -> Tensor:
         """
         CPU tensor with attention masks.
 

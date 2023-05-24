@@ -333,7 +333,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
                 positions = torch.arange(
                     cache_len,
                     cache_len + seq_len,
-                    dtype=torch.int32,
+                    dtype=torch.long,  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
                     device=k_rotary.device,
                 ).repeat(x.size(0), 1)
 

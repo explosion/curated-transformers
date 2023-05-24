@@ -1,5 +1,5 @@
 from typing import Iterable, List
-from cutlery import ByteBPEProcessor
+from curated_tokenizers import ByteBPEProcessor
 
 from .tokenizer import PiecesWithIds, Tokenizer
 
@@ -13,7 +13,7 @@ class ByteBPETokenizer(Tokenizer):
         *,
         processor: ByteBPEProcessor,
     ):
-        """Construct a tokenizer from a cutlery byte-level BPE processor.
+        """Construct a tokenizer from a curated tokenizers byte-level BPE processor.
 
         processor (ByteBPEProcessor): The processor to wrap.
         """

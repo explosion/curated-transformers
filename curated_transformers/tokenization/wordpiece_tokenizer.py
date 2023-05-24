@@ -1,5 +1,5 @@
 from typing import Iterable, List
-from cutlery import WordPieceProcessor
+from curated_tokenizers import WordPieceProcessor
 
 from .tokenizer import PiecesWithIds, Tokenizer
 
@@ -13,7 +13,7 @@ class WordPieceTokenizer(Tokenizer):
         *,
         processor: WordPieceProcessor,
     ):
-        """Construct a tokenizer from a cutlery WordPiece processor.
+        """Construct a tokenizer from a curated tokenizers WordPiece processor.
 
         :param processor: The processor to wrap.
         """
@@ -57,7 +57,8 @@ def clean_up_decoded_string_like_hf(text: str) -> str:
     is compatible with the decoded output of the corresponding HF
     WordPiece tokenizer.
 
-    c.f https://github.com/huggingface/tokenizers/blob/b4fcc9ce6e4ad5806e82826f816acfdfdc4fcc67/tokenizers/src/decoders/wordpiece.rs#L31"""
+    c.f https://github.com/huggingface/tokenizers/blob/b4fcc9ce6e4ad5806e82826f816acfdfdc4fcc67/tokenizers/src/decoders/wordpiece.rs#L31
+    """
     cleaned_up = (
         text.replace(" .", ".")
         .replace(" ?", "?")

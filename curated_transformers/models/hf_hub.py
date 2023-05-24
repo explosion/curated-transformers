@@ -85,6 +85,10 @@ class FromPretrainedHFModel(ABC):
         state_dict = cls.convert_hf_state_dict(state_dict)
 
         emplace_module_state_dict(model, state_dict, device=device)  # type:ignore
+        # Ensure that any non-persistent buffers are also moved to
+        # the correct device.
+        if device is not None:
+            model.to(device)
 
         return model
 

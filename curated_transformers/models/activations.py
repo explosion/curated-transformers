@@ -9,7 +9,7 @@ class GeluNew(Module):
 
     def forward(self, input: Tensor) -> Tensor:
         """
-        :param input: Input tensor, **Shape:** (batch_size, seq_len, width)
+        :param input: Input tensor. **Shape:** (batch_size, seq_len, width)
         """
         return (
             0.5
@@ -30,7 +30,7 @@ class GeluFast(Module):
 
     def forward(self, input: Tensor) -> Tensor:
         """
-        :param input: Input tensor, **Shape:** (batch_size, seq_len, width)
+        :param input: Input tensor. **Shape:** (batch_size, seq_len, width)
         """
         return (
             0.5

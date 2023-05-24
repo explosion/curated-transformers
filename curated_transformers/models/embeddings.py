@@ -72,6 +72,10 @@ class RotaryEmbeddings(Module):
         if width % 2:
             raise ValueError(f"Width of rotary embeddings must be even, was: {width}")
 
+        # Ignore allocations on the meta device as we don't persist our buffer,
+        # i.e., we don't expect the backing tensor to be replaced with pretrained weights.
+        if device == torch.device("meta"):
+            device = None
         # Θ_i = 10000^(-2(i-1)/d)
         theta = torch.pow(
             base, -torch.arange(0, width, 2, dtype=torch.float, device=device) / width

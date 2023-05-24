@@ -7,6 +7,9 @@ import torch
 from torch import Tensor
 from torch.nn import Parameter
 
+from .loading_util import emplace_module_state_dict
+
+
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX = "pytorch_model.bin.index.json"
@@ -81,21 +84,9 @@ class FromPretrainedHFModel(ABC):
         state_dict = _load_state_dict_checkpoints(checkpoint_filenames)
         state_dict = cls.convert_hf_state_dict(state_dict)
 
-        model.load_state_dict(state_dict)
-        if device is not None:
-            model.to(device)
+        emplace_module_state_dict(model, state_dict, device=device)  # type:ignore
 
         return model
-
-    @abstractmethod
-    def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
-        """Load a state dictionary.
-
-        This method is automatically implemented by also deriving from
-        `torch.nn.Module`. This mixin does not derive from `Module` in
-        order to be an abstract base class.
-        """
-        ...
 
 
 def _get_model_config_filepath(name: str, revision: str) -> str:

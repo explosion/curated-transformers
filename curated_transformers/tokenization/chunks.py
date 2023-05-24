@@ -1,5 +1,4 @@
-from typing import Optional, Union
-from collections import UserList
+from typing import List, Optional, Union
 import dataclasses
 from dataclasses import dataclass
 
@@ -54,7 +53,7 @@ class TextChunk:
     text: str
 
 
-class MergedInputChunks(UserList[MergedChunkT]):
+class MergedInputChunks(List[MergedChunkT]):
     """
     A list of chunks in which consecutive text chunks and before/after
     texts of special piece chunks are merged.
@@ -63,7 +62,7 @@ class MergedInputChunks(UserList[MergedChunkT]):
     pass
 
 
-class InputChunks(UserList[ChunkT]):
+class InputChunks(List[ChunkT]):
     """
     A list of chunks.
     """

@@ -5,7 +5,8 @@ from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization.camembert_tokenizer import CamembertTokenizer
 
-from ..util import torch_assertclose, compare_tokenizer_outputs_with_hf_tokenizer
+from .util import compare_tokenizer_outputs_with_hf_tokenizer
+from ..util import torch_assertclose
 
 
 @pytest.fixture
@@ -186,7 +187,7 @@ def _check_toy_tokenizer(pieces):
         ),
     )
     torch_assertclose(
-        pieces.attention_mask,
+        pieces.attention_mask(),
         torch.tensor(
             [
                 [

@@ -2,6 +2,7 @@ from typing import Iterable, List, Optional, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import torch
+from torch import Tensor
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -13,25 +14,46 @@ class PiecesWithIds:
     ids: List[List[int]]
     pieces: List[List[str]]
 
-    @property
-    def attention_mask(self):
-        """CPU tensor with attention masks.
+    def attention_mask(self, pad_left: bool = False) -> Tensor:
+        """
+        CPU tensor with attention masks.
 
-        The mask is equivalent to `ids.padded_tensor != padding_id`."""
+        The mask is equivalent to:
+        ``ids.padded_tensor(padding_id) != padding_id``
+
+        :param pad_left:
+            By default sequences shorter than the longest sequence are
+            right-padded. Use left-padding when set to ``True``.
+        :returns:
+            The attention mask. **Shape:** (batch_size, max_seq_len)
+        """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
         mask = torch.full((n_seqs, max_len), False)
         for idx, seq_ids in enumerate(self.ids):
-            mask[idx, : len(seq_ids)] = True
+            if pad_left:
+                mask[idx, -len(seq_ids) :] = True
+            else:
+                mask[idx, : len(seq_ids)] = True
         return mask
 
-    def padded_tensor(self, *, padding_id: int):
-        """Padded CPU tensor of the piece identifiers."""
+    def padded_tensor(self, *, padding_id: int, pad_left: bool = False):
+        """Padded CPU tensor of the piece identifiers.
+
+        :param pad_left:
+            By default sequences shorter than the longest sequence are
+            right-padded. Use left-padding when set to ``True``.
+        :returns:
+            The padded piece ids. **Shape:** (batch_size, max_seq_len)
+        """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
         padded = torch.full((n_seqs, max_len), padding_id, dtype=torch.int32)
         for idx, seq_ids in enumerate(self.ids):
-            padded[idx, : len(seq_ids)] = torch.tensor(seq_ids)
+            if pad_left:
+                padded[idx, -len(seq_ids) :] = torch.tensor(seq_ids)
+            else:
+                padded[idx, : len(seq_ids)] = torch.tensor(seq_ids)
         return padded
 
 

@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import AddBosEosPreEncoder, PreDecoder
 from .util import remove_pieces_from_sequence
 
@@ -35,7 +34,7 @@ class RobertaPreDecoder(PreDecoder):
         ]
 
 
-class RobertaTokenizer(ByteBPETokenizer, FromHFHub, FromPretrainedHFTokenizer):
+class RobertaTokenizer(ByteBPETokenizer):
     def __init__(
         self,
         *,

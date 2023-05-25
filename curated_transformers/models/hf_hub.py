@@ -79,6 +79,14 @@ class FromPretrainedHFModel(ABC):
         # Initialize the model on the torch `meta` device to avoid unnecessary allocations.
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
 
+        # Convert the model to the expected dtype.
+        dtype_str = config.get("torch_dtype")
+        if dtype_str is not None:
+            dtype = getattr(torch, dtype_str, None)
+            if dtype is None or not isinstance(dtype, torch.dtype):
+                raise ValueError(f"Invalid torch dtype `{dtype_str}`")
+            model.to(dtype=dtype)
+
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames = _get_model_checkpoint_filepaths(name, revision)
         state_dict = _load_state_dict_checkpoints(checkpoint_filenames)

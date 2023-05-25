@@ -136,6 +136,7 @@ class SelfAttention(Module):
         dropout_prob: float = 0.1,
         hidden_width: int = 768,
         num_attention_heads: int = 12,
+        device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer.
 
@@ -143,6 +144,7 @@ class SelfAttention(Module):
             and output layers.
         :param hidden_width: Hidden width of the layer.
         :param num_attention_heads: Number of attention heads.
+        :param device: Device on which the module is to be initialized.
         """
         super().__init__()
 
@@ -155,9 +157,11 @@ class SelfAttention(Module):
             )
 
         self.dims_per_head = self.model_dim // self.num_heads
-        self.attention = ScaledDotProductAttention(dropout_prob=dropout_prob)
-        self.input = Linear(self.model_dim, self.model_dim * 3)
-        self.output = Linear(self.model_dim, self.model_dim)
+        self.attention = ScaledDotProductAttention(
+            dropout_prob=dropout_prob,
+        )
+        self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
+        self.output = Linear(self.model_dim, self.model_dim, device=device)
 
     def forward(
         self,
@@ -213,6 +217,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         rotary_fraction: float = 1.0,
         rotary_base: int = 10000,
         split_heads_before_chunk: bool = False,
+        device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer with rotary position embeddings.
 
@@ -227,6 +232,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             into heads before splitting query/key/value representations when
             ``True``. This option is required for some newer transformer
             architectures that split heads before chunking.
+        :param device: Device on which the module is to be initialized.
         """
 
         super().__init__()
@@ -248,10 +254,14 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             )
         self.rotary_dims = int(rotary_fraction * self.dims_per_head)
 
-        self.input = Linear(self.model_dim, self.model_dim * 3)
-        self.attention = ScaledDotProductAttention(dropout_prob=dropout_prob)
-        self.output = Linear(self.model_dim, self.model_dim)
-        self.rotary_embeds = RotaryEmbeddings(width=self.rotary_dims, base=rotary_base)
+        self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
+        self.attention = ScaledDotProductAttention(
+            dropout_prob=dropout_prob,
+        )
+        self.output = Linear(self.model_dim, self.model_dim, device=device)
+        self.rotary_embeds = RotaryEmbeddings(
+            width=self.rotary_dims, base=rotary_base, device=device
+        )
 
     def forward(
         self,
@@ -323,7 +333,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
                 positions = torch.arange(
                     cache_len,
                     cache_len + seq_len,
-                    dtype=torch.int32,
+                    dtype=torch.long,  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
                     device=k_rotary.device,
                 ).repeat(x.size(0), 1)
 

@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
@@ -29,11 +30,12 @@ class PointwiseFeedForward(Module):
         hidden_act: str = "gelu",
         hidden_width: int = 768,
         intermediate_width: int = 3072,
+        device: Optional[torch.device] = None,
     ):
         super().__init__()
 
-        self.intermediate = Linear(hidden_width, intermediate_width)
-        self.output = Linear(intermediate_width, hidden_width)
+        self.intermediate = Linear(hidden_width, intermediate_width, device=device)
+        self.output = Linear(intermediate_width, hidden_width, device=device)
         if hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif hidden_act == "gelu":

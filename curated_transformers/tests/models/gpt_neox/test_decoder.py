@@ -5,21 +5,25 @@ from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.models.gpt_neox.decoder import GPTNeoXDecoder
 from curated_transformers.tests.util import torch_assertclose
 
+from ...conftest import TORCH_DEVICES
+
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_decoder():
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_decoder(torch_device):
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
     )
+    hf_model.to(torch_device)
     hf_model.eval()
 
     model = GPTNeoXDecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
+        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
+    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
 
     with torch.no_grad():
         Y = model(X).last_hidden_layer_states
@@ -29,20 +33,22 @@ def test_decoder():
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_decoder_with_cache():
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_decoder_with_cache(torch_device):
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
     )
+    hf_model.to(torch_device)
     hf_model.eval()
 
     model = GPTNeoXDecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
+        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
-    X_rest = torch.randint(0, hf_model.config.vocab_size, (2, 10))
+    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    X_rest = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
 
     with torch.no_grad():
         Y = model(X, store_cache=True)
@@ -54,20 +60,24 @@ def test_decoder_with_cache():
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_decoder_with_positions():
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_decoder_with_positions(torch_device):
     hf_model = transformers.AutoModel.from_pretrained(
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
     )
+    hf_model.to(torch_device)
     hf_model.eval()
 
     model = GPTNeoXDecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
+        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10))
-    positions = torch.randint(0, hf_model.config.max_position_embeddings, (2, 10))
+    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    positions = torch.randint(
+        0, hf_model.config.max_position_embeddings, (2, 10), device=torch_device
+    )
 
     with torch.no_grad():
         Y = model(X, positions=positions).last_hidden_layer_states

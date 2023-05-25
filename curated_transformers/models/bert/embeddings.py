@@ -8,32 +8,43 @@ from .config import BertEmbeddingConfig, BertLayerConfig
 
 class BertEmbeddings(Module):
     def __init__(
-        self, embedding_config: BertEmbeddingConfig, layer_config: BertLayerConfig
+        self,
+        embedding_config: BertEmbeddingConfig,
+        layer_config: BertLayerConfig,
+        *,
+        device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
 
         self.word_embeddings = Embedding(
             num_embeddings=embedding_config.vocab_size,
             embedding_dim=embedding_config.embedding_width,
+            device=device,
         )
         self.token_type_embeddings = Embedding(
             num_embeddings=embedding_config.type_vocab_size,
             embedding_dim=embedding_config.embedding_width,
+            device=device,
         )
         self.position_embeddings = Embedding(
             num_embeddings=embedding_config.max_position_embeddings,
             embedding_dim=embedding_config.embedding_width,
+            device=device,
         )
 
         if embedding_config.embedding_width != layer_config.hidden_width:
             self.projection = Linear(
-                embedding_config.embedding_width, layer_config.hidden_width
+                embedding_config.embedding_width,
+                layer_config.hidden_width,
+                device=device,
             )
         else:
             self.projection = None  # type: ignore
 
         self.layer_norm = LayerNorm(
-            embedding_config.embedding_width, eps=embedding_config.layer_norm_eps
+            embedding_config.embedding_width,
+            eps=embedding_config.layer_norm_eps,
+            device=device,
         )
         self.dropout = Dropout(p=embedding_config.dropout_prob)
 

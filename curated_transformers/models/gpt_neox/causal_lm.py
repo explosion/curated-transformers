@@ -1,4 +1,5 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
+import torch
 from torch import Tensor
 from torch.nn import Linear, Parameter
 
@@ -18,17 +19,21 @@ Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 class GPTNeoXCausalLM(CausalLMModule, FromPretrainedHFModel):
     """GPT-NeoX (Black et al, 2022) causal language model."""
 
-    def __init__(self, config: GPTNeoXConfig) -> None:
+    def __init__(
+        self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
+    ) -> None:
         """
         :param config: Model configuration.
+        :param device: Device on which the module is to be initialized.
         """
         super().__init__()
 
-        self.decoder = GPTNeoXDecoder(config)
+        self.decoder = GPTNeoXDecoder(config, device=device)
         self.output_embeddings = Linear(
             in_features=config.layer.hidden_width,
             out_features=config.embedding.vocab_size,
             bias=False,
+            device=device,
         )
 
     def forward(
@@ -81,6 +86,11 @@ class GPTNeoXCausalLM(CausalLMModule, FromPretrainedHFModel):
         return convert_hf_state_dict(cls, params)
 
     @classmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         config = convert_hf_config(hf_config)
-        return cls(config)
+        return cls(config, device=device)

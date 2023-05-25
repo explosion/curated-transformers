@@ -1,4 +1,5 @@
 from typing import Optional
+import torch
 from torch.nn import Module
 from torch import Tensor
 
@@ -11,11 +12,12 @@ class RobertaEmbeddings(Module):
         embedding_config: BertEmbeddingConfig,
         layer_config: BertLayerConfig,
         *,
-        padding_id: int
+        padding_id: int,
+        device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
 
-        self.inner = BertEmbeddings(embedding_config, layer_config)
+        self.inner = BertEmbeddings(embedding_config, layer_config, device=device)
         self.padding_id = padding_id
 
     def _get_position_ids(self, x: Tensor) -> Tensor:

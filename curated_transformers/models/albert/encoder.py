@@ -16,10 +16,7 @@ Self = TypeVar("Self", bound="AlbertEncoder")
 
 
 class AlbertEncoder(Module, FromPretrainedHFModel):
-    def __init__(
-        self,
-        config: AlbertConfig,
-    ):
+    def __init__(self, config: AlbertConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
         self.padding_id = config.padding_id
@@ -34,12 +31,12 @@ class AlbertEncoder(Module, FromPretrainedHFModel):
                 f"({num_hidden_groups})"
             )
 
-        self.embeddings = BertEmbeddings(config.embedding, config.layer)
+        self.embeddings = BertEmbeddings(config.embedding, config.layer, device=device)
 
         # Parameters are shared by groups of layers.
         self.groups = torch.nn.ModuleList(
             [
-                AlbertLayerGroup(config.layer, config.attention)
+                AlbertLayerGroup(config.layer, config.attention, device=device)
                 for _ in range(num_hidden_groups)
             ]
         )
@@ -80,6 +77,11 @@ class AlbertEncoder(Module, FromPretrainedHFModel):
         return convert_hf_state_dict(params)
 
     @classmethod
-    def from_hf_config(cls: Type[Self], *, hf_config: Any) -> Self:
+    def from_hf_config(
+        cls: Type[Self],
+        *,
+        hf_config: Any,
+        device: Optional[torch.device] = None,
+    ) -> Self:
         config = convert_hf_config(hf_config)
-        return cls(config)
+        return cls(config, device=device)

@@ -16,25 +16,51 @@ from ..util import torch_assertclose
 
 
 @pytest.fixture
-def toy_tokenizer(test_dir):
+def toy_tokenizer_from_files(test_dir):
     return BertTokenizer.from_files(
         vocab_path=test_dir / "toy.wordpieces",
     )
 
 
+@pytest.fixture
+def toy_tokenizer_from_tokenizer_json(test_dir):
+    return BertTokenizer.from_tokenizer_json_file(test_dir / "toy-bert.json")
+
+
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
-def test_berttokenizer_hf_tokenizer(sample_texts):
+def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
         sample_texts, "bert-base-cased", BertTokenizer
     )
 
 
-def test_bert_toy_tokenizer(toy_tokenizer, short_sample_texts):
-    encoding = toy_tokenizer(short_sample_texts)
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts,
+        "bert-base-cased",
+        BertTokenizer,
+        from_hf_tokenizer=True,
+        # Use a revision from before tokenizer.json.
+        revision="6c38be42d6b3ed125933ca95fd0165fb9df8e414",
+    )
+
+
+def test_from_json_file(toy_tokenizer_from_tokenizer_json, short_sample_texts):
+    encoding = toy_tokenizer_from_tokenizer_json(short_sample_texts)
     _check_toy_tokenizer(encoding)
 
-    assert toy_tokenizer.decode(encoding.ids) == [
+    assert toy_tokenizer_from_tokenizer_json.decode(encoding.ids) == [
+        "I saw a girl with a telescope.",
+        "Today we will eat pok [UNK] bowl, lots of it!",
+    ]
+
+
+def test_from_files(toy_tokenizer_from_files, short_sample_texts):
+    encoding = toy_tokenizer_from_files(short_sample_texts)
+    _check_toy_tokenizer(encoding)
+
+    assert toy_tokenizer_from_files.decode(encoding.ids) == [
         "I saw a girl with a telescope.",
         "Today we will eat pok [UNK] bowl, lots of it!",
     ]

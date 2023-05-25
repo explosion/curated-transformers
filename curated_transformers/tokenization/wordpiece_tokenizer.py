@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Dict, Iterable, List, Optional
 from curated_tokenizers import WordPieceProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk
@@ -12,13 +12,35 @@ class WordPieceTokenizer(Tokenizer):
     def __init__(
         self,
         *,
-        processor: WordPieceProcessor,
+        vocab: Dict[str, int],
+        added_tokens: Optional[Dict[str, int]],
     ):
         """Construct a tokenizer from a curated tokenizers WordPiece processor.
 
-        :param processor: The processor to wrap.
+        :param vocab:
+            The word piece vocabulary.
+        :param added_tokens:
+            Additional tokens.
         """
-        self.processor = processor
+        # Added tokens are usually already in the wordpiece vocabs, but lets
+        # just add them to be sure.
+        self.added_tokens = {} if added_tokens is None else added_tokens
+        vocab.update(self.added_tokens)
+
+        # We'll build up the vocab, verifying that the user provided ids for
+        # all tokens as a sanity check.
+        vocab_size = max(vocab.values()) + 1
+        pieces: List[Optional[str]] = [None] * vocab_size
+        for piece, idx in vocab.items():
+            pieces[idx] = piece
+
+        unused_indices = [str(id) for id, piece in enumerate(pieces) if piece is None]
+        if unused_indices:
+            raise ValueError(
+                f"WordPiece vocabulary contains unused indices: {', '.join(unused_indices)}"
+            )
+
+        self.processor = WordPieceProcessor(pieces)
 
     def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
         decoded = []

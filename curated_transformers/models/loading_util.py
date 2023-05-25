@@ -94,7 +94,7 @@ def emplace_module_state_dict(
 
         for name, child in module._modules.items():
             if child is not None:
-                child_prefix = prefix + name + "."
+                child_prefix = f"{prefix}{name}."
                 child_state_dict = {
                     k: v for k, v in state_dict.items() if k.startswith(child_prefix)
                 }

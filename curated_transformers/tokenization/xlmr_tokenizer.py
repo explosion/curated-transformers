@@ -122,7 +122,7 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         )
 
     @classmethod
-    def convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
+    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
         if not hasattr(tokenizer, "vocab_file"):
             raise ValueError(
                 f"Hugging Face tokenizer (`{type(tokenizer)}`) doesn't "

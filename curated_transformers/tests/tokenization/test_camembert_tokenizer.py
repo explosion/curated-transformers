@@ -17,17 +17,16 @@ def toy_tokenizer(test_dir):
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
-def test_camembert_tokenizer_hf_tokenizer(sample_texts):
+def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "camembert-base", CamembertTokenizer
+        sample_texts, "camembert-base", CamembertTokenizer, from_hf_tokenizer=True
     )
     sample_texts = [
         "J'ai vu une fille avec un télescope.",
         "Aujourd'hui, nous allons manger un poké bowl.",
     ]
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "camembert-base", CamembertTokenizer
+        sample_texts, "camembert-base", CamembertTokenizer, from_hf_tokenizer=True
     )
 
 

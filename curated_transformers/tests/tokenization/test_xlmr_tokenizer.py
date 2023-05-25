@@ -17,10 +17,9 @@ def toy_tokenizer(test_dir):
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.slow
-def test_xlmr_tokenizer_hf_tokenizer(sample_texts):
+def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "xlm-roberta-base", XlmrTokenizer
+        sample_texts, "xlm-roberta-base", XlmrTokenizer, from_hf_tokenizer=True
     )
 
 

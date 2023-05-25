@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Dict, Iterable, List, Optional, Tuple
 from curated_tokenizers import ByteBPEProcessor
 
 from curated_transformers.tokenization.chunks import (
@@ -10,19 +10,31 @@ from .tokenizer import PiecesWithIds, Tokenizer
 
 
 class ByteBPETokenizer(Tokenizer):
-    """Piece tokenizer using byte-level byte pair encoding
-    (Gage, 1994, Sennrich et al., 2016)"""
+    """
+    Piece tokenizer using byte-level byte pair encoding
+    (Gage, 1994, Sennrich et al., 2016)
+    """
 
     def __init__(
         self,
         *,
-        processor: ByteBPEProcessor,
+        vocab: Dict[str, int],
+        merges: List[Tuple[str, str]],
+        added_tokens: Optional[Dict[str, int]] = None,
     ):
-        """Construct a tokenizer from a curated tokenizers byte-level BPE processor.
-
-        processor (ByteBPEProcessor): The processor to wrap.
         """
-        self.processor = processor
+        Construct a byte BPE tokenizer.
+
+        :param vocab:
+            The word piece vocabulary.
+        :param merges:
+            Merges.
+        :param added_tokens:
+            Additional tokens.
+        """
+        self.special_pieces = {} if added_tokens is None else added_tokens
+        vocab.update(self.special_pieces)
+        self.processor = ByteBPEProcessor(vocab, merges)
 
     def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
         return [self.processor.decode_from_ids(ids) for ids in input]

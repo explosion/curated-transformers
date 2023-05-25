@@ -1,10 +1,11 @@
-from typing import Any, Iterable, List, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 from curated_tokenizers import WordPieceProcessor
+import json
 from pathlib import Path
 import unicodedata
 
 from .chunks import InputChunks, SpecialPieceChunk, TextChunk
-from .hf_hub import FromPretrainedHFTokenizer
+from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, PreEncoder, PostEncoder, PreDecoder, PostDecoder
 from .util import remove_pieces_from_sequence
 from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
@@ -164,11 +165,12 @@ class BertPostDecoder(PostDecoder):
         return [clean_up_decoded_string_like_hf(string.strip()) for string in output]
 
 
-class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
+class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
     def __init__(
         self,
         *,
-        processor: WordPieceProcessor,
+        vocab: Dict[str, int],
+        added_tokens: Optional[Dict[str, int]] = None,
         bos_piece: str = "[CLS]",
         eos_piece: str = "[SEP]",
         unk_piece: str = "[UNK]",
@@ -177,20 +179,26 @@ class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
     ):
         """Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
 
-        processor (WordPieceProcessor): The processor to wrap.
-        bos_piece (str): The piece used to mark the beginning of a sequence.
-        eos_piece (str): The piece used to mark the end of a sequence.
-        unk_piece (str): The piece used to mark unknown tokens.
-        lowercase (bool): Lowercase text.
-        strip_accents (bool): Strip accents from text.
+        :param vocab:
+            The word piece vocabulary.
+        :param added_tokens:
+            Additional tokens.
+        :param bos_piece:
+            The piece used to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece used to mark the end of a sequence.
+        :param unk_piece:
+            The piece used to mark unknown tokens.
+        :param lowercase:
+            Lowercase text.
+        :param strip_accents:
+            Strip accents from text.
         """
-        super().__init__(processor=processor)
+        super().__init__(vocab=vocab, added_tokens=added_tokens)
 
-        self.processor = processor
-
-        bos_id = _get_piece_id_or_fail(processor, bos_piece)
-        eos_id = _get_piece_id_or_fail(processor, eos_piece)
-        unk_id = _get_piece_id_or_fail(processor, unk_piece)
+        bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
+        eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
+        unk_id = _get_piece_id_or_fail(self.processor, unk_piece)
 
         self.pre_encoder = BertPreEncoder(
             bos_piece=bos_piece,
@@ -225,9 +233,13 @@ class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
         lowercase (bool): Lowercase text.
         strip_accents (bool): Strip accents from text.
         """
-        processor = WordPieceProcessor.from_file(vocab_path)
+        vocab: Dict[str, int] = {}
+        with open(vocab_path, encoding="utf8") as f:
+            for line in f:
+                vocab[line.strip()] = len(vocab)
+
         return cls(
-            processor=processor,
+            vocab=vocab,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             unk_piece=unk_piece,
@@ -236,33 +248,47 @@ class BertTokenizer(WordPieceTokenizer, FromPretrainedHFTokenizer):
         )
 
     @classmethod
-    def convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        # TODO raise an error if the hf_tokenizer is not of the expected type?
-        # We'll need to import the type from transformers, though
+    def _convert_hf_tokenizer_json(cls: Type[Self], *, hf_tokenizer: Any) -> Self:
+        if hf_tokenizer["pre_tokenizer"]["type"] != "BertPreTokenizer":
+            raise ValueError(
+                "Attempted to load a non-BERT tokenizer as a BERT tokenizer"
+            )
 
-        # Seems like we cannot get the vocab file name for a BERT vocabulary? So,
-        # instead, copy the vocabulary.
-        vocab = [None] * tokenizer.vocab_size  # type: ignore
-        for piece, idx in tokenizer.vocab.items():  # type: ignore
-            vocab[idx] = piece
+        model = hf_tokenizer["model"]
+        unk_piece = model["unk_token"]
 
-        bos_piece = tokenizer.cls_token  # type: ignore
-        eos_piece = tokenizer.sep_token  # type: ignore
-        unk_piece = tokenizer.unk_token  # type: ignore
-        lowercase = tokenizer.do_lower_case  # type: ignore
-        strip_accents = tokenizer.backend_tokenizer.normalizer.strip_accents  # type: ignore
+        vocab = model["vocab"]
+        added_tokens = {
+            added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
+        }
+
+        normalizer = hf_tokenizer["normalizer"]
+        lowercase = normalizer["lowercase"]
+        strip_accents = normalizer["lowercase"]
+
         # Huggingface BERT also strips accents when lowercasing is enabled
         # and accent stripping is not defined.
         strip_accents = strip_accents or (strip_accents is not False and lowercase)
-        processor = WordPieceProcessor(vocab)
+
+        special_tokens = hf_tokenizer["post_processor"]["special_tokens"]
+        bos_piece = special_tokens["[CLS]"]["id"]
+        eos_piece = special_tokens["[SEP]"]["id"]
+
         return cls(
-            processor=processor,
+            vocab=vocab,
+            added_tokens=added_tokens,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             unk_piece=unk_piece,
             lowercase=lowercase,
             strip_accents=strip_accents,
         )
+
+    @classmethod
+    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
+        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
+        deserialized = json.loads(serialized)
+        return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
 
 
 def _get_piece_id_or_fail(processor: WordPieceProcessor, piece: str):

@@ -1,10 +1,10 @@
-from typing import Any, Iterable, List, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, cast
 from curated_tokenizers import ByteBPEProcessor
 import json
 from pathlib import Path
 
 from .bbpe_tokenizer import ByteBPETokenizer
-from .hf_hub import FromPretrainedHFTokenizer
+from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import AddBosEosPreEncoder, PreDecoder
 from .util import remove_pieces_from_sequence
 
@@ -35,26 +35,34 @@ class RobertaPreDecoder(PreDecoder):
         ]
 
 
-class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
+class RobertaTokenizer(ByteBPETokenizer, FromHFHub, FromPretrainedHFTokenizer):
     def __init__(
         self,
         *,
-        processor: ByteBPEProcessor,
+        vocab: Dict[str, int],
+        merges: List[Tuple[str, str]],
+        added_tokens: Optional[Dict[str, int]] = None,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a RoBERTa tokenizer from a curated tokenizers byte-level BPE processor.
-
-        processor (ByteBPEProcessor): The processor to wrap.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
         """
-        super().__init__(processor=processor)
+        Construct a RoBERTa tokenizer.
 
-        self.processor = processor
+        :param vocab:
+            The word piece vocabulary.
+        :param merges:
+            Merges.
+        :param added_tokens:
+            Additional tokens.
+        :param bos_piece:
+            Beginning of sequence piece.
+        :param eos_piece:
+            End of sequence piece.
+        """
+        super().__init__(vocab=vocab, merges=merges, added_tokens=added_tokens)
 
-        bos_id = _get_piece_id_or_fail(processor, bos_piece)
-        eos_id = _get_piece_id_or_fail(processor, eos_piece)
+        bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
+        eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
 
         self.pre_decoder = RobertaPreDecoder(
             bos_id=bos_id,
@@ -83,25 +91,48 @@ class RobertaTokenizer(ByteBPETokenizer, FromPretrainedHFTokenizer):
             vocab=vocab_path, merges=merges_path
         )
         return cls(
-            processor=processor,
+            # This is a bit annoying, but we want to avoid these extremely
+            # overloaded constructor.
+            vocab=processor.vocab,
+            merges=processor.merges,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
         )
 
     @classmethod
-    def convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
-        deserialized = json.loads(serialized)
-        vocab_merges = deserialized["model"]
-        merges = [tuple(merge.split(" ")) for merge in vocab_merges["merges"]]
-        processor = ByteBPEProcessor(vocab_merges["vocab"], merges)
-        bos_piece = tokenizer.bos_token  # type: ignore
-        eos_piece = tokenizer.eos_token  # type: ignore
+    def _convert_hf_tokenizer_json(cls: Type[Self], *, hf_tokenizer: Any) -> Self:
+        if hf_tokenizer["post_processor"]["type"] != "RobertaProcessing":
+            raise ValueError(
+                "Attempted to load a non-RoBERTa tokenizer as a RoBERTa tokenizer"
+            )
+
+        model = hf_tokenizer["model"]
+        vocab = model["vocab"]
+        merges = [
+            cast(Tuple[str, str], tuple(merge.split(" ", maxsplit=2)))
+            for merge in model["merges"]
+        ]
+        added_tokens = {
+            added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
+        }
+
+        post_processor = hf_tokenizer["post_processor"]
+        bos_piece = post_processor["cls"][0]
+        eos_piece = post_processor["sep"][0]
+
         return cls(
-            processor=processor,
+            vocab=vocab,
+            merges=merges,
+            added_tokens=added_tokens,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
         )
+
+    @classmethod
+    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
+        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
+        deserialized = json.loads(serialized)
+        return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
 
 
 def _get_piece_id_or_fail(processor: ByteBPEProcessor, piece: str):

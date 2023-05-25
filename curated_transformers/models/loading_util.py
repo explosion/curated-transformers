@@ -1,5 +1,5 @@
 import itertools
-from typing import Mapping, Optional
+from typing import Dict, Mapping, Optional, Union
 import torch
 from torch.nn import Module, Parameter
 
@@ -7,6 +7,7 @@ from torch.nn import Module, Parameter
 def _emplace_module_tensor(
     module: Module,
     tensor_name: str,
+    prefix: str,
     tensor: torch.Tensor,
     device: Optional[torch.device] = None,
 ):
@@ -17,6 +18,7 @@ def _emplace_module_tensor(
 
     :param module: Module whose associated tensor needs replacing.
     :param tensor_name: Name of the tensor to be replaced.
+    :param prefix: Module prefix.
     :param tensor: eplacement tensor.
     :param device: Device to which the replacement tensor is moved.
     """
@@ -27,27 +29,33 @@ def _emplace_module_tensor(
     if device is not None:
         tensor = tensor.to(device=device)
 
-    size_mismatch_msg = (
-        "Expected the size of the replacement for `{}` to be {}, but got {}"
-    )
-
+    full_name = f"{prefix}{tensor_name}"
     if is_parameter:
         old_param = module._parameters[tensor_name]
         assert old_param is not None
-        if old_param.shape != tensor.shape:
-            raise ValueError(
-                size_mismatch_msg.format(tensor_name, old_param.shape, tensor.shape)
-            )
+        _validate_replacement(old_param, tensor, full_name)
         new_param = Parameter(tensor, requires_grad=old_param.requires_grad)
         module._parameters[tensor_name] = new_param
     else:
         old_buffer = module._buffers[tensor_name]
         assert old_buffer is not None
-        if old_buffer.shape != tensor.shape:
-            raise ValueError(
-                size_mismatch_msg.format(tensor_name, old_buffer.shape, tensor.shape)
-            )
+        _validate_replacement(old_buffer, tensor, full_name)
         module._buffers[tensor_name] = tensor
+
+
+def _validate_replacement(
+    replaced: Union[Parameter, torch.Tensor],
+    replacement: torch.Tensor,
+    name: str,
+):
+    if replaced.shape != replacement.shape:
+        raise ValueError(
+            f"Expected size of replacement for `{name}` to be {replaced.shape}, but got {replacement.shape}"
+        )
+    elif replaced.dtype != replacement.dtype:
+        raise ValueError(
+            f"Expected dtype of replacement for `{name}` to be {replaced.dtype}, but got {replacement.dtype}"
+        )
 
 
 def emplace_module_state_dict(
@@ -65,41 +73,41 @@ def emplace_module_state_dict(
     :param device: Device to which the replacement tensors are moved.
     """
 
-    def emplace(module: Module, state_dict: Mapping[str, torch.Tensor], prefix: str):
-        persistent_buffers = {
-            k: v
-            for k, v in module._buffers.items()
-            if k not in module._non_persistent_buffers_set
-        }
-        local_name_params = itertools.chain(
-            module._parameters.items(), persistent_buffers.items()
-        )
+    queue = [(module, state_dict, "")]
+    while queue:
+        current_module, current_state_dict, prefix = queue.pop(0)
 
-        for name, param in local_name_params:
+        local_params: Dict[
+            str, Union[Optional[Parameter], Optional[torch.Tensor]]
+        ] = dict(current_module._parameters.items())
+        for name, buf in current_module._buffers.items():
+            if name in local_params:
+                raise KeyError(
+                    f"Key `{name}` used in both learnable parameters and buffers in module `{prefix}`"
+                )
+            elif name not in current_module._non_persistent_buffers_set:
+                local_params[name] = buf
+
+        for name, param in local_params.items():
             key = prefix + name
             if param is None:
-                if key in state_dict:
+                if key in current_state_dict:
                     raise ValueError(
                         f"Key `{name}` found in state dict but no data in module `{prefix}`"
                     )
                 else:
                     continue
-            if key not in state_dict:
+            if key not in current_state_dict:
                 raise ValueError(f"Key `{name}` not found in module `{prefix}`")
-            replacement = state_dict[key]
-            _emplace_module_tensor(module, name, replacement, device=device)
+            replacement = current_state_dict[key]
+            _emplace_module_tensor(
+                current_module, name, prefix, replacement, device=device
+            )
 
-    def traverse(module: Module, state_dict: Mapping[str, torch.Tensor], prefix: str):
-        emplace(module, state_dict, prefix)
-
-        for name, child in module._modules.items():
+        for name, child in current_module._modules.items():
             if child is not None:
                 child_prefix = f"{prefix}{name}."
                 child_state_dict = {
-                    k: v for k, v in state_dict.items() if k.startswith(child_prefix)
+                    k: v for k, v in state_dict.items() if k.startswith(prefix)
                 }
-                traverse(child, child_state_dict, child_prefix)
-
-    traverse(module, state_dict, "")
-    del traverse
-    del emplace
+                queue.append((child, child_state_dict, child_prefix))

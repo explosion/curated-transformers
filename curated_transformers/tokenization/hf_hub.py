@@ -32,7 +32,7 @@ class FromHFHub(ABC):
         :returns:
             The tokenizer.
         """
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf8") as f:
             hf_tokenizer = json.load(f)
         if not isinstance(hf_tokenizer, dict):
             raise ValueError(
@@ -71,7 +71,7 @@ class FromHFHub(ABC):
             The tokenizer.
         """
         tokenizer_filename = _get_tokenizer_filepath(name, revision)
-        with open(tokenizer_filename, "r") as f:
+        with open(tokenizer_filename, "r", encoding="utf8") as f:
             hf_tokenizer = json.load(f)
         if not isinstance(hf_tokenizer, dict):
             raise ValueError(

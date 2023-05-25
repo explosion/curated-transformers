@@ -74,7 +74,7 @@ class RotaryEmbeddings(Module):
 
         # Ignore allocations on the meta device as we don't persist our buffer,
         # i.e., we don't expect the backing tensor to be replaced with pretrained weights.
-        if device.type == "meta":
+        if device is not None and device.type == "meta":
             device = None
         # Θ_i = 10000^(-2(i-1)/d)
         theta = torch.pow(

@@ -25,7 +25,7 @@ class FromHFHub(ABC):
         cls: Type[SelfFromHFHub],
         path: Path,
     ) -> SelfFromHFHub:
-        """Construct a Hugging Face fast tokenizer JSON file.
+        """Construct a tokenizer from a Hugging Face fast tokenizer JSON file.
 
         :param tokenizer_path:
             Path to the tokenizer JSON file.
@@ -87,7 +87,7 @@ def _get_tokenizer_filepath(name: str, revision: str) -> str:
         )
     except:
         raise ValueError(
-            f"Couldn't find a valid config for model `{name}` "
+            f"Couldn't find a valid tokenizer config for model `{name}` "
             f"(revision `{revision}`) on HuggingFace Model Hub"
         )
 

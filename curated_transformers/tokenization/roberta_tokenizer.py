@@ -91,7 +91,7 @@ class RobertaTokenizer(ByteBPETokenizer):
         )
         return cls(
             # This is a bit annoying, but we want to avoid these extremely
-            # overloaded constructor.
+            # overloaded constructors.
             vocab=processor.vocab,
             merges=processor.merges,
             bos_piece=bos_piece,

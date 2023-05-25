@@ -37,7 +37,7 @@ class WordPieceTokenizer(Tokenizer):
         unused_indices = [str(id) for id, piece in enumerate(pieces) if piece is None]
         if unused_indices:
             raise ValueError(
-                f"Vocabulary contains unused indices: {', '.join(unused_indices)}"
+                f"WordPiece vocabulary contains unused indices: {', '.join(unused_indices)}"
             )
 
         self.processor = WordPieceProcessor(pieces)

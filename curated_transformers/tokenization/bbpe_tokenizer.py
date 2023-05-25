@@ -76,7 +76,9 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
         return PiecesWithIds(ids=ids, pieces=pieces)
 
     @classmethod
-    def _convert_hf_tokenizer_json(cls: Type[Self], *, hf_tokenizer: Any) -> Self:
+    def _convert_hf_tokenizer_json(
+        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
+    ) -> Self:
         model = hf_tokenizer["model"]
         if model["type"] != "BPE":
             raise ValueError(

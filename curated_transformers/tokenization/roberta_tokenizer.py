@@ -99,7 +99,9 @@ class RobertaTokenizer(ByteBPETokenizer):
         )
 
     @classmethod
-    def _convert_hf_tokenizer_json(cls: Type[Self], *, hf_tokenizer: Any) -> Self:
+    def _convert_hf_tokenizer_json(
+        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
+    ) -> Self:
         if hf_tokenizer["post_processor"]["type"] != "RobertaProcessing":
             raise ValueError(
                 "Attempted to load a non-RoBERTa tokenizer as a RoBERTa tokenizer"

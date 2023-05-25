@@ -1,4 +1,4 @@
-from typing import Any, Type, TypeVar
+from typing import Any, Dict, Type, TypeVar
 from abc import ABC, abstractmethod
 from huggingface_hub import hf_hub_download
 import json
@@ -33,14 +33,18 @@ class FromHFHub(ABC):
             The tokenizer.
         """
         with open(path, "r") as f:
-            tokenizer = json.load(f)
+            hf_tokenizer = json.load(f)
+        if not isinstance(hf_tokenizer, dict):
+            raise ValueError(
+                f"Tokenizer must be a json dict, was: {type(hf_tokenizer).__name__}"
+            )
 
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=tokenizer)
+        return cls._convert_hf_tokenizer_json(hf_tokenizer=hf_tokenizer)
 
     @classmethod
     @abstractmethod
     def _convert_hf_tokenizer_json(
-        cls: Type[SelfFromHFHub], *, hf_tokenizer: Any
+        cls: Type[SelfFromHFHub], *, hf_tokenizer: Dict[str, Any]
     ) -> SelfFromHFHub:
         """
         Construct a tokenizer from a deserialized Hugging Face fast tokenizer
@@ -66,10 +70,14 @@ class FromHFHub(ABC):
         :return:
             The tokenizer.
         """
-        config_filename = _get_tokenizer_filepath(name, revision)
-        with open(config_filename, "r") as f:
-            config = json.load(f)
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=config)
+        tokenizer_filename = _get_tokenizer_filepath(name, revision)
+        with open(tokenizer_filename, "r") as f:
+            hf_tokenizer = json.load(f)
+        if not isinstance(hf_tokenizer, dict):
+            raise ValueError(
+                f"Tokenizer must be a json dict, was: {type(hf_tokenizer).__name__}"
+            )
+        return cls._convert_hf_tokenizer_json(hf_tokenizer=hf_tokenizer)
 
 
 def _get_tokenizer_filepath(name: str, revision: str) -> str:

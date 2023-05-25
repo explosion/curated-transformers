@@ -1,3 +1,5 @@
+from typing import Optional
+import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
 
@@ -9,13 +11,17 @@ from .config import AlbertLayerConfig
 
 class AlbertLayerGroup(Module):
     def __init__(
-        self, layer_config: AlbertLayerConfig, attention_config: BertAttentionConfig
+        self,
+        layer_config: AlbertLayerConfig,
+        attention_config: BertAttentionConfig,
+        *,
+        device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
 
         self.group_layers = ModuleList(
             [
-                BertEncoderLayer(layer_config, attention_config)
+                BertEncoderLayer(layer_config, attention_config, device=device)
                 for _ in range(layer_config.inner_group_num)
             ]
         )

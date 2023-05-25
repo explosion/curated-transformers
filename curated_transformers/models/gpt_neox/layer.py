@@ -16,11 +16,16 @@ class GPTNeoXDecoderLayer(Module):
     """GPT-NeoX (Black et al, 2022) layer."""
 
     def __init__(
-        self, layer_config: GPTNeoXLayerConfig, attention_config: GPTNeoXAttentionConfig
+        self,
+        layer_config: GPTNeoXLayerConfig,
+        attention_config: GPTNeoXAttentionConfig,
+        *,
+        device: Optional[torch.device] = None
     ):
         """
         :param layer_config: Layer configuration.
         :param attention_config: Attention configuration.
+        :param device: Device on which the module is to be initialized.
         """
         super().__init__()
 
@@ -31,19 +36,21 @@ class GPTNeoXDecoderLayer(Module):
             rotary_fraction=attention_config.rotary_fraction,
             rotary_base=attention_config.rotary_base,
             split_heads_before_chunk=True,
+            device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
         self.mha_layer_norm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
 
         self.ffn = PointwiseFeedForward(
             hidden_act=layer_config.hidden_act,
             hidden_width=layer_config.hidden_width,
             intermediate_width=layer_config.intermediate_width,
+            device=device,
         )
         self.ffn_layer_norm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 

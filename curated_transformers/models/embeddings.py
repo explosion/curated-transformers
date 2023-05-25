@@ -7,13 +7,22 @@ from torch.nn import Module
 
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class SinusoidalPositionalEmbedding(Module):
-    def __init__(self, dim: int, max_len: int, *, normalize=True):
+    def __init__(
+        self,
+        dim: int,
+        max_len: int,
+        *,
+        normalize=True,
+        device: Optional[torch.device] = None,
+    ):
         super().__init__()
 
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2) * (-math.log(10000.0) / dim))
+        position = torch.arange(max_len, device=device).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, dim, 2, device=device) * (-math.log(10000.0) / dim)
+        )
 
-        pe = torch.zeros(max_len, dim)
+        pe = torch.zeros(max_len, dim, device=device)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
@@ -37,7 +46,14 @@ class RotaryEmbeddings(Module):
     sin: Tensor
     theta: Tensor
 
-    def __init__(self, width: int, *, seq_len: int = 512, base: int = 10000):
+    def __init__(
+        self,
+        width: int,
+        *,
+        seq_len: int = 512,
+        base: int = 10000,
+        device: Optional[torch.device] = None,
+    ):
         """Rotary embeddings (Su et al., 2021) layer. The rotary embedding
         will be precomputed for up to 'seq _len' positions. The embedding
         will be recomputed when a longer sequence is found in the input.
@@ -48,14 +64,22 @@ class RotaryEmbeddings(Module):
             Number of positons to initially precompute.
         :param base:
             The base used for Θ_i, determines the cycle length of the
-            embeddings."""
+            embeddings.
+        :param device: Device on which the module is to be initialized.
+        """
         super().__init__()
 
         if width % 2:
             raise ValueError(f"Width of rotary embeddings must be even, was: {width}")
 
+        # Ignore allocations on the meta device as we don't persist our buffer,
+        # i.e., we don't expect the backing tensor to be replaced with pretrained weights.
+        if device is not None and device.type == "meta":
+            device = None
         # Θ_i = 10000^(-2(i-1)/d)
-        theta = torch.pow(base, -torch.arange(0, width, 2, dtype=torch.float) / width)
+        theta = torch.pow(
+            base, -torch.arange(0, width, 2, dtype=torch.float, device=device) / width
+        )
         self.register_buffer("theta", theta, persistent=False)
 
         self._create_rotary_embed(width=width, length=seq_len)

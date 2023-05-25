@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 from torch.nn import Linear, Module
 from torch import Tensor
@@ -9,7 +10,11 @@ from ..feedforward import PointwiseFeedForward
 
 class BertEncoderLayer(Module):
     def __init__(
-        self, layer_config: BertLayerConfig, attention_config: BertAttentionConfig
+        self,
+        layer_config: BertLayerConfig,
+        attention_config: BertAttentionConfig,
+        *,
+        device: Optional[torch.device] = None
     ):
         super().__init__()
 
@@ -17,18 +22,20 @@ class BertEncoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
+            device=device,
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
         self.ffn = PointwiseFeedForward(
             hidden_act=layer_config.hidden_act,
             hidden_width=layer_config.hidden_width,
             intermediate_width=layer_config.intermediate_width,
+            device=device,
         )
         self.ffn_output_layernorm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps
+            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 

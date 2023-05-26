@@ -10,25 +10,30 @@ from .embeddings import RotaryEmbeddings
 
 class AttentionMask:
     bool_mask: Tensor
-    _logit_mask: Optional[Tensor]
 
     def __init__(self, bool_mask: Tensor):
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
         self.bool_mask = bool_mask
-        self._logit_mask = torch.jit.annotate(Optional[Tensor], None)
 
-    @property
-    def logit_mask(self) -> Tensor:
-        if self._logit_mask is None:
-            # The value is `torch.finfo(attn_scores.dype).min`. Unfortunately,
-            # we cannot use `torch.finfo` in TorchScript.
-            self._logit_mask = (1.0 - self.bool_mask.int()) * -3.4028234663852886e38
+    def apply_logit_mask(self, input: Tensor) -> Tensor:
+        """Use the attention mask to mask logits.
 
-        # Narrow type for TorchScript.
-        logit_mask = self._logit_mask
-        assert logit_mask is not None
-        return logit_mask
+        :param input:
+            Attention logits to apply the mask to. **Shape:**
+            (batch, heads, query_len, key_len)
+        :returns:
+            Logits with the attention mask applied. **Shape:**
+            (batch, heads, query_len, key_len)
+        """
+        blocked_value = torch.finfo(input.dtype).min
+        # We need to get the
+        batch, _, _, key_len = input.shape
+        return torch.where(
+            self.bool_mask.view(batch, 1, 1, key_len),
+            input,
+            blocked_value,
+        )
 
     def dim(self) -> int:
         return self.bool_mask.dim()
@@ -36,6 +41,34 @@ class AttentionMask:
     @property
     def shape(self):
         return self.bool_mask.shape
+
+
+def apply_causal_mask(input: Tensor) -> Tensor:
+    """Apply a causal mask.
+
+    A causal mask ensures that tokens cannot attend to succeeding tokens.
+
+    :param input:
+        Attention logits to apply the mask to. **Shape:**
+        (batch, heads, query_len, key_len)
+    :returns:
+        Logits with the causal mask applied. **Shape:**
+        (batch, heads, query_len, key_len)
+    """
+
+    _, _, query_len, key_len = input.shape
+
+    causal_mask = torch.tril(
+        torch.full(
+            (key_len, key_len),
+            True,
+            device=input.device,
+        ),
+    ).view(1, 1, key_len, key_len)
+    causal_mask = causal_mask[:, :, key_len - query_len : key_len, :key_len]
+
+    blocked_value = torch.finfo(input.dtype).min
+    return torch.where(causal_mask, input, blocked_value)
 
 
 CacheProtocolSelf = TypeVar("CacheProtocolSelf", bound="CacheProtocol")
@@ -132,28 +165,14 @@ class ScaledDotProductAttention(Module):
         attn_scores /= math.sqrt(model_dim)
 
         if use_causal_mask:
-            # The value is `torch.finfo(attn_scores.dype).min`. Unfortunately,
-            # we cannot use `torch.finfo` in TorchScript.
-            blocked_value = -3.4028234663852886e38
-            seq_len = attn_scores.shape[-1]
-            # TODO: We may want to cache this, but we should probably find out
-            # if it is worth it first.
-            causal_mask = torch.triu(
-                torch.full(
-                    (seq_len, seq_len), blocked_value, device=attn_scores.device
-                ),
-                diagonal=1,
-            ).view(1, 1, seq_len, seq_len)
-            k_len = k.shape[-2]
-            q_len = q.shape[-2]
-            causal_mask = causal_mask[:, :, k_len - q_len : k_len, :k_len]
-            attn_scores += causal_mask
+            # Replace tokens that occur after at token to zero them out
+            # during softmax normalization.
+            attn_scores = apply_causal_mask(attn_scores)
 
         if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large
             # negative value to zero them out during softmax normalization.
-            batch, seq_len = attention_mask.shape
-            attn_scores += attention_mask.logit_mask.view(batch, 1, 1, seq_len)
+            attn_scores = attention_mask.apply_logit_mask(attn_scores)
 
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ v)

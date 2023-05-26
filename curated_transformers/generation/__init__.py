@@ -1,2 +1,2 @@
-from .greedy import GreedyGenerator
-from .string_generator import StringDecode
+from .greedy import Generator
+from .string_generator import StringGenerator

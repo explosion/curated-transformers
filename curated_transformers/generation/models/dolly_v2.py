@@ -2,9 +2,9 @@ from typing import Iterator, List, Tuple, Type, TypeVar
 import torch
 
 from .generator_model import GeneratorModel
-from ..greedy import GreedyGenerator
+from ..greedy import Generator
 from ...models.gpt_neox.causal_lm import GPTNeoXCausalLM
-from ..string_generator import StringDecode
+from ..string_generator import StringGenerator
 from ...tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
 from ...tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
 
@@ -21,7 +21,7 @@ Self = TypeVar("Self", bound="DollyV2Generator")
 class DollyV2Generator(GeneratorModel):
     def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: GPTNeoXCausalLM):
         super().__init__()
-        self.generator = StringDecode(GreedyGenerator(causal_lm), tokenizer)
+        self.generator = StringGenerator(Generator(causal_lm), tokenizer)
         self.eos_id = tokenizer.processor.piece_id(END_KEY)
 
     @classmethod

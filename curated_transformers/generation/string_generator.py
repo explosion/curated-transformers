@@ -1,30 +1,29 @@
 from typing import Generic, Iterable, Iterator, Tuple
 
-from .greedy import GreedyGenerator
+from .greedy import Generator
 from ..models.attention import CacheT
 from ..tokenization.chunks import InputChunks
 from ..tokenization.tokenizer import Tokenizer
 
 
-class StringDecode(Generic[CacheT]):
+class StringGenerator(Generic[CacheT]):
     """
-    Generator wrapper that decodes ids that are she output of a generator to
-    strings.
+    Generator wrapper that takes textual input and outputs generated strings.
     """
 
-    inner: GreedyGenerator[CacheT]
+    inner: Generator[CacheT]
     tokenizer: Tokenizer
 
-    def __init__(self, decode: GreedyGenerator[CacheT], tokenizer: Tokenizer) -> None:
+    def __init__(self, decode: Generator[CacheT], tokenizer: Tokenizer) -> None:
         self.inner = decode
         self.tokenizer = tokenizer
 
     def __call__(
         self, prompts: Iterable[InputChunks], eos_id: int
     ) -> Iterator[Iterator[Tuple[int, str]]]:
-        return self.decode(prompts, eos_id)
+        return self.generate(prompts, eos_id)
 
-    def decode(
+    def generate(
         self, prompts: Iterable[InputChunks], eos_id: int
     ) -> Iterator[Iterator[Tuple[int, str]]]:
         device = next(self.inner.model.parameters()).device

@@ -16,7 +16,7 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(CausalLMModule, FromPretrainedHFModel):
+class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
     """GPT-NeoX (Black et al, 2022) causal language model."""
 
     def __init__(

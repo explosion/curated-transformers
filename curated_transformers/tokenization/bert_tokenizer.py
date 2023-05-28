@@ -248,7 +248,9 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         )
 
     @classmethod
-    def _convert_hf_tokenizer_json(cls: Type[Self], *, hf_tokenizer: Dict[str, Any]) -> Self:
+    def _convert_hf_tokenizer_json(
+        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
+    ) -> Self:
         if hf_tokenizer["pre_tokenizer"]["type"] != "BertPreTokenizer":
             raise ValueError(
                 "Attempted to load a non-BERT tokenizer as a BERT tokenizer"

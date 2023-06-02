@@ -1,5 +1,6 @@
 import torch
 
-from .conftest import TORCH_DEVICES
+from . import conftest
 
-TORCH_DEVICES.append(torch.device("cuda", index=0))
+conftest.TORCH_DEVICES.append(torch.device("cuda", index=0))
+conftest.GPU_TESTS_ENABLED = True

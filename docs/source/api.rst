@@ -8,4 +8,5 @@ API
    causal-lm
    encoders
    decoders
+   generation
    tokenizers

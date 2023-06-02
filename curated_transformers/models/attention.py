@@ -82,6 +82,7 @@ class CacheProtocol(Protocol):
 
         :param mask:
             Mask of batch items to retain.
+            **Shape:** (batch,)
         :returns:
             Filtered items.
         """

@@ -40,7 +40,7 @@ class StringGenerator(Generic[CacheT]):
     ) -> Iterator[List[Tuple[int, str]]]:
         """
         Generate text using the given prompts. This function yields for
-        each generation step a list of requence identifiers and the
+        each generation step a list of sequence identifiers and the
         corresponding generated substring.
 
         :param prompts:
@@ -48,7 +48,7 @@ class StringGenerator(Generic[CacheT]):
         :param eos_id:
             Piece identifier that signals the end of generation.
         :returns:
-            An iterator returning for each generation step sequence
+            An iterator returning for each generation the step sequence
             identifiers and the substrings that were generated
             for the sequences.
         """

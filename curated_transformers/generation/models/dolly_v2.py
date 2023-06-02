@@ -59,6 +59,9 @@ def _to_prompt_with_instructions(prompt):
     return InputChunks(
         [
             TextChunk(INTRO_BLURB),
+            # Dolly is really picky about getting the correct number of line
+            # breaks, so the double line breaks in this chunk and the last
+            # chunk are intentional.
             SpecialPieceChunk(INSTRUCTION_KEY, before="\n\n", after="\n"),
             TextChunk(prompt),
             SpecialPieceChunk(RESPONSE_KEY, before="\n\n", after="\n"),

@@ -1,12 +1,12 @@
 from typing import Iterator, List, Optional, Tuple, Type, TypeVar
 import torch
 
-from .generation_model import GenerationModel
-from ..generator import Generator
-from ...models.gpt_neox.causal_lm import GPTNeoXCausalLM
-from ..string_generator import StringGenerator
-from ...tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
-from ...tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
+from .generator import Generator
+from .generator_wrapper import GeneratorWrapper
+from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
+from .string_generator import StringGenerator
+from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
+from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
@@ -18,7 +18,7 @@ INTRO_BLURB = "Below is an instruction that describes a task. Write a response t
 Self = TypeVar("Self", bound="DollyV2Generator")
 
 
-class DollyV2Generator(GenerationModel):
+class DollyV2Generator(GeneratorWrapper):
     """Dolly v2 generator."""
 
     def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: GPTNeoXCausalLM):

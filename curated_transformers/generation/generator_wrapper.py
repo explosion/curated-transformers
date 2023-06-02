@@ -4,10 +4,15 @@ import torch
 
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="GenerationModel")
+Self = TypeVar("Self", bound="GeneratorWrapper")
 
 
-class GenerationModel(ABC):
+class GeneratorWrapper(ABC):
+    """
+    Model-specific wrapper for
+    :class:`curated_transformers.generation.Generator`.
+    """
+
     @classmethod
     @abstractmethod
     def from_hf_hub(
@@ -17,7 +22,7 @@ class GenerationModel(ABC):
         revision: str = "main",
         device: Optional[torch.device] = None
     ) -> Self:
-        """Load a generation model from Huggingface Hub."""
+        """Load a generator from Huggingface Hub."""
         ...
 
     def __call__(self, prompts: List[str]) -> Iterator[List[Tuple[int, str]]]:

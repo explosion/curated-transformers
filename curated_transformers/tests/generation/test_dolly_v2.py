@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from curated_transformers.generation.models.dolly_v2 import DollyV2Generator
+from curated_transformers.generation.dolly_v2 import DollyV2Generator
 
-from ...conftest import GPU_TESTS_ENABLED
+from ..conftest import GPU_TESTS_ENABLED
 
 
 @pytest.mark.veryslow

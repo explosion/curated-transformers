@@ -1,10 +1,5 @@
-from typing import Iterator, List, Optional, Tuple, Type, TypeVar
+from typing import Iterator, List, Tuple
 from abc import ABC, abstractmethod
-import torch
-
-
-# Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="GeneratorWrapper")
 
 
 class GeneratorWrapper(ABC):
@@ -12,18 +7,6 @@ class GeneratorWrapper(ABC):
     Model-specific wrapper for
     :class:`curated_transformers.generation.Generator`.
     """
-
-    @classmethod
-    @abstractmethod
-    def from_hf_hub(
-        cls: Type[Self],
-        *,
-        name: str,
-        revision: str = "main",
-        device: Optional[torch.device] = None
-    ) -> Self:
-        """Load a generator from Huggingface Hub."""
-        ...
 
     def __call__(self, prompts: List[str]) -> Iterator[List[Tuple[int, str]]]:
         """

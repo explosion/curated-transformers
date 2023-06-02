@@ -3,6 +3,7 @@ import torch
 
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
+from .hf_hub import FromHFHub
 from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from .string_generator import StringGenerator
 from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
@@ -18,7 +19,7 @@ INTRO_BLURB = "Below is an instruction that describes a task. Write a response t
 Self = TypeVar("Self", bound="DollyV2Generator")
 
 
-class DollyV2Generator(GeneratorWrapper):
+class DollyV2Generator(GeneratorWrapper, FromHFHub):
     """Dolly v2 generator."""
 
     def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: GPTNeoXCausalLM):

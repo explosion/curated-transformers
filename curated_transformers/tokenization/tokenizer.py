@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import torch
 from torch import Tensor
+import unicodedata
 
 from .chunks import InputChunks, MergedInputChunks, SpecialPieceChunk, TextChunk
 
@@ -91,9 +92,18 @@ class PostEncoder(ABC):
         ...
 
 
+class Normalizer(ABC):
+    """Callable applied before encoding."""
+
+    @abstractmethod
+    def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        ...
+
+
 class Tokenizer(ABC):
     """Base class for all tokenizers."""
 
+    normalizer: Optional[Normalizer] = None
     pre_decoder: Optional[PreDecoder] = None
     post_decoder: Optional[PostDecoder] = None
     pre_encoder: Optional[PreEncoder] = None
@@ -143,6 +153,8 @@ class Tokenizer(ABC):
         """
         chunks = self._convert_strings(input)
 
+        if self.normalizer is not None:
+            chunks = self.normalizer(chunks)
         if self.pre_encoder is not None:
             chunks = self.pre_encoder(chunks)
 
@@ -173,7 +185,7 @@ class Tokenizer(ABC):
 
 class AddBosEosPreEncoder(PreEncoder):
     """
-    Construct a decoder that adds beginning/end of sequence markers.
+    Adds beginning/end of sequence markers before the encoding process.
     """
 
     def __init__(
@@ -182,7 +194,7 @@ class AddBosEosPreEncoder(PreEncoder):
         bos_piece: str,
         eos_piece: str,
     ):
-        """Construct a decoder that adds beginning/end of sequence markers..
+        """Construct a pre-encoder that adds beginning/end of sequence markers.
 
         :param bos_piece:
             The piece used to mark the beginning of a sequence.
@@ -205,3 +217,50 @@ class AddBosEosPreEncoder(PreEncoder):
                 )
             )
         return bos_eos_chunks
+
+
+class DefaultNormalizer(Normalizer):
+    """
+    Performs normalization operations on input chunks before encoding.
+    """
+
+    def __init__(
+        self,
+        *,
+        utf_normalization: Optional[str] = None,
+        lowercase: bool = False,
+        strip_accents: bool = False,
+    ) -> None:
+        """
+        :param utf_normalization:
+            Unicode normalization scheme to use.
+        :param lowercase:
+            Lowercase text.
+        :param strip_accents:
+            Remove accents from text.
+        """
+        super().__init__()
+        self.utf_normalization = utf_normalization
+        self.lowercase = lowercase
+        self.strip_accents = strip_accents
+
+    def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        for chunk in chunks:
+            for piece_or_text in chunk:
+                if not isinstance(piece_or_text, TextChunk):
+                    continue
+                text = piece_or_text.text
+                if self.lowercase:
+                    text = text.lower()
+                if self.strip_accents:
+                    # Normalize with NFD to decompose accents.
+                    text = unicodedata.normalize("NFD", text)
+                    text = "".join(
+                        [char for char in text if unicodedata.category(char) != "Mn"]
+                    )
+                if self.utf_normalization is not None:
+                    # This has to be done at the end to ensure that previously
+                    # applied normalization is correctly overridden.
+                    text = unicodedata.normalize(self.utf_normalization, text)
+                piece_or_text.text = text
+        return chunks

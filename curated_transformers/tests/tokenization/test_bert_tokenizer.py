@@ -4,6 +4,7 @@ import torch
 from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenization import PiecesWithIds
 from curated_transformers.tokenization import BertTokenizer
+from curated_transformers.tokenization.tokenizer import DefaultNormalizer
 from curated_transformers.tokenization.bert_tokenizer import BertPreEncoder
 from curated_transformers.tokenization.chunks import (
     InputChunks,
@@ -256,11 +257,14 @@ def _check_toy_tokenizer(pieces):
     )
 
 
-def test_bert_tokenizer_preencoder():
-    preencoder = BertPreEncoder(
-        lowercase=False, strip_accents=True, bos_piece="[CLS]", eos_piece="[SEP]"
-    )
-    assert preencoder([InputChunks([TextChunk("AWO-Mitarbeiter")])]) == [
+def test_bert_tokenizer_normalizer_preencoder():
+    normalizer = DefaultNormalizer(lowercase=False, strip_accents=True)
+    preencoder = BertPreEncoder(bos_piece="[CLS]", eos_piece="[SEP]")
+
+    def apply(input):
+        return preencoder(normalizer(input))
+
+    assert apply([InputChunks([TextChunk("AWO-Mitarbeiter")])]) == [
         InputChunks(
             [
                 SpecialPieceChunk("[CLS]"),
@@ -269,7 +273,7 @@ def test_bert_tokenizer_preencoder():
             ]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("-Mitarbeiter")])]) == [
+    assert apply([InputChunks([TextChunk("-Mitarbeiter")])]) == [
         InputChunks(
             [
                 SpecialPieceChunk("[CLS]"),
@@ -278,17 +282,17 @@ def test_bert_tokenizer_preencoder():
             ]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("AWO-")])]) == [
+    assert apply([InputChunks([TextChunk("AWO-")])]) == [
         InputChunks(
             [SpecialPieceChunk("[CLS]"), TextChunk("AWO -"), SpecialPieceChunk("[SEP]")]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("-")])]) == [
+    assert apply([InputChunks([TextChunk("-")])]) == [
         InputChunks(
             [SpecialPieceChunk("[CLS]"), TextChunk("-"), SpecialPieceChunk("[SEP]")]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("")])]) == [
+    assert apply([InputChunks([TextChunk("")])]) == [
         InputChunks(
             [
                 SpecialPieceChunk("[CLS]"),
@@ -297,7 +301,7 @@ def test_bert_tokenizer_preencoder():
             ]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("Brötchen")])]) == [
+    assert apply([InputChunks([TextChunk("Brötchen")])]) == [
         InputChunks(
             [
                 SpecialPieceChunk("[CLS]"),
@@ -306,7 +310,7 @@ def test_bert_tokenizer_preencoder():
             ]
         )
     ]
-    assert preencoder([InputChunks([TextChunk("Mw.-St.")])]) == [
+    assert apply([InputChunks([TextChunk("Mw.-St.")])]) == [
         InputChunks(
             [
                 SpecialPieceChunk("[CLS]"),

@@ -74,10 +74,9 @@ class Generator(Generic[CacheT]):
 
             completed = ids.view(-1) == eos_id
             ids = ids[completed.logical_not()]
-            seq_ids = state.seq_ids
             state.step(cache=output.cache, completed=completed)
 
             if state.is_finished:
                 return
 
-            yield seq_ids, ids
+            yield state.seq_ids, ids

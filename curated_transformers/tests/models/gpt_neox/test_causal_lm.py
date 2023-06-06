@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers.models.attention import AttentionMask
 from curated_transformers.models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from curated_transformers.tests.util import torch_assertclose
 
@@ -28,5 +29,10 @@ def test_causal_lm_against_hf(torch_device):
     with torch.no_grad():
         Y = model(X).logits
         Y_hf = hf_model(X).logits
+    torch_assertclose(Y, Y_hf)
 
+    mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
+    with torch.no_grad():
+        Y = model(X, attention_mask=AttentionMask(mask)).logits * mask.unsqueeze(-1)
+        Y_hf = hf_model(X, attention_mask=mask).logits * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_hf)

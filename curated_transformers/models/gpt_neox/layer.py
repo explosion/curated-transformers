@@ -57,7 +57,7 @@ class GPTNeoXDecoderLayer(Module):
     def forward(
         self,
         x: Tensor,
-        attention_mask: AttentionMask,
+        attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,

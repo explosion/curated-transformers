@@ -2,6 +2,7 @@ from typing import Type
 import torch
 
 from curated_transformers._compat import transformers
+from curated_transformers.models.attention import AttentionMask
 from curated_transformers.models.hf_hub import FromPretrainedHFModel
 
 
@@ -34,3 +35,11 @@ def assert_encoder_output_equals_hf(
         Y_hf = hf_model(X).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
+
+    mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
+    with torch.no_grad():
+        Y = model(
+            X, attention_mask=AttentionMask(mask)
+        ).last_hidden_layer_states * mask.unsqueeze(-1)
+        Y_hf = hf_model(X, attention_mask=mask).last_hidden_state * mask.unsqueeze(-1)
+    torch_assertclose(Y, Y_hf)

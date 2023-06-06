@@ -1,10 +1,16 @@
-from typing import Iterable, List, Optional, TypeVar, Union
+from typing import Iterable, List, Optional, Set, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import re
 import torch
 from torch import Tensor
 
-from .chunks import InputChunks, MergedInputChunks, SpecialPieceChunk, TextChunk
+from .chunks import (
+    InputChunks,
+    MergedInputChunks,
+    SpecialPieceChunk,
+    TextChunk,
+)
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -98,6 +104,8 @@ class Tokenizer(ABC):
     post_decoder: Optional[PostDecoder] = None
     pre_encoder: Optional[PreEncoder] = None
     post_encoder: Optional[PostEncoder] = None
+    _any_special_tokens_regex: Optional[re.Pattern] = None
+    _only_special_tokens_regex: Optional[re.Pattern] = None
 
     def __call__(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
@@ -142,6 +150,7 @@ class Tokenizer(ABC):
             Pieces in each sequence.
         """
         chunks = self._convert_strings(input)
+        self._validate_chunks(chunks)
 
         if self.pre_encoder is not None:
             chunks = self.pre_encoder(chunks)
@@ -162,12 +171,54 @@ class Tokenizer(ABC):
             for seq in input
         ]
 
+    def _validate_chunks(self, input: List[InputChunks]):
+        if self._any_special_tokens_regex is None:
+            special_tokens = self._special_tokens()
+            if len(special_tokens) == 0:
+                return
+            pattern = "|".join(
+                ["({})".format(re.escape(token)) for token in special_tokens]
+            )
+            self._any_special_tokens_regex = re.compile(pattern)
+            self._only_special_tokens_regex = re.compile(f"^{pattern}$")
+
+        assert self._only_special_tokens_regex is not None
+        assert self._any_special_tokens_regex is not None
+
+        for chunks in input:
+            for piece_or_text in chunks:
+                if isinstance(piece_or_text, SpecialPieceChunk):
+                    if (
+                        self._only_special_tokens_regex.search(piece_or_text.piece)
+                        is None
+                    ):
+                        raise ValueError(
+                            f"Special piece chunk `{piece_or_text.piece}` is invalid"
+                        )
+                elif isinstance(piece_or_text, TextChunk):
+                    if (
+                        self._any_special_tokens_regex.search(piece_or_text.text)
+                        is not None
+                    ):
+                        raise ValueError(
+                            f"Text chunk `{piece_or_text.text}` contains a special piece"
+                        )
+                else:
+                    raise ValueError(
+                        f"Input chunk has an unexpected type `{type(piece_or_text)}`"
+                    )
+
     @abstractmethod
     def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
         ...
 
     @abstractmethod
     def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
+        ...
+
+    @abstractmethod
+    def _special_tokens(self) -> Set[str]:
+        """Special tokens supported by the tokenizer"""
         ...
 
 

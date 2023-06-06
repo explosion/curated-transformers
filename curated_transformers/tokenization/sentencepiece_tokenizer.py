@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Set
 from curated_tokenizers import SentencePieceProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk
@@ -51,3 +51,12 @@ class SentencePieceTokenizer(Tokenizer):
             pieces.append(seq_pieces)
 
         return PiecesWithIds(ids=ids, pieces=pieces)
+
+    def _special_tokens(self) -> Set[str]:
+        special_tokens = {
+            self.processor.id_to_piece(self.processor.bos_id()),
+            self.processor.id_to_piece(self.processor.eos_id()),
+            self.processor.id_to_piece(self.processor.unk_id()),
+        }
+
+        return special_tokens

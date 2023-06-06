@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type, TypeVar, cast
 from curated_tokenizers import ByteBPEProcessor
 import json
 from pathlib import Path
@@ -60,6 +60,9 @@ class RobertaTokenizer(ByteBPETokenizer):
         """
         super().__init__(vocab=vocab, merges=merges, added_tokens=added_tokens)
 
+        self.bos_piece = bos_piece
+        self.eos_piece = eos_piece
+
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
 
@@ -69,6 +72,11 @@ class RobertaTokenizer(ByteBPETokenizer):
         )
 
         self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
+
+    def _special_tokens(self) -> Set[str]:
+        special_tokens = {self.bos_piece, self.eos_piece}
+        special_tokens.update(super()._special_tokens())
+        return special_tokens
 
     @classmethod
     def from_files(

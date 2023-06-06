@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Set, Type, TypeVar
 from curated_tokenizers import WordPieceProcessor
 import json
 from pathlib import Path
@@ -196,6 +196,10 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         """
         super().__init__(vocab=vocab, added_tokens=added_tokens)
 
+        self.bos_piece = bos_piece
+        self.eos_piece = eos_piece
+        self.unk_piece = unk_piece
+
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
         unk_id = _get_piece_id_or_fail(self.processor, unk_piece)
@@ -291,6 +295,11 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
         deserialized = json.loads(serialized)
         return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
+
+    def _special_tokens(self) -> Set[str]:
+        special_tokens = {self.bos_piece, self.eos_piece, self.unk_piece}
+        special_tokens.update(self.added_tokens.keys())
+        return special_tokens
 
 
 def _get_piece_id_or_fail(processor: WordPieceProcessor, piece: str):

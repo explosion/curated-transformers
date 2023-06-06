@@ -245,6 +245,7 @@ class DefaultNormalizer(Normalizer):
         self.strip_accents = strip_accents
 
     def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        chunks = list(chunks)
         for chunk in chunks:
             for piece_or_text in chunk:
                 if not isinstance(piece_or_text, TextChunk):

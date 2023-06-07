@@ -1,4 +1,4 @@
-from typing import Generic, Iterable, Iterator, List, Tuple
+from typing import Generic, Iterable, List
 
 from .generator import Generator
 from ..models.attention import CacheT
@@ -27,30 +27,23 @@ class StringGenerator(Generic[CacheT]):
         self.inner = generator
         self.tokenizer = tokenizer
 
-    def __call__(
-        self, prompts: Iterable[InputChunks], eos_id: int
-    ) -> Iterator[List[Tuple[int, str]]]:
+    def __call__(self, prompts: Iterable[InputChunks], eos_id: int) -> List[str]:
         """
         See the :meth:`.generate` method.
         """
         return self.generate(prompts, eos_id)
 
-    def generate(
-        self, prompts: Iterable[InputChunks], eos_id: int
-    ) -> Iterator[List[Tuple[int, str]]]:
+    def generate(self, prompts: Iterable[InputChunks], eos_id: int) -> List[str]:
         """
-        Generate text using the given prompts. This function yields for
-        each generation step a list of sequence identifiers and the
-        corresponding generated substring.
+        Generate text using the given prompts. This method returns the
+        generated text for each prompt.
 
         :param prompts:
             Prompts to generate from.
         :param eos_id:
             Piece identifier that signals the end of generation.
         :returns:
-            An iterator returning for each generation the step sequence
-            identifiers and the substrings that were generated
-            for the sequences.
+            Strings generated for the prompts.
         """
 
         device = next(self.inner.model.parameters()).device
@@ -58,8 +51,11 @@ class StringGenerator(Generic[CacheT]):
         ids = pieces.padded_tensor(padding_id=0, pad_left=True).to(device)
         attention_mask = pieces.attention_mask(pad_left=True).to(device)
 
+        piece_ids: List[List[int]] = [[] for _ in range(ids.size(0))]
         for seq_ids, outputs in self.inner(
             ids=ids, attention_mask=attention_mask, eos_id=eos_id
         ):
-            decoded = self.tokenizer.decode(outputs.tolist())
-            yield list(zip(seq_ids.tolist(), decoded))
+            for seq_id, seq_piece_ids in zip(seq_ids.tolist(), outputs.tolist()):
+                piece_ids[seq_id].extend(seq_piece_ids)
+
+        return self.tokenizer.decode(piece_ids)

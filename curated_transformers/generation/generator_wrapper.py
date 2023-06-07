@@ -8,7 +8,7 @@ class GeneratorWrapper(ABC):
     :class:`curated_transformers.generation.Generator`.
     """
 
-    def __call__(self, prompts: List[str]) -> Iterator[List[Tuple[int, str]]]:
+    def __call__(self, prompts: List[str]) -> List[str]:
         """
         See the :meth:`.generate` method.
         """
@@ -16,17 +16,14 @@ class GeneratorWrapper(ABC):
         return self.generate(prompts)
 
     @abstractmethod
-    def generate(self, prompts: List[str]) -> Iterator[List[Tuple[int, str]]]:
+    def generate(self, prompts: List[str]) -> List[str]:
         """
-        Generate text using the given prompts. This function yields for
-        each generation step a list of requence identifiers and the
-        corresponding generated substring.
+        Generate text using the given prompts. This method returns the
+        generated text for each prompt.
 
         :param prompts:
             Prompts to generate from.
         :returns:
-            An iterator returning for each generation step sequence
-            identifiers and the substrings that were generated
-            for the sequences.
+            Strings generated for the prompts.
         """
         ...

@@ -170,7 +170,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         self,
         *,
         vocab: Dict[str, int],
-        added_tokens: Optional[Dict[str, int]] = None,
+        special_pieces: Optional[Dict[str, int]] = None,
         bos_piece: str = "[CLS]",
         eos_piece: str = "[SEP]",
         unk_piece: str = "[UNK]",
@@ -181,8 +181,8 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
 
         :param vocab:
             The word piece vocabulary.
-        :param added_tokens:
-            Additional tokens.
+        :param special_pieces:
+            Additional pieces.
         :param bos_piece:
             The piece used to mark the beginning of a sequence.
         :param eos_piece:
@@ -194,7 +194,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         :param strip_accents:
             Strip accents from text.
         """
-        super().__init__(vocab=vocab, added_tokens=added_tokens)
+        super().__init__(vocab=vocab, special_pieces=special_pieces)
 
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
@@ -260,7 +260,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         unk_piece = model["unk_token"]
 
         vocab = model["vocab"]
-        added_tokens = {
+        special_pieces = {
             added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
         }
 
@@ -278,7 +278,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
 
         return cls(
             vocab=vocab,
-            added_tokens=added_tokens,
+            special_pieces=special_pieces,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             unk_piece=unk_piece,

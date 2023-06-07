@@ -40,7 +40,7 @@ class RobertaTokenizer(ByteBPETokenizer):
         *,
         vocab: Dict[str, int],
         merges: List[Tuple[str, str]],
-        added_tokens: Optional[Dict[str, int]] = None,
+        special_pieces: Optional[Dict[str, int]] = None,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
@@ -51,14 +51,14 @@ class RobertaTokenizer(ByteBPETokenizer):
             The word piece vocabulary.
         :param merges:
             Merges.
-        :param added_tokens:
-            Additional tokens.
+        :param special_pieces:
+            Additional pieces.
         :param bos_piece:
             Beginning of sequence piece.
         :param eos_piece:
             End of sequence piece.
         """
-        super().__init__(vocab=vocab, merges=merges, added_tokens=added_tokens)
+        super().__init__(vocab=vocab, merges=merges, special_pieces=special_pieces)
 
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
@@ -113,7 +113,7 @@ class RobertaTokenizer(ByteBPETokenizer):
             cast(Tuple[str, str], tuple(merge.split(" ", maxsplit=2)))
             for merge in model["merges"]
         ]
-        added_tokens = {
+        special_pieces = {
             added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
         }
 
@@ -124,7 +124,7 @@ class RobertaTokenizer(ByteBPETokenizer):
         return cls(
             vocab=vocab,
             merges=merges,
-            added_tokens=added_tokens,
+            special_pieces=special_pieces,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
         )

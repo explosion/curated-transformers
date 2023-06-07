@@ -1,6 +1,7 @@
 from typing import Iterable, List, Optional, TypeVar, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 import torch
 from torch import Tensor
 import unicodedata
@@ -219,6 +220,13 @@ class AddBosEosPreEncoder(PreEncoder):
         return bos_eos_chunks
 
 
+class UnicodeNormalization(str, Enum):
+    NFC = "NFC"
+    NFKC = "NFKC"
+    NFD = "NFD"
+    NFKD = "NFKD"
+
+
 class DefaultNormalizer(Normalizer):
     """
     Performs normalization operations on input chunks before encoding.
@@ -227,7 +235,7 @@ class DefaultNormalizer(Normalizer):
     def __init__(
         self,
         *,
-        utf_normalization: Optional[str] = None,
+        utf_normalization: Optional[UnicodeNormalization] = None,
         lowercase: bool = False,
         strip_accents: bool = False,
     ) -> None:
@@ -255,7 +263,7 @@ class DefaultNormalizer(Normalizer):
                     text = text.lower()
                 if self.strip_accents:
                     # Normalize with NFD to decompose accents.
-                    text = unicodedata.normalize("NFD", text)
+                    text = unicodedata.normalize(UnicodeNormalization.NFD, text)
                     text = "".join(
                         [char for char in text if unicodedata.category(char) != "Mn"]
                     )

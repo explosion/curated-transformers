@@ -87,7 +87,7 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
         return PiecesWithIds(ids=ids, pieces=pieces)
 
     def _special_tokens(self) -> Set[str]:
-        return set(self.special_pieces.keys())
+        return set(self.special_piece_to_id.keys())
 
     @classmethod
     def _convert_hf_tokenizer_json(

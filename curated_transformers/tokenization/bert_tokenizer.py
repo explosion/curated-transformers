@@ -298,7 +298,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
 
     def _special_tokens(self) -> Set[str]:
         special_tokens = {self.bos_piece, self.eos_piece, self.unk_piece}
-        special_tokens.update(self.added_tokens.keys())
+        special_tokens.update(self.special_piece_to_id.keys())
         return special_tokens
 
 

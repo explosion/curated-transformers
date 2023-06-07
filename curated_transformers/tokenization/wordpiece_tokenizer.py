@@ -13,19 +13,20 @@ class WordPieceTokenizer(Tokenizer):
         self,
         *,
         vocab: Dict[str, int],
-        added_tokens: Optional[Dict[str, int]],
+        special_pieces: Optional[Dict[str, int]],
     ):
         """Construct a tokenizer from a curated tokenizers WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.
-        :param added_tokens:
-            Additional tokens.
+        :param special_pieces:
+            Special pieces.
         """
-        # Added tokens are usually already in the wordpiece vocabs, but lets
+        # Special tokens are usually already in the wordpiece vocabs, but lets
         # just add them to be sure.
-        self.added_tokens = {} if added_tokens is None else added_tokens
-        vocab.update(self.added_tokens)
+        self.special_piece_to_id = {} if special_pieces is None else special_pieces
+        self.id_to_special_piece = {v: k for k, v in self.special_piece_to_id.items()}
+        vocab.update(self.special_piece_to_id)
 
         # We'll build up the vocab, verifying that the user provided ids for
         # all tokens as a sanity check.
@@ -42,11 +43,16 @@ class WordPieceTokenizer(Tokenizer):
 
         self.processor = WordPieceProcessor(pieces)
 
-    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+    def _decode(
+        self, input: Iterable[Iterable[int]], skip_special_pieces: bool
+    ) -> List[str]:
         decoded = []
         for piece_ids in input:
             tokens = []
             for piece_id in piece_ids:
+                if piece_id in self.id_to_special_piece:
+                    continue
+
                 token, is_initial = self.processor.id_to_piece(piece_id)
                 if is_initial:
                     token = " " + token

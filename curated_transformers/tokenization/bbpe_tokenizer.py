@@ -28,7 +28,7 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
         *,
         vocab: Dict[str, int],
         merges: List[Tuple[str, str]],
-        added_tokens: Optional[Dict[str, int]] = None,
+        special_pieces: Optional[Dict[str, int]] = None,
     ):
         """
         Construct a byte BPE tokenizer.
@@ -37,14 +37,25 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
             The word piece vocabulary.
         :param merges:
             Merges.
-        :param added_tokens:
-            Additional tokens.
+        :param special_pieces:
+            Special pieces.
         """
-        self.special_pieces = {} if added_tokens is None else added_tokens
-        vocab.update(self.special_pieces)
+        self.special_piece_to_id = {} if special_pieces is None else special_pieces
+        self.id_to_special_piece = {v: k for k, v in self.special_piece_to_id.items()}
+        vocab.update(self.special_piece_to_id)
         self.processor = ByteBPEProcessor(vocab, merges)
 
-    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+    def _decode(
+        self, input: Iterable[Iterable[int]], skip_special_pieces: bool
+    ) -> List[str]:
+        input = [
+            [
+                id
+                for id in ids
+                if not skip_special_pieces or id not in self.id_to_special_piece
+            ]
+            for ids in input
+        ]
         return [self.processor.decode_from_ids(ids) for ids in input]
 
     def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
@@ -90,10 +101,10 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
             cast(Tuple[str, str], tuple(merge.split(" ", maxsplit=2)))
             for merge in model["merges"]
         ]
-        added_tokens = {
+        special_pieces = {
             added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
         }
-        return cls(vocab=vocab, merges=merges, added_tokens=added_tokens)
+        return cls(vocab=vocab, merges=merges, special_pieces=special_pieces)
 
     @classmethod
     def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:

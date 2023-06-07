@@ -112,18 +112,22 @@ class Tokenizer(ABC):
         """
         return self.encode(input)
 
-    def decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+    def decode(
+        self, input: Iterable[Iterable[int]], skip_special_pieces: bool = True
+    ) -> List[str]:
         """Reconstruct string sequences from piece identifiers.
 
         :param input:
             The piece identifiers to reconstruct the strings from.
+        :param skip_special_pieces:
+            Skip special pieces during decoding.
         :returns:
             The decoded strings.
         """
         if self.pre_decoder is not None:
             input = self.pre_decoder(input)
 
-        strings = self._decode(input)
+        strings = self._decode(input, skip_special_pieces)
 
         if self.post_decoder is not None:
             strings = self.post_decoder(strings)
@@ -163,7 +167,9 @@ class Tokenizer(ABC):
         ]
 
     @abstractmethod
-    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+    def _decode(
+        self, input: Iterable[Iterable[int]], skip_special_pieces: bool
+    ) -> List[str]:
         ...
 
     @abstractmethod

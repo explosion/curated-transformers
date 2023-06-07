@@ -332,6 +332,11 @@ def test_bert_chunk_validation(toy_tokenizer_from_tokenizer_json):
             [InputChunks([SpecialPieceChunk("Brötchen")])]
         )
 
+    with pytest.raises(ValueError):
+        toy_tokenizer_from_tokenizer_json(
+            [InputChunks([SpecialPieceChunk("[CLS] something")])]
+        )
+
     toy_tokenizer_from_tokenizer_json(
         [
             InputChunks(

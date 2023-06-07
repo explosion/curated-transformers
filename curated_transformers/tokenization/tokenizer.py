@@ -1,5 +1,6 @@
 from typing import Iterable, List, Optional, Set, TypeVar, Union
 from abc import ABC, abstractmethod
+from ahocorasick import Automaton
 from dataclasses import dataclass
 import re
 import torch
@@ -104,8 +105,7 @@ class Tokenizer(ABC):
     post_decoder: Optional[PostDecoder] = None
     pre_encoder: Optional[PreEncoder] = None
     post_encoder: Optional[PostEncoder] = None
-    _any_special_tokens_regex: Optional[re.Pattern] = None
-    _only_special_tokens_regex: Optional[re.Pattern] = None
+    _special_tokens_automaton: Optional[Automaton] = None
 
     def __call__(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
@@ -172,34 +172,35 @@ class Tokenizer(ABC):
         ]
 
     def _validate_chunks(self, input: List[InputChunks]):
-        if self._any_special_tokens_regex is None:
+        if self._special_tokens_automaton is None:
             special_tokens = self._special_tokens()
             if len(special_tokens) == 0:
                 return
-            pattern = "|".join(
-                ["({})".format(re.escape(token)) for token in special_tokens]
-            )
-            self._any_special_tokens_regex = re.compile(pattern)
-            self._only_special_tokens_regex = re.compile(f"^{pattern}$")
+            self._special_tokens_automaton = automaton = Automaton()
+            for special_token in special_tokens:
+                automaton.add_word(special_token, special_token)
+            automaton.make_automaton()
 
-        assert self._only_special_tokens_regex is not None
-        assert self._any_special_tokens_regex is not None
-
+        assert self._special_tokens_automaton is not None
         for chunks in input:
             for piece_or_text in chunks:
                 if isinstance(piece_or_text, SpecialPieceChunk):
-                    if (
-                        self._only_special_tokens_regex.search(piece_or_text.piece)
-                        is None
-                    ):
-                        raise ValueError(
-                            f"Special piece chunk `{piece_or_text.piece}` is invalid"
-                        )
+                    matches = list(
+                        self._special_tokens_automaton.iter_long(piece_or_text.piece)
+                    )
+                    msg = f"Special piece chunk `{piece_or_text.piece}` is invalid"
+                    if len(matches) != 1:
+                        raise ValueError(msg)
+
+                    end_idx, value = matches[0]
+                    start_idx = end_idx - len(value) + 1
+                    if start_idx != 0 or end_idx != len(piece_or_text.piece) - 1:
+                        raise ValueError(msg)
                 elif isinstance(piece_or_text, TextChunk):
-                    if (
-                        self._any_special_tokens_regex.search(piece_or_text.text)
-                        is not None
-                    ):
+                    matches = list(
+                        self._special_tokens_automaton.iter_long(piece_or_text.text)
+                    )
+                    if len(matches) != 0:
                         raise ValueError(
                             f"Text chunk `{piece_or_text.text}` contains a special piece"
                         )

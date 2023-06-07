@@ -293,6 +293,11 @@ def test_roberta_chunk_validation(toy_tokenizer_from_tokenizer_json):
             [InputChunks([SpecialPieceChunk("Brötchen")])]
         )
 
+    with pytest.raises(ValueError):
+        toy_tokenizer_from_tokenizer_json(
+            [InputChunks([SpecialPieceChunk("</s> Brötchen")])]
+        )
+
     toy_tokenizer_from_tokenizer_json(
         [
             InputChunks(

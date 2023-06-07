@@ -258,6 +258,9 @@ def test_camembert_chunk_validation(toy_tokenizer):
     with pytest.raises(ValueError):
         toy_tokenizer([InputChunks([SpecialPieceChunk("Brötchen")])])
 
+    with pytest.raises(ValueError):
+        toy_tokenizer([InputChunks([SpecialPieceChunk("</s> Brötchen")])])
+
     toy_tokenizer(
         [
             InputChunks(

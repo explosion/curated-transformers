@@ -182,7 +182,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         :param vocab:
             The word piece vocabulary.
         :param special_pieces:
-            Additional pieces.
+            Special pieces.
         :param bos_piece:
             The piece used to mark the beginning of a sequence.
         :param eos_piece:

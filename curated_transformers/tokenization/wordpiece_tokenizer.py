@@ -20,9 +20,9 @@ class WordPieceTokenizer(Tokenizer):
         :param vocab:
             The word piece vocabulary.
         :param special_pieces:
-            Additional pieces.
+            Special pieces.
         """
-        # Added tokens are usually already in the wordpiece vocabs, but lets
+        # Special tokens are usually already in the wordpiece vocabs, but lets
         # just add them to be sure.
         self.special_piece_to_id = {} if special_pieces is None else special_pieces
         self.id_to_special_piece = {v: k for k, v in self.special_piece_to_id.items()}

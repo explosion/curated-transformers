@@ -52,7 +52,7 @@ class RobertaTokenizer(ByteBPETokenizer):
         :param merges:
             Merges.
         :param special_pieces:
-            Additional pieces.
+            Special pieces.
         :param bos_piece:
             Beginning of sequence piece.
         :param eos_piece:

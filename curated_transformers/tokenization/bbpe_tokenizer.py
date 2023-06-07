@@ -38,7 +38,7 @@ class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
         :param merges:
             Merges.
         :param special_pieces:
-            Additional pieces.
+            Special pieces.
         """
         self.special_piece_to_id = {} if special_pieces is None else special_pieces
         self.id_to_special_piece = {v: k for k, v in self.special_piece_to_id.items()}

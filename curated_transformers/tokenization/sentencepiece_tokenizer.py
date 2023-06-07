@@ -20,7 +20,12 @@ class SentencePieceTokenizer(Tokenizer):
         """
         self.processor = processor
 
-    def _decode(self, input: Iterable[Iterable[int]]) -> List[str]:
+    def _decode(
+        self, input: Iterable[Iterable[int]], skip_special_pieces: bool
+    ) -> List[str]:
+        # skip_special_pieces is currently ignored. Since sentencepiece
+        # processes the whole input output, this probably needs to be
+        # handled by the sentencepiece library itself?
         return [self.processor.decode_from_ids(ids) for ids in input]
 
     def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:

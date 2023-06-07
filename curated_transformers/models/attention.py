@@ -320,7 +320,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
     def forward(
         self,
         x: Tensor,
-        attention_mask: AttentionMask,
+        attention_mask: Optional[AttentionMask],
         use_causal_mask: bool = False,
         cache: Optional[KeyValueCache] = None,
         store_cache: bool = False,

@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers, transformers
+from curated_transformers.models.attention import AttentionMask
 from curated_transformers.models.gpt_neox.decoder import GPTNeoXDecoder
 from curated_transformers.tests.util import torch_assertclose
 
@@ -82,5 +83,12 @@ def test_decoder_with_positions(torch_device):
     with torch.no_grad():
         Y = model(X, positions=positions).last_hidden_layer_states
         Y_hf = hf_model(X, position_ids=positions).last_hidden_state
+    torch_assertclose(Y, Y_hf)
 
+    mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
+    with torch.no_grad():
+        Y = model(
+            X, attention_mask=AttentionMask(mask)
+        ).last_hidden_layer_states * mask.unsqueeze(-1)
+        Y_hf = hf_model(X, attention_mask=mask).last_hidden_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_hf)

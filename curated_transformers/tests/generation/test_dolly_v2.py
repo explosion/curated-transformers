@@ -17,7 +17,6 @@ def test_generate_deterministic():
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
-    print(generator(prompts))
     assert generator(prompts) == [
         "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is designed to have a small, stable, and fast implementation. Rust is also designed to be easy to learn. Rust is intended to be used for writing fast, reliable, and portable code.\n\n",
         "SpaCy is an open-source natural language processing (NLP) library for Python. It is designed to be fast, scalable, and easy to use.\n\n",
@@ -27,7 +26,6 @@ def test_generate_deterministic():
         "What is spaCy?",
         "What is the Rust programming language?",
     ]
-    print(generator(prompts))
     assert generator(prompts) == [
         "SpaCy is an open-source natural language processing (NLP) library for Python. It is designed to be fast, scalable, and easy to use.\n\n",
         "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is designed to have a small, stable, and fast implementation. Rust is also designed to be easy to learn. Rust is intended to be used for writing fast, reliable, and portable code.\n\n",

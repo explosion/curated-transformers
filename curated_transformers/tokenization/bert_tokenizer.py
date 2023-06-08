@@ -6,7 +6,14 @@ import unicodedata
 
 from .chunks import InputChunks, SpecialPieceChunk, TextChunk
 from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
-from .tokenizer import PiecesWithIds, PreEncoder, PostEncoder, PreDecoder, PostDecoder
+from .tokenizer import (
+    DefaultNormalizer,
+    PiecesWithIds,
+    PreEncoder,
+    PostEncoder,
+    PreDecoder,
+    PostDecoder,
+)
 from .util import remove_pieces_from_sequence
 from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
 
@@ -21,8 +28,6 @@ class BertPreEncoder(PreEncoder):
         *,
         bos_piece: str,
         eos_piece: str,
-        lowercase: bool,
-        strip_accents: bool,
     ):
         """Construct a BERT pre-encoder.
 
@@ -30,15 +35,9 @@ class BertPreEncoder(PreEncoder):
             The piece used to mark the beginning of a sequence.
         :param eos_piece:
             The piece used to mark the end of a sequence.
-        :param lowercase:
-            Lowercase text.
-        :param strip_accents:
-            Strip accents from text.
         """
         self.bos_piece = bos_piece
         self.eos_piece = eos_piece
-        self.lowercase = lowercase
-        self.strip_accents = strip_accents
 
     def split_token_on_punctuation(self, token: str) -> List[str]:
         """Split a token on punctuation characters. For instance,
@@ -74,11 +73,6 @@ class BertPreEncoder(PreEncoder):
 
         return unicodedata.category(char).startswith("P")
 
-    def strip_token_accents(self, token: str) -> str:
-        # TODO move this to the normalization phase of to the tokenizer
-        token = unicodedata.normalize("NFD", token)
-        return "".join([char for char in token if unicodedata.category(char) != "Mn"])
-
     def __call__(self, input: Iterable[InputChunks]) -> List[InputChunks]:
         preprocessed = []
 
@@ -88,10 +82,6 @@ class BertPreEncoder(PreEncoder):
                 if isinstance(chunk, TextChunk):
                     words = []
                     for word in chunk.text.split(" "):
-                        if self.lowercase:
-                            word = word.lower()
-                        if self.strip_accents:
-                            word = self.strip_token_accents(word)
                         word_with_punct = self.split_token_on_punctuation(word)
                         words.extend(word_with_punct)
                     processed_seq.append(TextChunk(" ".join(words)))
@@ -196,6 +186,10 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         """
         super().__init__(vocab=vocab, special_pieces=special_pieces)
 
+        self.normalizer = DefaultNormalizer(
+            lowercase=lowercase, strip_accents=strip_accents
+        )
+
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
         unk_id = _get_piece_id_or_fail(self.processor, unk_piece)
@@ -203,8 +197,6 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         self.pre_encoder = BertPreEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
-            lowercase=lowercase,
-            strip_accents=strip_accents,
         )
         self.post_encoder = BertPostEncoder(
             unk_piece=unk_piece,
@@ -266,7 +258,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
 
         normalizer = hf_tokenizer["normalizer"]
         lowercase = normalizer["lowercase"]
-        strip_accents = normalizer["lowercase"]
+        strip_accents = normalizer["strip_accents"]
 
         # Huggingface BERT also strips accents when lowercasing is enabled
         # and accent stripping is not defined.

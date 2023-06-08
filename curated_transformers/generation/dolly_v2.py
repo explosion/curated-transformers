@@ -1,6 +1,7 @@
 from typing import Iterator, List, Optional, Tuple, Type, TypeVar
 import torch
 
+from .config import GeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
 from .hf_hub import FromHFHub
@@ -49,11 +50,13 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         )
         return cls(tokenizer, causal_lm)
 
-    def generate(self, prompts: List[str]) -> List[str]:
+    def generate(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
         prompts_with_instructions = [
             _to_prompt_with_instructions(prompt) for prompt in prompts
         ]
-        return self.generator(prompts_with_instructions, eos_id=self.eos_id)
+        return self.generator(
+            prompts_with_instructions, eos_id=self.eos_id, config=config
+        )
 
 
 def _to_prompt_with_instructions(prompt):

@@ -1,9 +1,18 @@
 from typing import Generic, Iterator, List, Optional, Tuple
 import torch
 from torch import Tensor
+from torch.distributions import Categorical
+
+from curated_transformers.generation.config import (
+    GeneratorConfig,
+    GreedyGeneratorConfig,
+    SampleGeneratorConfig,
+)
+from curated_transformers.generation.logits import LogitsTransform
 
 from ..models.attention import AttentionMask, CacheT
 from ..models.module import CausalLMModule
+from ..models.output import CausalLMOutputWithCache
 from .state import GeneratorState
 
 
@@ -22,15 +31,30 @@ class Generator(Generic[CacheT]):
         self.model = model
 
     def __call__(
-        self, *, attention_mask: Tensor, ids: Tensor, eos_id: int
+        self,
+        *,
+        attention_mask: Tensor,
+        ids: Tensor,
+        eos_id: int,
+        config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
         See the :meth:`.generate` method.
         """
-        return self.generate(attention_mask=attention_mask, ids=ids, eos_id=eos_id)
+        return self.generate(
+            attention_mask=attention_mask,
+            ids=ids,
+            eos_id=eos_id,
+            config=config,
+        )
 
     def generate(
-        self, *, attention_mask: Tensor, ids: Tensor, eos_id: int
+        self,
+        *,
+        attention_mask: Tensor,
+        ids: Tensor,
+        eos_id: int,
+        config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
         Generate text, starting from the given piece identifiers.
@@ -50,12 +74,24 @@ class Generator(Generic[CacheT]):
             **Shape:** (batch, seq_len)
         :param eos_id:
             Piece identifier that signals the end of the generated sequence.
+        :param config:
+            Generator configuraton.
         :returns:
             An iterator over tuples. Each tuple contains a tensor with the
             sequence identifiers and a tensor with the next piece identier.
             **Shape:** (batch_unfinished,)
         """
         self.model.eval()
+
+        logits_transform = config.logits_transform()
+        if isinstance(config, GreedyGeneratorConfig):
+            generation_step = self._decode_greedy
+        elif isinstance(config, SampleGeneratorConfig):
+            generation_step = self._decode_sample
+        else:
+            raise ValueError(
+                f"Unknown generator configuration: {type(config).__name__}"
+            )
 
         cache: Optional[List[CacheT]] = None
         state = GeneratorState(attention_mask=attention_mask, cache=cache)
@@ -69,8 +105,8 @@ class Generator(Generic[CacheT]):
                     store_cache=True,
                     positions=state.positions,
                 )
-            best = output.logits.argmax(-1)
-            ids = best[:, -1:]
+
+            ids = generation_step(logits_transform, output)
 
             completed = ids.view(-1) == eos_id
             ids = ids[completed.logical_not()]
@@ -80,3 +116,17 @@ class Generator(Generic[CacheT]):
                 return
 
             yield state.seq_ids, ids
+
+    def _decode_greedy(
+        self,
+        logits_transform: LogitsTransform,
+        output: CausalLMOutputWithCache[CacheT],
+    ) -> Tensor:
+        return output.logits[:, -1:, :].argmax(-1)
+
+    def _decode_sample(
+        self, logits_transform: LogitsTransform, output: CausalLMOutputWithCache[CacheT]
+    ) -> Tensor:
+        logits = logits_transform(output.logits[:, -1:, :], inplace=True)
+        distribution = Categorical(logits=logits)
+        return distribution.sample()

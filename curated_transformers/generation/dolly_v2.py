@@ -49,11 +49,11 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         )
         return cls(tokenizer, causal_lm)
 
-    def generate(self, prompts: List[str]) -> Iterator[List[Tuple[int, str]]]:
+    def generate(self, prompts: List[str]) -> List[str]:
         prompts_with_instructions = [
             _to_prompt_with_instructions(prompt) for prompt in prompts
         ]
-        yield from self.generator(prompts_with_instructions, eos_id=self.eos_id)
+        return self.generator(prompts_with_instructions, eos_id=self.eos_id)
 
 
 def _to_prompt_with_instructions(prompt):

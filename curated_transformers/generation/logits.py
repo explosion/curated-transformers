@@ -11,7 +11,7 @@ class LogitsTransform(ABC):
     of the softmax distribution.
     """
 
-    def __call__(self, logits: Tensor, inplace=False) -> Tensor:
+    def __call__(self, logits: Tensor, inplace: bool = False) -> Tensor:
         """
         Transform the given logits.
 
@@ -97,7 +97,7 @@ class TemperatureTransform(LogitsTransform):
     - T > 1: the entropy of the distribution is increased.
     """
 
-    def __init__(self, temperature=1.0):
+    def __init__(self, temperature: float = 1.0):
         """
         Create a temperature transform with a given temperature.
 

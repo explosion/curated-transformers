@@ -90,6 +90,8 @@ def load_model_from_checkpoints(
 ):
     """Load parameters from PyTorch checkpoints with minimal copies.
 
+    :param model:
+        PyTorch module into which the parameters are to be loaded.
     :param filepaths:
         Paths to PyTorch checkpoints.
     :param deserialization_buckets:

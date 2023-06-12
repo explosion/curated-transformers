@@ -51,7 +51,8 @@ class SampleGeneratorConfig(GeneratorConfig):
         - T < 1: the entropy of the distribution is decreased.
         - T > 1: the entropy of the distribution is increased.
     :param top_k:
-        Sample from top-k highest-probability pieces.
+        Sample from top-k highest-probability pieces. k < 1 disables top-k
+        filtering.
     """
 
     temperature: float = 1.0

@@ -54,11 +54,6 @@ def test_generate_sample(dolly_generator):
     ]
 
     torch.manual_seed(0)
-    print(
-        dolly_generator(prompts, config=SampleGeneratorConfig(top_k=5, temperature=2))
-    )
-
-    torch.manual_seed(0)
     assert dolly_generator(
         prompts, config=SampleGeneratorConfig(top_k=5, temperature=2)
     ) == [

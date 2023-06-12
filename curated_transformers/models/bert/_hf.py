@@ -1,10 +1,9 @@
 from typing import Any, Mapping
 import re
 from torch import Tensor
-from torch.nn import Parameter
 
 from .config import BertConfig
-from ..hf_util import _merge_qkv, _rename_old_hf_names
+from ..util.hf import _merge_qkv, _rename_old_hf_names
 
 
 def convert_hf_config(hf_config: Any) -> BertConfig:
@@ -27,7 +26,7 @@ def convert_hf_config(hf_config: Any) -> BertConfig:
     )
 
 
-def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tensor]:
+def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     out = {}
 
     renamed_params = _rename_old_hf_names(params)
@@ -58,17 +57,16 @@ def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tenso
 
         out[name] = parameter
 
-    # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = stripped_params[
-        "embeddings.word_embeddings.weight"
-    ]
-    out["embeddings.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
-    out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
+    key_map = {
+        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
+        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
+    }
+
+    for hf_name, curated_name in key_map.items():
+        if hf_name in stripped_params:
+            out[curated_name] = stripped_params[hf_name]
 
     return _merge_qkv(out)

@@ -1,6 +1,6 @@
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Type, TypeVar
 import torch
-from torch.nn import Module, Parameter
+from torch.nn import Module
 from torch import Tensor
 
 from ..attention import AttentionMask
@@ -9,7 +9,8 @@ from ..hf_hub import FromPretrainedHFModel
 from ..output import ModelOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
-from ._hf import convert_hf_config, convert_hf_state_dict
+from ._hf import convert_hf_config, convert_hf_state_dict, deserialization_param_buckets
+from ..util.serde import DeserializationParamBucket
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="AlbertEncoder")
@@ -72,8 +73,13 @@ class AlbertEncoder(Module, FromPretrainedHFModel):
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
 
+    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
+        num_groups = len(self.groups)
+        num_layers_per_group = self.num_hidden_layers // num_groups
+        return deserialization_param_buckets(num_groups, num_layers_per_group)
+
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Parameter]):
+    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
         return convert_hf_state_dict(params)
 
     @classmethod

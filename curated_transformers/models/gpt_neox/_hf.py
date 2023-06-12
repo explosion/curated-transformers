@@ -1,7 +1,6 @@
 from typing import Any, Mapping
 import re
 from torch import Tensor
-from torch.nn import Parameter
 
 from .config import GPTNeoXConfig
 from ..module import DecoderModule
@@ -31,7 +30,7 @@ def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
     )
 
 
-def convert_hf_state_dict(cls, params: Mapping[str, Parameter]) -> Mapping[str, Tensor]:
+def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     """Convert state dict from HF paramater naming to ours.
     The function is insensitive to prefixes, to allow loading
     both the decoder and the full LM."""

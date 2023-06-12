@@ -1,7 +1,7 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, LayerNorm, ModuleList, Parameter
+from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
 
 from ..hf_hub import FromPretrainedHFModel
@@ -11,6 +11,7 @@ from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .layer import GPTNeoXDecoderLayer
+from ..util.serde import DeserializationParamBucket
 
 
 # Only provided as typing.Self in Python 3.11+.
@@ -105,8 +106,11 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
             cache=new_cache if store_cache else None,
         )
 
+    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
+        return []
+
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Parameter]):
+    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
         return convert_hf_state_dict(cls, params)
 
     @classmethod

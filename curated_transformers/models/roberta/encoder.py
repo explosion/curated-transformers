@@ -1,8 +1,7 @@
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Parameter
 
 from ..attention import AttentionMask
 from ..bert.layer import BertEncoderLayer
@@ -12,6 +11,9 @@ from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
+from ..util.serde import DeserializationParamBucket
+from ..util.hf import _param_buckets_for_bert_qkv
+
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="RobertaEncoder")
@@ -63,8 +65,11 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
             embedding_output=embeddings, layer_hidden_states=layer_outputs
         )
 
+    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
+        return _param_buckets_for_bert_qkv(num_layers=len(self.layers))
+
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Parameter]):
+    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
         return convert_hf_state_dict(params)
 
     @classmethod

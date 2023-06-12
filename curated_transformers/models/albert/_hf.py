@@ -1,11 +1,12 @@
-from typing import Any, Mapping
+from typing import Any, List, Mapping
+import itertools
 import re
 import torch
 from torch import Tensor
-from torch.nn import Parameter
 
 
-from curated_transformers.models.albert.config import AlbertConfig
+from .config import AlbertConfig
+from ..util.serde import DeserializationParamBucket, RegExParameterBucket
 
 
 def convert_hf_config(hf_config: Any) -> AlbertConfig:
@@ -30,7 +31,7 @@ def convert_hf_config(hf_config: Any) -> AlbertConfig:
     )
 
 
-def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tensor]:
+def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     # Strip the `albert` prefix from ALBERT model parameters.
     stripped_params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
 
@@ -74,27 +75,40 @@ def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tenso
         out[name] = parameter
 
     # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = stripped_params[
-        "embeddings.word_embeddings.weight"
-    ]
-    out["embeddings.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
-    out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
+    key_map = {
+        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
+        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
+        # Embedding projection
+        "encoder.embedding_hidden_mapping_in.weight": "embeddings.projection.weight",
+        "encoder.embedding_hidden_mapping_in.bias": "embeddings.projection.bias",
+    }
 
-    # Embedding projection
-    out["embeddings.projection.weight"] = stripped_params[
-        "encoder.embedding_hidden_mapping_in.weight"
-    ]
-    out["embeddings.projection.bias"] = stripped_params[
-        "encoder.embedding_hidden_mapping_in.bias"
-    ]
+    for hf_name, curated_name in key_map.items():
+        if hf_name in stripped_params:
+            out[curated_name] = stripped_params[hf_name]
 
     return _merge_qkv_albert(out)
+
+
+def deserialization_param_buckets(
+    num_groups: int, num_layers_per_group: int
+) -> List[DeserializationParamBucket]:
+    out = []
+    for group, layer in itertools.product(
+        range(num_groups), range(num_layers_per_group)
+    ):
+        regex_str = rf"groups\.{group}\.group_layers\.{layer}\.mha\.(query|key|value).(weight|bias)"
+        expected_keys = {
+            rf"groups.{group}.group_layers.{layer}.mha.{module}.{param}"
+            for module, param in itertools.product(
+                ["query", "key", "value"], ["weight", "bias"]
+            )
+        }
+        out.append(RegExParameterBucket(pattern=regex_str, expected_keys=expected_keys))
+    return out  # type: ignore
 
 
 def _merge_qkv_albert(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:

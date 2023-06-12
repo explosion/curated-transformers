@@ -1,5 +1,7 @@
 from typing import Generic, Iterable, List
 
+from curated_transformers.generation.config import GeneratorConfig
+
 from .generator import Generator
 from ..models.attention import CacheT
 from ..tokenization.chunks import InputChunks
@@ -27,13 +29,17 @@ class StringGenerator(Generic[CacheT]):
         self.inner = generator
         self.tokenizer = tokenizer
 
-    def __call__(self, prompts: Iterable[InputChunks], eos_id: int) -> List[str]:
+    def __call__(
+        self, prompts: Iterable[InputChunks], eos_id: int, config: GeneratorConfig
+    ) -> List[str]:
         """
         See the :meth:`.generate` method.
         """
-        return self.generate(prompts, eos_id)
+        return self.generate(prompts, eos_id, config=config)
 
-    def generate(self, prompts: Iterable[InputChunks], eos_id: int) -> List[str]:
+    def generate(
+        self, prompts: Iterable[InputChunks], eos_id: int, config: GeneratorConfig
+    ) -> List[str]:
         """
         Generate text using the given prompts. This method returns the
         generated text for each prompt.
@@ -42,6 +48,8 @@ class StringGenerator(Generic[CacheT]):
             Prompts to generate from.
         :param eos_id:
             Piece identifier that signals the end of generation.
+        :param config:
+            Generator configuraton.
         :returns:
             Strings generated for the prompts.
         """
@@ -53,7 +61,7 @@ class StringGenerator(Generic[CacheT]):
 
         piece_ids: List[List[int]] = [[] for _ in range(ids.size(0))]
         for seq_ids, outputs in self.inner(
-            ids=ids, attention_mask=attention_mask, eos_id=eos_id
+            ids=ids, attention_mask=attention_mask, eos_id=eos_id, config=config
         ):
             for seq_id, seq_piece_ids in zip(seq_ids.tolist(), outputs.tolist()):
                 piece_ids[seq_id].extend(seq_piece_ids)

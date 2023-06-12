@@ -3,7 +3,7 @@ import re
 from torch import Tensor
 
 from .config import RobertaConfig
-from ..util.hf import _merge_qkv
+from ...util.hf import _merge_qkv
 
 
 def convert_hf_config(hf_config: Any) -> RobertaConfig:

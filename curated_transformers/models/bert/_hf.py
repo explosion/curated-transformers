@@ -3,7 +3,7 @@ import re
 from torch import Tensor
 
 from .config import BertConfig
-from ..util.hf import _merge_qkv, _rename_old_hf_names
+from ...util.hf import _merge_qkv, _rename_old_hf_names
 
 
 def convert_hf_config(hf_config: Any) -> BertConfig:

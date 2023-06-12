@@ -10,7 +10,7 @@ from ..output import ModelOutput
 from .config import AlbertConfig
 from .layer_group import AlbertLayerGroup
 from ._hf import convert_hf_config, convert_hf_state_dict, deserialization_param_buckets
-from ..util.serde import DeserializationParamBucket
+from ...util.serde import DeserializationParamBucket
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="AlbertEncoder")

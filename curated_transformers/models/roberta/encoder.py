@@ -11,8 +11,8 @@ from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
-from ..util.serde import DeserializationParamBucket
-from ..util.hf import _param_buckets_for_bert_qkv
+from ...util.serde import DeserializationParamBucket
+from ...util.hf import _param_buckets_for_bert_qkv
 
 
 # Only provided as typing.Self in Python 3.11+.

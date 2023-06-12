@@ -6,7 +6,7 @@ from torch import Tensor
 
 
 from .config import AlbertConfig
-from ..util.serde import DeserializationParamBucket, RegExParameterBucket
+from ...util.serde import DeserializationParamBucket, RegExParameterBucket
 
 
 def convert_hf_config(hf_config: Any) -> AlbertConfig:

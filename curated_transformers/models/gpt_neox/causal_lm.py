@@ -10,7 +10,7 @@ from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
 from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder
-from ..util.serde import DeserializationParamBucket
+from ...util.serde import DeserializationParamBucket
 
 
 # Only provided as typing.Self in Python 3.11+.

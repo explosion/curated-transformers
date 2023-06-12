@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers.generation.config import (
     GreedyGeneratorConfig,
     SampleGeneratorConfig,

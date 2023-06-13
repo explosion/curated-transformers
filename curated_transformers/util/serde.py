@@ -56,10 +56,10 @@ class RegExParameterBucket(DeserializationParamBucket):
     key_matcher: re.Pattern
     expected_keys: Set[str]
 
-    def __init__(self, pattern: str, expected_keys: Set[str]) -> None:
+    def __init__(self, pattern: re.Pattern, expected_keys: Set[str]) -> None:
         super().__init__()
 
-        self.key_matcher = re.compile(pattern)
+        self.key_matcher = pattern
         self.expected_keys = expected_keys
 
     def match(self, param_key: str) -> bool:

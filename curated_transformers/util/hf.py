@@ -24,14 +24,18 @@ def _param_buckets_for_bert_qkv(
     for layer in range(num_layers):
         # This has to match the parameter key **BEFORE** it's renamed, i.e.,
         # the key used in the original pre-trained checkpoint from HF Hub.
-        regex_str = f"\\.{layer}\\.attention\\.self\\.(query|key|value)\\.(weight|bias)"
+        regex_pattern = re.compile(
+            f"\\.{layer}\\.attention\\.self\\.(query|key|value)\\.(weight|bias)"
+        )
         expected_keys = {
             f".{layer}.attention.self.{module}.{param}"
             for module, param in itertools.product(
                 ["query", "key", "value"], ["weight", "bias"]
             )
         }
-        out.append(RegExParameterBucket(pattern=regex_str, expected_keys=expected_keys))
+        out.append(
+            RegExParameterBucket(pattern=regex_pattern, expected_keys=expected_keys)
+        )
     return out  # type: ignore
 
 

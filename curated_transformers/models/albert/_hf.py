@@ -102,14 +102,18 @@ def deserialization_param_buckets(
     for group, layer in itertools.product(
         range(num_groups), range(num_layers_per_group)
     ):
-        regex_str = rf"groups\.{group}\.group_layers\.{layer}\.mha\.(query|key|value).(weight|bias)"
+        regex_pattern = re.compile(
+            rf"groups\.{group}\.group_layers\.{layer}\.mha\.(query|key|value).(weight|bias)"
+        )
         expected_keys = {
             rf"groups.{group}.group_layers.{layer}.mha.{module}.{param}"
             for module, param in itertools.product(
                 ["query", "key", "value"], ["weight", "bias"]
             )
         }
-        out.append(RegExParameterBucket(pattern=regex_str, expected_keys=expected_keys))
+        out.append(
+            RegExParameterBucket(pattern=regex_pattern, expected_keys=expected_keys)
+        )
     return out  # type: ignore
 
 

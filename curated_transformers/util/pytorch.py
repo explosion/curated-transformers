@@ -38,7 +38,6 @@ def apply_to_module(module: Module, func: Callable[[ModuleIterator], None]):
         itr = queue.pop(0)
         func(itr)
 
-        for name, child in itr.module._modules.items():
-            if child is not None:
-                child_prefix = f"{itr.prefix}.{name}" if itr.prefix else name
-                queue.append(ModuleIterator(child, name, child_prefix, itr.module))
+        for name, child in itr.module.named_children():
+            child_prefix = f"{itr.prefix}.{name}" if itr.prefix else name
+            queue.append(ModuleIterator(child, name, child_prefix, itr.module))

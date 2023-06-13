@@ -23,6 +23,7 @@ class BertEncoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
+            qkv_mode=attention_config.qkv_mode,
             device=device,
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(

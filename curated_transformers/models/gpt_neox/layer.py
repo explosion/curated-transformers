@@ -30,9 +30,9 @@ class GPTNeoXDecoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
+            qkv_mode=attention_config.qkv_mode,
             rotary_fraction=attention_config.rotary_fraction,
             rotary_base=attention_config.rotary_base,
-            split_heads_before_chunk=True,
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)

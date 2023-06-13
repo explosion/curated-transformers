@@ -1,6 +1,4 @@
-import re
-from abc import ABC, abstractmethod
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
+from typing import Callable, Dict, Iterable, Mapping, Optional, Set, Union
 
 import torch
 from torch.nn import Module, Parameter
@@ -20,69 +18,10 @@ HFStateDictConverterT = Callable[
 ]
 
 
-class DeserializationParamBucket(Dict, ABC):
-    """Used to group parameters that need to be deserialized at the same time."""
-
-    @abstractmethod
-    def match(self, param_key: str) -> bool:
-        """Returns True if the parameter key matches this bucket.
-
-        :param param_key:
-            Key extracted from a state dict.
-        :returns:
-            `True` if it's a match, `False` otherwise.
-        """
-        ...
-
-    @abstractmethod
-    def ready(self) -> bool:
-        """Returns True if this bucket is ready for deserialization."""
-        ...
-
-
-class DefaultParamBucket(DeserializationParamBucket):
-    """Default bucket that is always ready and matches all keys."""
-
-    def match(self, param_key: str) -> bool:
-        return True
-
-    def ready(self) -> bool:
-        return True
-
-
-class RegExParameterBucket(DeserializationParamBucket):
-    """Groups parameters whose keys match a given regular expression."""
-
-    key_matcher: re.Pattern
-    expected_keys: Set[str]
-
-    def __init__(self, pattern: re.Pattern, expected_keys: Set[str]) -> None:
-        super().__init__()
-
-        self.key_matcher = pattern
-        self.expected_keys = expected_keys
-
-    def match(self, param_key: str) -> bool:
-        return self.key_matcher.search(param_key) is not None
-
-    def ready(self) -> bool:
-        if len(self.expected_keys) != len(self):
-            return False
-
-        seen = 0
-        for expected in self.expected_keys:
-            for key in self.keys():
-                if expected in key:
-                    seen += 1
-                    break
-        return seen == len(self.expected_keys)
-
-
 def load_model_from_checkpoints(
     model: Module,
     *,
     filepaths: Iterable[str],
-    deserialization_buckets: List[DeserializationParamBucket],
     state_dict_converter: HFStateDictConverterT,
     tensor_to_param_converter: Optional[TensorToParameterConverterT] = None,
     device: Optional[torch.device] = None,
@@ -93,9 +32,6 @@ def load_model_from_checkpoints(
         PyTorch module into which the parameters are to be loaded.
     :param filepaths:
         Paths to PyTorch checkpoints.
-    :param deserialization_buckets:
-        Model-specific buckets into which parameters are to be sorted
-        before deserialization.
     :param state_dict_converter:
         Callback to convert Hugging Face state dicts to the
         `curated-transformers` format.
@@ -105,14 +41,17 @@ def load_model_from_checkpoints(
     :param device:
         Device in which to place the loaded parameters.
     """
+    state_dicts = _load_state_dicts_from_checkpoints(filepaths)
+    # We need to cache the model's parameter keys before loading the state
+    # dicts as the process could potentially change the structure of sub-modules,
+    # e.g: when quantized layers rename their parameters.
+    module_keys = set(model.state_dict().keys())
+    seen_keys: Set[str] = set()
 
-    def convert_and_load_state_dict(
-        state_dict: Mapping[str, torch.Tensor], seen_keys: Set[str]
-    ):
-
+    for state_dict in state_dicts:
         converted = state_dict_converter(state_dict)
         if len(converted) == 0:
-            return
+            continue
         seen_keys.update(converted.keys())
 
         # We have to walk the module tree for each state dict as there
@@ -124,54 +63,10 @@ def load_model_from_checkpoints(
             device=device,
         )
 
-    state_dicts = _load_state_dicts_from_checkpoints(filepaths)
-    # We need to cache the model's parameter keys before loading the state
-    # dicts as the process could potentially change the structure of sub-modules,
-    # e.g: when quantized layers rename their parameters.
-    module_keys = set(model.state_dict().keys())
-    seen_keys: Set[str] = set()
-
-    # Ideally, we'd lazily load and convert the state dicts in the incoming
-    # order, but some of the conversion operations induce dependencies between
-    # parameters in different state dicts. So, we need to sort them into buckets
-    # before performing the conversion ops, precluding us from "streaming" the
-    # parameters into the model. Consequently, this requires us to hold the
-    # incomplete buckets (and their parameters) in memory until all of their
-    # parameters have been accumulated.
-    default_bucket = DefaultParamBucket()
-    for state_dict in state_dicts:
-        # Sort into buckets.
-        for name, param in state_dict.items():
-            matching_buckets = [
-                bucket for bucket in deserialization_buckets if bucket.match(name)
-            ]
-            num_matching_buckets = len(matching_buckets)
-            if num_matching_buckets == 0:
-                default_bucket[name] = param
-            elif num_matching_buckets == 1:
-                matching_buckets[0][name] = param
-            else:
-                raise ValueError(
-                    f"Key `{name}` matched multiple ({num_matching_buckets}) deserialization buckets"
-                )
-
-        # Convert and load the default bucket first.
-        convert_and_load_state_dict(default_bucket, seen_keys)
-        default_bucket.clear()
-
-        # Process other buckets that are full.
-        for bucket in deserialization_buckets:
-            if bucket.ready():
-                convert_and_load_state_dict(bucket, seen_keys)
-                bucket.clear()
-
     # Make sure that we didn't miss any keys.
     missing_keys = module_keys.difference(seen_keys)
     if len(missing_keys) != 0:
         raise ValueError(f"Some parameters were not updated/replaced: {missing_keys}")
-
-    if any(len(bucket) for bucket in deserialization_buckets):
-        raise ValueError("One or more deserialization buckets were not empty")
 
 
 def default_tensor_to_parameter_converter(

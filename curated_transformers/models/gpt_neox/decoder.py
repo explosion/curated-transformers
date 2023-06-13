@@ -11,7 +11,6 @@ from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .layer import GPTNeoXDecoderLayer
-from ...util.serde import DeserializationParamBucket
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="GPTNeoXDecoder")
@@ -104,9 +103,6 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
             layer_hidden_states=layer_outputs,
             cache=new_cache if store_cache else None,
         )
-
-    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
-        return []
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

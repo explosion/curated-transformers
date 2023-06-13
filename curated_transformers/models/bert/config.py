@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from ..attention import QkvMode
+
 # Defaults taken from syntaxdot
 # https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/models/bert/config.rs#L25
 
@@ -36,6 +38,7 @@ class BertAttentionConfig:
     hidden_width: int
     num_attention_heads: int
     dropout_prob: float
+    qkv_mode: QkvMode
 
     def __init__(
         self,
@@ -43,10 +46,12 @@ class BertAttentionConfig:
         hidden_width: int = 768,
         num_attention_heads: int = 12,
         dropout_prob: float = 0.1,
+        qkv_mode: QkvMode = QkvMode.SEPARATE,
     ) -> None:
         self.hidden_width = hidden_width
         self.num_attention_heads = num_attention_heads
         self.dropout_prob = dropout_prob
+        self.qkv_mode = qkv_mode
 
 
 @dataclass
@@ -114,6 +119,7 @@ class BertConfig:
             hidden_width=hidden_width,
             num_attention_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
+            qkv_mode=QkvMode.SEPARATE,
         )
         self.layer = BertLayerConfig(
             hidden_width=hidden_width,

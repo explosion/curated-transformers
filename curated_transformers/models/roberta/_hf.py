@@ -4,7 +4,6 @@ from typing import Any, Mapping
 
 from torch import Tensor
 
-from ...util.hf import _merge_qkv
 from .config import RobertaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
@@ -72,4 +71,4 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         if hf_name in stripped_params:
             out[curated_name] = stripped_params[hf_name]
 
-    return _merge_qkv(out)
+    return out

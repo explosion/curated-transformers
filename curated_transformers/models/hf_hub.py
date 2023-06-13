@@ -1,13 +1,13 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Iterable, Mapping, Optional, Type, TypeVar
 
 import torch
 from huggingface_hub import hf_hub_download
 from requests import HTTPError  # type: ignore
 from torch import Tensor
 
-from ..util.serde import DeserializationParamBucket, load_model_from_checkpoints
+from ..util.serde import load_model_from_checkpoints
 
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
@@ -100,7 +100,6 @@ class FromPretrainedHFModel(ABC):
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,
-            deserialization_buckets=model.deserialization_param_buckets(),
             state_dict_converter=cls.convert_hf_state_dict,
             device=device,
         )
@@ -126,14 +125,6 @@ class FromPretrainedHFModel(ABC):
         order to be an abstract base class.
         """
         ...
-
-    @abstractmethod
-    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
-        """Returns a list of buckets into which parameters are sorted
-        during loading. Each bucket represents a group of parameters
-        that need to be deserialized together.
-        """
-        raise NotImplementedError
 
 
 def _get_model_config_filepath(name: str, revision: str) -> str:

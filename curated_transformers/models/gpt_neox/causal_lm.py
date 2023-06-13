@@ -1,17 +1,16 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
+
 import torch
 from torch import Tensor
 from torch.nn import Linear
 
 from ..attention import AttentionMask, KeyValueCache
-from ._hf import convert_hf_config, convert_hf_state_dict
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
+from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder
-from ...util.serde import DeserializationParamBucket
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")

@@ -1,9 +1,10 @@
 from typing import Optional
+
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .activations import GeluNew, GeluFast
+from .activations import GeluFast, GeluNew
 
 
 class PointwiseFeedForward(Module):

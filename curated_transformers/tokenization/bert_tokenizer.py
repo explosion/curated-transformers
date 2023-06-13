@@ -1,22 +1,22 @@
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
-from curated_tokenizers import WordPieceProcessor
 import json
-from pathlib import Path
 import unicodedata
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+
+from curated_tokenizers import WordPieceProcessor
 
 from .chunks import InputChunks, SpecialPieceChunk, TextChunk
 from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import (
     DefaultNormalizer,
     PiecesWithIds,
-    PreEncoder,
+    PostDecoder,
     PostEncoder,
     PreDecoder,
-    PostDecoder,
+    PreEncoder,
 )
 from .util import remove_pieces_from_sequence
 from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="BertTokenizer")

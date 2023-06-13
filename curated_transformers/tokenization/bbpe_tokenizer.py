@@ -1,17 +1,11 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, cast
-from curated_tokenizers import ByteBPEProcessor
 import json
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, cast
 
-from .chunks import (
-    MergedInputChunks,
-    MergedSpecialPieceChunk,
-)
-from .hf_hub import (
-    FromHFHub,
-    FromPretrainedHFTokenizer,
-)
+from curated_tokenizers import ByteBPEProcessor
+
+from .chunks import MergedInputChunks, MergedSpecialPieceChunk
+from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import PiecesWithIds, Tokenizer
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="ByteBPETokenizer")

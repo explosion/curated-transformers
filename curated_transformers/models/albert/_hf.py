@@ -1,13 +1,13 @@
-from typing import Any, List, Mapping
-from types import MappingProxyType
 import itertools
 import re
+from types import MappingProxyType
+from typing import Any, List, Mapping
+
 import torch
 from torch import Tensor
 
-
-from .config import AlbertConfig
 from ...util.serde import DeserializationParamBucket, RegExParameterBucket
+from .config import AlbertConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {

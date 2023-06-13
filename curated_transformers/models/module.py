@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import Generic, List, Optional
+
 from torch import Tensor
 from torch.nn import Module
 

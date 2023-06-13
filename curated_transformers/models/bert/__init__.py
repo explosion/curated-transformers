@@ -1,8 +1,8 @@
-from .embeddings import BertEmbeddings
 from .config import (
     BertAttentionConfig,
+    BertConfig,
     BertEmbeddingConfig,
     BertLayerConfig,
-    BertConfig,
 )
+from .embeddings import BertEmbeddings
 from .encoder import BertEncoder

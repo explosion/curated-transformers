@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 # Defaults taken from syntaxdot
 # https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/models/bert/config.rs#L25
 

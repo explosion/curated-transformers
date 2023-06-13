@@ -1,11 +1,12 @@
-from typing import Any, Mapping
-from types import MappingProxyType
 import re
+from types import MappingProxyType
+from typing import Any, Mapping
+
 from torch import Tensor
 
-from .config import RobertaConfig
 from ...util.hf import _merge_qkv
-
+from ..hf_util import _merge_qkv
+from .config import RobertaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {

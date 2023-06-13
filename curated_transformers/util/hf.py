@@ -1,7 +1,8 @@
 import itertools
-from typing import List, Mapping
-import torch
 import re
+from typing import List, Mapping
+
+import torch
 
 from .serde import DeserializationParamBucket, RegExParameterBucket
 

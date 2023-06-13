@@ -1,9 +1,10 @@
 from typing import Optional
-import torch
-from torch.nn import Module
-from torch import Tensor
 
-from ..bert import BertEmbeddings, BertEmbeddingConfig, BertLayerConfig
+import torch
+from torch import Tensor
+from torch.nn import Module
+
+from ..bert import BertEmbeddingConfig, BertEmbeddings, BertLayerConfig
 
 
 class RobertaEmbeddings(Module):

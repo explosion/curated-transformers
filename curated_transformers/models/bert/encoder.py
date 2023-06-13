@@ -1,18 +1,18 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
-import torch
-from torch.nn import Module
-from torch import Tensor
 
+import torch
+from torch import Tensor
+from torch.nn import Module
+
+from ...util.hf import _param_buckets_for_bert_qkv
+from ...util.serde import DeserializationParamBucket
+from ..attention import AttentionMask
+from ..hf_hub import FromPretrainedHFModel
+from ..output import ModelOutput
+from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import BertConfig
 from .embeddings import BertEmbeddings
-from ..hf_hub import FromPretrainedHFModel
 from .layer import BertEncoderLayer
-from ..attention import AttentionMask
-from ._hf import convert_hf_config, convert_hf_state_dict
-from ..output import ModelOutput
-from ...util.serde import DeserializationParamBucket
-from ...util.hf import _param_buckets_for_bert_qkv
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="BertEncoder")

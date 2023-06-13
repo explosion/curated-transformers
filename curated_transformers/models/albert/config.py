@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from ..bert import BertConfig, BertAttentionConfig, BertEmbeddingConfig
-from ..bert import BertLayerConfig
+from ..bert import BertAttentionConfig, BertConfig, BertEmbeddingConfig, BertLayerConfig
 
 
 @dataclass

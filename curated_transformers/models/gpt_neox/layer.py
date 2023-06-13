@@ -1,14 +1,11 @@
 from typing import Optional, Tuple
-from torch import Tensor
+
 import torch
+from torch import Tensor
 from torch.nn import Module
 
+from ..attention import AttentionMask, KeyValueCache, SelfAttentionWithRotaryEmbeddings
 from ..feedforward import PointwiseFeedForward
-from ..attention import (
-    AttentionMask,
-    KeyValueCache,
-    SelfAttentionWithRotaryEmbeddings,
-)
 from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
 
 

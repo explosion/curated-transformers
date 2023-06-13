@@ -1,7 +1,7 @@
 from typing import Generic, List, Optional, TypeVar
+
 import torch
 from torch import Tensor
-
 
 CacheT = TypeVar("CacheT")
 

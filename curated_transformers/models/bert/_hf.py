@@ -1,11 +1,11 @@
-from typing import Any, Mapping
-from types import MappingProxyType
 import re
+from types import MappingProxyType
+from typing import Any, Mapping
+
 from torch import Tensor
 
-from .config import BertConfig
 from ...util.hf import _merge_qkv, _rename_old_hf_names
-
+from .config import BertConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {

@@ -1,12 +1,12 @@
 import json
-from typing import Any, Iterable, List, Mapping, Optional, Type, TypeVar
 from abc import ABC, abstractmethod
+from typing import Any, Iterable, Mapping, Optional, Type, TypeVar
+
 from huggingface_hub import hf_hub_download
 from requests import HTTPError  # type: ignore
-import torch
 from torch import Tensor
 
-from ..util.serde import load_model_from_checkpoints, DeserializationParamBucket
+from ..util.serde import DeserializationParamBucket, load_model_from_checkpoints
 
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"

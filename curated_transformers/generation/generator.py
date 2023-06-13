@@ -1,4 +1,5 @@
 from typing import Generic, Iterator, List, Optional, Tuple
+
 import torch
 from torch import Tensor
 from torch.distributions import Categorical

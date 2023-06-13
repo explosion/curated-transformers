@@ -21,10 +21,12 @@ class StopCondition(ABC):
         """
         Update completed sequences according to the stop condition.
 
-        :param completed_exclude: Tensor marking which sequences are completed
-            and for which the last generated piece **should not** be emitted.
-        :param completed_include: Tensor marking which sequences are completed
-            and for which the last generated piece **should** be emitted.
+        :param completed_exclude: Output tensor marking which sequences are
+            completed and for which the last generated piece **should not**
+            be emitted.
+        :param completed_include: Output tensor marking which sequences are
+            completed and for which the last generated piece **should** be
+            emitted.
         """
         ...
 

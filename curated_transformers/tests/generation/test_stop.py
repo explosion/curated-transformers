@@ -10,7 +10,7 @@ from curated_transformers.generation.stop import (
 def test_end_of_sequence_condition():
     attention_mask = torch.ones((2, 2), dtype=torch.bool)
     ids = torch.arange(0, 4).reshape(2, 2)
-    state = GeneratorState(attention_mask=attention_mask, cache=None, ids=ids)
+    state = GeneratorState(attention_mask=attention_mask, cache=None, prompt_ids=ids)
     state.generated_ids = torch.arange(4, 8).reshape(2, 2)
 
     completed_exclude = torch.zeros((2, 1), dtype=torch.bool)
@@ -52,7 +52,7 @@ def test_end_of_sequence_condition():
 def test_max_generated_pieces_condition():
     attention_mask = torch.ones((2, 3), dtype=torch.bool)
     ids = torch.arange(0, 6).reshape(2, 3)
-    state = GeneratorState(attention_mask=attention_mask, cache=None, ids=ids)
+    state = GeneratorState(attention_mask=attention_mask, cache=None, prompt_ids=ids)
     state.generated_ids = torch.arange(4, 8).reshape(2, 2)
 
     completed_exclude = torch.zeros((2, 1), dtype=torch.bool)

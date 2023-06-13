@@ -18,7 +18,11 @@ class GeneratorState(Generic[CacheT]):
     generated_ids: Tensor
 
     def __init__(
-        self, *, attention_mask: Tensor, cache: Optional[List[CacheT]], ids: Tensor
+        self,
+        *,
+        attention_mask: Tensor,
+        cache: Optional[List[CacheT]],
+        prompt_ids: Tensor,
     ) -> None:
         self.attention_mask = attention_mask
         self.positions = attention_mask.int().cumsum(-1) - 1
@@ -26,9 +30,9 @@ class GeneratorState(Generic[CacheT]):
         self.seq_ids = torch.arange(
             0, self.attention_mask.size(0), device=attention_mask.device
         )
-        self.prompt_ids = ids
+        self.prompt_ids = prompt_ids
         self.generated_ids = torch.zeros(
-            (ids.size(0), 0), dtype=ids.dtype, device=ids.device
+            (prompt_ids.size(0), 0), dtype=prompt_ids.dtype, device=prompt_ids.device
         )
 
     @property

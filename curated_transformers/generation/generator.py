@@ -96,7 +96,9 @@ class Generator(Generic[CacheT]):
             )
 
         cache: Optional[List[CacheT]] = None
-        state = GeneratorState(attention_mask=attention_mask, cache=cache, ids=ids)
+        state = GeneratorState(
+            attention_mask=attention_mask, cache=cache, prompt_ids=ids
+        )
 
         while True:
             with torch.no_grad():

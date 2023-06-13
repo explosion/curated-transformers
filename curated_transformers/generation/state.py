@@ -24,15 +24,17 @@ class GeneratorState(Generic[CacheT]):
         cache: Optional[List[CacheT]],
         prompt_ids: Tensor,
     ) -> None:
+        device = prompt_ids.device
+        assert (
+            attention_mask.device == device
+        ), f"Attention mask device '{attention_mask.device}' is not same as prompt ids device '{prompt_ids.device}'"
         self.attention_mask = attention_mask
         self.positions = attention_mask.int().cumsum(-1) - 1
         self.cache = cache
-        self.seq_ids = torch.arange(
-            0, self.attention_mask.size(0), device=attention_mask.device
-        )
+        self.seq_ids = torch.arange(0, self.attention_mask.size(0), device=device)
         self.prompt_ids = prompt_ids
         self.generated_ids = torch.zeros(
-            (prompt_ids.size(0), 0), dtype=prompt_ids.dtype, device=prompt_ids.device
+            (prompt_ids.size(0), 0), dtype=prompt_ids.dtype, device=device
         )
 
     @property

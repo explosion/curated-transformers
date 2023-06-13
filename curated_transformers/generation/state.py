@@ -24,6 +24,18 @@ class GeneratorState(Generic[CacheT]):
         cache: Optional[List[CacheT]],
         prompt_ids: Tensor,
     ) -> None:
+        """
+        Construct a generator state.
+
+        :param attention_mask:
+            Atention mask for the prompts.
+            **Shape:** (batch_size, seq_len)
+        :param cache:
+            Transformer model cache.
+        :param prompt_ids:
+            Batch of prompts.
+            **Shape:** (batch_size, seq_len)
+        """
         device = prompt_ids.device
         assert (
             attention_mask.device == device
@@ -39,6 +51,12 @@ class GeneratorState(Generic[CacheT]):
 
     @property
     def is_finished(self):
+        """
+        Check whether all sequences have finished generating.
+
+        :returns:
+            ``True`` iff all sequences have finished generating.
+        """
         return len(self.seq_ids) == 0
 
     @property

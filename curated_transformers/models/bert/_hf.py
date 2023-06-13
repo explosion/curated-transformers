@@ -1,11 +1,21 @@
 import re
+from types import MappingProxyType
 from typing import Any, Mapping
 
 from torch import Tensor
-from torch.nn import Parameter
 
-from ..hf_util import _merge_qkv, _rename_old_hf_names
+from ...util.hf import _merge_qkv, _rename_old_hf_names
 from .config import BertConfig
+
+HF_KEY_TO_CURATED_KEY = MappingProxyType(
+    {
+        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
+        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
+    }
+)
 
 
 def convert_hf_config(hf_config: Any) -> BertConfig:
@@ -28,7 +38,7 @@ def convert_hf_config(hf_config: Any) -> BertConfig:
     )
 
 
-def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tensor]:
+def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     out = {}
 
     renamed_params = _rename_old_hf_names(params)
@@ -59,17 +69,8 @@ def convert_hf_state_dict(params: Mapping[str, Parameter]) -> Mapping[str, Tenso
 
         out[name] = parameter
 
-    # Rename and move embedding parameters to the inner BertEmbeddings module.
-    out["embeddings.word_embeddings.weight"] = stripped_params[
-        "embeddings.word_embeddings.weight"
-    ]
-    out["embeddings.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
-    out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
-    out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
+    for hf_name, curated_name in HF_KEY_TO_CURATED_KEY.items():
+        if hf_name in stripped_params:
+            out[curated_name] = stripped_params[hf_name]
 
     return _merge_qkv(out)

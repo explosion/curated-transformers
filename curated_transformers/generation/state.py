@@ -1,9 +1,10 @@
-from typing import Generic, List, Optional
+from typing import Generic, List, Optional, Tuple
 
 import torch
 from torch import Tensor
 
 from ..models.attention import CacheT
+from .stop import StopCondition
 
 
 class GeneratorState(Generic[CacheT]):
@@ -13,12 +14,11 @@ class GeneratorState(Generic[CacheT]):
     cache: Optional[List[CacheT]]
     positions: Tensor
     seq_ids: Tensor
+    prompt_ids: Tensor
+    generated_ids: Tensor
 
     def __init__(
-        self,
-        *,
-        attention_mask: Tensor,
-        cache: Optional[List[CacheT]],
+        self, *, attention_mask: Tensor, cache: Optional[List[CacheT]], ids: Tensor
     ) -> None:
         self.attention_mask = attention_mask
         self.positions = attention_mask.int().cumsum(-1) - 1
@@ -26,27 +26,52 @@ class GeneratorState(Generic[CacheT]):
         self.seq_ids = torch.arange(
             0, self.attention_mask.size(0), device=attention_mask.device
         )
+        self.prompt_ids = ids
+        self.generated_ids = torch.zeros(
+            (ids.size(0), 0), dtype=ids.dtype, device=ids.device
+        )
 
     @property
     def is_finished(self):
         return len(self.seq_ids) == 0
 
-    def step(self, *, cache: List[CacheT], completed: Optional[Tensor] = None):
+    @property
+    def last_step_ids(self) -> Tensor:
+        """
+        Identifiers generated in the last step.
+
+        Returns the prompt identifiers when the generator has not stepped yet.
+        """
+        if not self.generated_ids.size(1):
+            return self.prompt_ids
+        else:
+            return self.generated_ids[:, -1:]
+
+    def step(
+        self,
+        *,
+        cache: List[CacheT],
+        predicted_ids: Tensor,
+        stop_condition: StopCondition,
+    ) -> Tuple[Tensor, Tensor]:
         """
         Step the generation state.
 
         :param cache:
             Model cache from the last model call.
-        :param completed:
-            Tensor indicating which sequences are completed. These sequences
-            are removed from the generation state.
+        :param generated_ids:
+            Tensor containing generated ids.
+            **Shape:** (batch_size, 1)
+        :param stop_condition:
+            Generation stop condition.
+        :returns:
+            Sequence identifiers and piece ids.
+            **Shape:** (batch_size), (batch_size, 1)
         """
+        # We update the state before removing completed sequences, so that
+        # stopping conditions get a consistent view.
         self.cache = cache
-
-        if completed is not None:
-            self._remove_completed(completed)
-
-        self.positions = self.positions.max(-1, keepdim=True).values + 1
+        self.generated_ids = torch.concat([self.generated_ids, predicted_ids], 1)
         self.attention_mask = torch.cat(
             [
                 self.attention_mask,
@@ -58,6 +83,25 @@ class GeneratorState(Generic[CacheT]):
             ],
             dim=-1,
         )
+        self.positions = self.positions.max(-1, keepdim=True).values + 1
+
+        # Determine which sequences are done generating and remove them.
+        completed_exclude = torch.zeros_like(predicted_ids, dtype=torch.bool)
+        completed_include = torch.zeros_like(predicted_ids, dtype=torch.bool)
+        stop_condition.update_completed(
+            state=self,
+            completed_exclude=completed_exclude,
+            completed_include=completed_include,
+        )
+
+        # Prepare sequences and identifiers that the generator should yield.
+        to_yield = completed_exclude.logical_not().view(-1)
+        seq_ids = self.seq_ids[to_yield.view(-1)]
+        last_step_ids = self.last_step_ids[to_yield]
+
+        self._remove_completed((completed_exclude ^ completed_include).view(-1))
+
+        return seq_ids, last_step_ids
 
     def _remove_completed(self, completed: Tensor):
         """Remove completed sequences.
@@ -66,11 +110,13 @@ class GeneratorState(Generic[CacheT]):
             Tensor indicating for the active sequences whether they are completed.
         """
         not_completed = completed.logical_not()
+        self.generated_ids = self.generated_ids[not_completed]
         self.attention_mask = self.attention_mask[not_completed]
         if self.cache is not None:
             self.cache = [
                 layer_cache.filter_batch_items(not_completed)
                 for layer_cache in self.cache
             ]
+        self.prompt_ids = self.prompt_ids[not_completed]
         self.positions = self.positions[not_completed]
         self.seq_ids = self.seq_ids[not_completed]

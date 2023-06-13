@@ -1,4 +1,5 @@
-from typing import Iterator, List, Optional, Tuple, Type, TypeVar
+import dataclasses
+from typing import List, Optional, Type, TypeVar
 
 import torch
 
@@ -52,6 +53,13 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         return cls(tokenizer, causal_lm)
 
     def generate(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
+        # Fill config when necessary.
+        eos_id = self.eos_id if config.eos_id is None else config.eos_id
+        max_new_pieces = 256 if config.max_new_pieces is None else config.max_new_pieces
+        config = dataclasses.replace(
+            config, eos_id=eos_id, max_new_pieces=max_new_pieces
+        )
+
         prompts_with_instructions = [
             _to_prompt_with_instructions(prompt) for prompt in prompts
         ]

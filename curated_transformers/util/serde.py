@@ -133,7 +133,7 @@ def load_model_from_checkpoints(
     seen_keys: Set[str] = set()
 
     # Ideally, we'd lazily load and convert the state dicts in the incoming
-    # order, but some of the conversion operations induce dependencies b'ween
+    # order, but some of the conversion operations induce dependencies between
     # parameters in different state dicts. So, we need to sort them into buckets
     # before performing the conversion ops, precluding us from "streaming" the
     # parameters into the model. Consequently, this requires us to hold the

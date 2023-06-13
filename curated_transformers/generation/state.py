@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 from ..models.attention import CacheT
-from .stop import StopCondition
+from .stop_conditions import StopCondition
 
 
 class GeneratorState(Generic[CacheT]):

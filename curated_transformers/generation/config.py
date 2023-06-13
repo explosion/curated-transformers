@@ -8,7 +8,7 @@ from .logits import (
     TemperatureTransform,
     TopKTransform,
 )
-from .stop import (
+from .stop_conditions import (
     CompoundStopCondition,
     EndOfSequenceCondition,
     MaxGeneratedPiecesCondition,

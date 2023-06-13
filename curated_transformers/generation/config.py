@@ -22,7 +22,7 @@ class GeneratorConfig(ABC):
     Configuration of the generator.
 
     :param eos_id:
-        End-of-sequence identifier that should end generation of a sequence
+        End-of-sequence identifier that should end the generation of a sequence
         when predicted. When this value is set to `None`, it is the
         responsibility of the generator to set it.
 
@@ -33,7 +33,6 @@ class GeneratorConfig(ABC):
     """
 
     eos_id: Optional[int] = None
-
     max_generated_pieces: Optional[int] = None
 
     @abstractmethod

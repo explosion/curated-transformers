@@ -5,13 +5,21 @@ from torch.nn import Module
 
 @dataclass
 class ModuleIterator:
-    # Current module.
+    """Represents the details of a module when travesing a PyTorch module graph.
+
+    :param module:
+        Current module.
+    :param name:
+        Name of the module.
+    :param prefix:
+        Current dot path of the module. Includes the name.
+    :param parent:
+        Parent module. Will be `None` for the root module.
+    """
+
     module: Module
-    # Module name.
     name: str
-    # Current dot path of the module. Includes the name.
     prefix: str
-    # Parent module.
     parent: Optional[Module]
 
 

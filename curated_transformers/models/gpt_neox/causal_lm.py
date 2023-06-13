@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Linear
 
+from ...util.serde import DeserializationParamBucket
 from ..attention import AttentionMask, KeyValueCache
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule

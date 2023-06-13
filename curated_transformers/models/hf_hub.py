@@ -1,7 +1,8 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Mapping, Optional, Type, TypeVar
+from typing import Any, Iterable, List, Mapping, Optional, Type, TypeVar
 
+import torch
 from huggingface_hub import hf_hub_download
 from requests import HTTPError  # type: ignore
 from torch import Tensor

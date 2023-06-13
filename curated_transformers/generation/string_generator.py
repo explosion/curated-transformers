@@ -2,10 +2,10 @@ from typing import Generic, Iterable, List
 
 from curated_transformers.generation.config import GeneratorConfig
 
-from .generator import Generator
 from ..models.attention import CacheT
 from ..tokenization.chunks import InputChunks
 from ..tokenization.tokenizer import Tokenizer
+from .generator import Generator
 
 
 class StringGenerator(Generic[CacheT]):

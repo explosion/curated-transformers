@@ -1,4 +1,5 @@
 from typing import Iterable, List
+
 from curated_tokenizers import SentencePieceProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk

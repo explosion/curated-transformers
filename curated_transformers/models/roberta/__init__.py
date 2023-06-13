@@ -1,2 +1,2 @@
-from .encoder import RobertaEncoder
 from .config import RobertaConfig
+from .encoder import RobertaEncoder

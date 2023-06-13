@@ -1,10 +1,11 @@
-from typing import Any, Mapping
 import re
+from typing import Any, Mapping
+
 from torch import Tensor
 from torch.nn import Parameter
 
-from .config import RobertaConfig
 from ..hf_util import _merge_qkv
+from .config import RobertaConfig
 
 
 def convert_hf_config(hf_config: Any) -> RobertaConfig:

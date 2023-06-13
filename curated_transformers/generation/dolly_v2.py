@@ -1,14 +1,15 @@
 from typing import Iterator, List, Optional, Tuple, Type, TypeVar
+
 import torch
 
+from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
+from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
+from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
 from .config import GeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
 from .hf_hub import FromHFHub
-from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from .string_generator import StringGenerator
-from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
-from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"

@@ -1,12 +1,12 @@
-from typing import Any, Type, TypeVar
-from curated_tokenizers import SentencePieceProcessor
 from pathlib import Path
+from typing import Any, Type, TypeVar
 
-from ._fairseq import FairSeqPostEncoder, FairSeqPreDecoder, FAIRSEQ_PIECE_IDS
+from curated_tokenizers import SentencePieceProcessor
+
+from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
+from .hf_hub import FromPretrainedHFTokenizer
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 from .tokenizer import AddBosEosPreEncoder
-from .hf_hub import FromPretrainedHFTokenizer
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="XlmrTokenizer")

@@ -6,12 +6,12 @@ from torch.nn import Parameter
 
 from ..attention import AttentionMask
 from ..bert.layer import BertEncoderLayer
-from .config import RobertaConfig
-from .embeddings import RobertaEmbeddings
 from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
+from .config import RobertaConfig
+from .embeddings import RobertaEmbeddings
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="RobertaEncoder")

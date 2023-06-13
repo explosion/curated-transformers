@@ -1,8 +1,9 @@
 import contextlib
-from pathlib import Path
 import shutil
-import torch
 import tempfile
+from pathlib import Path
+
+import torch
 
 
 @contextlib.contextmanager

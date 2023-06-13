@@ -1,9 +1,9 @@
-from typing import Any, Mapping
 import re
+from typing import Any, Mapping
+
 import torch
 from torch import Tensor
 from torch.nn import Parameter
-
 
 from curated_transformers.models.albert.config import AlbertConfig
 

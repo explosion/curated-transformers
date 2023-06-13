@@ -1,11 +1,12 @@
 from typing import Optional
+
 import torch
-from torch.nn import Linear, Module
 from torch import Tensor
+from torch.nn import Linear, Module
 
 from ..attention import AttentionMask, SelfAttention
-from .config import BertAttentionConfig, BertLayerConfig
 from ..feedforward import PointwiseFeedForward
+from .config import BertAttentionConfig, BertLayerConfig
 
 
 class BertEncoderLayer(Module):

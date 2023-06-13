@@ -1,6 +1,7 @@
-from typing import Mapping
-import torch
 import re
+from typing import Mapping
+
+import torch
 
 
 def _rename_old_hf_names(

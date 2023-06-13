@@ -1,7 +1,6 @@
-from typing import List, Optional, Union
 import dataclasses
 from dataclasses import dataclass
-
+from typing import List, Optional, Union
 
 ChunkT = Union["SpecialPieceChunk", "TextChunk"]
 MergedChunkT = Union["MergedSpecialPieceChunk", "TextChunk"]

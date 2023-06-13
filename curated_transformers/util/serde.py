@@ -1,6 +1,5 @@
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
-from abc import abstractmethod
-from collections import UserDict
+from abc import abstractmethod, ABC
 import re
 import torch
 from torch.nn import Module, Parameter
@@ -21,7 +20,7 @@ HFStateDictConverterT = Callable[
 ]
 
 
-class DeserializationParamBucket(UserDict):
+class DeserializationParamBucket(Dict, ABC):
     """Used to group parameters that need to be deserialized at the same time."""
 
     @abstractmethod

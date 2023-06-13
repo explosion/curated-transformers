@@ -3,7 +3,7 @@ import torch
 from curated_transformers.generation.state import GeneratorState
 from curated_transformers.generation.stop import (
     EndOfSequenceCondition,
-    MaxNewPiecesCondition,
+    MaxGeneratedPiecesCondition,
 )
 
 
@@ -49,7 +49,7 @@ def test_end_of_sequence_condition():
     assert not completed_include.any()
 
 
-def test_max_new_pieces_condition():
+def test_max_generated_pieces_condition():
     attention_mask = torch.ones((2, 3), dtype=torch.bool)
     ids = torch.arange(0, 6).reshape(2, 3)
     state = GeneratorState(attention_mask=attention_mask, cache=None, ids=ids)
@@ -57,7 +57,7 @@ def test_max_new_pieces_condition():
 
     completed_exclude = torch.zeros((2, 1), dtype=torch.bool)
     completed_include = torch.zeros((2, 1), dtype=torch.bool)
-    MaxNewPiecesCondition(3).update_completed(
+    MaxGeneratedPiecesCondition(3).update_completed(
         state=state,
         completed_exclude=completed_exclude,
         completed_include=completed_include,
@@ -65,7 +65,7 @@ def test_max_new_pieces_condition():
     assert not completed_exclude.any()
     assert not completed_include.any()
 
-    MaxNewPiecesCondition(2).update_completed(
+    MaxGeneratedPiecesCondition(2).update_completed(
         state=state,
         completed_exclude=completed_exclude,
         completed_include=completed_include,
@@ -74,7 +74,7 @@ def test_max_new_pieces_condition():
     assert completed_include.all()
 
     completed_include = torch.zeros((2, 1), dtype=torch.bool)
-    MaxNewPiecesCondition(1).update_completed(
+    MaxGeneratedPiecesCondition(1).update_completed(
         state=state,
         completed_exclude=completed_exclude,
         completed_include=completed_include,

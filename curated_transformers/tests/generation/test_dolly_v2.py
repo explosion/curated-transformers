@@ -41,13 +41,13 @@ def test_generate_deterministic(dolly_generator):
 
 @pytest.mark.veryslow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
-def test_generate_max_new_pieces(dolly_generator):
+def test_generate_max_generated_pieces(dolly_generator):
     prompts = [
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
     assert dolly_generator(
-        prompts, config=GreedyGeneratorConfig(max_new_pieces=10)
+        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
     ) == [
         "Rust is a multi-paradigm,",
         "SpaCy is an open-source natural language",
@@ -58,7 +58,7 @@ def test_generate_max_new_pieces(dolly_generator):
         "What is the Rust programming language?",
     ]
     assert dolly_generator(
-        prompts, config=GreedyGeneratorConfig(max_new_pieces=10)
+        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
     ) == [
         "SpaCy is an open-source natural language",
         "Rust is a multi-paradigm,",

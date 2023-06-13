@@ -72,19 +72,19 @@ class EndOfSequenceCondition(StopCondition):
         completed_exclude ^= state.last_step_ids == self.eos_id
 
 
-class MaxNewPiecesCondition(StopCondition):
+class MaxGeneratedPiecesCondition(StopCondition):
     """Stop after generating a maximum number of pieces."""
 
-    def __init__(self, max_new_pieces: int):
+    def __init__(self, max_generated_pieces: int):
         """
         Construct the condition.
 
-        :param max_new_pieces:
+        :param max_generated_pieces:
             The maximum number of generated pieces. This condition is a noop
             for values less than 1.
         """
         super().__init__()
-        self.max_new_pieces = max_new_pieces
+        self.max_generated_pieces = max_generated_pieces
 
     def update_completed(
         self,
@@ -93,8 +93,8 @@ class MaxNewPiecesCondition(StopCondition):
         completed_exclude: Tensor,
         completed_include: Tensor
     ):
-        if self.max_new_pieces < 1:
+        if self.max_generated_pieces < 1:
             return False
 
-        if state.generated_ids.size(-1) >= self.max_new_pieces:
+        if state.generated_ids.size(-1) >= self.max_generated_pieces:
             completed_include ^= True

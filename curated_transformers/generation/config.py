@@ -11,7 +11,7 @@ from .logits import (
 from .stop import (
     CompoundStopCondition,
     EndOfSequenceCondition,
-    MaxNewPiecesCondition,
+    MaxGeneratedPiecesCondition,
     StopCondition,
 )
 
@@ -26,7 +26,7 @@ class GeneratorConfig(ABC):
         when predicted. When this value is set to `None`, it is the
         responsibility of the generator to set it.
 
-    :param max_new_pieces:
+    :param max_generated_pieces:
         The maximum number of generation steps. This condition is a noop
         for values less than 1. When this value is set to `None`, it is the
         responsibility of the generator to set it.
@@ -34,7 +34,7 @@ class GeneratorConfig(ABC):
 
     eos_id: Optional[int] = None
 
-    max_new_pieces: Optional[int] = None
+    max_generated_pieces: Optional[int] = None
 
     @abstractmethod
     def logits_transform(self) -> LogitsTransform:
@@ -53,10 +53,14 @@ class GeneratorConfig(ABC):
         else:
             conditions.append(EndOfSequenceCondition(self.eos_id))
 
-        if self.max_new_pieces is None:
+        if self.max_generated_pieces is None:
             raise ValueError("Maximum number of generation steps is unset")
         else:
-            conditions.append(MaxNewPiecesCondition(max_new_pieces=self.max_new_pieces))
+            conditions.append(
+                MaxGeneratedPiecesCondition(
+                    max_generated_pieces=self.max_generated_pieces
+                )
+            )
 
         return conditions
 

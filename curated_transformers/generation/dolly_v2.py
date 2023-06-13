@@ -55,9 +55,11 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
     def generate(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
         # Fill config when necessary.
         eos_id = self.eos_id if config.eos_id is None else config.eos_id
-        max_new_pieces = 256 if config.max_new_pieces is None else config.max_new_pieces
+        max_generated_pieces = (
+            256 if config.max_generated_pieces is None else config.max_generated_pieces
+        )
         config = dataclasses.replace(
-            config, eos_id=eos_id, max_new_pieces=max_new_pieces
+            config, eos_id=eos_id, max_generated_pieces=max_generated_pieces
         )
 
         prompts_with_instructions = [

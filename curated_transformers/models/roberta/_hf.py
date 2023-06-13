@@ -5,7 +5,6 @@ from typing import Any, Mapping
 from torch import Tensor
 
 from ...util.hf import _merge_qkv
-from ..hf_util import _merge_qkv
 from .config import RobertaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(

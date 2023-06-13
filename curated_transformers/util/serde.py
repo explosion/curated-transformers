@@ -1,11 +1,11 @@
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
-from abc import abstractmethod, ABC
 import re
+from abc import ABC, abstractmethod
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
+
 import torch
 from torch.nn import Module, Parameter
 
-from .pytorch import apply_to_module, ModuleIterator
-
+from .pytorch import ModuleIterator, apply_to_module
 
 # Args: Parent module, module prefix, parameter name, tensor to convert, device.
 # Returns the new paramater.

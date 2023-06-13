@@ -1,5 +1,6 @@
-from typing import Callable, List, Optional
 from dataclasses import dataclass
+from typing import Callable, List, Optional
+
 from torch.nn import Module
 
 

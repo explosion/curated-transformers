@@ -5,3 +5,6 @@ requires = [
 ]
 
 build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"

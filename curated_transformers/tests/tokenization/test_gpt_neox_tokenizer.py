@@ -9,8 +9,8 @@ from curated_transformers.tokenization.chunks import (
     TextChunk,
 )
 
-from .util import compare_tokenizer_outputs_with_hf_tokenizer
 from ..util import torch_assertclose
+from .util import compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture

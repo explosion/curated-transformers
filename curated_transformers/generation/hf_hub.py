@@ -1,7 +1,7 @@
-from typing import Optional, Type, TypeVar
 from abc import ABC, abstractmethod
-import torch
+from typing import Optional, Type, TypeVar
 
+import torch
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")

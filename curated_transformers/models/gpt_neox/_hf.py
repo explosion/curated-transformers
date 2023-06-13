@@ -1,10 +1,11 @@
-from typing import Any, Mapping
 import re
+from typing import Any, Mapping
+
 from torch import Tensor
 from torch.nn import Parameter
 
-from .config import GPTNeoXConfig
 from ..module import DecoderModule
+from .config import GPTNeoXConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"

@@ -1,7 +1,7 @@
 from pathlib import Path
+
 import pytest
 import torch
-
 
 TORCH_DEVICES = [torch.device("cpu")]
 GPU_TESTS_ENABLED = False

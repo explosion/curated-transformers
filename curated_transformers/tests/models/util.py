@@ -1,10 +1,10 @@
 from typing import Type
+
 import torch
 
 from curated_transformers._compat import transformers
 from curated_transformers.models.attention import AttentionMask
 from curated_transformers.models.hf_hub import FromPretrainedHFModel
-
 
 from ..util import torch_assertclose
 

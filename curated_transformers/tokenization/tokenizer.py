@@ -1,13 +1,13 @@
-from typing import Iterable, List, Optional, TypeVar, Union
+import unicodedata
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Iterable, List, Optional, TypeVar, Union
+
 import torch
 from torch import Tensor
-import unicodedata
 
 from .chunks import InputChunks, MergedInputChunks, SpecialPieceChunk, TextChunk
-
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="Tokenizer")

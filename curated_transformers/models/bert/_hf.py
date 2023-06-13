@@ -1,9 +1,21 @@
 from typing import Any, Mapping
+from types import MappingProxyType
 import re
 from torch import Tensor
 
 from .config import BertConfig
 from ...util.hf import _merge_qkv, _rename_old_hf_names
+
+
+HF_KEY_TO_CURATED_KEY = MappingProxyType(
+    {
+        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
+        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
+    }
+)
 
 
 def convert_hf_config(hf_config: Any) -> BertConfig:
@@ -57,15 +69,7 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
 
         out[name] = parameter
 
-    key_map = {
-        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
-        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
-        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
-        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
-        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
-    }
-
-    for hf_name, curated_name in key_map.items():
+    for hf_name, curated_name in HF_KEY_TO_CURATED_KEY.items():
         if hf_name in stripped_params:
             out[curated_name] = stripped_params[hf_name]
 

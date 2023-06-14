@@ -116,7 +116,7 @@ def _convert_tensor_to_quantized_parameter(
 
 def _init_8bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
-) -> bnb.nn.Linear8bitLt:
+) -> "bnb.nn.Linear8bitLt":
     assert isinstance(config, _8BitConfig)
     quantized_module = bnb.nn.Linear8bitLt(
         input_features=source.in_features,
@@ -131,7 +131,7 @@ def _init_8bit_linear(
 
 def _init_4bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
-) -> bnb.nn.Linear4bit:
+) -> "bnb.nn.Linear4bit":
     assert isinstance(config, _4BitConfig)
     quantized_module = bnb.nn.Linear4bit(
         input_features=source.in_features,

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional
 
 from .logits import (
     CompoundLogitTransforms,
@@ -7,10 +8,32 @@ from .logits import (
     TemperatureTransform,
     TopKTransform,
 )
+from .stop_conditions import (
+    CompoundStopCondition,
+    EndOfSequenceCondition,
+    MaxGeneratedPiecesCondition,
+    StopCondition,
+)
 
 
+@dataclass
 class GeneratorConfig(ABC):
-    """Configuration of the generator."""
+    """
+    Configuration of the generator.
+
+    :param eos_id:
+        End-of-sequence identifier that should end the generation of a sequence
+        when predicted. When this value is set to `None`, it is the
+        responsibility of the generator to set it.
+
+    :param max_generated_pieces:
+        The maximum number of generation steps. This condition is a noop
+        for values less than 1. When this value is set to `None`, it is the
+        responsibility of the generator to set it.
+    """
+
+    eos_id: Optional[int] = None
+    max_generated_pieces: Optional[int] = None
 
     @abstractmethod
     def logits_transform(self) -> LogitsTransform:
@@ -21,6 +44,24 @@ class GeneratorConfig(ABC):
             Logits transform. Usually multiple composed transforms.
         """
         ...
+
+    def stop_condition(self) -> StopCondition:
+        conditions = CompoundStopCondition()
+        if self.eos_id is None:
+            raise ValueError("End-of-sequence piece id is unset")
+        else:
+            conditions.append(EndOfSequenceCondition(self.eos_id))
+
+        if self.max_generated_pieces is None:
+            raise ValueError("Maximum number of generation steps is unset")
+        else:
+            conditions.append(
+                MaxGeneratedPiecesCondition(
+                    max_generated_pieces=self.max_generated_pieces
+                )
+            )
+
+        return conditions
 
 
 class GreedyGeneratorConfig(GeneratorConfig):

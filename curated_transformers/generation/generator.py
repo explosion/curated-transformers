@@ -85,6 +85,7 @@ class Generator(Generic[CacheT]):
         self.model.eval()
 
         logits_transform = config.logits_transform()
+        stop_condition = config.stop_condition()
         if isinstance(config, GreedyGeneratorConfig):
             generation_step = self._decode_greedy
         elif isinstance(config, SampleGeneratorConfig):
@@ -95,28 +96,31 @@ class Generator(Generic[CacheT]):
             )
 
         cache: Optional[List[CacheT]] = None
-        state = GeneratorState(attention_mask=attention_mask, cache=cache)
+        state = GeneratorState(
+            attention_mask=attention_mask, cache=cache, prompt_ids=ids
+        )
 
         while True:
             with torch.no_grad():
                 output = self.model(
-                    ids,
+                    state.last_step_ids,
                     attention_mask=AttentionMask(state.attention_mask),
                     cache=state.cache,
                     store_cache=True,
                     positions=state.positions,
                 )
 
-            ids = generation_step(logits_transform, output)
+            seq_ids, last_step_ids = state.step(
+                cache=output.cache,
+                predicted_ids=generation_step(logits_transform, output),
+                stop_condition=stop_condition,
+            )
 
-            completed = ids.view(-1) == eos_id
-            ids = ids[completed.logical_not()]
-            state.step(cache=output.cache, completed=completed)
+            if seq_ids.size(0) > 0:
+                yield seq_ids, last_step_ids
 
             if state.is_finished:
                 return
-
-            yield state.seq_ids, ids
 
     def _decode_greedy(
         self,

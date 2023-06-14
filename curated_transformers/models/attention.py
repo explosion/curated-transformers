@@ -203,10 +203,10 @@ class SelfAttention(Module):
     def __init__(
         self,
         *,
-        dropout_prob: float = 0.1,
-        hidden_width: int = 768,
-        num_attention_heads: int = 12,
-        qkv_mode: QkvMode = QkvMode.SEPARATE,
+        dropout_prob: float,
+        hidden_width: int,
+        num_attention_heads: int,
+        qkv_mode: QkvMode,
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer.
@@ -302,11 +302,11 @@ class SelfAttentionWithRotaryEmbeddings(Module):
     def __init__(
         self,
         *,
-        dropout_prob: float = 0.1,
-        hidden_width: int = 768,
-        num_attention_heads: int = 12,
-        qkv_mode: QkvMode = QkvMode.MERGED_SPLIT_AFTER,
-        rotary_fraction: float = 1.0,
+        dropout_prob: float,
+        hidden_width: int,
+        num_attention_heads: int,
+        qkv_mode: QkvMode,
+        rotary_fraction: float,
         rotary_base: int = 10000,
         device: Optional[torch.device] = None,
     ):

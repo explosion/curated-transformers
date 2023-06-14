@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from ..attention import QkvMode
+
 
 @dataclass
 class GPTNeoXAttentionConfig:
@@ -8,6 +10,7 @@ class GPTNeoXAttentionConfig:
     dropout_prob: float
     hidden_width: int
     num_attention_heads: int
+    qkv_mode: QkvMode
     rotary_fraction: float
     rotary_base: int
 

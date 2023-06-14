@@ -4,7 +4,6 @@ import torch
 from torch import Tensor
 from torch.nn import Linear
 
-from ...util.serde import DeserializationParamBucket
 from ..attention import AttentionMask, KeyValueCache
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
@@ -60,9 +59,6 @@ class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
             layer_hidden_states=decoder_output.all_hidden_layer_states,
             logits=logits,
         )
-
-    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
-        return []
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

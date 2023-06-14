@@ -1,5 +1,6 @@
 import math
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import Optional, Protocol, Tuple, TypeVar
 
 import torch
@@ -115,6 +116,21 @@ class KeyValueCache:
         return KeyValueCache(key=self.key[mask], value=self.value[mask])
 
 
+class QkvMode(IntEnum):
+    """Modes of handling the query, key and value projections
+    in the self-attention layer.
+    """
+
+    #: ``SEPARATE`` - Use separate projections for query, key and value.
+    SEPARATE = (0,)
+
+    #: ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query, key and value, and split heads before splitting the query, key and value representations.
+    MERGED_SPLIT_BEFORE = (1,)
+
+    #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query, key and value, and split heads after splitting the query, key and value representations.
+    MERGED_SPLIT_AFTER = (2,)
+
+
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
     """Scaled dot-product attention (Vaswani et al., 2017)"""
@@ -188,9 +204,10 @@ class SelfAttention(Module):
     def __init__(
         self,
         *,
-        dropout_prob: float = 0.1,
-        hidden_width: int = 768,
-        num_attention_heads: int = 12,
+        dropout_prob: float,
+        hidden_width: int,
+        num_attention_heads: int,
+        qkv_mode: QkvMode,
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer.
@@ -199,6 +216,7 @@ class SelfAttention(Module):
             and output layers.
         :param hidden_width: Hidden width of the layer.
         :param num_attention_heads: Number of attention heads.
+        :param qkv_mode: Handling mode for query, key and value.
         :param device: Device on which the module is to be initialized.
         """
         super().__init__()
@@ -212,10 +230,17 @@ class SelfAttention(Module):
             )
 
         self.dims_per_head = self.model_dim // self.num_heads
+        self.qkv_mode = qkv_mode
         self.attention = ScaledDotProductAttention(
             dropout_prob=dropout_prob,
         )
-        self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
+
+        if qkv_mode == QkvMode.SEPARATE:
+            self.query = Linear(self.model_dim, self.model_dim, device=device)
+            self.key = Linear(self.model_dim, self.model_dim, device=device)
+            self.value = Linear(self.model_dim, self.model_dim, device=device)
+        else:
+            self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
         self.output = Linear(self.model_dim, self.model_dim, device=device)
 
     def forward(
@@ -240,16 +265,28 @@ class SelfAttention(Module):
             output - (batch, seq_len, width)
         """
 
-        # Project query, key, and value all at once and then split. We do
-        # the projection this way to have the option of switching to fused
-        # PyTorch kernels in the future.
-        proj = self.input(x)
-        q, k, v = proj.chunk(3, dim=-1)
+        if self.qkv_mode == QkvMode.SEPARATE:
+            q = self.query(x)
+            k = self.key(x)
+            v = self.value(x)
 
-        # (batch, head, seq_len, width_per_head)
-        k = split_heads(k, self.num_heads)
-        q = split_heads(q, self.num_heads)
-        v = split_heads(v, self.num_heads)
+            q = split_heads(q, self.num_heads)
+            k = split_heads(k, self.num_heads)
+            v = split_heads(v, self.num_heads)
+        elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
+            # Project query, key, and value all at once and then split. We do
+            # the projection this way to have the option of switching to fused
+            # PyTorch kernels in the future.
+            proj = self.input(x)
+            proj = split_heads(proj, self.num_heads)
+            q, k, v = proj.chunk(3, dim=-1)
+        else:
+            proj = self.input(x)
+            q, k, v = proj.chunk(3, dim=-1)
+
+            k = split_heads(k, self.num_heads)
+            q = split_heads(q, self.num_heads)
+            v = split_heads(v, self.num_heads)
 
         # (batch, seq_len, width)
         attn = combine_heads(self.attention(k, q, v, attention_mask, use_causal_mask))
@@ -266,12 +303,12 @@ class SelfAttentionWithRotaryEmbeddings(Module):
     def __init__(
         self,
         *,
-        dropout_prob: float = 0.1,
-        hidden_width: int = 768,
-        num_attention_heads: int = 12,
-        rotary_fraction: float = 1.0,
+        dropout_prob: float,
+        hidden_width: int,
+        num_attention_heads: int,
+        qkv_mode: QkvMode,
+        rotary_fraction: float,
         rotary_base: int = 10000,
-        split_heads_before_chunk: bool = False,
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer with rotary position embeddings.
@@ -280,13 +317,10 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             and output layers.
         :param hidden_width: Hidden width of the layer.
         :param num_attention_heads: Number of attention heads.
+        :param qkv_mode: Handling mode for query, key and value.
         :param rotary_fraction: fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
         :param rotary_base: Base in signifying the rotary embedding period.
-        :param split_heads_before_chunk: Split the hidden representation
-            into heads before splitting query/key/value representations when
-            ``True``. This option is required for some newer transformer
-            architectures that split heads before chunking.
         :param device: Device on which the module is to be initialized.
         """
 
@@ -300,23 +334,28 @@ class SelfAttentionWithRotaryEmbeddings(Module):
                 f"divisible by the number of self-attention heads ({self.num_heads})"
             )
 
-        self.split_heads_before_chunk = split_heads_before_chunk
         self.dims_per_head = self.model_dim // self.num_heads
+        self.qkv_mode = qkv_mode
 
         if not 0.0 <= rotary_fraction <= 1.0:
             raise ValueError(
                 f"Rotary embedding fraction should be between 0.0 and 1.0 inclusive, was: {rotary_fraction}"
             )
         self.rotary_dims = int(rotary_fraction * self.dims_per_head)
-
-        self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
-        self.attention = ScaledDotProductAttention(
-            dropout_prob=dropout_prob,
-        )
-        self.output = Linear(self.model_dim, self.model_dim, device=device)
         self.rotary_embeds = RotaryEmbeddings(
             width=self.rotary_dims, base=rotary_base, device=device
         )
+
+        self.attention = ScaledDotProductAttention(
+            dropout_prob=dropout_prob,
+        )
+        if qkv_mode == QkvMode.SEPARATE:
+            self.query = Linear(self.model_dim, self.model_dim, device=device)
+            self.key = Linear(self.model_dim, self.model_dim, device=device)
+            self.value = Linear(self.model_dim, self.model_dim, device=device)
+        else:
+            self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
+        self.output = Linear(self.model_dim, self.model_dim, device=device)
 
     def forward(
         self,
@@ -354,15 +393,22 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             positions - (batch, seq_len)
         """
 
-        proj = self.input(x)
+        if self.qkv_mode == QkvMode.SEPARATE:
+            q = self.query(x)
+            k = self.key(x)
+            v = self.value(x)
 
-        if self.split_heads_before_chunk:
+            q = split_heads(q, self.num_heads)
+            k = split_heads(k, self.num_heads)
+            v = split_heads(v, self.num_heads)
+        elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
+            proj = self.input(x)
             proj = split_heads(proj, self.num_heads)
             q, k, v = proj.chunk(3, dim=-1)
         else:
+            proj = self.input(x)
             q, k, v = proj.chunk(3, dim=-1)
 
-            # (batch, head, seq_len, width_per_head)
             k = split_heads(k, self.num_heads)
             q = split_heads(q, self.num_heads)
             v = split_heads(v, self.num_heads)

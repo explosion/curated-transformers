@@ -4,7 +4,6 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...util.serde import DeserializationParamBucket
 from ..attention import AttentionMask, KeyValueCache
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
@@ -104,9 +103,6 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
             layer_hidden_states=layer_outputs,
             cache=new_cache if store_cache else None,
         )
-
-    def deserialization_param_buckets(self) -> List[DeserializationParamBucket]:
-        return []
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

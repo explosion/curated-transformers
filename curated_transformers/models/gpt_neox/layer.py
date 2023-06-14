@@ -4,7 +4,12 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..attention import AttentionMask, KeyValueCache, SelfAttentionWithRotaryEmbeddings
+from ..attention import (
+    AttentionMask,
+    KeyValueCache,
+    QkvMode,
+    SelfAttentionWithRotaryEmbeddings,
+)
 from ..feedforward import PointwiseFeedForward
 from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
 
@@ -30,9 +35,9 @@ class GPTNeoXDecoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
+            qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
             rotary_fraction=attention_config.rotary_fraction,
             rotary_base=attention_config.rotary_base,
-            split_heads_before_chunk=True,
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)

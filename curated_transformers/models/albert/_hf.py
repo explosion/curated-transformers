@@ -1,12 +1,9 @@
-import itertools
 import re
 from types import MappingProxyType
-from typing import Any, List, Mapping
+from typing import Any, Mapping
 
-import torch
 from torch import Tensor
 
-from ...util.serde import DeserializationParamBucket, RegExParameterBucket
 from .config import AlbertConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
@@ -91,50 +88,5 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     for hf_name, curated_name in HF_KEY_TO_CURATED_KEY.items():
         if hf_name in stripped_params:
             out[curated_name] = stripped_params[hf_name]
-
-    return _merge_qkv_albert(out)
-
-
-def deserialization_param_buckets(
-    num_groups: int, num_layers_per_group: int
-) -> List[DeserializationParamBucket]:
-    out = []
-    for group, layer in itertools.product(
-        range(num_groups), range(num_layers_per_group)
-    ):
-        regex_pattern = re.compile(
-            rf"groups\.{group}\.group_layers\.{layer}\.mha\.(query|key|value).(weight|bias)"
-        )
-        expected_keys = {
-            rf"groups.{group}.group_layers.{layer}.mha.{module}.{param}"
-            for module, param in itertools.product(
-                ["query", "key", "value"], ["weight", "bias"]
-            )
-        }
-        out.append(
-            RegExParameterBucket(pattern=regex_pattern, expected_keys=expected_keys)
-        )
-    return out  # type: ignore
-
-
-def _merge_qkv_albert(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    out = {}
-    for name, parameter in params.items():
-        m = re.match(
-            r"groups\.(?P<group>[0-9]+)\.group_layers\.(?P<layer>[0-9]+)\.mha\.(query|key|value).(?P<param_type>weight|bias)",
-            name,
-        )
-        if m:
-            if "query" in name:
-                base = f"groups.{m['group']}.group_layers.{m['layer']}.mha"
-                out[f"{base}.input.{m['param_type']}"] = torch.cat(
-                    [
-                        parameter,
-                        params[f"{base}.key.{m['param_type']}"],
-                        params[f"{base}.value.{m['param_type']}"],
-                    ]
-                )
-            continue
-        out[name] = parameter
 
     return out

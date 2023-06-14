@@ -120,9 +120,9 @@ class QkvMode(IntEnum):
     """Modes of handling the query, key and value projections
     in the self-attention layer.
 
-    ``SEPARATE`` - Use separate projections for query, key and value.
-    ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query, key and value, and split heads before chunking.
-    ``MERGED_SPLIT_AFTER`` - Use a merged projection for query, key and value, and split heads after chunking.
+    - ``SEPARATE`` - Use separate projections for query, key and value.
+    - ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query, key and value, and split heads before splitting the query, key and value representations.
+    - ``MERGED_SPLIT_AFTER`` - Use a merged projection for query, key and value, and split heads after splitting the query, key and value representations.
     """
 
     SEPARATE = (0,)

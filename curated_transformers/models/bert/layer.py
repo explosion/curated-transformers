@@ -2,9 +2,9 @@ from typing import Optional
 
 import torch
 from torch import Tensor
-from torch.nn import Linear, Module
+from torch.nn import Module
 
-from ..attention import AttentionMask, SelfAttention
+from ..attention import AttentionMask, QkvMode, SelfAttention
 from ..feedforward import PointwiseFeedForward
 from .config import BertAttentionConfig, BertLayerConfig
 
@@ -23,7 +23,7 @@ class BertEncoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
-            qkv_mode=attention_config.qkv_mode,
+            qkv_mode=QkvMode.SEPARATE,
             device=device,
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(

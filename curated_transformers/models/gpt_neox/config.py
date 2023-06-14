@@ -20,7 +20,6 @@ class GPTNeoXAttentionConfig:
         dropout_prob: float = 0.1,
         hidden_width: int = 2560,
         num_attention_heads: int = 32,
-        qkv_mode: QkvMode = QkvMode.MERGED_SPLIT_BEFORE,
         rotary_base=10000,
         rotary_fraction=0.25,
     ):
@@ -28,7 +27,6 @@ class GPTNeoXAttentionConfig:
         :param dropout_prob: Dropout to apply after attention.
         :param hidden_width: Hidden width of the transformer.
         :param num_attention_heads: Number of attention heads.
-        :param qkv_mode: Handling mode for query, key and value.
         :param rotary_base: Base in signifying the rotary embedding period.
         :param rotary_fraction: fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
@@ -37,7 +35,6 @@ class GPTNeoXAttentionConfig:
         self.dropout_prob = dropout_prob
         self.hidden_width = hidden_width
         self.num_attention_heads = num_attention_heads
-        self.qkv_mode = qkv_mode
         self.rotary_base = rotary_base
         self.rotary_fraction = rotary_fraction
 
@@ -165,7 +162,6 @@ class GPTNeoXConfig:
             dropout_prob=attention_probs_dropout_prob,
             hidden_width=hidden_width,
             num_attention_heads=num_attention_heads,
-            qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
             rotary_fraction=rotary_embedding_fraction,
             rotary_base=rotary_embedding_base,
         )

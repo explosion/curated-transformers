@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from ..attention import QkvMode
 from ..bert import BertAttentionConfig, BertConfig, BertEmbeddingConfig, BertLayerConfig
 
 
@@ -51,7 +50,6 @@ class AlbertConfig(BertConfig):
             hidden_width=hidden_width,
             num_attention_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
-            qkv_mode=QkvMode.SEPARATE,
         )
         self.layer = AlbertLayerConfig(
             hidden_width=hidden_width,

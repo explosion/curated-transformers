@@ -109,7 +109,6 @@ def load_model_from_checkpoints(
     def convert_and_load_state_dict(
         state_dict: Mapping[str, torch.Tensor], seen_keys: Set[str]
     ):
-
         converted = state_dict_converter(state_dict)
         if len(converted) == 0:
             return

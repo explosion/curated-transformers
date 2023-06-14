@@ -86,10 +86,11 @@ class TopKTransform(LogitsTransform):
 
 class TemperatureTransform(LogitsTransform):
     """
-    Apply temperature to the softmax distribution. Given the temperature *T*:
+    Apply temperature to the softmax distribution. Given the temperature *T*
+    and logits z(y|x):
 
     .. math::
-        p(y|x) = \frac{\mbox{exp}(\frac{z_i}{T})}{\sum_{y'=1}^N{\mbox{exp}(\frac{z_{y'}}{T})}}
+        p(y|x) = softmax(z(y|x)/T)
 
     For a temperature T:
 

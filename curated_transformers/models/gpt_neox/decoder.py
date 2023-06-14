@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
+from ...util.serde import DeserializationParamBucket
 from ..attention import AttentionMask, KeyValueCache
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
@@ -11,7 +12,6 @@ from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .layer import GPTNeoXDecoderLayer
-from ...util.serde import DeserializationParamBucket
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="GPTNeoXDecoder")

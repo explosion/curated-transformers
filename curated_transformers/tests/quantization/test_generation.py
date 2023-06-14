@@ -1,5 +1,6 @@
 import pytest
 import torch
+
 from curated_transformers._compat import has_bitsandbytes
 from curated_transformers.generation.config import GreedyGeneratorConfig
 from curated_transformers.generation.dolly_v2 import DollyV2Generator

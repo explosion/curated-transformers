@@ -1,13 +1,14 @@
 import math
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional, Protocol, Tuple, TypeVar
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .embeddings import RotaryEmbeddings
+from .embeddings import QueryKeyRotaryEmbeddings
+from .output import KeyValueCache
 
 
 class AttentionMask:
@@ -72,50 +73,6 @@ def apply_causal_mask(input: Tensor) -> Tensor:
     return torch.where(causal_mask, input, blocked_value)
 
 
-CacheProtocolSelf = TypeVar("CacheProtocolSelf", bound="CacheProtocol")
-
-
-class CacheProtocol(Protocol):
-    def filter_batch_items(self: CacheProtocolSelf, mask: Tensor) -> CacheProtocolSelf:
-        """
-        Filter batch sequences from the cache.
-
-        Sequences for which the mask is ``True`` are retained.
-
-        :param mask:
-            Mask of batch items to retain.
-            **Shape:** (batch,)
-        :returns:
-            Filtered items.
-        """
-        ...
-
-
-CacheT = TypeVar("CacheT", bound=CacheProtocol)
-
-
-@dataclass
-class KeyValueCache:
-    """Cache type for layers that cache keys and values."""
-
-    key: Tensor
-    value: Tensor
-
-    def filter_batch_items(self, mask: Tensor) -> "KeyValueCache":
-        if mask.ndim != 1:
-            raise ValueError(
-                f"Cache mask must be a 1D tensor, has {mask.ndim} dimensions."
-            )
-        if mask.size(0) != self.key.size(0):
-            raise ValueError(
-                f"Cache mask size ({mask.size(0)}) must match cache batch size ({self.key.size(0)})."
-            )
-        if mask.dtype != torch.bool:
-            raise ValueError(f"Cache mask dtype must be bool, was: {mask.dtype}.")
-
-        return KeyValueCache(key=self.key[mask], value=self.value[mask])
-
-
 class QkvMode(IntEnum):
     """Modes of handling the query, key and value projections
     in the self-attention layer.
@@ -145,9 +102,10 @@ class ScaledDotProductAttention(Module):
 
     def forward(
         self,
-        k: Tensor,
-        q: Tensor,
-        v: Tensor,
+        *,
+        query: Tensor,
+        key: Tensor,
+        value: Tensor,
         attention_mask: Optional[AttentionMask],
         use_causal_mask: bool,
     ) -> Tensor:
@@ -177,8 +135,8 @@ class ScaledDotProductAttention(Module):
                 "The attention mask must be a 2D-tensor of shape [batch, seq_len]"
             )
 
-        model_dim = k.shape[-1]
-        attn_scores = q @ k.transpose(-2, -1)
+        model_dim = key.shape[-1]
+        attn_scores = query @ key.transpose(-2, -1)
         attn_scores /= math.sqrt(model_dim)
 
         if use_causal_mask:
@@ -192,112 +150,28 @@ class ScaledDotProductAttention(Module):
             attn_scores = attention_mask.apply_logit_mask(attn_scores)
 
         attn_weights = attn_scores.softmax(dim=-1)
-        attn_values = self.dropout(attn_weights @ v)
+        attn_values = self.dropout(attn_weights @ value)
 
         return attn_values
 
 
-# https://www.tensorflow.org/text/tutorials/transformer#multi-head_attention
+@dataclass
+class RotaryEmbeddingConfig:
+    """
+    Configuration for rotary embeddings.
+
+    :param fraction: fraction of hidden width to apply rotary
+        embeddings to. Must be in [0,1].
+    :param base: Base in signifying the rotary embedding period.
+    """
+
+    fraction: float
+    base: int = 10000
+
+
 class SelfAttention(Module):
-    """Transformer self-attention layer (Vaswani et al., 2017)."""
-
-    def __init__(
-        self,
-        *,
-        dropout_prob: float,
-        hidden_width: int,
-        num_attention_heads: int,
-        qkv_mode: QkvMode,
-        device: Optional[torch.device] = None,
-    ):
-        """Construct a self-attention layer.
-
-        :param dropout_prob: Dropout to apply between the self-attention
-            and output layers.
-        :param hidden_width: Hidden width of the layer.
-        :param num_attention_heads: Number of attention heads.
-        :param qkv_mode: Handling mode for query, key and value.
-        :param device: Device on which the module is to be initialized.
-        """
-        super().__init__()
-
-        self.model_dim = hidden_width
-        self.num_heads = num_attention_heads
-        if self.model_dim % self.num_heads != 0:
-            raise ValueError(
-                f"The hidden width of the transformer ({self.model_dim}) must be "
-                f"divisible by the number of self-attention heads ({self.num_heads})"
-            )
-
-        self.dims_per_head = self.model_dim // self.num_heads
-        self.qkv_mode = qkv_mode
-        self.attention = ScaledDotProductAttention(
-            dropout_prob=dropout_prob,
-        )
-
-        if qkv_mode == QkvMode.SEPARATE:
-            self.query = Linear(self.model_dim, self.model_dim, device=device)
-            self.key = Linear(self.model_dim, self.model_dim, device=device)
-            self.value = Linear(self.model_dim, self.model_dim, device=device)
-        else:
-            self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
-        self.output = Linear(self.model_dim, self.model_dim, device=device)
-
-    def forward(
-        self,
-        x: Tensor,
-        attention_mask: Optional[AttentionMask],
-        use_causal_mask: bool = False,
-    ) -> Tensor:
-        """
-        Apply self-attention layer to the input.
-
-        :param x: Input to apply self-attention to.
-        :param attention_mask: Attention mask. Sequence elements for which the
-            corresponding mask element is set to ``False`` are ignored
-            in attention.
-        :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
-        :returns: Layer output.
-
-        Shapes:
-            x - (batch, seq_len, width)
-            attention_mask - (batch, seq_len)
-            output - (batch, seq_len, width)
-        """
-
-        if self.qkv_mode == QkvMode.SEPARATE:
-            q = self.query(x)
-            k = self.key(x)
-            v = self.value(x)
-
-            q = split_heads(q, self.num_heads)
-            k = split_heads(k, self.num_heads)
-            v = split_heads(v, self.num_heads)
-        elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
-            # Project query, key, and value all at once and then split. We do
-            # the projection this way to have the option of switching to fused
-            # PyTorch kernels in the future.
-            proj = self.input(x)
-            proj = split_heads(proj, self.num_heads)
-            q, k, v = proj.chunk(3, dim=-1)
-        else:
-            proj = self.input(x)
-            q, k, v = proj.chunk(3, dim=-1)
-
-            k = split_heads(k, self.num_heads)
-            q = split_heads(q, self.num_heads)
-            v = split_heads(v, self.num_heads)
-
-        # (batch, seq_len, width)
-        attn = combine_heads(self.attention(k, q, v, attention_mask, use_causal_mask))
-        out = self.output(attn)
-
-        return out
-
-
-class SelfAttentionWithRotaryEmbeddings(Module):
-    """Transformer self-attention layer with rotary position embeddings
-    (Su et al., 2021).
+    """
+    Transformer self-attention layer (Vaswani et al., 2017).
     """
 
     def __init__(
@@ -307,8 +181,7 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         hidden_width: int,
         num_attention_heads: int,
         qkv_mode: QkvMode,
-        rotary_fraction: float,
-        rotary_base: int = 10000,
+        rotary_embeds: Optional[RotaryEmbeddingConfig],
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer with rotary position embeddings.
@@ -318,9 +191,8 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         :param hidden_width: Hidden width of the layer.
         :param num_attention_heads: Number of attention heads.
         :param qkv_mode: Handling mode for query, key and value.
-        :param rotary_fraction: fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
-        :param rotary_base: Base in signifying the rotary embedding period.
+        :param rotary_embeds: Configuration for rotary embeddings, rotary
+            embeddings wil not be used when set to ``None``.
         :param device: Device on which the module is to be initialized.
         """
 
@@ -337,24 +209,28 @@ class SelfAttentionWithRotaryEmbeddings(Module):
         self.dims_per_head = self.model_dim // self.num_heads
         self.qkv_mode = qkv_mode
 
-        if not 0.0 <= rotary_fraction <= 1.0:
-            raise ValueError(
-                f"Rotary embedding fraction should be between 0.0 and 1.0 inclusive, was: {rotary_fraction}"
+        if rotary_embeds:
+            self.rotary_embeds = QueryKeyRotaryEmbeddings(
+                base=rotary_embeds.base,
+                fraction=rotary_embeds.fraction,
+                dims_per_head=self.dims_per_head,
             )
-        self.rotary_dims = int(rotary_fraction * self.dims_per_head)
-        self.rotary_embeds = RotaryEmbeddings(
-            width=self.rotary_dims, base=rotary_base, device=device
-        )
 
         self.attention = ScaledDotProductAttention(
             dropout_prob=dropout_prob,
         )
+
         if qkv_mode == QkvMode.SEPARATE:
             self.query = Linear(self.model_dim, self.model_dim, device=device)
             self.key = Linear(self.model_dim, self.model_dim, device=device)
             self.value = Linear(self.model_dim, self.model_dim, device=device)
         else:
-            self.input = Linear(self.model_dim, self.model_dim * 3, device=device)
+            self.input = Linear(
+                self.model_dim,
+                self.model_dim * 3,
+                device=device,
+            )
+
         self.output = Linear(self.model_dim, self.model_dim, device=device)
 
     def forward(
@@ -393,73 +269,76 @@ class SelfAttentionWithRotaryEmbeddings(Module):
             positions - (batch, seq_len)
         """
 
-        if self.qkv_mode == QkvMode.SEPARATE:
-            q = self.query(x)
-            k = self.key(x)
-            v = self.value(x)
+        query, key, value = self._query_key_value(x)
 
-            q = split_heads(q, self.num_heads)
-            k = split_heads(k, self.num_heads)
-            v = split_heads(v, self.num_heads)
-        elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
-            proj = self.input(x)
-            proj = split_heads(proj, self.num_heads)
-            q, k, v = proj.chunk(3, dim=-1)
-        else:
-            proj = self.input(x)
-            q, k, v = proj.chunk(3, dim=-1)
-
-            k = split_heads(k, self.num_heads)
-            q = split_heads(q, self.num_heads)
-            v = split_heads(v, self.num_heads)
-
-        dims_per_head = self.dims_per_head
-        rotary_dims = self.rotary_dims
-
-        if rotary_dims == dims_per_head:
-            # Fast path: we apply rotary embeddings the full key/query vectors.
-            k = self.rotary_embeds(k)
-            q = self.rotary_embeds(q)
-        else:
-            # Otherwise, split up key/query vectors, apply rotary embeddings
-            # and concatenate again.
-            k_rotary, k_rest = k.split([rotary_dims, dims_per_head - rotary_dims], -1)
-            q_rotary, q_rest = q.split([rotary_dims, dims_per_head - rotary_dims], -1)
-
-            # If a cache was provided, but no positions, assume that the
-            # positions of the current batch continue from the cache.
-            if cache is not None and positions is None:
-                cache_len = cache.key.size(-2)
-                seq_len = k.size(-2)
-                positions = torch.arange(
-                    cache_len,
-                    cache_len + seq_len,
-                    dtype=torch.long,  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
-                    device=k_rotary.device,
-                ).repeat(x.size(0), 1)
-
-            # Apply rotary embeddings.
-            k_rotary = self.rotary_embeds(k_rotary, positions=positions)
-            q_rotary = self.rotary_embeds(q_rotary, positions=positions)
-
-            q = torch.cat([q_rotary, q_rest], dim=-1)
-            k = torch.cat([k_rotary, k_rest], dim=-1)
+        if hasattr(self, "rotary_embeds"):
+            query, key = self.rotary_embeds(
+                query=query, key=key, cache=cache, positions=positions
+            )
 
         if cache is not None:
             cache_k = cache.key
             cache_v = cache.value
 
-            k = torch.cat([cache_k, k], dim=-2)
-            v = torch.cat([cache_v, v], dim=-2)
+            key = torch.cat([cache_k, key], dim=-2)
+            value = torch.cat([cache_v, value], dim=-2)
 
-        attn = combine_heads(self.attention(k, q, v, attention_mask, use_causal_mask))
+        attn = combine_heads(
+            self.attention(
+                query=query,
+                key=key,
+                value=value,
+                attention_mask=attention_mask,
+                use_causal_mask=use_causal_mask,
+            )
+        )
 
         output = self.output(attn)
 
         if store_cache:
-            return output, KeyValueCache(key=k, value=v)
+            return output, KeyValueCache(key=key, value=value)
         else:
             return output, None
+
+    def _query_key_value(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Compute query, key and value representations for the input.
+
+        :param x:
+            Input
+            **Shape:** (batch, seq_len, hidden_width)
+        :returns:
+            Query, key, value
+            **Shape:** (batch, head, seq_len, width_per_head)
+        """
+        if self.qkv_mode == QkvMode.SEPARATE:
+            query = self.query(x)
+            key = self.key(x)
+            value = self.value(x)
+
+            query = split_heads(query, self.num_heads)
+            key = split_heads(key, self.num_heads)
+            value = split_heads(value, self.num_heads)
+        elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
+            proj = self.input(x)
+            proj = split_heads(proj, self.num_heads)
+            query, key, value = proj.chunk(3, dim=-1)
+        else:
+            proj = self.input(x)
+            query, key, value = proj.split(
+                [
+                    self.num_heads * self.dims_per_head,
+                    self.num_heads * self.dims_per_head,
+                    self.num_heads * self.dims_per_head,
+                ],
+                dim=-1,
+            )
+
+            query = split_heads(query, self.num_heads)
+            key = split_heads(key, self.num_heads)
+            value = split_heads(value, self.num_heads)
+
+        return query, key, value
 
 
 def split_heads(x: Tensor, num_heads: int) -> Tensor:

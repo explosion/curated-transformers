@@ -4,10 +4,10 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ..attention import AttentionMask, KeyValueCache
+from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
-from ..output import ModelOutputWithCache
+from ..output import KeyValueCache, ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .layer import GPTNeoXDecoderLayer

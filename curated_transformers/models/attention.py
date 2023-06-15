@@ -174,6 +174,8 @@ class SelfAttention(Module):
     Transformer self-attention layer (Vaswani et al., 2017).
     """
 
+    rotary_embeds: Optional[QueryKeyRotaryEmbeddings]
+
     def __init__(
         self,
         *,
@@ -215,6 +217,8 @@ class SelfAttention(Module):
                 fraction=rotary_embeds.fraction,
                 dims_per_head=self.dims_per_head,
             )
+        else:
+            self.rotary_embeds = None
 
         self.attention = ScaledDotProductAttention(
             dropout_prob=dropout_prob,
@@ -271,7 +275,7 @@ class SelfAttention(Module):
 
         query, key, value = self._query_key_value(x)
 
-        if hasattr(self, "rotary_embeds"):
+        if self.rotary_embeds is not None:
             query, key = self.rotary_embeds(
                 query=query, key=key, cache=cache, positions=positions
             )

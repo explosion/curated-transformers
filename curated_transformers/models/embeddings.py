@@ -175,7 +175,7 @@ class QueryKeyRotaryEmbeddings(Module):
         representations.
 
         :param base: Base in signifying the rotary embedding period.
-        :param fraction: fraction of hidden width to apply rotary
+        :param fraction: Fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
         :param dims_per_head: Width of key and value heads.
         :param device: Device on which the module is to be initialized.

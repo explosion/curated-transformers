@@ -181,7 +181,7 @@ class SelfAttention(Module):
         hidden_width: int,
         num_attention_heads: int,
         qkv_mode: QkvMode,
-        rotary_embeds: Optional[RotaryEmbeddingConfig],
+        rotary_embeds: Optional[RotaryEmbeddingConfig] = None,
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer with rotary position embeddings.
@@ -192,7 +192,7 @@ class SelfAttention(Module):
         :param num_attention_heads: Number of attention heads.
         :param qkv_mode: Handling mode for query, key and value.
         :param rotary_embeds: Configuration for rotary embeddings, rotary
-            embeddings wil not be used when set to ``None``.
+            embeddings will not be used when set to ``None``.
         :param device: Device on which the module is to be initialized.
         """
 

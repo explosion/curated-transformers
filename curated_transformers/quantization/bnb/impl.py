@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn import Module, Parameter
 
 from ..._compat import bitsandbytes as bnb
-from ..._compat import has_bitsandbytes
+from ..._compat import has_bitsandbytes, has_bitsandbytes_linear_device
 from ...util.pytorch import ModuleIterator, apply_to_module
 from ...util.serde import TensorToParameterConverterT
 from .config import BitsAndBytesConfig, _4BitConfig, _8BitConfig
@@ -164,12 +164,7 @@ def _assert_bitsandbytes_installed():
         raise ValueError(
             "The `bitsandbytes` Python library is required for quantization support"
         )
-
-    # Ensure that we have the correct version (that exposes the `device` parameter).
-    try:
-        _ = bnb.nn.Linear8bitLt(1, 1, device=torch.device("cpu"))
-        _ = bnb.nn.Linear4bit(1, 1, device=torch.device("cpu"))
-    except TypeError:
+    elif not has_bitsandbytes_linear_device:
         raise ValueError(
             "The currently installed `bitsandbytes` library does not support "
             "passing device parameters to its modules. Refer to the readme "

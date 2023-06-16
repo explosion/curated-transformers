@@ -31,12 +31,17 @@ class PointwiseFeedForward(Module):
         hidden_act: str = "gelu",
         hidden_width: int = 768,
         intermediate_width: int = 3072,
+        use_bias: bool,
         device: Optional[torch.device] = None,
     ):
         super().__init__()
 
-        self.intermediate = Linear(hidden_width, intermediate_width, device=device)
-        self.output = Linear(intermediate_width, hidden_width, device=device)
+        self.intermediate = Linear(
+            hidden_width, intermediate_width, bias=use_bias, device=device
+        )
+        self.output = Linear(
+            intermediate_width, hidden_width, bias=use_bias, device=device
+        )
         if hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif hidden_act == "gelu":

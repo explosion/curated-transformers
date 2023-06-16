@@ -13,16 +13,16 @@ from ..attention import (
     SelfAttention,
 )
 from ..feedforward import PointwiseFeedForward
-from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
+from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
 
 
-class GPTNeoXDecoderLayer(Module):
-    """GPT-NeoX (Black et al, 2022) layer."""
+class RefinedWebModelDecoderLayer(Module):
+    """Refined Web Model (eg. Falcon) layer."""
 
     def __init__(
         self,
-        layer_config: GPTNeoXLayerConfig,
-        attention_config: GPTNeoXAttentionConfig,
+        layer_config: RefinedWebModelLayerConfig,
+        attention_config: RefinedWebModelAttentionConfig,
         *,
         device: Optional[torch.device] = None
     ):
@@ -35,15 +35,17 @@ class GPTNeoXDecoderLayer(Module):
 
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
-            qkv_head_sharing=QkvHeadSharing.NONE,
             hidden_width=attention_config.hidden_width,
+            qkv_head_sharing=QkvHeadSharing.KEY_VALUE
+            if attention_config.multi_query
+            else QkvHeadSharing.NONE,
             num_attention_heads=attention_config.num_attention_heads,
-            qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
             rotary_embeds=RotaryEmbeddingConfig(
-                fraction=attention_config.rotary_fraction,
                 base=attention_config.rotary_base,
+                fraction=attention_config.rotary_fraction,
             ),
-            use_bias=True,
+            qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
+            use_bias=attention_config.use_bias,
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
@@ -52,14 +54,11 @@ class GPTNeoXDecoderLayer(Module):
         )
 
         self.ffn = PointwiseFeedForward(
-            hidden_act=layer_config.hidden_act,
+            hidden_act="gelu",
             hidden_width=layer_config.hidden_width,
-            intermediate_width=layer_config.intermediate_width,
-            use_bias=True,
+            intermediate_width=4 * layer_config.hidden_width,
+            use_bias=layer_config.use_bias,
             device=device,
-        )
-        self.ffn_layer_norm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
@@ -72,12 +71,14 @@ class GPTNeoXDecoderLayer(Module):
         store_cache: bool = False,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
-        Apply the GPT-NeoX layer to the given piece hidden representations.
+        Apply the Refined Web Model layer to the given piece hidden representations.
 
         :param x: Hidden representations to apply the layer to.
+            **Shape:** (batch, seq_len, width)
         :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
+            **Shape:** (batch, seq_len)
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -87,13 +88,12 @@ class GPTNeoXDecoderLayer(Module):
         :param store_cache: Whether to cache the key/value representations for
             future reuse.
         :returns: Layer output.
-
-        Shapes:
-            x - (batch, seq_len, width)
-            attention_mask - (batch, seq_len)
         """
+        # NOTE: we currently only support parallel attention.
+        x_layer_norm = self.input_layer_norm(x)
+
         attn_out, cache = self.mha(
-            self.input_layer_norm(x),
+            x_layer_norm,
             attention_mask,
             cache=cache,
             store_cache=store_cache,
@@ -101,8 +101,6 @@ class GPTNeoXDecoderLayer(Module):
             use_causal_mask=True,
         )
         attn_out = self.attn_output_dropout(attn_out)
-        ffn_out = self.ffn(self.ffn_layer_norm(x))
-        ffn_out = self.ffn_output_dropout(ffn_out)
 
-        # Parallel attention & feed-forward, Section 2.1.2
-        return x + attn_out + ffn_out, cache
+        ffn_out = self.ffn(x_layer_norm)
+        return self.ffn_output_dropout(ffn_out + attn_out) + x, cache

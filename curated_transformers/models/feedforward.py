@@ -16,27 +16,32 @@ class PointwiseFeedForward(Module):
     the input to an intermediate width, g is a non-linear activation
     function and W_2 and b_2 transform the output of the activation back to
     the input width.
-
-    hidden_act (str): the activation function to apply, one of: "relu",
-        "gelu" or "gelu_new" (default: "gelu").
-    hidden_width (int): the input and output width of the layer.
-        (default: 768)
-    intermediate_width (int): the width of the projection to which the
-        non-linearity is applied. (default: 3072)
     """
 
     def __init__(
         self,
         *,
-        hidden_act: str = "gelu",
-        hidden_width: int = 768,
-        intermediate_width: int = 3072,
+        hidden_act: str,
+        hidden_width: int,
+        intermediate_width: int,
+        use_bias: bool,
         device: Optional[torch.device] = None,
     ):
+        """
+        :param hidden_act: The activation function to apply, one of: "relu",
+            "gelu" or "gelu_new".
+        :param hidden_width: The input and output width of the layer.
+        :param intermediate_width: The width of the projection to which the
+            non-linearity is applied.
+        """
         super().__init__()
 
-        self.intermediate = Linear(hidden_width, intermediate_width, device=device)
-        self.output = Linear(intermediate_width, hidden_width, device=device)
+        self.intermediate = Linear(
+            hidden_width, intermediate_width, bias=use_bias, device=device
+        )
+        self.output = Linear(
+            intermediate_width, hidden_width, bias=use_bias, device=device
+        )
         if hidden_act == "relu":
             self.activation = torch.nn.ReLU()  # type: ignore
         elif hidden_act == "gelu":

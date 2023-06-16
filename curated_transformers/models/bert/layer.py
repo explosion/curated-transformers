@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..attention import AttentionMask, QkvMode, SelfAttention
+from ..attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
 from ..feedforward import PointwiseFeedForward
 from .config import BertAttentionConfig, BertLayerConfig
 
@@ -22,9 +22,11 @@ class BertEncoderLayer(Module):
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
+            qkv_head_sharing=QkvHeadSharing.NONE,
             num_attention_heads=attention_config.num_attention_heads,
             qkv_mode=QkvMode.SEPARATE,
             rotary_embeds=None,
+            use_bias=True,
             device=device,
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(
@@ -35,6 +37,7 @@ class BertEncoderLayer(Module):
             hidden_act=layer_config.hidden_act,
             hidden_width=layer_config.hidden_width,
             intermediate_width=layer_config.intermediate_width,
+            use_bias=True,
             device=device,
         )
         self.ffn_output_layernorm = torch.nn.LayerNorm(

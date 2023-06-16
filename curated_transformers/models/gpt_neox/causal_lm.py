@@ -1,9 +1,10 @@
-from typing import Any, List, Mapping, Optional, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Set, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Linear
 
+from ...quantization import Quantizable
 from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
@@ -16,7 +17,9 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
+class GPTNeoXCausalLM(
+    CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quantizable
+):
     """GPT-NeoX (Black et al, 2022) causal language model."""
 
     def __init__(
@@ -73,3 +76,8 @@ class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
     ) -> Self:
         config = convert_hf_config(hf_config)
         return cls(config, device=device)
+
+    @classmethod
+    def modules_to_not_quantize(cls) -> Set[str]:
+        # Ignore the LM head.
+        return {"output_embeddings"}

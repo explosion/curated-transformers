@@ -4,6 +4,7 @@ from typing import List, Optional, Type, TypeVar
 import torch
 
 from ..models.refined_web_model.causal_lm import RefinedWebModelCausalLM
+from ..quantization.bnb.config import BitsAndBytesConfig
 from ..tokenization.chunks import InputChunks, TextChunk
 from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
 from .config import GeneratorConfig
@@ -41,11 +42,15 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
         *,
         name: str,
         revision: str = "main",
-        device: Optional[torch.device] = None
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
         tokenizer = GPTNeoXTokenizer.from_hf_hub(name=name, revision=revision)
         causal_lm = RefinedWebModelCausalLM.from_hf_hub(
-            name=name, revision=revision, device=device
+            name=name,
+            revision=revision,
+            device=device,
+            quantization_config=quantization_config,
         )
         return cls(tokenizer, causal_lm)
 

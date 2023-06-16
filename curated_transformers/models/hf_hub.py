@@ -7,6 +7,7 @@ from huggingface_hub import hf_hub_download
 from requests import HTTPError  # type: ignore
 from torch import Tensor
 
+from ..quantization import BitsAndBytesConfig, prepare_module_for_quantization
 from ..util.serde import load_model_from_checkpoints
 
 HF_MODEL_CONFIG = "config.json"
@@ -68,6 +69,7 @@ class FromPretrainedHFModel(ABC):
         revision: str = "main",
         *,
         device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
         """Construct a module and load its parameters from Hugging Face Hub.
 
@@ -77,6 +79,8 @@ class FromPretrainedHFModel(ABC):
             Model revision.
         :param device:
             Device on which to initialize the model.
+        :param quantization_config:
+            Configuration for loading quantized weights.
         :returns:
             Module with the parameters loaded.
         """
@@ -95,12 +99,19 @@ class FromPretrainedHFModel(ABC):
                 raise ValueError(f"Invalid torch dtype `{dtype_str}`")
             model.to(dtype=dtype)
 
+        # Prepare for quantization.
+        if quantization_config is not None:
+            tensor2param = prepare_module_for_quantization(model, quantization_config)  # type: ignore
+        else:
+            tensor2param = None
+
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames = _get_model_checkpoint_filepaths(name, revision)
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,
             state_dict_converter=cls.convert_hf_state_dict,
+            tensor_to_param_converter=tensor2param,
             device=device,
         )
 

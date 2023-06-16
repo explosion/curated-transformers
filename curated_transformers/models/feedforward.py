@@ -28,10 +28,10 @@ class PointwiseFeedForward(Module):
         device: Optional[torch.device] = None,
     ):
         """
-        :param hidden_act: the activation function to apply, one of: "relu",
+        :param hidden_act: The activation function to apply, one of: "relu",
             "gelu" or "gelu_new".
-        :param hidden_width: the input and output width of the layer.
-        :param intermediate_width: the width of the projection to which the
+        :param hidden_width: The input and output width of the layer.
+        :param intermediate_width: The width of the projection to which the
             non-linearity is applied.
         """
         super().__init__()

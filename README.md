@@ -24,3 +24,13 @@ change in incompatible ways.
 ```bash
 pip install curated-transformers
 ```
+
+## Quantization
+
+`curated-transformers` implements dynamic 8-bit and 4-bit quantization of models by leveraging the [`bitsandbytes` library](https://github.com/TimDettmers/bitsandbytes).
+
+### Installation
+
+Since `curated-transformers` requires functionality that isn't currently present in `bitsandbytes` (as of `v0.39.0`), one needs to install the library
+from source by cloning the [following branch](https://github.com/shadeMe/bitsandbytes/tree/linear-layer-device) of our fork. Installation instructions
+can be found [here](https://github.com/shadeMe/bitsandbytes/blob/linear-layer-device/compile_from_source.md).

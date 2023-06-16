@@ -31,9 +31,9 @@ class RefinedWebModelAttentionConfig:
             value heads.
         :param num_attention_heads: Number of attention heads.
         :param rotary_base: Base in signifying the rotary embedding period.
-        :param rotary_fraction: fraction of hidden width to apply rotary
+        :param rotary_fraction: Fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
-        :param use_bias: use bias in linear layers.
+        :param use_bias: Use bias in linear layers.
         """
 
         self.dropout_prob = dropout_prob
@@ -99,7 +99,7 @@ class RefinedWebModelLayerConfig:
         :param hidden_width: Hidden width of the transformer.
         :param layer_norm_eps: Epsilon for layer normalization.
         :param num_hidden_layers: Number of hidden layers.
-        :param use_bias: use bias in linear layers.
+        :param use_bias: Use bias in linear layers.
         """
 
         self.dropout_prob = dropout_prob
@@ -143,7 +143,7 @@ class RefinedWebModelConfig:
         :param rotary_embedding_base: Base in signifying the rotary embedding period.
         :param rotary_embedding_fraction: Fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
-        :param use_bias: use bias in linear layers.
+        :param use_bias: Use bias in linear layers.
         :param vocab_size: Vocabulary size (number of embeddings).
         """
 

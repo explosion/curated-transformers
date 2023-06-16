@@ -71,7 +71,7 @@ class RefinedWebModelDecoderLayer(Module):
         store_cache: bool = False,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
-        Apply the GPT-NeoX layer to the given piece hidden representations.
+        Apply the Refined Web Model layer to the given piece hidden representations.
 
         :param x: Hidden representations to apply the layer to.
         :param attention_mask: Attention mask. Sequence elements for which the

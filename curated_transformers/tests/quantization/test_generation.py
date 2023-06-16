@@ -41,7 +41,7 @@ def dolly_generator_4_bit():
 
 def _check_quantized_generator_output(output, expected_keywords):
     # Due the inherent non-determinism of executing low-bit quantized modules on
-    # different GPUs (which use different kernels), we can't reliably expect the
+    # different GPUs (which can use different kernels), we can't reliably expect the
     # output to match a string verbatim. So, we'll just look for specific, low-frequency
     # keywords as a way to detect if gibberish/irrelevant text is being generated.
     for output, keywords in zip(output, expected_keywords):

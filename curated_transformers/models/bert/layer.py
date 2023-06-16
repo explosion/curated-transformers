@@ -24,6 +24,7 @@ class BertEncoderLayer(Module):
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
             qkv_mode=QkvMode.SEPARATE,
+            rotary_embeds=None,
             device=device,
         )
         self.attn_output_layernorm = torch.nn.LayerNorm(
@@ -47,7 +48,7 @@ class BertEncoderLayer(Module):
             x - (batch, seq_len, width)
             attention_mask - (batch, seq_len)
         """
-        attn_out = self.mha(x, attention_mask)
+        attn_out, _ = self.mha(x, attention_mask)
         attn_out = self.attn_output_dropout(attn_out)
         attn_out = self.attn_output_layernorm(x + attn_out)
 

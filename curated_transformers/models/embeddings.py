@@ -1,9 +1,11 @@
 import math
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn import Module
+
+from .output import KeyValueCache
 
 
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
@@ -155,3 +157,99 @@ class RotaryEmbeddings(Module):
 
         # Eq 34 with ordering changed for compatibility.
         return rot_cos * input + rot_sin * self._rotate(input)
+
+
+class QueryKeyRotaryEmbeddings(Module):
+    """Rotary embeddings applied to key and value representations"""
+
+    def __init__(
+        self,
+        *,
+        base: int = 10000,
+        fraction: float,
+        dims_per_head: int,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        """
+        Construct rotary embeddings for transforming key and value
+        representations.
+
+        :param base: Base in signifying the rotary embedding period.
+        :param fraction: Fraction of hidden width to apply rotary
+            embeddings to. Must be in [0,1].
+        :param dims_per_head: Width of key and value heads.
+        :param device: Device on which the module is to be initialized.
+        """
+        super().__init__()
+        if not 0.0 <= fraction <= 1.0:
+            raise ValueError(
+                f"Rotary embedding fraction should be between 0.0 and 1.0 inclusive, was: {fraction}"
+            )
+        self.rotary_dims = int(fraction * dims_per_head)
+        self.dims_per_head = dims_per_head
+        self.rotary_embeds = RotaryEmbeddings(
+            width=self.rotary_dims, base=base, device=device
+        )
+
+    def forward(
+        self,
+        *,
+        query: Tensor,
+        key: Tensor,
+        cache: Optional[KeyValueCache] = None,
+        positions: Optional[Tensor] = None,
+    ) -> Tuple[Tensor, Tensor]:
+        """
+        Apply rotary embeddings to the query and key.
+
+        :param query:
+            Query representations.
+            **Shape:** (batch, head, seq_len, width_per_head)
+        :param key:
+            Key representations.
+            **Shape:** (batch, head, seq_len, width_per_head)
+        :param cache: Key/value cache to avoid recomputing
+            key/value representations for tokens that were previously seen.
+        :param positions: Input positions. Positions are needed to
+            look up rotary embeddings. Normally, these positions are calculated
+            automatically. But if the positions deviate for some reason, they
+            can be provided through this argument.
+        :returns:
+            Query and key with the rotary embeddings applied.
+            **Shape:** (batch, head, seq_len, width_per_head)
+        """
+        dims_per_head = self.dims_per_head
+        rotary_dims = self.rotary_dims
+
+        # If a cache was provided, but no positions, assume that the
+        # positions of the current batch continue from the cache.
+        if cache is not None and positions is None:
+            cache_len = cache.key.size(-2)
+            seq_len = key.size(-2)
+            positions = torch.arange(
+                cache_len,
+                cache_len + seq_len,
+                dtype=torch.long,  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
+                device=key.device,
+            ).repeat(key.size(0), 1)
+
+        if rotary_dims == dims_per_head:
+            # Fast path: we apply rotary embeddings the full key/query vectors.
+            key = self.rotary_embeds(key, positions=positions)
+            query = self.rotary_embeds(query, positions=positions)
+        else:
+            # Otherwise, split up key/query vectors, apply rotary embeddings
+            # and concatenate again.
+            k_rotary, k_rest = key.split([rotary_dims, dims_per_head - rotary_dims], -1)
+            q_rotary, q_rest = query.split(
+                [rotary_dims, dims_per_head - rotary_dims], -1
+            )
+
+            # Apply rotary embeddings.
+            k_rotary = self.rotary_embeds(k_rotary, positions=positions)
+            q_rotary = self.rotary_embeds(q_rotary, positions=positions)
+
+            query = torch.cat([q_rotary, q_rest], dim=-1)
+            key = torch.cat([k_rotary, k_rest], dim=-1)
+
+        return query, key

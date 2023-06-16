@@ -3,7 +3,7 @@ from typing import Generic, List, Optional, Tuple
 import torch
 from torch import Tensor
 
-from ..models.attention import CacheT
+from ..models.output import CacheT
 from .stop_conditions import StopCondition
 
 

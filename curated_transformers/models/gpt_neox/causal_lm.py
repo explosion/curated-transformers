@@ -5,10 +5,10 @@ from torch import Tensor
 from torch.nn import Linear
 
 from ...quantization import Quantizable
-from ..attention import AttentionMask, KeyValueCache
+from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
-from ..output import CausalLMOutputWithCache
+from ..output import CausalLMOutputWithCache, KeyValueCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder

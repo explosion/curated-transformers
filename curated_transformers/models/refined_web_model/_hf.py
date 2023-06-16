@@ -56,8 +56,6 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
         if "rotary_emb" in name or "attention.bias" in name or "masked_bias" in name:
             continue
 
-        name = name.replace("gpt_neox", "decoder")
-
         name = re.sub(r"^h\.", "layers.", name)
         name = re.sub(r"decoder\.h\.", "decoder.layers.", name)
 

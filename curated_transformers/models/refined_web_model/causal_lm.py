@@ -17,7 +17,7 @@ Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
 
 
 class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
-    """GPT-NeoX (Black et al, 2022) causal language model."""
+    """Refined Web Model (eg. Falcon) causal language model."""
 
     def __init__(
         self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None

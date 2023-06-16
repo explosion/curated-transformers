@@ -17,6 +17,8 @@ Self = TypeVar("Self", bound="RefinedWebModelDecoder")
 
 
 class RefinedWebModelDecoder(DecoderModule, FromPretrainedHFModel):
+    """Refined Web Model (eg. Falcon) decoder."""
+
     def __init__(
         self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
     ) -> None:
@@ -53,7 +55,7 @@ class RefinedWebModelDecoder(DecoderModule, FromPretrainedHFModel):
         store_cache: bool = False,
     ) -> ModelOutputWithCache[KeyValueCache]:
         """
-        Apply the GPT-NeoX decoder to the given piece identifiers.
+        Apply the Refined Web Model decoder to the given piece identifiers.
 
         :param input_ids: Piece identifiers to apply the decoder to.
         :param attention_mask: Attention mask. Sequence elements for which the

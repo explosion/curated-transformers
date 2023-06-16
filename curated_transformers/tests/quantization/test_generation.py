@@ -1,12 +1,24 @@
+from copy import deepcopy
+
 import pytest
 import torch
-
 from curated_transformers._compat import has_bitsandbytes
 from curated_transformers.generation.config import GreedyGeneratorConfig
 from curated_transformers.generation.dolly_v2 import DollyV2Generator
 from curated_transformers.quantization import BitsAndBytesConfig
 
 from ..conftest import GPU_TESTS_ENABLED
+
+PROMPTS_AND_KEYWORDS = [
+    [
+        "What is the Rust programming language?",
+        "What is spaCy?",
+    ],
+    [
+        ["Rust", "multi-paradigm", "language", "design"],
+        ["SpaCy", "NLP", "library", "Python"],
+    ],
+]
 
 
 @pytest.fixture(scope="module")
@@ -27,60 +39,51 @@ def dolly_generator_4_bit():
     )
 
 
+def _check_quantized_generator_output(output, expected_keywords):
+    # Due the inherent non-determinism of executing low-bit quantized modules on
+    # different GPUs (which use different kernels), we can't reliably expect the
+    # output to match a string verbatim. So, we'll just look for specific, low-frequency
+    # keywords as a way to detect if gibberish/irrelevant text is being generated.
+    for output, keywords in zip(output, expected_keywords):
+        assert all(keyword in output for keyword in keywords)
+
+
 @pytest.mark.veryslow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 @pytest.mark.skipif(not has_bitsandbytes, reason="requires bitsandbytes")
 def test_8_bit_quantization(dolly_generator_8_bit):
-    prompts = [
-        "What is the Rust programming language?",
-        "What is spaCy?",
-    ]
-    expected = [
-        "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is designed to have a small, consistent, and predictable set of language features that together provide a high-level of productivity and reliability. Rust's",
-        "SpaCy is an open-source library for natural language processing (NLP) and language understanding (LU) on the web. It is designed to be fast, scalable, and easy to use.\n\n",
-    ]
+    prompts = deepcopy(PROMPTS_AND_KEYWORDS[0])
+    expected = deepcopy(PROMPTS_AND_KEYWORDS[1])
     generated = dolly_generator_8_bit(
         prompts, config=GreedyGeneratorConfig(max_generated_pieces=50)
     )
-    assert generated == expected
+    _check_quantized_generator_output(generated, expected)
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
+    prompts = prompts[::-1]
     expected = expected[::-1]
     generated = dolly_generator_8_bit(
         prompts, config=GreedyGeneratorConfig(max_generated_pieces=50)
     )
-    assert generated == expected
+    _check_quantized_generator_output(generated, expected)
 
 
 @pytest.mark.veryslow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 @pytest.mark.skipif(not has_bitsandbytes, reason="requires bitsandbytes")
 def test_4_bit_quantization(dolly_generator_4_bit):
-    prompts = [
-        "What is the Rust programming language?",
-        "What is spaCy?",
-    ]
-    expected = [
-        "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is a compiled language, but unlike other compiled languages, Rust guarantees memory safety, which means that all memory accesses are guaranteed to be valid.",
-        "SpaCy is an NLP library for the Python programming language. It is developed by the spacy team at IST Austria.\n\n",
-    ]
+    prompts = deepcopy(PROMPTS_AND_KEYWORDS[0])
+    expected = deepcopy(PROMPTS_AND_KEYWORDS[1])
     generated = dolly_generator_4_bit(
         prompts, config=GreedyGeneratorConfig(max_generated_pieces=50)
     )
-    assert generated == expected
+    _check_quantized_generator_output(generated, expected)
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
+    prompts = prompts[::-1]
     expected = expected[::-1]
     generated = dolly_generator_4_bit(
         prompts, config=GreedyGeneratorConfig(max_generated_pieces=50)
     )
-    assert generated == expected
+    _check_quantized_generator_output(generated, expected)
 
 
 @pytest.mark.veryslow

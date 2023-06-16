@@ -16,6 +16,20 @@ def prepare_for_quantization(
     config: BitsAndBytesConfig,
     non_quantizable_module_prefixes: Set[str],
 ) -> Optional[TensorToParameterConverterT]:
+    """Prepares a PyTorch module for quantization using the ``bitsandbytes``
+    library.
+
+    :param module:
+        Module to prepare for quantization.
+    :param config:
+        ``bitsandbytes`` quantization configuration.
+    :param non_quantizable_module_prefixes:
+        Set of module prefixes that should not be quantized.
+    :returns:
+        An optional callback for converting non-quantized tensors
+        to parameters that are compatible with the ``bitsandbytes``
+        quantization backend.
+    """
     _assert_bitsandbytes_installed()
 
     # All inputs to quantized layers need to be of type `float16`.

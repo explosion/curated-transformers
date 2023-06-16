@@ -101,6 +101,11 @@ jobs:
           echo "version=$(python -m pip show transformers | grep -i version:)" >> $GITHUB_OUTPUT
         shell: bash
 
+      # Upstream Refined Web Model imports this, but doesn't use it. 😭
+      - name: Install einops
+        run: |
+          python -m pip install einops
+
       # Disabled for Windows as the models appear to
       # be stored at a non-standard location.
       - name: Cache HF pre-trained models

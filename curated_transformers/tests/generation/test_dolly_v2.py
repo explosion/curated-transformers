@@ -24,19 +24,17 @@ def test_generate_deterministic(dolly_generator):
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
-    assert dolly_generator(prompts, config=GreedyGeneratorConfig()) == [
+    answers = [
         "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is designed to have a small, stable, and fast implementation. Rust is also designed to be easy to learn. Rust is intended to be used for writing fast, reliable, and portable code.\n\n",
         "SpaCy is an open-source natural language processing (NLP) library for Python. It is designed to be fast, scalable, and easy to use.\n\n",
     ]
+    assert dolly_generator(prompts, config=GreedyGeneratorConfig()) == answers
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
-    assert dolly_generator(prompts, config=GreedyGeneratorConfig()) == [
-        "SpaCy is an open-source natural language processing (NLP) library for Python. It is designed to be fast, scalable, and easy to use.\n\n",
-        "Rust is a multi-paradigm, high-level, general-purpose programming language. Rust is designed to have a small, stable, and fast implementation. Rust is also designed to be easy to learn. Rust is intended to be used for writing fast, reliable, and portable code.\n\n",
-    ]
+    # Test in reverse order to verify that sequence identifiers are
+    # handled correctly.
+    assert (
+        dolly_generator(prompts[::-1], config=GreedyGeneratorConfig()) == answers[::-1]
+    )
 
 
 @pytest.mark.veryslow
@@ -46,23 +44,23 @@ def test_generate_max_generated_pieces(dolly_generator):
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
-    assert dolly_generator(
-        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
-    ) == [
+    answers = [
         "Rust is a multi-paradigm,",
         "SpaCy is an open-source natural language",
     ]
+    assert (
+        dolly_generator(prompts, config=GreedyGeneratorConfig(max_generated_pieces=10))
+        == answers
+    )
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
-    assert dolly_generator(
-        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
-    ) == [
-        "SpaCy is an open-source natural language",
-        "Rust is a multi-paradigm,",
-    ]
+    # Test in reverse order to verify that sequence identifiers are
+    # handled correctly.
+    assert (
+        dolly_generator(
+            prompts[::-1], config=GreedyGeneratorConfig(max_generated_pieces=10)
+        )
+        == answers[::-1]
+    )
 
 
 @pytest.mark.veryslow

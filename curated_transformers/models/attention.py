@@ -73,6 +73,17 @@ def apply_causal_mask(input: Tensor) -> Tensor:
     return torch.where(causal_mask, input, blocked_value)
 
 
+class QkvHeadSharing(IntEnum):
+    """Sharing of head parameters."""
+
+    #: No parameters are shared between heads.
+    NONE = 0
+
+    #: Key shares heads, value shares heads, query has separate heads.
+    #: See Shazeer, 2019: https://arxiv.org/abs/1911.02150
+    KEY_VALUE = 1
+
+
 class QkvMode(IntEnum):
     """Modes of handling the query, key and value projections
     in the self-attention layer.
@@ -180,16 +191,19 @@ class SelfAttention(Module):
         self,
         *,
         dropout_prob: float,
+        qkv_head_sharing: QkvHeadSharing,
         hidden_width: int,
         num_attention_heads: int,
         qkv_mode: QkvMode,
         rotary_embeds: Optional[RotaryEmbeddingConfig] = None,
+        use_bias: bool,
         device: Optional[torch.device] = None,
     ):
         """Construct a self-attention layer with rotary position embeddings.
 
         :param dropout_prob: Dropout to apply between the self-attention
             and output layers.
+        :param qkv_head_sharing: Head sharing in query, key and value.
         :param hidden_width: Hidden width of the layer.
         :param num_attention_heads: Number of attention heads.
         :param qkv_mode: Handling mode for query, key and value.
@@ -224,18 +238,40 @@ class SelfAttention(Module):
             dropout_prob=dropout_prob,
         )
 
+        if (
+            qkv_mode == QkvMode.MERGED_SPLIT_BEFORE
+            and qkv_head_sharing == QkvHeadSharing.KEY_VALUE
+        ):
+            raise ValueError(
+                "QkvMode.MERGED_SPLIT_BEFORE is incompatible with key/value head sharing"
+            )
+        self.head_sharing = qkv_head_sharing
+
+        # Head sharing is implemented as just having one head. We will still
+        # have multiple heads after attention, because the value has multiple
+        # heads, so attention will broadcast.
+        kv_dim = (
+            self.dims_per_head
+            if qkv_head_sharing == QkvHeadSharing.KEY_VALUE
+            else self.model_dim
+        )
         if qkv_mode == QkvMode.SEPARATE:
-            self.query = Linear(self.model_dim, self.model_dim, device=device)
-            self.key = Linear(self.model_dim, self.model_dim, device=device)
-            self.value = Linear(self.model_dim, self.model_dim, device=device)
+            self.query = Linear(
+                self.model_dim, self.model_dim, bias=use_bias, device=device
+            )
+            self.key = Linear(self.model_dim, kv_dim, bias=use_bias, device=device)
+            self.value = Linear(self.model_dim, kv_dim, bias=use_bias, device=device)
         else:
             self.input = Linear(
                 self.model_dim,
-                self.model_dim * 3,
+                self.model_dim + 2 * kv_dim,
+                bias=use_bias,
                 device=device,
             )
 
-        self.output = Linear(self.model_dim, self.model_dim, device=device)
+        self.output = Linear(
+            self.model_dim, self.model_dim, bias=use_bias, device=device
+        )
 
     def forward(
         self,
@@ -315,14 +351,17 @@ class SelfAttention(Module):
             Query, key, value
             **Shape:** (batch, head, seq_len, width_per_head)
         """
+        kv_heads = (
+            1 if self.head_sharing == QkvHeadSharing.KEY_VALUE else self.num_heads
+        )
         if self.qkv_mode == QkvMode.SEPARATE:
             query = self.query(x)
             key = self.key(x)
             value = self.value(x)
 
             query = split_heads(query, self.num_heads)
-            key = split_heads(key, self.num_heads)
-            value = split_heads(value, self.num_heads)
+            key = split_heads(key, kv_heads)
+            value = split_heads(value, kv_heads)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
             proj = self.input(x)
             proj = split_heads(proj, self.num_heads)
@@ -332,15 +371,15 @@ class SelfAttention(Module):
             query, key, value = proj.split(
                 [
                     self.num_heads * self.dims_per_head,
-                    self.num_heads * self.dims_per_head,
-                    self.num_heads * self.dims_per_head,
+                    kv_heads * self.dims_per_head,
+                    kv_heads * self.dims_per_head,
                 ],
                 dim=-1,
             )
 
             query = split_heads(query, self.num_heads)
-            key = split_heads(key, self.num_heads)
-            value = split_heads(value, self.num_heads)
+            key = split_heads(key, kv_heads)
+            value = split_heads(value, kv_heads)
 
         return query, key, value
 

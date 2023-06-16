@@ -2,7 +2,7 @@ from typing import Generic, Iterable, List
 
 from curated_transformers.generation.config import GeneratorConfig
 
-from ..models.attention import CacheT
+from ..models.output import CacheT
 from ..tokenization.chunks import InputChunks
 from ..tokenization.tokenizer import Tokenizer
 from .generator import Generator

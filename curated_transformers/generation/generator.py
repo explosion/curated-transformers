@@ -11,9 +11,9 @@ from curated_transformers.generation.config import (
 )
 from curated_transformers.generation.logits import LogitsTransform
 
-from ..models.attention import AttentionMask, CacheT
+from ..models.attention import AttentionMask
 from ..models.module import CausalLMModule
-from ..models.output import CausalLMOutputWithCache
+from ..models.output import CacheT, CausalLMOutputWithCache
 from .state import GeneratorState
 
 

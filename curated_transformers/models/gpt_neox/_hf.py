@@ -65,7 +65,7 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
         name = re.sub(r"\.dense_4h_to_h", r".output", name)
 
         # Layer norms
-        name = re.sub(r"\.input_layernorm", r".mha_layer_norm", name)
+        name = re.sub(r"\.input_layernorm", r".input_layer_norm", name)
         name = re.sub(r"\.post_attention_layernorm", r".ffn_layer_norm", name)
         name = re.sub(r"final_layer_norm\.", r"output_layer_norm.", name)
 

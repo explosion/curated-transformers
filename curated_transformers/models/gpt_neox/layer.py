@@ -8,7 +8,8 @@ from ..attention import (
     AttentionMask,
     KeyValueCache,
     QkvMode,
-    SelfAttentionWithRotaryEmbeddings,
+    RotaryEmbeddingConfig,
+    SelfAttention,
 )
 from ..feedforward import PointwiseFeedForward
 from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
@@ -31,17 +32,19 @@ class GPTNeoXDecoderLayer(Module):
         """
         super().__init__()
 
-        self.mha = SelfAttentionWithRotaryEmbeddings(
+        self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
             num_attention_heads=attention_config.num_attention_heads,
             qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
-            rotary_fraction=attention_config.rotary_fraction,
-            rotary_base=attention_config.rotary_base,
+            rotary_embeds=RotaryEmbeddingConfig(
+                fraction=attention_config.rotary_fraction,
+                base=attention_config.rotary_base,
+            ),
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
-        self.mha_layer_norm = torch.nn.LayerNorm(
+        self.input_layer_norm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
 
@@ -86,7 +89,7 @@ class GPTNeoXDecoderLayer(Module):
             attention_mask - (batch, seq_len)
         """
         attn_out, cache = self.mha(
-            self.mha_layer_norm(x),
+            self.input_layer_norm(x),
             attention_mask,
             cache=cache,
             store_cache=store_cache,

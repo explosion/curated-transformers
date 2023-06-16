@@ -10,7 +10,7 @@ Attention
 .. autoclass:: curated_transformers.models.attention.AttentionMask
    :members:
 
-.. autoclass:: curated_transformers.models.attention.KeyValueCache
+.. autoclass:: curated_transformers.models.output.KeyValueCache
    :members:
 
 .. autoclass:: curated_transformers.models.attention.ScaledDotProductAttention

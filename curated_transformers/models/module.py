@@ -4,8 +4,8 @@ from typing import Generic, List, Optional
 from torch import Tensor
 from torch.nn import Module
 
-from .attention import AttentionMask, CacheT
-from .output import CausalLMOutputWithCache
+from .attention import AttentionMask
+from .output import CacheT, CausalLMOutputWithCache
 
 
 class CausalLMModule(Generic[CacheT], Module):

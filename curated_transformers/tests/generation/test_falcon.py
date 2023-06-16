@@ -24,19 +24,17 @@ def test_generate_deterministic(falcon_generator):
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
-    assert falcon_generator(prompts, config=GreedyGeneratorConfig()) == [
+    answers = [
         "Rust is a programming language that is designed to be a safe, concurrent, and efficient replacement for C++. It is a statically-typed language that is designed to be memory-safe and thread-safe, making it a good choice for developing high-performance applications.",
         "spaCy is a Python library for natural language processing. It is designed to be easy to use and highly customizable, making it a great tool for developers and researchers.",
     ]
+    assert falcon_generator(prompts, config=GreedyGeneratorConfig()) == answers
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
-    assert falcon_generator(prompts, config=GreedyGeneratorConfig()) == [
-        "spaCy is a Python library for natural language processing. It is designed to be easy to use and highly customizable, making it a great tool for developers and researchers.",
-        "Rust is a programming language that is designed to be a safe, concurrent, and efficient replacement for C++. It is a statically-typed language that is designed to be memory-safe and thread-safe, making it a good choice for developing high-performance applications.",
-    ]
+    # Test in reverse order to verify that sequence identifiers are
+    # handled correctly.
+    assert (
+        falcon_generator(prompts[::-1], config=GreedyGeneratorConfig()) == answers[::-1]
+    )
 
 
 @pytest.mark.veryslow
@@ -46,23 +44,23 @@ def test_generate_max_generated_pieces(falcon_generator):
         "What is the Rust programming language?",
         "What is spaCy?",
     ]
-    assert falcon_generator(
-        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
-    ) == [
+    answers = [
         "Rust is a programming language that is designed to",
         "spaCy is a Python library for natural language",
     ]
+    assert (
+        falcon_generator(prompts, config=GreedyGeneratorConfig(max_generated_pieces=10))
+        == answers
+    )
 
-    prompts = [
-        "What is spaCy?",
-        "What is the Rust programming language?",
-    ]
-    assert falcon_generator(
-        prompts, config=GreedyGeneratorConfig(max_generated_pieces=10)
-    ) == [
-        "spaCy is a Python library for natural language",
-        "Rust is a programming language that is designed to",
-    ]
+    # Test in reverse order to verify that sequence identifiers are
+    # handled correctly.
+    assert (
+        falcon_generator(
+            prompts[::-1], config=GreedyGeneratorConfig(max_generated_pieces=10)
+        )
+        == answers[::-1]
+    )
 
 
 @pytest.mark.veryslow

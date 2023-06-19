@@ -21,10 +21,6 @@ Attention
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.attention.SelfAttentionWithRotaryEmbeddings
-   :members:
-   :show-inheritance:
-
 Embeddings
 ----------
 

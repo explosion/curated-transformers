@@ -78,7 +78,7 @@ class AttentionMask:
     def dim(self) -> int:
         return self.bool_mask.dim()
 
-    def merge_mask(self, other: "AttentionMask"):
+    def merge_mask(self, other: "AttentionMask") -> "AttentionMask":
         return AttentionMask(self.bool_mask.logical_and(other.bool_mask))
 
     def logit_mask(self, dtype: torch.dtype):

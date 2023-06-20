@@ -38,6 +38,7 @@ class BertEncoderLayer(Module):
             hidden_width=layer_config.hidden_width,
             intermediate_width=layer_config.intermediate_width,
             use_bias=True,
+            use_gate=False,
             device=device,
         )
         self.ffn_output_layernorm = torch.nn.LayerNorm(

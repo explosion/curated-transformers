@@ -1,23 +1,66 @@
 import math
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Optional, Tuple
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module
 
 from .embeddings import QueryKeyRotaryEmbeddings
 from .output import KeyValueCache
 
+_TORCH_SDP: ContextVar[bool] = ContextVar("torch_sdp", default=False)
+
+
+@contextmanager
+def enable_torch_sdp(use_torch_sdp: bool = True):
+    """
+    Enables Torch scaled dot product attention.
+
+    Torch provides an implementation of scaled dot product attention that
+    has many optimizations. For instance, in some scenarios Flash Attention
+    is applied (Dao et al., 2022). We do not use the Torch implementation
+    by default, because it is still in beta.
+
+    This context manager enables use of the Torch implementation of scaled
+    dot product attention.
+
+    .. code-block:: python
+
+        with enable_torch_sdp():
+            Y = bert_encoder(X)
+    """
+    token = _TORCH_SDP.set(use_torch_sdp)
+    try:
+        yield
+    finally:
+        _TORCH_SDP.reset(token)
+
 
 class AttentionMask:
     bool_mask: Tensor
+    _logit_mask: Optional[Tensor]
 
     def __init__(self, bool_mask: Tensor):
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
-        self.bool_mask = bool_mask
+
+        if bool_mask.dim() == 2:
+            batch_len, key_len = bool_mask.shape
+            self.bool_mask = bool_mask.view([batch_len, 1, 1, key_len])
+        elif bool_mask.dim() == 4:
+            self.bool_mask = bool_mask
+        else:
+            raise ValueError(
+                "The attention mask must be a tensor of shape [batch, key_len] or "
+                "[batch_len, heads, query_len, key_len]"
+            )
+
+        self._logit_mask = None
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
         """Use the attention mask to mask attention logits.
@@ -30,47 +73,50 @@ class AttentionMask:
             (batch, heads, query_len, key_len)
         """
         blocked_value = torch.finfo(input.dtype).min
-        batch, _, _, key_len = input.shape
-        return torch.where(
-            self.bool_mask.view(batch, 1, 1, key_len),
-            input,
-            blocked_value,
-        )
+        return torch.where(self.bool_mask, input, blocked_value)
 
     def dim(self) -> int:
         return self.bool_mask.dim()
+
+    def merge_mask(self, other: "AttentionMask") -> "AttentionMask":
+        return AttentionMask(self.bool_mask.logical_and(other.bool_mask))
+
+    def logit_mask(self, dtype: torch.dtype):
+        if self._logit_mask is None:
+            self._logit_mask = (1.0 - self.bool_mask.int()) * torch.finfo(dtype).min
+        return self._logit_mask
 
     @property
     def shape(self):
         return self.bool_mask.shape
 
 
-def apply_causal_mask(input: Tensor) -> Tensor:
-    """Apply a causal mask.
+def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
+    """Create a causal mask.
 
     A causal mask ensures that tokens cannot attend to succeeding tokens.
 
-    :param input:
-        Attention logits to apply the causal mask to. **Shape:**
-        (batch, heads, query_len, key_len)
+    :param query:
+        Query to compute the causal mask for. **Shape:**
+        (batch, heads, query_len, head_dim)
+    :param key:
+        Key to compute the causal mask for. **Shape:**
+        (batch, heads, key_len, head_dim)
     :returns:
-        Logits with the causal mask applied. **Shape:**
+        The causal mask. **Shape:**
         (batch, heads, query_len, key_len)
     """
-
-    _, _, query_len, key_len = input.shape
+    query_len = query.size(2)
+    key_len = key.size(2)
 
     causal_mask = torch.tril(
         torch.full(
             (key_len, key_len),
             True,
-            device=input.device,
+            device=query.device,
         ),
     ).view(1, 1, key_len, key_len)
-    causal_mask = causal_mask[:, :, key_len - query_len : key_len, :key_len]
-
-    blocked_value = torch.finfo(input.dtype).min
-    return torch.where(causal_mask, input, blocked_value)
+    return AttentionMask(causal_mask[:, :, key_len - query_len : key_len, :key_len])
 
 
 class QkvHeadSharing(IntEnum):
@@ -118,7 +164,6 @@ class ScaledDotProductAttention(Module):
         key: Tensor,
         value: Tensor,
         attention_mask: Optional[AttentionMask],
-        use_causal_mask: bool,
     ) -> Tensor:
         """
         Apply attention layer to the given key, query and value.
@@ -132,28 +177,15 @@ class ScaledDotProductAttention(Module):
         :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
-        :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
-        :returns: hidden representation after applying attention.
 
         Shapes:
             k, q, v - (batch, heads, seq_len, width)
             attention_mask - (batch, seq_len)
             output - (batch, heads, seq_len, width)
         """
-
-        if attention_mask is not None and attention_mask.dim() != 2:
-            raise ValueError(
-                "The attention mask must be a 2D-tensor of shape [batch, seq_len]"
-            )
-
         model_dim = key.shape[-1]
         attn_scores = query @ key.transpose(-2, -1)
         attn_scores /= math.sqrt(model_dim)
-
-        if use_causal_mask:
-            # Replace tokens that occur after at token to zero them out
-            # during softmax normalization.
-            attn_scores = apply_causal_mask(attn_scores)
 
         if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large
@@ -214,6 +246,7 @@ class SelfAttention(Module):
 
         super().__init__()
 
+        self.dropout_prob = dropout_prob
         self.model_dim = hidden_width
         self.num_heads = num_attention_heads
         if self.model_dim % self.num_heads != 0:
@@ -323,15 +356,36 @@ class SelfAttention(Module):
             key = torch.cat([cache_k, key], dim=-2)
             value = torch.cat([cache_v, value], dim=-2)
 
-        attn = combine_heads(
-            self.attention(
+        combined_mask = attention_mask
+        if use_causal_mask:
+            causal_mask = create_causal_mask(query, key)
+            combined_mask = (
+                causal_mask
+                if combined_mask is None
+                else combined_mask.merge_mask(causal_mask)
+            )
+
+        if _TORCH_SDP.get():
+            # We can't pass a bool mask, because it is currently broken:
+            # https://github.com/pytorch/pytorch/issues/103749
+            attn = F.scaled_dot_product_attention(
                 query=query,
                 key=key,
                 value=value,
-                attention_mask=attention_mask,
-                use_causal_mask=use_causal_mask,
+                attn_mask=None
+                if combined_mask is None
+                else combined_mask.logit_mask(query.dtype),
+                dropout_p=self.dropout_prob if self.training else 0.0,
             )
-        )
+        else:
+            attn = self.attention(
+                query=query,
+                key=key,
+                value=value,
+                attention_mask=combined_mask,
+            )
+
+        attn = combine_heads(attn)
 
         output = self.output(attn)
 

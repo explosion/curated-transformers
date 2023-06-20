@@ -10,3 +10,4 @@ API
    decoders
    generation
    tokenizers
+   utils

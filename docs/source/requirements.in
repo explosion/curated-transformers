@@ -1,0 +1,5 @@
+sphinx
+sphinx_rtd_theme
+# Pin to 1.23.0, because later versions use Sphinx 7,
+# which is not supported by the RTD theme yet.
+sphinx-autodoc-typehints==1.23.0

@@ -2,10 +2,10 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Module
 
 from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel
+from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import BertConfig
@@ -16,7 +16,7 @@ from .layer import BertEncoderLayer
 Self = TypeVar("Self", bound="BertEncoder")
 
 
-class BertEncoder(Module, FromPretrainedHFModel):
+class BertEncoder(EncoderModule, FromPretrainedHFModel):
     def __init__(self, config: BertConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 

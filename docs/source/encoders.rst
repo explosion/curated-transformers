@@ -12,3 +12,7 @@ Encoders
 .. autoclass:: curated_transformers.models.RobertaEncoder
    :members:
    :show-inheritance:
+
+.. autoclass:: curated_transformers.util.auto_model.AutoEncoder
+   :members:
+   :show-inheritance:

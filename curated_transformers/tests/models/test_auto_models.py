@@ -1,4 +1,5 @@
 import pytest
+
 from curated_transformers._compat import has_hf_transformers
 from curated_transformers.generation.dolly_v2 import DollyV2Generator
 from curated_transformers.generation.falcon import FalconGenerator

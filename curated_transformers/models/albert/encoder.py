@@ -2,11 +2,11 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Module
 
 from ..attention import AttentionMask
 from ..bert.embeddings import BertEmbeddings
 from ..hf_hub import FromPretrainedHFModel
+from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import AlbertConfig
@@ -16,7 +16,7 @@ from .layer_group import AlbertLayerGroup
 Self = TypeVar("Self", bound="AlbertEncoder")
 
 
-class AlbertEncoder(Module, FromPretrainedHFModel):
+class AlbertEncoder(EncoderModule, FromPretrainedHFModel):
     def __init__(self, config: AlbertConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 

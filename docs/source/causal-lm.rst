@@ -34,3 +34,7 @@ language model with the ``cache`` argument::
 .. autoclass:: curated_transformers.models.RefinedWebModelCausalLM
    :members:
    :show-inheritance:
+
+.. autoclass:: curated_transformers.util.auto_model.AutoCausalLM
+   :members:
+   :show-inheritance:

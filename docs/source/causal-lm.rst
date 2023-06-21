@@ -26,3 +26,11 @@ language model with the ``cache`` argument::
 .. autoclass:: curated_transformers.models.GPTNeoXCausalLM
    :members:
    :show-inheritance:
+
+.. autoclass:: curated_transformers.models.LLaMACausalLM
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.models.RefinedWebModelCausalLM
+   :members:
+   :show-inheritance:

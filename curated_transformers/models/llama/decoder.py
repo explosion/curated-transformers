@@ -2,25 +2,27 @@ from typing import Any, List, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
+from torch.nn import Dropout, Embedding, ModuleList
+
+from curated_transformers.models.normalization import RMSNorm
 
 from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
 from ..output import KeyValueCache, ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import GPTNeoXConfig
-from .layer import GPTNeoXDecoderLayer
+from .config import LLaMAConfig
+from .layer import LLaMADecoderLayer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="GPTNeoXDecoder")
+Self = TypeVar("Self", bound="LLaMADecoder")
 
 
-class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
-    """GPT-NeoX (Black et al, 2022) decoder."""
+class LLaMADecoder(DecoderModule, FromPretrainedHFModel):
+    """LLaMa (Touvron et al., 2023) decoder."""
 
     def __init__(
-        self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
+        self, config: LLaMAConfig, *, device: Optional[torch.device] = None
     ) -> None:
         """
         :param config: Model configuration.
@@ -35,13 +37,13 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
 
         self.layers = ModuleList(
             [
-                GPTNeoXDecoderLayer(config.layer, config.attention, device=device)
+                LLaMADecoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
 
-        self.output_layer_norm = LayerNorm(
-            config.layer.hidden_width, config.layer.layer_norm_eps, device=device
+        self.output_rms_norm = RMSNorm(
+            config.layer.hidden_width, eps=config.layer.rms_norm_eps, device=device
         )
 
     def forward(
@@ -53,7 +55,7 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
         store_cache: bool = False,
     ) -> ModelOutputWithCache[KeyValueCache]:
         """
-        Apply the GPT-NeoX decoder to the given piece identifiers.
+        Apply the LLaMA decoder to the given piece identifiers.
 
         :param input_ids: Piece identifiers to apply the decoder to.
             **Shape:** (batch, seq_len)
@@ -96,7 +98,7 @@ class GPTNeoXDecoder(DecoderModule, FromPretrainedHFModel):
             if store_cache:
                 new_cache.append(new_layer_cache)
 
-        layer_outputs[-1] = self.output_layer_norm(layer_outputs[-1])
+        layer_outputs[-1] = self.output_rms_norm(layer_outputs[-1])
 
         return ModelOutputWithCache(
             embedding_output=embeddings,

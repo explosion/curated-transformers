@@ -78,4 +78,4 @@ def test_auto_generator():
         assert isinstance(generator, generator_cls)
 
     with pytest.raises(ValueError, match="Unsupported generator"):
-        AutoGenerator.from_hf_hub("TheBloke/falcon-40b-instruct-GPTQ")
+        AutoGenerator.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")

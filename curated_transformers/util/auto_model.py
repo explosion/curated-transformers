@@ -52,6 +52,28 @@ class AutoModel(ABC, Generic[ModelT]):
         """
         raise NotImplementedError
 
+    @classmethod
+    def _instantiate_module_from_hf_hub(
+        cls,
+        name: str,
+        revision: str,
+        device: Optional[torch.device],
+        quantization_config: Optional[BitsAndBytesConfig],
+        model_type_to_class_map: Mapping[str, Type],
+    ) -> FromPretrainedHFModel:
+        model_type = _get_hf_config_model_type(name, revision)
+        module_cls = model_type_to_class_map.get(model_type)
+        if module_cls is None:
+            raise ValueError(
+                f"Unsupported model type `{model_type}` for {cls.__name__}. "
+                f"Supported model types: {tuple(model_type_to_class_map.keys())}"
+            )
+        assert issubclass(module_cls, FromPretrainedHFModel)
+        module = module_cls.from_hf_hub(
+            name, revision, device=device, quantization_config=quantization_config
+        )
+        return module
+
 
 class AutoEncoder(AutoModel[EncoderModule]):
     """Encoder module loaded from the Hugging Face Model Hub."""
@@ -73,13 +95,8 @@ class AutoEncoder(AutoModel[EncoderModule]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> EncoderModule:
-        encoder = _instantiate_module_from_hf_hub(
-            name,
-            revision,
-            device,
-            quantization_config,
-            cls._HF_MODEL_TYPE_TO_CURATED,
-            "encoder",
+        encoder = cls._instantiate_module_from_hf_hub(
+            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(encoder, EncoderModule)
         return encoder
@@ -103,13 +120,8 @@ class AutoDecoder(AutoModel[DecoderModule]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> DecoderModule:
-        decoder = _instantiate_module_from_hf_hub(
-            name,
-            revision,
-            device,
-            quantization_config,
-            cls._HF_MODEL_TYPE_TO_CURATED,
-            "decoder",
+        decoder = cls._instantiate_module_from_hf_hub(
+            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(decoder, DecoderModule)
         return decoder
@@ -133,13 +145,8 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> CausalLMModule[KeyValueCache]:
-        causal_lm = _instantiate_module_from_hf_hub(
-            name,
-            revision,
-            device,
-            quantization_config,
-            cls._HF_MODEL_TYPE_TO_CURATED,
-            "causal LM",
+        causal_lm = cls._instantiate_module_from_hf_hub(
+            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(causal_lm, CausalLMModule)
         return causal_lm
@@ -148,13 +155,13 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
 class AutoGenerator(AutoModel[GeneratorWrapper]):
     """Causal LM generator loaded from the Hugging Face Model Hub.
 
-    **NOTE** - This class can currently only be used with following models:
-        - ``databricks/dolly-v2`` variants.
-        - ``tiiuae/falcon`` variants.
+    **NOTE** - This class can currently only be used with the following models:
+        - Models based on Dolly v2 (contain ``dolly-v2``` in the name).
+        - Models based on Falcon (contain ``falcon`` in the name).
     """
 
-    _DOLLY_V2_PREFIX = "databricks/dolly-v2"
-    _FALCON_PREFIX = "tiiuae/falcon"
+    _DOLLY_V2_SUBSTRING = "dolly-v2"
+    _FALCON_SUBSTRING = "falcon"
 
     @classmethod
     def from_hf_hub(
@@ -169,14 +176,14 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
         # generators bundle model-specific prompts that are specific
         # to certain fine-tuned models.
         generator: Optional[GeneratorWrapper] = None
-        if name.startswith(cls._DOLLY_V2_PREFIX):
+        if cls._DOLLY_V2_SUBSTRING in name.lower():
             generator = DollyV2Generator.from_hf_hub(
                 name=name,
                 revision=revision,
                 device=device,
                 quantization_config=quantization_config,
             )
-        elif name.startswith(cls._FALCON_PREFIX):
+        elif cls._FALCON_SUBSTRING in name.lower():
             generator = FalconGenerator.from_hf_hub(
                 name=name,
                 revision=revision,
@@ -184,37 +191,15 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
                 quantization_config=quantization_config,
             )
         else:
-            supported_models = (cls._DOLLY_V2_PREFIX, cls._FALCON_PREFIX)
+            supported_models = (cls._DOLLY_V2_SUBSTRING, cls._FALCON_SUBSTRING)
             raise ValueError(
-                f"Unsupported generator model `{name}`. "
-                f"Supported model: `{supported_models}` variants"
+                f"Unsupported {cls.__name__} model `{name}`. "
+                f"Supported model variants: `{supported_models}`"
             )
 
         assert generator is not None
         assert isinstance(generator, GeneratorWrapper)
         return generator
-
-
-def _instantiate_module_from_hf_hub(
-    name: str,
-    revision: str,
-    device: Optional[torch.device],
-    quantization_config: Optional[BitsAndBytesConfig],
-    model_type_to_class_map: Mapping[str, Type],
-    module_type: str,
-) -> FromPretrainedHFModel:
-    model_type = _get_hf_config_model_type(name, revision)
-    module_cls = model_type_to_class_map.get(model_type)
-    if module_cls is None:
-        raise ValueError(
-            f"Unsupported model type `{model_type}` for {module_type}. "
-            f"Supported model types: {tuple(model_type_to_class_map.keys())}"
-        )
-    assert issubclass(module_cls, FromPretrainedHFModel)
-    module = module_cls.from_hf_hub(
-        name, revision, device=device, quantization_config=quantization_config
-    )
-    return module
 
 
 def _get_hf_config_model_type(name: str, revision: str) -> Any:

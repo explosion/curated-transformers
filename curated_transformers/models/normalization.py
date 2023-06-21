@@ -32,7 +32,9 @@ class RMSNorm(Module):
         :returns:
             Normalized tensor.
         """
-        # Zhang & Sennrich, Equation 4
+        # Zhang & Sennrich, Equation 4. If we are in lower precision than
+        # float32, then squaring and averaging can get way off. So for
+        # normalization we want to use higher precision.
         rms = (
             input.to(torch.float32)
             .square()

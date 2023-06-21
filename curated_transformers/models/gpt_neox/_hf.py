@@ -10,8 +10,26 @@ ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
+EXPECTED_CONFIG_KEYS = {
+    "hidden_act",
+    "hidden_size",
+    "intermediate_size",
+    "layer_norm_eps",
+    "max_position_embeddings",
+    "max_position_embeddings",
+    "num_attention_heads",
+    "num_hidden_layers",
+    "rotary_emb_base",
+    "rotary_pct",
+    "vocab_size",
+}
+
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
+    missing_keys = tuple(sorted(EXPECTED_CONFIG_KEYS.difference(set(hf_config.keys()))))
+    if len(missing_keys) != 0:
+        raise ValueError(f"Missing keys in HF GPT-NeoX model config: {missing_keys}")
+
     # Handle config options that are not set in all models.
     extra_kwargs = {k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config}
 
@@ -27,7 +45,7 @@ def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
         rotary_embedding_base=hf_config["rotary_emb_base"],
         rotary_embedding_fraction=hf_config["rotary_pct"],
         vocab_size=hf_config["vocab_size"],
-        **extra_kwargs
+        **extra_kwargs,
     )
 
 

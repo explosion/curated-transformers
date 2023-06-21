@@ -17,7 +17,27 @@ HF_KEY_TO_CURATED_KEY = MappingProxyType(
 )
 
 
+EXPECTED_CONFIG_KEYS = {
+    "pad_token_id",
+    "attention_probs_dropout_prob",
+    "hidden_act",
+    "hidden_dropout_prob",
+    "hidden_size",
+    "intermediate_size",
+    "layer_norm_eps",
+    "max_position_embeddings",
+    "num_attention_heads",
+    "num_hidden_layers",
+    "type_vocab_size",
+    "vocab_size",
+}
+
+
 def convert_hf_config(hf_config: Any) -> RobertaConfig:
+    missing_keys = tuple(sorted(EXPECTED_CONFIG_KEYS.difference(set(hf_config.keys()))))
+    if len(missing_keys) != 0:
+        raise ValueError(f"Missing keys in HF RoBERTa model config: {missing_keys}")
+
     padding_id = hf_config["pad_token_id"]
     return RobertaConfig(
         attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],

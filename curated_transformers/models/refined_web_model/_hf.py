@@ -11,7 +11,24 @@ HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 
+EXPECTED_CONFIG_KEYS = {
+    "hidden_size",
+    "layer_norm_epsilon",
+    "multi_query",
+    "n_layer",
+    "n_head",
+    "parallel_attn",
+    "alibi",
+    "bias",
+    "vocab_size",
+}
+
+
 def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
+    missing_keys = tuple(sorted(EXPECTED_CONFIG_KEYS.difference(set(hf_config.keys()))))
+    if len(missing_keys) != 0:
+        raise ValueError(f"Missing keys in HF RefinedWeb model config: {missing_keys}")
+
     # Handle config options that are not set in all models.
     extra_kwargs = {k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config}
 
@@ -33,7 +50,7 @@ def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
         rotary_embedding_fraction=1.0,
         use_bias=hf_config["bias"],
         vocab_size=hf_config["vocab_size"],
-        **extra_kwargs
+        **extra_kwargs,
     )
 
 

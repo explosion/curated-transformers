@@ -10,8 +10,22 @@ ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
+EXPECTED_CONFIG_KEYS = {
+    "hidden_act",
+    "hidden_size",
+    "intermediate_size",
+    "rms_norm_eps",
+    "num_attention_heads",
+    "num_hidden_layers",
+    "vocab_size",
+}
+
 
 def convert_hf_config(hf_config: Any) -> LLaMAConfig:
+    missing_keys = tuple(sorted(EXPECTED_CONFIG_KEYS.difference(set(hf_config.keys()))))
+    if len(missing_keys) != 0:
+        raise ValueError(f"Missing keys in HF LLaMA model config: {missing_keys}")
+
     # Handle config options that are not set in all models.
     extra_kwargs = {k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config}
 
@@ -25,7 +39,7 @@ def convert_hf_config(hf_config: Any) -> LLaMAConfig:
         rotary_embedding_base=10000,
         rotary_embedding_fraction=1.0,
         vocab_size=hf_config["vocab_size"],
-        **extra_kwargs
+        **extra_kwargs,
     )
 
 

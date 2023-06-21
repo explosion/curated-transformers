@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Dict, Optional, Type
 
 import torch
 from torch import Tensor
@@ -6,7 +6,7 @@ from torch.nn import Linear, Module
 
 from .activations import GeluFast, GeluNew
 
-_ACTIVATIONS: Dict[str, Callable[[], Module]] = {
+_ACTIVATIONS: Dict[str, Type[Module]] = {
     "relu": torch.nn.ReLU,
     "gelu": torch.nn.GELU,
     "gelu_fast": GeluFast,

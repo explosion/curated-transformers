@@ -25,7 +25,7 @@ class LLaMAAttentionConfig:
         :param hidden_width: Hidden width of the transformer.
         :param num_attention_heads: Number of attention heads.
         :param rotary_base: Base in signifying the rotary embedding period.
-        :param rotary_fraction: fraction of hidden width to apply rotary
+        :param rotary_fraction: Fraction of hidden width to apply rotary
             embeddings to. Must be in [0,1].
         """
 

@@ -207,7 +207,7 @@ def _instantiate_module_from_hf_hub(
     module_cls = model_type_to_class_map.get(model_type)
     if module_cls is None:
         raise ValueError(
-            f"Unknown model type `{model_type}` for {module_type}. "
+            f"Unsupported model type `{model_type}` for {module_type}. "
             f"Supported model types: {tuple(model_type_to_class_map.keys())}"
         )
     assert issubclass(module_cls, FromPretrainedHFModel)

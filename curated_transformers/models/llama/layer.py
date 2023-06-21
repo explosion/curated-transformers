@@ -13,16 +13,17 @@ from ..attention import (
     SelfAttention,
 )
 from ..feedforward import PointwiseFeedForward
-from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
+from ..normalization import RMSNorm
+from .config import LLaMAAttentionConfig, LLaMALayerConfig
 
 
-class RefinedWebModelDecoderLayer(Module):
-    """Refined Web Model (eg. Falcon) layer."""
+class LLaMADecoderLayer(Module):
+    """LLaMa (Touvron et al., 2023) layer."""
 
     def __init__(
         self,
-        layer_config: RefinedWebModelLayerConfig,
-        attention_config: RefinedWebModelAttentionConfig,
+        layer_config: LLaMALayerConfig,
+        attention_config: LLaMAAttentionConfig,
         *,
         device: Optional[torch.device] = None
     ):
@@ -35,31 +36,32 @@ class RefinedWebModelDecoderLayer(Module):
 
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
+            qkv_head_sharing=QkvHeadSharing.NONE,
             hidden_width=attention_config.hidden_width,
-            qkv_head_sharing=QkvHeadSharing.KEY_VALUE
-            if attention_config.multi_query
-            else QkvHeadSharing.NONE,
             num_attention_heads=attention_config.num_attention_heads,
+            qkv_mode=QkvMode.SEPARATE,
             rotary_embeds=RotaryEmbeddingConfig(
-                base=attention_config.rotary_base,
                 fraction=attention_config.rotary_fraction,
+                base=attention_config.rotary_base,
             ),
-            qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
-            use_bias=attention_config.use_bias,
+            use_bias=False,
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
-        self.input_layer_norm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
+        self.attn_rms_norm = RMSNorm(
+            layer_config.hidden_width, eps=layer_config.rms_norm_eps, device=device
         )
 
         self.ffn = PointwiseFeedForward(
-            hidden_act="gelu",
+            hidden_act=layer_config.hidden_act,
             hidden_width=layer_config.hidden_width,
-            intermediate_width=4 * layer_config.hidden_width,
-            use_bias=layer_config.use_bias,
-            use_gate=False,
+            intermediate_width=layer_config.intermediate_width,
+            use_bias=False,
+            use_gate=True,
             device=device,
+        )
+        self.ffn_rms_norm = RMSNorm(
+            layer_config.hidden_width, eps=layer_config.rms_norm_eps, device=device
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
@@ -72,7 +74,7 @@ class RefinedWebModelDecoderLayer(Module):
         store_cache: bool = False,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
-        Apply the Refined Web Model layer to the given piece hidden representations.
+        Apply the LLaMA layer to the given piece hidden representations.
 
         :param x: Hidden representations to apply the layer to.
             **Shape:** (batch, seq_len, width)
@@ -90,11 +92,8 @@ class RefinedWebModelDecoderLayer(Module):
             future reuse.
         :returns: Layer output.
         """
-        # NOTE: we currently only support parallel attention.
-        x_layer_norm = self.input_layer_norm(x)
-
         attn_out, cache = self.mha(
-            x_layer_norm,
+            self.attn_rms_norm(x),
             attention_mask,
             cache=cache,
             store_cache=store_cache,
@@ -103,5 +102,9 @@ class RefinedWebModelDecoderLayer(Module):
         )
         attn_out = self.attn_output_dropout(attn_out)
 
-        ffn_out = self.ffn(x_layer_norm)
-        return self.ffn_output_dropout(ffn_out + attn_out) + x, cache
+        x = x + attn_out
+
+        ffn_out = self.ffn(self.ffn_rms_norm(x))
+        ffn_out = self.ffn_output_dropout(ffn_out)
+
+        return x + ffn_out, cache

@@ -56,6 +56,7 @@ class GPTNeoXDecoderLayer(Module):
             hidden_width=layer_config.hidden_width,
             intermediate_width=layer_config.intermediate_width,
             use_bias=True,
+            use_gate=False,
             device=device,
         )
         self.ffn_layer_norm = torch.nn.LayerNorm(
@@ -75,9 +76,11 @@ class GPTNeoXDecoderLayer(Module):
         Apply the GPT-NeoX layer to the given piece hidden representations.
 
         :param x: Hidden representations to apply the layer to.
+            **Shape:** (batch, seq_len, width)
         :param attention_mask: Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
+            **Shape:** (batch, seq_len)
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -87,10 +90,6 @@ class GPTNeoXDecoderLayer(Module):
         :param store_cache: Whether to cache the key/value representations for
             future reuse.
         :returns: Layer output.
-
-        Shapes:
-            x - (batch, seq_len, width)
-            attention_mask - (batch, seq_len)
         """
         attn_out, cache = self.mha(
             self.input_layer_norm(x),

@@ -83,7 +83,7 @@ class AttentionMask:
 
     def logit_mask(self, dtype: torch.dtype):
         if self._logit_mask is None:
-            self._logit_mask = (1.0 - self.bool_mask.int()) * torch.finfo(dtype).min
+            self._logit_mask = (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
         return self._logit_mask
 
     @property

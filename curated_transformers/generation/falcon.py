@@ -65,7 +65,7 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
         )
 
         preprocessed_prompts = [_preprocess_prompt(prompt) for prompt in prompts]
-        return self.generator(preprocessed_prompts, eos_id=self.eos_id, config=config)
+        return self.generator(preprocessed_prompts, config=config)
 
 
 def _preprocess_prompt(prompt):

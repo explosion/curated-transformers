@@ -36,7 +36,6 @@ class Generator(Generic[CacheT]):
         *,
         attention_mask: Tensor,
         ids: Tensor,
-        eos_id: int,
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
@@ -45,7 +44,6 @@ class Generator(Generic[CacheT]):
         return self.generate(
             attention_mask=attention_mask,
             ids=ids,
-            eos_id=eos_id,
             config=config,
         )
 
@@ -54,7 +52,6 @@ class Generator(Generic[CacheT]):
         *,
         attention_mask: Tensor,
         ids: Tensor,
-        eos_id: int,
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
@@ -73,8 +70,6 @@ class Generator(Generic[CacheT]):
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
             **Shape:** (batch, seq_len)
-        :param eos_id:
-            Piece identifier that signals the end of the generated sequence.
         :param config:
             Generator configuraton.
         :returns:

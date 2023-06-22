@@ -30,15 +30,15 @@ class StringGenerator(Generic[CacheT]):
         self.tokenizer = tokenizer
 
     def __call__(
-        self, prompts: Iterable[InputChunks], eos_id: int, config: GeneratorConfig
+        self, prompts: Iterable[InputChunks], config: GeneratorConfig
     ) -> List[str]:
         """
         See the :meth:`.generate` method.
         """
-        return self.generate(prompts, eos_id, config=config)
+        return self.generate(prompts, config=config)
 
     def generate(
-        self, prompts: Iterable[InputChunks], eos_id: int, config: GeneratorConfig
+        self, prompts: Iterable[InputChunks], config: GeneratorConfig
     ) -> List[str]:
         """
         Generate text using the given prompts. This method returns the
@@ -46,8 +46,6 @@ class StringGenerator(Generic[CacheT]):
 
         :param prompts:
             Prompts to generate from.
-        :param eos_id:
-            Piece identifier that signals the end of generation.
         :param config:
             Generator configuraton.
         :returns:
@@ -61,7 +59,7 @@ class StringGenerator(Generic[CacheT]):
 
         piece_ids: List[List[int]] = [[] for _ in range(ids.size(0))]
         for seq_ids, outputs in self.inner(
-            ids=ids, attention_mask=attention_mask, eos_id=eos_id, config=config
+            ids=ids, attention_mask=attention_mask, config=config
         ):
             for seq_id, seq_piece_ids in zip(seq_ids.tolist(), outputs.tolist()):
                 piece_ids[seq_id].extend(seq_piece_ids)

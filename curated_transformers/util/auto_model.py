@@ -193,7 +193,7 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
         else:
             supported_models = (cls._DOLLY_V2_SUBSTRING, cls._FALCON_SUBSTRING)
             raise ValueError(
-                f"Unsupported {cls.__name__} model `{name}`. "
+                f"Unsupported generator model `{name}` for {cls.__name__}. "
                 f"Supported model variants: `{supported_models}`"
             )
 

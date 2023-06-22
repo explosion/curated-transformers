@@ -70,9 +70,7 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         prompts_with_instructions = [
             _to_prompt_with_instructions(prompt) for prompt in prompts
         ]
-        return self.generator(
-            prompts_with_instructions, eos_id=self.eos_id, config=config
-        )
+        return self.generator(prompts_with_instructions, config=config)
 
 
 def _to_prompt_with_instructions(prompt):

@@ -19,27 +19,34 @@ HF_KEY_TO_CURATED_KEY = MappingProxyType(
     }
 )
 
+HF_CONFIG_KEY_MAPPING = {
+    "pad_token_id": "padding_id",
+    "attention_probs_dropout_prob": "attention_probs_dropout_prob",
+    "embedding_size": "embedding_width",
+    "hidden_act": "hidden_act",
+    "hidden_dropout_prob": "hidden_dropout_prob",
+    "hidden_size": "hidden_width",
+    "inner_group_num": "inner_group_num",
+    "intermediate_size": "intermediate_width",
+    "layer_norm_eps": "layer_norm_eps",
+    "max_position_embeddings": "max_position_embeddings",
+    "num_attention_heads": "num_attention_heads",
+    "num_hidden_groups": "num_hidden_groups",
+    "num_hidden_layers": "num_hidden_layers",
+    "type_vocab_size": "type_vocab_size",
+    "vocab_size": "vocab_size",
+}
+
 
 def convert_hf_config(hf_config: Any) -> AlbertConfig:
-    padding_id = hf_config["pad_token_id"]
-    return AlbertConfig(
-        attention_probs_dropout_prob=hf_config["attention_probs_dropout_prob"],
-        embedding_width=hf_config["embedding_size"],
-        hidden_act=hf_config["hidden_act"],
-        hidden_dropout_prob=hf_config["hidden_dropout_prob"],
-        hidden_width=hf_config["hidden_size"],
-        inner_group_num=hf_config["inner_group_num"],
-        intermediate_width=hf_config["intermediate_size"],
-        layer_norm_eps=hf_config["layer_norm_eps"],
-        model_max_length=hf_config["max_position_embeddings"],
-        max_position_embeddings=hf_config["max_position_embeddings"],
-        num_attention_heads=hf_config["num_attention_heads"],
-        num_hidden_groups=hf_config["num_hidden_groups"],
-        num_hidden_layers=hf_config["num_hidden_layers"],
-        padding_id=padding_id,
-        type_vocab_size=hf_config["type_vocab_size"],
-        vocab_size=hf_config["vocab_size"],
+    missing_keys = tuple(
+        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
+    if len(missing_keys) != 0:
+        raise ValueError(f"Missing keys in HF ALBERT model config: {missing_keys}")
+
+    kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
+    return AlbertConfig(model_max_length=hf_config["max_position_embeddings"], **kwargs)
 
 
 def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:

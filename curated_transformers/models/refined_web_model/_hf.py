@@ -11,29 +11,41 @@ HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 
-def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
-    # Handle config options that are not set in all models.
-    extra_kwargs = {k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config}
+HF_CONFIG_KEY_MAPPING = {
+    "hidden_size": "hidden_width",
+    "layer_norm_epsilon": "layer_norm_eps",
+    "multi_query": "multi_query",
+    "n_head": "num_attention_heads",
+    "n_layer": "num_hidden_layers",
+    "bias": "use_bias",
+    "vocab_size": "vocab_size",
+}
 
-    if not hf_config["parallel_attn"]:
+
+def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
+    missing_keys = tuple(
+        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
+    )
+    if len(missing_keys) != 0:
+        raise ValueError(
+            f"Missing keys in Hugging Face Refined Web Model config: {missing_keys}"
+        )
+
+    kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
+    # Handle config options that are not set in all models.
+    kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
+
+    if "parallel_attn" in hf_config and not hf_config["parallel_attn"]:
         raise ValueError(
             "Refined Web Models without parallel attention are currently not supported"
         )
-
-    if hf_config["alibi"]:
+    if "alibi" in hf_config and hf_config["alibi"]:
         raise ValueError("Refined Web Models with ALiBi are currently not supported")
 
     return RefinedWebModelConfig(
-        hidden_width=hf_config["hidden_size"],
-        layer_norm_eps=hf_config["layer_norm_epsilon"],
-        multi_query=hf_config["multi_query"],
-        num_hidden_layers=hf_config["n_layer"],
-        num_attention_heads=hf_config["n_head"],
         rotary_embedding_base=10000,
         rotary_embedding_fraction=1.0,
-        use_bias=hf_config["bias"],
-        vocab_size=hf_config["vocab_size"],
-        **extra_kwargs
+        **kwargs,
     )
 
 

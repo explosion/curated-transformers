@@ -37,10 +37,6 @@ class StringGenerator(Generic[CacheT]):
         """
         return self.generate(prompts, config=config)
 
-    def eval(self):
-        """Set the wrapped model to evaluation mode."""
-        self.inner.eval()
-
     def generate(
         self, prompts: Iterable[InputChunks], config: GeneratorConfig
     ) -> List[str]:
@@ -69,12 +65,3 @@ class StringGenerator(Generic[CacheT]):
                 piece_ids[seq_id].extend(seq_piece_ids)
 
         return self.tokenizer.decode(piece_ids)
-
-    def train(self, mode: bool = True):
-        """
-        Set the wrapped model's train mode.
-
-        :param mode:
-            Set to training mode when ``True`` or evaluation otherwise.
-        """
-        self.inner.train(mode)

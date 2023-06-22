@@ -43,7 +43,7 @@ def convert_hf_config(hf_config: Any) -> AlbertConfig:
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
     if len(missing_keys) != 0:
-        raise ValueError(f"Missing keys in HF AlBERT model config: {missing_keys}")
+        raise ValueError(f"Missing keys in HF ALBERT model config: {missing_keys}")
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     return AlbertConfig(model_max_length=hf_config["max_position_embeddings"], **kwargs)

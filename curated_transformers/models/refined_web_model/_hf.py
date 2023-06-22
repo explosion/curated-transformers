@@ -27,7 +27,7 @@ def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
     if len(missing_keys) != 0:
-        raise ValueError(f"Missing keys in HF RefinedWeb model config: {missing_keys}")
+        raise ValueError(f"Missing keys in Hugging Face Refined Web Model config: {missing_keys}")
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     # Handle config options that are not set in all models.

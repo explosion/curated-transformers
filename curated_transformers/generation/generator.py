@@ -1,6 +1,5 @@
 from typing import Generic, Iterator, List, Optional, Tuple
 
-import torch
 from torch import Tensor
 from torch.distributions import Categorical
 
@@ -47,6 +46,10 @@ class Generator(Generic[CacheT]):
             config=config,
         )
 
+    def eval(self):
+        """Set the wrapped model to evaluation mode."""
+        self.model.eval()
+
     def generate(
         self,
         *,
@@ -77,8 +80,6 @@ class Generator(Generic[CacheT]):
             sequence identifiers and a tensor with the next piece identier.
             **Shape:** (batch_unfinished,)
         """
-        self.model.eval()
-
         logits_transform = config.logits_transform()
         stop_condition = config.stop_condition()
         if isinstance(config, GreedyGeneratorConfig):
@@ -96,14 +97,13 @@ class Generator(Generic[CacheT]):
         )
 
         while True:
-            with torch.no_grad():
-                output = self.model(
-                    state.last_step_ids,
-                    attention_mask=AttentionMask(state.attention_mask),
-                    cache=state.cache,
-                    store_cache=True,
-                    positions=state.positions,
-                )
+            output = self.model(
+                state.last_step_ids,
+                attention_mask=AttentionMask(state.attention_mask),
+                cache=state.cache,
+                store_cache=True,
+                positions=state.positions,
+            )
 
             seq_ids, last_step_ids = state.step(
                 cache=output.cache,
@@ -116,6 +116,15 @@ class Generator(Generic[CacheT]):
 
             if state.is_finished:
                 return
+
+    def train(self, mode: bool = True):
+        """
+        Set the wrapped model's train mode.
+
+        :param mode:
+            Set to training mode when ``True`` or evaluation otherwise.
+        """
+        self.model.train(mode)
 
     def _decode_greedy(
         self,

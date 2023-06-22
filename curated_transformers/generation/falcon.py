@@ -32,8 +32,8 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
             A Falcon causal language model.
 
         """
-        super().__init__()
-        self.generator = StringGenerator(tokenizer, Generator(causal_lm))
+        generator = StringGenerator(tokenizer, Generator(causal_lm))
+        super().__init__(generator)
         self.eos_id = tokenizer.processor.piece_id(END_KEY)
 
     @classmethod

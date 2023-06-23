@@ -56,7 +56,7 @@ parser.add_argument(
 parser.add_argument(
     "--torch-sdp",
     action="store_true",
-    help="enable Torch scaled dot product implementation",
+    help="enable Torch scaled dot product attention implementation",
 )
 
 

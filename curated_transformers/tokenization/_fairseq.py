@@ -15,18 +15,22 @@ class FAIRSEQ_PIECE_IDS:
 
 
 class FairSeqPostEncoder(PostEncoder):
-    """Performs fixups of SentencePiece piece identifiers for models that use
-    the fairseq vocabulary."""
+    """
+    Performs fixups of SentencePiece piece identifiers for models that use
+    the fairseq vocabulary.
+    """
 
     def __init__(
         self,
         *,
         piece_updater: Callable[[int], int],
     ):
-        """Construct a fairseq post-encoder.
+        """
+        Construct a fairseq post-encoder.
 
-        :param piece_updater: Function that tranforms a given
-            SentencePiece piece identifier to a valid fairseq one.
+        :param piece_updater:
+            Function that tranforms a given SentencePiece piece
+            identifier to a valid fairseq one.
         """
         self.piece_updater = piece_updater
 
@@ -47,12 +51,16 @@ class FairSeqPreDecoder(PreDecoder):
         eos_id: int,
         piece_updater: Callable[[int], int],
     ):
-        """Construct a fairseq pre-decoder.
+        """
+        Construct a fairseq pre-decoder.
 
-        :param bos_id: The piece id used to mark the beginning of a sequence.
-        :param eos_id: The piece id used to mark the end of a sequence.
-        :param piece_updater: Function that tranforms a given
-            fairseq piece identifier to the original SentencePiece one.
+        :param bos_id:
+            The piece id used to mark the beginning of a sequence.
+        :param eos_id:
+            The piece id used to mark the end of a sequence.
+        :param piece_updater:
+            Function that tranforms a given fairseq piece identifier
+            to the original SentencePiece one.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id

@@ -1,15 +1,14 @@
 from typing import Generic, Iterator, List, Optional, Tuple
 
 import torch
-from torch import Tensor
-from torch.distributions import Categorical
-
 from curated_transformers.generation.config import (
     GeneratorConfig,
     GreedyGeneratorConfig,
     SampleGeneratorConfig,
 )
 from curated_transformers.generation.logits import LogitsTransform
+from torch import Tensor
+from torch.distributions import Categorical
 
 from ..models.attention import AttentionMask
 from ..models.module import CausalLMModule
@@ -18,7 +17,9 @@ from .state import GeneratorState
 
 
 class Generator(Generic[CacheT]):
-    """Generator for causal language models."""
+    """
+    Generator base class for causal language models.
+    """
 
     model: CausalLMModule[CacheT]
 
@@ -39,7 +40,7 @@ class Generator(Generic[CacheT]):
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
-        See the :meth:`.generate` method.
+        Alias for :meth:`.generate`.
         """
         return self.generate(
             attention_mask=attention_mask,
@@ -66,10 +67,10 @@ class Generator(Generic[CacheT]):
 
         :param ids:
             Batch of piece identifiers to start generating from.
-            **Shape:** (batch, seq_len)
+            **Shape:** (batch_size,, seq_len)
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
-            **Shape:** (batch, seq_len)
+            **Shape:** (batch_size,, seq_len)
         :param config:
             Generator configuraton.
         :returns:

@@ -15,12 +15,12 @@ def prepare_module_for_quantization(
     to generate quantized parameter tensors.
 
     :param module:
-        Top-level module to quantize. Should implement `Quantizable`.
+        Top-level module to quantize. Should implement ``Quantizable``.
     :param config:
         Configuration for the quantizer.
     :returns:
-        A callable that converts a non-quantized tensor to a quantized
-        parameter.
+        An optional callable that converts a non-quantized tensor
+        to a quantized parameter.
     """
     if not isinstance(module, Quantizable):
         raise ValueError(f"Module of type `{type(module)}` is not quantizable")

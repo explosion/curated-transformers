@@ -3,7 +3,9 @@ from dataclasses import dataclass
 
 @dataclass
 class LLaMAAttentionConfig:
-    """LLaMA (Touvron et al., 2023) attention configuration."""
+    """
+    LLaMA (Touvron et al., 2023) attention configuration.
+    """
 
     dropout_prob: float
     hidden_width: int
@@ -21,12 +23,17 @@ class LLaMAAttentionConfig:
         rotary_fraction=0.25,
     ):
         """
-        :param dropout_prob: Dropout to apply after attention.
-        :param hidden_width: Hidden width of the transformer.
-        :param num_attention_heads: Number of attention heads.
-        :param rotary_base: Base in signifying the rotary embedding period.
-        :param rotary_fraction: Fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
+        :param dropout_prob:
+            Dropout to apply after attention.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param num_attention_heads:
+            Number of attention heads.
+        :param rotary_base:
+            Base in signifying the rotary embedding period.
+        :param rotary_fraction:
+            Fraction of hidden width to apply rotary embeddings to.
+            Must be in ``[0,1]``.
         """
 
         self.dropout_prob = dropout_prob
@@ -38,7 +45,9 @@ class LLaMAAttentionConfig:
 
 @dataclass
 class LLaMAEmbeddingConfig:
-    """LLaMA (Touvron et al., 2023) embedding configuration."""
+    """
+    LLaMA (Touvron et al., 2023) embedding configuration.
+    """
 
     dropout_prob: float
     embedding_width: int
@@ -54,10 +63,14 @@ class LLaMAEmbeddingConfig:
         vocab_size: int = 50432,
     ) -> None:
         """
-        :param dropout_prob: Dropout to apply after attention.
-        :param embedding_width: Width of the embeddings.
-        :param rms_norm_eps: Epsilon for layer normalization.
-        :param vocab_size: Vocabulary size (number of embeddings).
+        :param dropout_prob:
+            Dropout to apply after attention.
+        :param embedding_width:
+            Width of the embeddings.
+        :param rms_norm_eps:
+            Epsilon for layer normalization.
+        :param vocab_size:
+            Vocabulary size (number of embeddings).
         """
 
         self.dropout_prob = dropout_prob
@@ -68,7 +81,9 @@ class LLaMAEmbeddingConfig:
 
 @dataclass
 class LLaMALayerConfig:
-    """LLaMA (Touvron et al., 2023) layer configuration."""
+    """
+    LLaMA (Touvron et al., 2023) layer configuration.
+    """
 
     dropout_prob: float
     hidden_act: str
@@ -88,15 +103,21 @@ class LLaMALayerConfig:
         rms_norm_eps: float = 1e-5,
     ) -> None:
         """
-        :param dropout_prob: Dropout to apply after hidden layers.
-        :param hidden_act: Activation in the feed-forward layer. See
+        :param dropout_prob:
+            Dropout to apply after hidden layers.
+        :param hidden_act:
+            Activation in the feed-forward layer. See
             :class:`curated_transformers.models.feedforward.PointwiseFeedForward`
             for possible values.
-        :param hidden_width: Hidden width of the transformer.
-        :param intermediate_width: Intermediate width in the feed-forward
-            layer. The non-linearity is applied in this intermediate width.
-        :param rms_norm_eps: Epsilon for layer normalization.
-        :param num_hidden_layers: Number of hidden layers.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param intermediate_width:
+            Intermediate width in the feed-forward layer.
+            The non-linearity is applied in this intermediate width.
+        :param rms_norm_eps:
+            Epsilon for layer normalization.
+        :param num_hidden_layers:
+            Number of hidden layers.
         """
 
         self.dropout_prob = dropout_prob
@@ -108,7 +129,9 @@ class LLaMALayerConfig:
 
 
 class LLaMAConfig:
-    """LLaMA (Touvron et al., 2023) model configuration."""
+    """
+    LLaMA (Touvron et al., 2023) model configuration.
+    """
 
     attention: LLaMAAttentionConfig
     embedding: LLaMAEmbeddingConfig
@@ -130,22 +153,32 @@ class LLaMAConfig:
         vocab_size: int = 50280,
     ):
         """
-        :param attention_probs_dropout_prob: Dropout to apply after attention.
-        :param hidden_act: Activation in the feed-forward layer. See
+        :param attention_probs_dropout_prob:
+            Dropout to apply after attention.
+        :param hidden_act:
+            Activation in the feed-forward layer. See
             :class:`curated_transformers.models.feedforward.PointwiseFeedForward`
             for possible values.
-        :param hidden_dropout_prob: Dropout to apply to the hidden and
-            embedding layers.
-        :param hidden_width: Hidden width of the transformer.
-        :param intermediate_width: Intermediate width in the feed-forward
-            layer. The non-linearity is applied in this intermediate width.
-        :param rms_norm_eps: Epsilon for layer normalization.
-        :param num_attention_heads: Number of attention heads.
-        :param num_hidden_layers: Number of hidden layers.
-        :param rotary_embedding_base: Base in signifying the rotary embedding period.
-        :param rotary_embedding_fraction: Fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
-        :param vocab_size: Vocabulary size (number of embeddings).
+        :param hidden_dropout_prob:
+            Dropout to apply to the hidden and embedding layers.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param intermediate_width:
+            Intermediate width in the feed-forward layer.
+            The non-linearity is applied in this intermediate width.
+        :param rms_norm_eps:
+            Epsilon for layer normalization.
+        :param num_attention_heads:
+            Number of attention heads.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param rotary_embedding_base:
+            Base in signifying the rotary embedding period.
+        :param rotary_embedding_fraction:
+            Fraction of hidden width to apply rotary embeddings to.
+            Must be in ``[0,1]``.
+        :param vocab_size:
+            Vocabulary size (number of embeddings).
         """
 
         self.attention = LLaMAAttentionConfig(

@@ -19,10 +19,13 @@ class RobertaPreDecoder(PreDecoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a RoBERTa pre-decoder.
+        """
+        Construct a RoBERTa pre-decoder.
 
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_id:
+            The piece id used to mark the beginning of a sequence.
+        :param eos_id:
+            The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
@@ -79,12 +82,17 @@ class RobertaTokenizer(ByteBPETokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
-        """Construct a tokenizer from vocabulary and merge files.
+        """
+        Construct a tokenizer from vocabulary and merge files.
 
-        vocab_path (Path): path to the vocabulary file.
-        merges_path (Path): path to the merges file.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
+        :param vocab_path:
+            Path to the vocabulary file.
+        :param merges_path:
+            Path to the merges file.
+        :param bos_piece:
+            The piece to use to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece to use to mark the end of a sequence.
         """
         processor = ByteBPEProcessor.load_from_files(
             vocab=vocab_path, merges=merges_path

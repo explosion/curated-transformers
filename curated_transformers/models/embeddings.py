@@ -10,6 +10,10 @@ from .output import KeyValueCache
 
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class SinusoidalPositionalEmbedding(Module):
+    """
+    Sinusoidal positional embeddings (Vaswani et al., 2017).
+    """
+
     def __init__(
         self,
         dim: int,
@@ -18,6 +22,18 @@ class SinusoidalPositionalEmbedding(Module):
         normalize=True,
         device: Optional[torch.device] = None,
     ):
+        """
+        Construct a sinosoidal positional embedding module.
+
+        :param dim:
+            Width of the embedding.
+        :param max_len:
+            Maximum length of the embedding.
+        :param normalize:
+            Perform L2 normalization of the embedding.
+        :param device:
+            Device on which the module is to be initialized.
+        """
         super().__init__()
 
         position = torch.arange(max_len, device=device).unsqueeze(1)
@@ -36,15 +52,25 @@ class SinusoidalPositionalEmbedding(Module):
         self.pe = pe
         self.pe.requires_grad = False
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         """
-        Shapes:
-            x - (batch, seq_len)
+        Returns the positional embedding for the input.
+
+        :param input:
+            Input.
+            **Shape:** (batch_size,, seq_len)
+        :returns:
+            Positional embedding for the input.
+            **Shape:** (seq_len, width)
         """
-        return self.pe[x.size(1), :]
+        return self.pe[input.size(1), :]
 
 
 class RotaryEmbeddings(Module):
+    """
+    Rotary embeddings (Su et al., 2021).
+    """
+
     cos: Tensor
     sin: Tensor
     theta: Tensor
@@ -57,18 +83,21 @@ class RotaryEmbeddings(Module):
         base: int = 10000,
         device: Optional[torch.device] = None,
     ):
-        """Rotary embeddings (Su et al., 2021) layer. The rotary embedding
-        will be precomputed for up to 'seq _len' positions. The embedding
+        """
+        Construct a rotary embedding module. The rotary embedding
+        will be precomputed for up to ``seq _len`` positions. The embedding
         will be recomputed when a longer sequence is found in the input.
 
         :param width:
-            Rotary embedding dimensionality, must be even.
+            Rotary embedding dimensionality.
+            Must be even.
         :param seq_len:
             Number of positons to initially precompute.
         :param base:
-            The base used for Θ_i, determines the cycle length of the
-            embeddings.
-        :param device: Device on which the module is to be initialized.
+            The base used for ``Θ_i``.
+            Determines the cycle length of the embeddings.
+        :param device:
+            Device on which the module is to be initialized.
         """
         super().__init__()
 
@@ -103,14 +132,17 @@ class RotaryEmbeddings(Module):
         self.register_buffer("sin", re_sin, persistent=False)
 
     def _rotate(self, input: Tensor):
-        """Rotate the input tensor by half of its innermost width.
+        """
+        Rotate the input tensor by half of its innermost width.
 
-        input (Tensor): array to rotate.
-        RETURNS (Tensor): rotated array.
+        :param input:
+            Tensor to rotate.
+            **Shape:** (..., width)
+        :returns:
+            Rotated tensor.
+            **Shape:** (.., width)
 
-        Shapes:
-            input - (..., width)
-            output - (..., width)
+        :meta private:
         """
         half_idx = input.shape[-1] // 2
         input_1 = -input[..., half_idx:]
@@ -119,17 +151,18 @@ class RotaryEmbeddings(Module):
 
     def forward(self, input: torch.Tensor, *, positions: Optional[Tensor] = None):
         """
-        Apply rotary embeddings to an array.
+        Apply rotary embeddings to the input.
 
-        :param input: Array to apply the rotary embeddings to.
-        :param positions: positions of the inputs. If no positions are
-            provided, they are assumed to be [0, seq_len).
-        :return: Array with the rotary embeddings applied.
-
-        Shapes:
-            input - (batch_size, num_heads, seq_len, width_per_head)
-            positions - (batch_size, seq_len)
-            output - (batch_size, num_heads, seq_len, width_per_head)
+        :param input:
+            Input to apply the rotary embeddings to.
+            **Shape:** (batch_size, num_heads, seq_len, width_per_head)
+        :param positions:
+            Positions of the inputs. If no positions are
+            provided, they are assumed to be ``[0, seq_len)``.
+            **Shape:** (batch_size, seq_len)
+        :returns:
+            Input with the rotary embeddings applied.
+            **Shape:** (batch_size, num_heads, seq_len, width_per_head)
         """
         batch_size, _, seq_len, width = input.shape
 
@@ -160,7 +193,10 @@ class RotaryEmbeddings(Module):
 
 
 class QueryKeyRotaryEmbeddings(Module):
-    """Rotary embeddings applied to key and value representations"""
+    """
+    Rotary embeddings (Su et al., 2021) applied
+    to key and value representations.
+    """
 
     def __init__(
         self,
@@ -171,14 +207,17 @@ class QueryKeyRotaryEmbeddings(Module):
         device: Optional[torch.device] = None,
     ) -> None:
         """
-        Construct rotary embeddings for transforming key and value
-        representations.
+        Construct a rotary embedding module.
 
-        :param base: Base in signifying the rotary embedding period.
-        :param fraction: Fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
-        :param dims_per_head: Width of key and value heads.
-        :param device: Device on which the module is to be initialized.
+        :param base:
+            Base in signifying the rotary embedding period.
+        :param fraction:
+            Fraction of hidden width to apply rotary embeddings to.
+            Must be in ``[0,1]``.
+        :param dims_per_head:
+            Width of key and value heads.
+        :param device:
+            Device on which the module is to be initialized.
         """
         super().__init__()
         if not 0.0 <= fraction <= 1.0:
@@ -204,19 +243,20 @@ class QueryKeyRotaryEmbeddings(Module):
 
         :param query:
             Query representations.
-            **Shape:** (batch, head, seq_len, width_per_head)
+            **Shape:** (batch_size,, head, seq_len, width_per_head)
         :param key:
             Key representations.
-            **Shape:** (batch, head, seq_len, width_per_head)
+            **Shape:** (batch_size,, head, seq_len, width_per_head)
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
             look up rotary embeddings. Normally, these positions are calculated
             automatically. But if the positions deviate for some reason, they
             can be provided through this argument.
+            **Shape:** (batch_size, seq_len)
         :returns:
             Query and key with the rotary embeddings applied.
-            **Shape:** (batch, head, seq_len, width_per_head)
+            **Shape:** (batch_size,, head, seq_len, width_per_head)
         """
         dims_per_head = self.dims_per_head
         rotary_dims = self.rotary_dims

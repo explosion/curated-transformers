@@ -17,7 +17,9 @@ from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
 
 
 class GPTNeoXDecoderLayer(Module):
-    """GPT-NeoX (Black et al, 2022) layer."""
+    """
+    GPT-NeoX (Black et al., 2022) decoder layer.
+    """
 
     def __init__(
         self,
@@ -26,11 +28,6 @@ class GPTNeoXDecoderLayer(Module):
         *,
         device: Optional[torch.device] = None
     ):
-        """
-        :param layer_config: Layer configuration.
-        :param attention_config: Attention configuration.
-        :param device: Device on which the module is to be initialized.
-        """
         super().__init__()
 
         self.mha = SelfAttention(
@@ -66,7 +63,7 @@ class GPTNeoXDecoderLayer(Module):
 
     def forward(
         self,
-        x: Tensor,
+        input: Tensor,
         attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
@@ -75,24 +72,28 @@ class GPTNeoXDecoderLayer(Module):
         """
         Apply the GPT-NeoX layer to the given piece hidden representations.
 
-        :param x: Hidden representations to apply the layer to.
-            **Shape:** (batch, seq_len, width)
-        :param attention_mask: Attention mask. Sequence elements for which the
+        :param input:
+            Hidden representations to apply the layer to.
+            **Shape:** (batch_size,, seq_len, width)
+        :param attention_mask:
+            Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch, seq_len)
-        :param cache: Key/value cache to avoid recomputing
+            **Shape:** (batch_size,, seq_len)
+        :param cache:
+            Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
-        :param positions: Input positions. Positions are needed to
-            look up rotary embeddings. Normally, these positions are calculated
-            automatically. But if the positions deviate for some reason, they
-            can be provided through this argument.
-        :param store_cache: Whether to cache the key/value representations for
-            future reuse.
-        :returns: Layer output.
+        :param positions:
+            Input positions. Positions are needed to look up rotary embeddings.
+            Normally, these positions are calculated automatically. But if the
+            positions deviate for some reason, they can be provided through this argument.
+        :param store_cache:
+            Whether to cache the key/value representations for future reuse.
+        :returns:
+            Layer output and the key/value cache.
         """
         attn_out, cache = self.mha(
-            self.input_layer_norm(x),
+            self.input_layer_norm(input),
             attention_mask,
             cache=cache,
             store_cache=store_cache,
@@ -100,8 +101,8 @@ class GPTNeoXDecoderLayer(Module):
             use_causal_mask=True,
         )
         attn_out = self.attn_output_dropout(attn_out)
-        ffn_out = self.ffn(self.ffn_layer_norm(x))
+        ffn_out = self.ffn(self.ffn_layer_norm(input))
         ffn_out = self.ffn_output_dropout(ffn_out)
 
         # Parallel attention & feed-forward, Section 2.1.2
-        return x + attn_out + ffn_out, cache
+        return input + attn_out + ffn_out, cache

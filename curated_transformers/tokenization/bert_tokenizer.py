@@ -29,7 +29,8 @@ class BertPreEncoder(PreEncoder):
         bos_piece: str,
         eos_piece: str,
     ):
-        """Construct a BERT pre-encoder.
+        """
+        Construct a BERT pre-encoder.
 
         :param bos_piece:
             The piece used to mark the beginning of a sequence.
@@ -40,8 +41,10 @@ class BertPreEncoder(PreEncoder):
         self.eos_piece = eos_piece
 
     def split_token_on_punctuation(self, token: str) -> List[str]:
-        """Split a token on punctuation characters. For instance,
-        'AWO-Mitarbeiter' is split into ['AWO', '-', 'Mitarbeiter']"""
+        """
+        Split a token on punctuation characters. For instance,
+        'AWO-Mitarbeiter' is split into ['AWO', '-', 'Mitarbeiter'].
+        """
         tokens = []
         in_word = False
         while token:
@@ -59,7 +62,9 @@ class BertPreEncoder(PreEncoder):
         return ["".join(t) for t in tokens]
 
     def is_punctuation(self, char: str) -> bool:
-        """Checks whether `char` is a punctuation character."""
+        """
+        Checks whether `char` is a punctuation character.
+        """
         # ASCII punctuation from HF tranformers, since we need to split
         # in the same way.
         cp = ord(char)
@@ -100,10 +105,13 @@ class BertPostEncoder(PostEncoder):
         unk_piece: str,
         unk_id: int,
     ):
-        """Construct a BERT post-encoder.
+        """
+        Construct a BERT post-encoder.
 
-        unk_piece (int): The piece used to mark unknown tokens.
-        unk_id (int): The piece id used to mark unknown tokens.
+        :param unk_piece:
+            The piece used to mark unknown tokens.
+        :param unk_id:
+            The piece id used to mark unknown tokens.
         """
         self.unk_piece = unk_piece
         self.unk_id = unk_id
@@ -126,10 +134,13 @@ class BertPreDecoder(PreDecoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a BERT pre-decoder.
+        """
+        Construct a BERT pre-decoder.
 
-        bos_id (int): The piece id used to mark the beginning of a sequence.
-        eos_id (int): The piece id used to mark the end of a sequence.
+        :param bos_id:
+            The piece id used to mark the beginning of a sequence.
+        :param eos_id:
+            The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
@@ -145,7 +156,9 @@ class BertPostDecoder(PostDecoder):
     def __init__(
         self,
     ):
-        """Construct a BERT post-decoder."""
+        """
+        Construct a BERT post-decoder.
+        """
         pass
 
     def __call__(self, output: Iterable[str]) -> List[str]:
@@ -167,7 +180,8 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         lowercase: bool = False,
         strip_accents: bool = False,
     ):
-        """Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
+        """
+        Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.
@@ -216,14 +230,21 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         lowercase: bool = False,
         strip_accents: bool = False,
     ) -> Self:
-        """Construct a tokenizer from the vocabulary file.
+        """
+        Construct a tokenizer from the vocabulary file.
 
-        vocab_path (Path): Path to the vocabulary file.
-        bos_piece (str): The piece to use to mark the beginning of a sequence.
-        eos_piece (str): The piece to use to mark the end of a sequence.
-        unk_piece (str): The piece used to mark unknown tokens.
-        lowercase (bool): Lowercase text.
-        strip_accents (bool): Strip accents from text.
+        :param vocab_path:
+            Path to the vocabulary file.
+        :param bos_piece:
+            The piece to use to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece to use to mark the end of a sequence.
+        :param unk_piece:
+            The piece used to mark unknown tokens.
+        :param lowercase:
+            Lowercase text.
+        :param strip_accents:
+            Strip accents from text.
         """
         vocab: Dict[str, int] = {}
         with open(vocab_path, encoding="utf8") as f:

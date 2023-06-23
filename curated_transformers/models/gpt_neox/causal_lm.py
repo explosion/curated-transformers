@@ -20,15 +20,13 @@ Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 class GPTNeoXCausalLM(
     CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quantizable
 ):
-    """GPT-NeoX (Black et al, 2022) causal language model."""
+    """
+    GPT-NeoX (Black et al., 2022) causal language model.
+    """
 
     def __init__(
         self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
     ) -> None:
-        """
-        :param config: Model configuration.
-        :param device: Device on which the module is to be initialized.
-        """
         super().__init__()
 
         self.decoder = GPTNeoXDecoder(config, device=device)
@@ -79,5 +77,5 @@ class GPTNeoXCausalLM(
 
     @classmethod
     def modules_to_not_quantize(cls) -> Set[str]:
-        # Ignore the LM head.
+        # Ignore the output projection layer.
         return {"output_embeddings"}

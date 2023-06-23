@@ -11,6 +11,10 @@ from .config import AlbertLayerConfig
 
 
 class AlbertLayerGroup(Module):
+    """
+    ALBERT (Lan et al., 2022) layer group.
+    """
+
     def __init__(
         self,
         layer_config: AlbertLayerConfig,
@@ -29,8 +33,16 @@ class AlbertLayerGroup(Module):
 
     def forward(self, input: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
-        Shapes:
-            input - (batch, seq_len, width)
+        Apply the ALBERT layer group to the input.
+
+        :param input:
+            Embeddings to apply the layer group to.
+            **Shape:** (batch_size,, seq_len, width)
+        :param attention_mask:
+            Attention mask. Sequence elements for which the
+            corresponding mask element is set to ``False`` are ignored
+            during attention calculation.
+            **Shape:** (batch_size,, seq_len)
         """
         layer_output = input
         for layer in self.group_layers:

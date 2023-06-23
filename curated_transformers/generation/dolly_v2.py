@@ -24,10 +24,13 @@ Self = TypeVar("Self", bound="DollyV2Generator")
 
 
 class DollyV2Generator(GeneratorWrapper, FromHFHub):
-    """Dolly v2 generator."""
+    """
+    Generator for Dolly v2 model variants.
+    """
 
     def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: GPTNeoXCausalLM):
-        """Construct a Dolly v2 generator.
+        """
+        Construct a Dolly v2 generator.
 
         :param tokenizer:
             A Dolly v2 tokenizer.

@@ -17,7 +17,9 @@ from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
 
 
 class RefinedWebModelDecoderLayer(Module):
-    """Refined Web Model (eg. Falcon) layer."""
+    """
+    Refined Web Model (eg. Falcon) layer.
+    """
 
     def __init__(
         self,
@@ -26,11 +28,6 @@ class RefinedWebModelDecoderLayer(Module):
         *,
         device: Optional[torch.device] = None
     ):
-        """
-        :param layer_config: Layer configuration.
-        :param attention_config: Attention configuration.
-        :param device: Device on which the module is to be initialized.
-        """
         super().__init__()
 
         self.mha = SelfAttention(
@@ -65,7 +62,7 @@ class RefinedWebModelDecoderLayer(Module):
 
     def forward(
         self,
-        x: Tensor,
+        input: Tensor,
         attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
@@ -74,27 +71,32 @@ class RefinedWebModelDecoderLayer(Module):
         """
         Apply the Refined Web Model layer to the given piece hidden representations.
 
-        :param x: Hidden representations to apply the layer to.
-            **Shape:** (batch, seq_len, width)
-        :param attention_mask: Attention mask. Sequence elements for which the
+        :param input:
+            Hidden representations to apply the layer to.
+            **Shape:** (batch_size,, seq_len, width)
+        :param attention_mask:
+            Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch, seq_len)
-        :param cache: Key/value cache to avoid recomputing
-            key/value representations for tokens that were previously seen.
-        :param positions: Input positions. Positions are needed to
-            look up rotary embeddings. Normally, these positions are calculated
-            automatically. But if the positions deviate for some reason, they
-            can be provided through this argument.
-        :param store_cache: Whether to cache the key/value representations for
-            future reuse.
-        :returns: Layer output.
+            **Shape:** (batch_size,, seq_len)
+        :param cache:
+            Key/value cache to avoid recomputing key/value representations
+            for tokens that were previously seen.
+        :param positions:
+            Input positions. Positions are needed to look up rotary embeddings.
+            Normally, these positions are calculated automatically. But if the
+            positions deviate for some reason, they can be provided through this
+            argument.
+        :param store_cache:
+            Whether to cache the key/value representations for future reuse.
+        :returns:
+            Layer output and the key/value cache.
         """
         # NOTE: we currently only support parallel attention.
-        x_layer_norm = self.input_layer_norm(x)
+        input_layer_norm = self.input_layer_norm(input)
 
         attn_out, cache = self.mha(
-            x_layer_norm,
+            input_layer_norm,
             attention_mask,
             cache=cache,
             store_cache=store_cache,
@@ -103,5 +105,5 @@ class RefinedWebModelDecoderLayer(Module):
         )
         attn_out = self.attn_output_dropout(attn_out)
 
-        ffn_out = self.ffn(x_layer_norm)
-        return self.ffn_output_dropout(ffn_out + attn_out) + x, cache
+        ffn_out = self.ffn(input_layer_norm)
+        return self.ffn_output_dropout(ffn_out + attn_out) + input, cache

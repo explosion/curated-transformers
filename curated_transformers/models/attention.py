@@ -42,10 +42,22 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
 
 
 class AttentionMask:
+    """
+    Mask for attention calculation. Sequence elements for which the
+    corresponding mask element is set to ``False`` are ignored during
+    attention calculation.
+    """
+
     bool_mask: Tensor
     _logit_mask: Optional[Tensor]
 
     def __init__(self, bool_mask: Tensor):
+        """
+        Construct an attention mask.
+
+        :params bool_mask:
+            The boolean mask.
+        """
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
 
@@ -63,14 +75,15 @@ class AttentionMask:
         self._logit_mask = None
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
-        """Use the attention mask to mask attention logits.
+        """
+        Use the attention mask to mask attention logits.
 
         :param input:
-            Attention logits to apply the mask to. **Shape:**
-            (batch, heads, query_len, key_len)
+            Attention logits to apply the mask to.
+            **Shape:** (batch_size,, heads, query_len, key_len)
         :returns:
-            Logits with the attention mask applied. **Shape:**
-            (batch, heads, query_len, key_len)
+            Logits with the attention mask applied.
+            **Shape:** (batch_size,, heads, query_len, key_len)
         """
         blocked_value = torch.finfo(input.dtype).min
         return torch.where(self.bool_mask, input, blocked_value)
@@ -92,19 +105,19 @@ class AttentionMask:
 
 
 def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
-    """Create a causal mask.
-
-    A causal mask ensures that tokens cannot attend to succeeding tokens.
+    """
+    Create a causal mask. A causal mask ensures that tokens
+    cannot attend to succeeding tokens.
 
     :param query:
-        Query to compute the causal mask for. **Shape:**
-        (batch, heads, query_len, head_dim)
+        Query to compute the causal mask for.
+        **Shape:** (batch_size,, heads, query_len, head_dim)
     :param key:
-        Key to compute the causal mask for. **Shape:**
-        (batch, heads, key_len, head_dim)
+        Key to compute the causal mask for.
+        **Shape:** (batch_size,, heads, key_len, head_dim)
     :returns:
-        The causal mask. **Shape:**
-        (batch, heads, query_len, key_len)
+        The causal mask.
+        **Shape:** (batch_size,, heads, query_len, key_len)
     """
     query_len = query.size(2)
     key_len = key.size(2)
@@ -120,7 +133,9 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
 
 
 class QkvHeadSharing(IntEnum):
-    """Sharing of head parameters."""
+    """
+    Sharing of head parameters.
+    """
 
     #: No parameters are shared between heads.
     NONE = 0
@@ -131,8 +146,9 @@ class QkvHeadSharing(IntEnum):
 
 
 class QkvMode(IntEnum):
-    """Modes of handling the query, key and value projections
-    in the self-attention layer.
+    """
+    How the query, key and value projections are handled in
+    the self-attention layer.
     """
 
     #: ``SEPARATE`` - Use separate projections for query, key and value.
@@ -147,12 +163,16 @@ class QkvMode(IntEnum):
 
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
-    """Scaled dot-product attention (Vaswani et al., 2017)"""
+    """
+    Scaled dot-product attention (Vaswani et al., 2017).
+    """
 
     def __init__(self, *, dropout_prob: float = 0.1):
         """
-        :param dropout_prob: Dropout to apply to the final hidden
-            representation.
+        Construct a scaled dot-product attention module.
+
+        :param dropout_prob:
+            Dropout to apply to the final hidden representation.
         """
         super().__init__()
         self.dropout = torch.nn.Dropout(p=dropout_prob)
@@ -171,17 +191,22 @@ class ScaledDotProductAttention(Module):
         Sequence elements that are marked with `False` in the attention mask
         are ignored by the attention mechanism (if a mask is provided).
 
-        :param k: Key.
-        :param q: Query.
-        :param v: Value.
-        :param attention_mask: Attention mask. Sequence elements for which the
-            corresponding mask element is set to ``False`` are ignored
-            in attention.
-
-        Shapes:
-            k, q, v - (batch, heads, seq_len, width)
-            attention_mask - (batch, seq_len)
-            output - (batch, heads, seq_len, width)
+        :param k:
+            Key.
+            **Shape:** (batch_size,, heads, seq_len, width)
+        :param q:
+            Query.
+            **Shape:** (batch_size,, heads, seq_len, width)
+        :param v:
+            Value.
+            **Shape:** (batch_size,, heads, seq_len, width)
+        :param attention_mask:
+            Attention mask. Sequence elements for which the corresponding mask
+            element is set to ``False`` are ignored in attention.
+            **Shape:** (batch_size,, seq_len)
+        :returns:
+            Attention values.
+            **Shape:** (batch_size,, heads, seq_len, width)
         """
         model_dim = key.shape[-1]
         attn_scores = query @ key.transpose(-2, -1)
@@ -203,9 +228,11 @@ class RotaryEmbeddingConfig:
     """
     Configuration for rotary embeddings.
 
-    :param fraction: fraction of hidden width to apply rotary
-        embeddings to. Must be in [0,1].
-    :param base: Base in signifying the rotary embedding period.
+    :param fraction:
+        Fraction of hidden width to apply rotary embeddings to.
+        Must be in ``[0,1]``.
+    :param base:
+        Base in signifying the rotary embedding period.
     """
 
     fraction: float
@@ -231,17 +258,24 @@ class SelfAttention(Module):
         use_bias: bool,
         device: Optional[torch.device] = None,
     ):
-        """Construct a self-attention layer with rotary position embeddings.
+        """
+        Construct a self-attention layer with rotary position embeddings.
 
-        :param dropout_prob: Dropout to apply between the self-attention
-            and output layers.
-        :param qkv_head_sharing: Head sharing in query, key and value.
-        :param hidden_width: Hidden width of the layer.
-        :param num_attention_heads: Number of attention heads.
-        :param qkv_mode: Handling mode for query, key and value.
-        :param rotary_embeds: Configuration for rotary embeddings, rotary
-            embeddings will not be used when set to ``None``.
-        :param device: Device on which the module is to be initialized.
+        :param dropout_prob:
+            Dropout to apply between the self-attention and output layers.
+        :param qkv_head_sharing:
+            Head sharing in query, key and value.
+        :param hidden_width:
+            Hidden width of the layer.
+        :param num_attention_heads:
+            Number of attention heads.
+        :param qkv_mode:
+            Handling mode for query, key and value.
+        :param rotary_embeds:
+            Configuration for rotary embeddings. Rotary embeddings will not
+            be used when set to ``None``.
+        :param device:
+            Device on which the module is to be initialized.
         """
 
         super().__init__()
@@ -308,7 +342,7 @@ class SelfAttention(Module):
 
     def forward(
         self,
-        x: Tensor,
+        input: Tensor,
         attention_mask: Optional[AttentionMask],
         use_causal_mask: bool = False,
         cache: Optional[KeyValueCache] = None,
@@ -318,31 +352,33 @@ class SelfAttention(Module):
         """
         Apply self-attention layer to the input.
 
-        Sequence elements that are marked with `False` in the attention mask
-        are ignored by the attention mechanism (if a mask is provided).
-
-        :param x: Input to apply self-attention to.
-        :param attention_mask: Attention mask. Sequence elements for which the
+        :param input:
+            Input to apply self-attention to.
+            **Shape:** (batch_size,, seq_len, width)
+        :param attention_mask:
+            Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
-        :param use_causal_mask: Mask out succeeding sequence elements when ``True``.
-        :param cache: Key/value cache to avoid recomputing
-            key/value representations for tokens that were previously seen.
-        :param store_cache: Whether to cache the key/value representations for
-            future reuse.
-        :param positions: Input positions. Positions are needed to
-            look up rotary embeddings. Normally, these positions are calculated
-            automatically. But if the positions deviate for some reason, they
-            can be provided through this argument.
-        :returns: Layer output.
-
-        Shapes:
-            x - (batch, seq_len, width)
-            attention_mask - (batch, seq_len)
-            positions - (batch, seq_len)
+            **Shape:** (batch_size,, seq_len)
+        :param use_causal_mask:
+            Mask out succeeding sequence elements when ``True``.
+        :param cache:
+            Key/value cache to avoid recomputing key/value representations
+            for tokens that were previously seen.
+        :param store_cache:
+            Whether to cache the key/value representations for future reuse.
+        :param positions:
+            Input positions. Positions are needed to look up rotary embeddings.
+            Normally, these positions are calculated automatically. But if the
+            positions deviate for some reason, they can be provided through this
+            argument.
+            **Shape:** (batch_size,, seq_len)
+        :returns:
+            Layer output.
+            **Shape:** (batch_size,, seq_len, width)
         """
 
-        query, key, value = self._query_key_value(x)
+        query, key, value = self._query_key_value(input)
 
         if self.rotary_embeds is not None:
             query, key = self.rotary_embeds(
@@ -394,34 +430,34 @@ class SelfAttention(Module):
         else:
             return output, None
 
-    def _query_key_value(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+    def _query_key_value(self, input: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Compute query, key and value representations for the input.
 
-        :param x:
+        :param input:
             Input
-            **Shape:** (batch, seq_len, hidden_width)
+            **Shape:** (batch_size,, seq_len, hidden_width)
         :returns:
             Query, key, value
-            **Shape:** (batch, head, seq_len, width_per_head)
+            **Shape:** (batch_size,, head, seq_len, width_per_head)
         """
         kv_heads = (
             1 if self.head_sharing == QkvHeadSharing.KEY_VALUE else self.num_heads
         )
         if self.qkv_mode == QkvMode.SEPARATE:
-            query = self.query(x)
-            key = self.key(x)
-            value = self.value(x)
+            query = self.query(input)
+            key = self.key(input)
+            value = self.value(input)
 
             query = split_heads(query, self.num_heads)
             key = split_heads(key, kv_heads)
             value = split_heads(value, kv_heads)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
-            proj = self.input(x)
+            proj = self.input(input)
             proj = split_heads(proj, self.num_heads)
             query, key, value = proj.chunk(3, dim=-1)
         else:
-            proj = self.input(x)
+            proj = self.input(input)
             query, key, value = proj.split(
                 [
                     self.num_heads * self.dims_per_head,
@@ -438,36 +474,40 @@ class SelfAttention(Module):
         return query, key, value
 
 
-def split_heads(x: Tensor, num_heads: int) -> Tensor:
+def split_heads(input: Tensor, num_heads: int) -> Tensor:
     """
     Split the input by attention head. The caller must validate
     that the innermost dimension is divisable by the number of
     heads.
 
-    x (Tensor): the tensor to split by head.
-    num_heads (int): the number of attention heads.
-
-    Shapes:
-        x - (batch, seq_len, width)
-        output - (batch, head, seq_len, width_per_head)
+    :param input:
+        Tensor to split by head.
+        **Shape:** (batch_size,, seq_len, hidden_width)
+    :param num_heads:
+        Number of attention heads.
+    :returns:
+        Tensor spilt by head.
+        **Shape:** (batch_size,, head, seq_len, width_per_head)
     """
-    batch_size, seq_len, model_dim = x.size()
-
+    batch_size, seq_len, model_dim = input.size()
     assert model_dim % num_heads == 0
-
     dims_per_head = model_dim // num_heads
 
-    return x.view(batch_size, seq_len, num_heads, dims_per_head).transpose(1, 2)
+    return input.view(batch_size, seq_len, num_heads, dims_per_head).transpose(1, 2)
 
 
-def combine_heads(x: Tensor) -> Tensor:
+def combine_heads(input: Tensor) -> Tensor:
     """
-    Combine the attention head representations. The inverse of
-    'split_heads'.
+    Combine the split attention head representations.
 
-    Shapes:
-        x - (batch, head, seq_len, width_per_head)
-        output - (batch, seq_len, width)
+    :param input:
+        Tensor split by head.
+        **Shape:** (batch_size,, head, seq_len, width_per_head)
+    :returns:
+        Merged tensor.
+        **Shape:** (batch_size,, seq_len, hidden_width)
     """
-    batch_size, head, seq_len, model_dim = x.size()
-    return x.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
+    batch_size, head, seq_len, model_dim = input.size()
+    return (
+        input.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
+    )

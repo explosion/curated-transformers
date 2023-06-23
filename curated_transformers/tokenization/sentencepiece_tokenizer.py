@@ -7,17 +7,21 @@ from .tokenizer import PiecesWithIds, Tokenizer
 
 
 class SentencePieceTokenizer(Tokenizer):
-    """Piece tokenizer using SentencePiece encoding
-    (Kudo et al., 2018)"""
+    """
+    Piece tokenizer using SentencePiece encoding
+    (Kudo et al., 2018)
+    """
 
     def __init__(
         self,
         *,
         processor: SentencePieceProcessor,
     ):
-        """Construct a tokenizer from a curated tokenizers SentencePiece processor.
+        """
+        Construct a sentence piece tokenzier.
 
-        :param processor: The processor to wrap.
+        :param processor:
+            The processor to wrap.
         """
         self.processor = processor
 

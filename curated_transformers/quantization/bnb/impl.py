@@ -16,7 +16,8 @@ def prepare_for_quantization(
     config: BitsAndBytesConfig,
     non_quantizable_module_prefixes: Set[str],
 ) -> Optional[TensorToParameterConverterT]:
-    """Prepares a PyTorch module for quantization using the ``bitsandbytes``
+    """
+    Prepares a PyTorch module for quantization using the ``bitsandbytes``
     library.
 
     :param module:

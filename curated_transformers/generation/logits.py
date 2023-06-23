@@ -104,7 +104,7 @@ class TemperatureTransform(LogitsTransform):
         Create a temperature transform with a given temperature.
 
         :param temperature:
-            The temperature.
+            The temperature. Must be a non-zero positive value.
         """
         super().__init__()
         if temperature <= 0.0:

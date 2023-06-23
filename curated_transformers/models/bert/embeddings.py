@@ -8,6 +8,10 @@ from .config import BertEmbeddingConfig, BertLayerConfig
 
 
 class BertEmbeddings(Module):
+    """
+    BERT (Devlin et al., 2018) embedding layer.
+    """
+
     def __init__(
         self,
         embedding_config: BertEmbeddingConfig,
@@ -62,8 +66,20 @@ class BertEmbeddings(Module):
         position_ids: Optional[Tensor] = None,
     ) -> Tensor:
         """
-        Shapes:
-            input_ids, token_type_ids, position_ids - (batch, seq_len)
+        Apply the ALBERT embedding layer to the input.
+
+        :param input_ids:
+            Piece identifiers to embed.
+            **Shape:** (batch_size,, seq_len)
+        :param token_type_ids:
+            Token type identifiers to indicate the spans of different
+            sequences in the input. Useful when performing tasks like
+            sequence classification and question answering.
+            **Shape:** (batch_size,, seq_len)
+        :param position_ids:
+            Positional identifiers with which to fetch the positional
+            embeddings for the sequences.
+            **Shape:** (batch_size,, seq_len)
         """
         if token_type_ids is None:
             token_type_ids = self._get_token_type_ids(input_ids)

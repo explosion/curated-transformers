@@ -25,15 +25,15 @@ class PointwiseFeedForward(Module):
 
     This layer is applied pointwise, meaning that the same
     transformation is applied to each sequence element. This
-    transformation is: g(xW_1 + b_1)W_2 + b_2, where W_1 and b_1 transform
-    the input to an intermediate width, g is a non-linear activation
-    function and W_2 and b_2 transform the output of the activation back to
+    transformation is: ``g(xW_1 + b_1)W_2 + b_2``, where ``W_1`` and ``b_1``
+    transform the input to an intermediate width, ``g`` is a non-linear activation
+    function and ``W_2`` and ``b_2`` transform the output of the activation back to
     the input width.
 
     Gated Linear Units (Dauphin et al., 2016 and Shazeer, 2020) are also
     supported. Gating applies the transformation
-    (g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2, where W_g and b_g are the
-    affine transformations for the gate.
+    ``(g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2``, where ``W_g`` and ``b_g``
+    are the affine transformations for the gate.
     """
 
     gate: Optional[Linear]
@@ -49,14 +49,22 @@ class PointwiseFeedForward(Module):
         device: Optional[torch.device] = None,
     ):
         """
-        :param hidden_act: The activation function to apply, one of: "relu",
-            "gelu" or "gelu_new".
-        :param hidden_width: The input and output width of the layer.
-        :param intermediate_width: The width of the projection to which the
-            non-linearity is applied.
-        :param use_bias: Use biases.
-        :param use_gate: Use Gated Linear Units.
-        :param device: Device on which the module is to be initialized.
+        Construct a point-wise feed-forward layer module.
+
+        :param hidden_act:
+            The activation function to apply.
+            Must be one of the following: ``relu``, ``gelu``, ``gelu_fast``,
+            ``gelu_new``, ``silu``.
+        :param hidden_width:
+            The input and output width of the layer.
+        :param intermediate_width:
+            The width of the projection to which the non-linearity is applied.
+        :param use_bias:
+            Use biases.
+        :param use_gate:
+            Use Gated Linear Units.
+        :param device:
+            Device on which the module is to be initialized.
         """
         super().__init__()
 
@@ -80,15 +88,20 @@ class PointwiseFeedForward(Module):
             )
         self.activation = _ACTIVATIONS[hidden_act]()
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         """
-        Apply the point-wise feedforward layer to the input.
+        Apply the point-wise feed-forward layer to the input.
 
-        Shapes:
-            x - (batch, seq_len, width)
-            output - (batch, seq_len, width)
+        :param input:
+            Input.
+            **Shape:** (batch_size, seq_len, width)
+        :returns:
+            Layer output.
+            **Shape:** (batch_size, seq_len, width)
         """
         if self.gate is None:
-            return self.output(self.activation(self.intermediate(x)))
+            return self.output(self.activation(self.intermediate(input)))
         else:
-            return self.output(self.activation(self.gate(x)) * self.intermediate(x))
+            return self.output(
+                self.activation(self.gate(input)) * self.intermediate(input)
+            )

@@ -15,21 +15,29 @@ Self = TypeVar("Self", bound="Tokenizer")
 
 @dataclass
 class PiecesWithIds:
+    """
+    Encoded output of tokenizers.
+
+    :param ids:
+        Piece identifiers of each input sequence.
+    :param pieces:
+        Piece strings of each input sequence.
+    """
+
     ids: List[List[int]]
     pieces: List[List[str]]
 
     def attention_mask(self, *, pad_left: bool = False) -> Tensor:
         """
-        CPU tensor with attention masks.
-
-        The mask is equivalent to:
+        CPU tensor with attention masks. The mask is equivalent to:
         ``ids.padded_tensor(padding_id) != padding_id``
 
         :param pad_left:
             By default sequences shorter than the longest sequence are
             right-padded. Use left-padding when set to ``True``.
         :returns:
-            The attention mask. **Shape:** (batch_size, max_seq_len)
+            The attention mask.
+            **Shape:** (batch_size, max_seq_len)
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
@@ -42,13 +50,15 @@ class PiecesWithIds:
         return mask
 
     def padded_tensor(self, *, padding_id: int, pad_left: bool = False):
-        """Padded CPU tensor of the piece identifiers.
+        """
+        Padded CPU tensor of the piece identifiers.
 
         :param pad_left:
             By default sequences shorter than the longest sequence are
             right-padded. Use left-padding when set to ``True``.
         :returns:
-            The padded piece ids. **Shape:** (batch_size, max_seq_len)
+            The padded piece ids.
+            **Shape:** (batch_size, max_seq_len)
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
@@ -62,47 +72,99 @@ class PiecesWithIds:
 
 
 class PreDecoder(ABC):
-    """Callable applied before decoding."""
+    """
+    Callable applied before decoding.
+    """
 
     @abstractmethod
     def __call__(self, input: Iterable[Iterable[int]]) -> List[List[int]]:
+        """
+        Apply the pre-decoder on the input.
+
+        :param input:
+            Piece identifiers of each input sequence.
+        :returns:
+            Modified piece identifiers.
+        """
         ...
 
 
 class PostDecoder(ABC):
-    """Callable applied after decoding."""
+    """
+    Callable applied after decoding.
+    """
 
     @abstractmethod
     def __call__(self, output: Iterable[str]) -> List[str]:
+        """
+        Apply the post-decoder on the output.
+
+        :param output:
+            Decoded strings from the tokenizer.
+        :returns:
+            Modified decoded strings.
+        """
         ...
 
 
 class PreEncoder(ABC):
-    """Callable applied before encoding."""
+    """
+    Callable applied before encoding.
+    """
 
     @abstractmethod
     def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        """
+        Apply the pre-encoder on the chunks.
+
+        :param chunks:
+            Input chunks of each input sequence.
+        :returns:
+            Modified input chunks.
+        """
         ...
 
 
 class PostEncoder(ABC):
-    """Callable applied after encoding."""
+    """
+    Callable applied after encoding.
+    """
 
     @abstractmethod
     def __call__(self, pieces: PiecesWithIds) -> PiecesWithIds:
+        """
+        Apply the post-encoder on the pieces.
+
+        :param pieces:
+            Encoded output of the tokenzier.
+        :returns:
+            Modified encoded output.
+        """
         ...
 
 
 class Normalizer(ABC):
-    """Callable applied before encoding."""
+    """
+    Callable applied before encoding.
+    """
 
     @abstractmethod
     def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        """
+        Apply the normalizer on the chunks.
+
+        :param chunks:
+            Input chunks of each input sequence.
+        :returns:
+            Modified input chunks.
+        """
         ...
 
 
 class Tokenizer(ABC):
-    """Base class for all tokenizers."""
+    """
+    Base class for all tokenizers.
+    """
 
     normalizer: Optional[Normalizer] = None
     pre_decoder: Optional[PreDecoder] = None
@@ -113,7 +175,8 @@ class Tokenizer(ABC):
     def __call__(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
     ) -> PiecesWithIds:
-        """Split one or more texts into pieces.
+        """
+        Split one or more texts into pieces.
 
         :param input:
             Sequences to tokenize. If the sequences are strings, they are
@@ -126,7 +189,8 @@ class Tokenizer(ABC):
     def decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool = True
     ) -> List[str]:
-        """Reconstruct string sequences from piece identifiers.
+        """
+        Reconstruct string sequences from piece identifiers.
 
         :param input:
             The piece identifiers to reconstruct the strings from.
@@ -148,7 +212,8 @@ class Tokenizer(ABC):
     def encode(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
     ) -> PiecesWithIds:
-        """Split one or more texts into pieces.
+        """
+        Split one or more texts into pieces.
 
         :param input:
             Sequences to tokenize. If the sequences are strings, they are
@@ -201,7 +266,8 @@ class AddBosEosPreEncoder(PreEncoder):
         bos_piece: str,
         eos_piece: str,
     ):
-        """Construct a pre-encoder that adds beginning/end of sequence markers.
+        """
+        Construct a pre-encoder that adds beginning/end of sequence markers.
 
         :param bos_piece:
             The piece used to mark the beginning of a sequence.
@@ -227,6 +293,10 @@ class AddBosEosPreEncoder(PreEncoder):
 
 
 class UnicodeNormalization(str, Enum):
+    """
+    Unicode normalization schemes.
+    """
+
     NFC = "NFC"
     NFKC = "NFKC"
     NFD = "NFD"
@@ -246,6 +316,8 @@ class DefaultNormalizer(Normalizer):
         strip_accents: bool = False,
     ) -> None:
         """
+        Construct a default normalizer.
+
         :param utf_normalization:
             Unicode normalization scheme to use.
         :param lowercase:

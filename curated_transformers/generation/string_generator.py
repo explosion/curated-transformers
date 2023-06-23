@@ -11,6 +11,8 @@ from .generator import Generator
 class StringGenerator(Generic[CacheT]):
     """
     Generator wrapper that takes textual input and outputs generated strings.
+    It wraps a generator and uses a tokenizer to split the input into pieces
+    and decode the output pieces.
     """
 
     inner: Generator[CacheT]
@@ -18,8 +20,7 @@ class StringGenerator(Generic[CacheT]):
 
     def __init__(self, tokenizer: Tokenizer, generator: Generator[CacheT]) -> None:
         """
-        Wrap a generator, using a tokenizer to split the input into pieces
-        and decode the output pieces into strings.
+        Construct a string generator.
 
         :param tokenizer:
             Tokenizer for piece processing.
@@ -33,7 +34,7 @@ class StringGenerator(Generic[CacheT]):
         self, prompts: Iterable[InputChunks], config: GeneratorConfig
     ) -> List[str]:
         """
-        See the :meth:`.generate` method.
+        Alias for :meth:`.generate`.
         """
         return self.generate(prompts, config=config)
 
@@ -41,8 +42,7 @@ class StringGenerator(Generic[CacheT]):
         self, prompts: Iterable[InputChunks], config: GeneratorConfig
     ) -> List[str]:
         """
-        Generate text using the given prompts. This method returns the
-        generated text for each prompt.
+        Generate text using the given prompts.
 
         :param prompts:
             Prompts to generate from.

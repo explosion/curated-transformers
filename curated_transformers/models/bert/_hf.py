@@ -4,7 +4,6 @@ from typing import Any, Mapping
 
 from torch import Tensor
 
-from ...util.hf import _rename_old_hf_names
 from .config import BertConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
@@ -39,7 +38,9 @@ def convert_hf_config(hf_config: Any) -> BertConfig:
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
     if len(missing_keys) != 0:
-        raise ValueError(f"Missing keys in HF BERT model config: {missing_keys}")
+        raise ValueError(
+            f"Missing keys in Hugging Face BERT model config: {missing_keys}"
+        )
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     return BertConfig(
@@ -84,4 +85,15 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         if hf_name in stripped_params:
             out[curated_name] = stripped_params[hf_name]
 
+    return out
+
+
+def _rename_old_hf_names(
+    params: Mapping[str, Tensor],
+) -> Mapping[str, Tensor]:
+    out = {}
+    for name, parameter in params.items():
+        name = re.sub(r"\.gamma$", ".weight", name)
+        name = re.sub(r"\.beta$", ".bias", name)
+        out[name] = parameter
     return out

@@ -8,7 +8,10 @@ from .stop_conditions import StopCondition
 
 
 class GeneratorState(Generic[CacheT]):
-    """Generator state."""
+    """
+    Stores the state of the generation process
+    and tracks the sequences being generated.
+    """
 
     attention_mask: Tensor
     cache: Optional[List[CacheT]]
@@ -52,7 +55,7 @@ class GeneratorState(Generic[CacheT]):
     @property
     def is_finished(self):
         """
-        Check whether all sequences have finished generating.
+        Whether all sequences have finished generating.
 
         :returns:
             ``True`` iff all sequences have finished generating.
@@ -64,7 +67,9 @@ class GeneratorState(Generic[CacheT]):
         """
         Identifiers generated in the last step.
 
-        Returns the prompt identifiers when the generator has not stepped yet.
+        :returns:
+            Generated identifiers. Prompt identifiers are returned
+            when the generator has not stepped yet.
         """
         if not self.generated_ids.size(1):
             return self.prompt_ids
@@ -84,12 +89,12 @@ class GeneratorState(Generic[CacheT]):
         :param cache:
             Model cache from the last model call.
         :param generated_ids:
-            Tensor containing generated ids.
+            Tensor containing generated IDs.
             **Shape:** (batch_size, 1)
         :param stop_condition:
             Generation stop condition.
         :returns:
-            Sequence identifiers and piece ids.
+            Sequence identifiers and piece IDs.
             **Shape:** (batch_size), (batch_size, 1)
         """
         # We update the state before removing completed sequences, so that
@@ -128,10 +133,13 @@ class GeneratorState(Generic[CacheT]):
         return seq_ids, last_step_ids
 
     def _remove_completed(self, completed: Tensor):
-        """Remove completed sequences.
+        """
+        Remove completed sequences.
 
         :param completed:
             Tensor indicating for the active sequences whether they are completed.
+
+        :meta private:
         """
         not_completed = completed.logical_not()
         self.generated_ids = self.generated_ids[not_completed]

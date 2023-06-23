@@ -17,6 +17,10 @@ Self = TypeVar("Self", bound="AlbertEncoder")
 
 
 class AlbertEncoder(EncoderModule, FromPretrainedHFModel):
+    """
+    ALBERT (Lan et al., 2022) encoder.
+    """
+
     def __init__(self, config: AlbertConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
@@ -51,10 +55,6 @@ class AlbertEncoder(EncoderModule, FromPretrainedHFModel):
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> ModelOutput:
-        """
-        Shapes:
-            input_ids, attention_mask, token_type_ids - (batch, seq_len)
-        """
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input_ids)
 

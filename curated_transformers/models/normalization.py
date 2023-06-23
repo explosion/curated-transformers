@@ -7,17 +7,20 @@ from torch.nn import Module, Parameter
 
 class RMSNorm(Module):
     """
-    Root Mean Square Normalization (Zhang & Sennrich, 2019).
+    Root Mean Square normalization (Zhang & Sennrich, 2019).
     """
 
     def __init__(self, dim: int, *, eps: float, device: Optional[torch.device] = None):
         """
+        Construct a RMS normalization module.
+
         :param dim:
             The (hidden) dimensionality of the representations that RMS
             normalization will be applied to.
         :param eps:
             Epsilon to avoid division by zero.
-        :param device: Device on which the module is to be initialized.
+        :param device:
+            Device on which the module is to be initialized.
         """
         super().__init__()
         self.eps = eps

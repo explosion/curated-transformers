@@ -1,9 +1,10 @@
 from typing import Any, List, Mapping, Optional, Type, TypeVar
 
 import torch
-from curated_transformers.models.normalization import RMSNorm
 from torch import Tensor
 from torch.nn import Dropout, Embedding, ModuleList
+
+from curated_transformers.models.normalization import RMSNorm
 
 from ..attention import AttentionMask
 from ..hf_hub import FromPretrainedHFModel

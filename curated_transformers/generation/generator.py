@@ -1,14 +1,15 @@
 from typing import Generic, Iterator, List, Optional, Tuple
 
 import torch
+from torch import Tensor
+from torch.distributions import Categorical
+
 from curated_transformers.generation.config import (
     GeneratorConfig,
     GreedyGeneratorConfig,
     SampleGeneratorConfig,
 )
 from curated_transformers.generation.logits import LogitsTransform
-from torch import Tensor
-from torch.distributions import Categorical
 
 from ..models.attention import AttentionMask
 from ..models.module import CausalLMModule

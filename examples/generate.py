@@ -15,7 +15,13 @@ from curated_transformers.models.attention import enable_torch_sdp
 from curated_transformers.util.auto_model import AutoGenerator
 
 parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
     description="Generate from a list of prompts in JSON format",
+    epilog="This program takes a JSON list of strings from the standard inputs as prompts. "
+    "For example:\n\n"
+    '["What is spaCy?", "What is Rust?"]\n\n'
+    "The output is a JSON list with the following fomat:\n\n"
+    '[{"prompt": "What is spaCy?", "answer": "..."}, {"prompt": "What is Rust?", "answer": "..."}]',
 )
 parser.add_argument(
     "--device",

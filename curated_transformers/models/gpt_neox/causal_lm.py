@@ -77,5 +77,5 @@ class GPTNeoXCausalLM(
 
     @classmethod
     def modules_to_not_quantize(cls) -> Set[str]:
-        # Ignore the output projection layer.
+        # Ignore the output embedding matrix.
         return {"output_embeddings"}

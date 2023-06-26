@@ -75,5 +75,5 @@ class LLaMACausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quanti
 
     @classmethod
     def modules_to_not_quantize(cls) -> Set[str]:
-        # Ignore the LM output projection layer.
+        # Ignore the LM output embedding matrix.
         return {"output_embeddings"}

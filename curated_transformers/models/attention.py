@@ -55,7 +55,7 @@ class AttentionMask:
         """
         Construct an attention mask.
 
-        :params bool_mask:
+        :param bool_mask:
             The boolean mask.
         """
         if bool_mask.dtype != torch.bool:
@@ -80,10 +80,12 @@ class AttentionMask:
 
         :param input:
             Attention logits to apply the mask to.
-            **Shape:** (batch_size,, heads, query_len, key_len)
+
+            **Shape:** ``(batch_size, heads, query_len, key_len)``
         :returns:
             Logits with the attention mask applied.
-            **Shape:** (batch_size,, heads, query_len, key_len)
+
+            **Shape:** ``(batch_size, heads, query_len, key_len)``
         """
         blocked_value = torch.finfo(input.dtype).min
         return torch.where(self.bool_mask, input, blocked_value)
@@ -111,13 +113,16 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
 
     :param query:
         Query to compute the causal mask for.
-        **Shape:** (batch_size,, heads, query_len, head_dim)
+
+        **Shape:** ``(batch_size, heads, query_len, head_dim)``
     :param key:
         Key to compute the causal mask for.
-        **Shape:** (batch_size,, heads, key_len, head_dim)
+
+        **Shape:** ``(batch_size, heads, key_len, head_dim)``
     :returns:
         The causal mask.
-        **Shape:** (batch_size,, heads, query_len, key_len)
+
+        **Shape:** ``(batch_size, heads, query_len, key_len)``
     """
     query_len = query.size(2)
     key_len = key.size(2)
@@ -193,20 +198,26 @@ class ScaledDotProductAttention(Module):
 
         :param k:
             Key.
-            **Shape:** (batch_size,, heads, seq_len, width)
+
+            **Shape:** ``(batch_size, heads, seq_len, width)``
         :param q:
             Query.
-            **Shape:** (batch_size,, heads, seq_len, width)
+
+            **Shape:** ``(batch_size, heads, seq_len, width)``
         :param v:
             Value.
-            **Shape:** (batch_size,, heads, seq_len, width)
+
+            **Shape:** ``(batch_size, heads, seq_len, width)``
         :param attention_mask:
+
             Attention mask. Sequence elements for which the corresponding mask
             element is set to ``False`` are ignored in attention.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :returns:
             Attention values.
-            **Shape:** (batch_size,, heads, seq_len, width)
+
+            **Shape:** ``(batch_size, heads, seq_len, width)``
         """
         model_dim = key.shape[-1]
         attn_scores = query @ key.transpose(-2, -1)
@@ -354,12 +365,14 @@ class SelfAttention(Module):
 
         :param input:
             Input to apply self-attention to.
-            **Shape:** (batch_size,, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param use_causal_mask:
             Mask out succeeding sequence elements when ``True``.
         :param cache:
@@ -372,10 +385,12 @@ class SelfAttention(Module):
             Normally, these positions are calculated automatically. But if the
             positions deviate for some reason, they can be provided through this
             argument.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :returns:
             Layer output.
-            **Shape:** (batch_size,, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         """
 
         query, key, value = self._query_key_value(input)
@@ -436,10 +451,12 @@ class SelfAttention(Module):
 
         :param input:
             Input
-            **Shape:** (batch_size,, seq_len, hidden_width)
+
+            **Shape:** ``(batch_size, seq_len, hidden_width)``
         :returns:
             Query, key, value
-            **Shape:** (batch_size,, head, seq_len, width_per_head)
+
+            **Shape:** ``(batch_size, head, seq_len, width_per_head)``
         """
         kv_heads = (
             1 if self.head_sharing == QkvHeadSharing.KEY_VALUE else self.num_heads
@@ -482,12 +499,14 @@ def split_heads(input: Tensor, num_heads: int) -> Tensor:
 
     :param input:
         Tensor to split by head.
-        **Shape:** (batch_size,, seq_len, hidden_width)
+
+        **Shape:** ``(batch_size, seq_len, hidden_width)``
     :param num_heads:
         Number of attention heads.
     :returns:
         Tensor spilt by head.
-        **Shape:** (batch_size,, head, seq_len, width_per_head)
+
+        **Shape:** ``(batch_size, head, seq_len, width_per_head)``
     """
     batch_size, seq_len, model_dim = input.size()
     assert model_dim % num_heads == 0
@@ -502,10 +521,12 @@ def combine_heads(input: Tensor) -> Tensor:
 
     :param input:
         Tensor split by head.
-        **Shape:** (batch_size,, head, seq_len, width_per_head)
+
+        **Shape:** ``(batch_size, head, seq_len, width_per_head)``
     :returns:
         Merged tensor.
-        **Shape:** (batch_size,, seq_len, hidden_width)
+
+        **Shape:** ``(batch_size, seq_len, hidden_width)``
     """
     batch_size, head, seq_len, model_dim = input.size()
     return (

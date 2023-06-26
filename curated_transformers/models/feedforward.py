@@ -94,10 +94,12 @@ class PointwiseFeedForward(Module):
 
         :param input:
             Input.
-            **Shape:** (batch_size, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         :returns:
             Layer output.
-            **Shape:** (batch_size, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         """
         if self.gate is None:
             return self.output(self.activation(self.intermediate(input)))

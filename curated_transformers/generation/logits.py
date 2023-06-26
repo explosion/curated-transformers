@@ -18,13 +18,15 @@ class LogitsTransform(ABC):
 
         :param logits:
             The logits array.
-            **Shape:** (..., n_class)
+
+            **Shape:** ``(..., n_class)``
         :param inplace:
             Transform logits in-place.
         :returns:
             The transformed logits. This will be the same tensor object as
             the ``logits`` argument when ``inplace`` is set.
-            **Shape:** (..., n_class)
+
+            **Shape:** ``(..., n_class)``
         """
         if not inplace:
             logits = logits.clone()
@@ -38,7 +40,8 @@ class LogitsTransform(ABC):
 
         :param logits:
             The logits array.
-            **Shape:** (..., n_class)
+
+            **Shape:** ``(..., n_class)``
         """
         ...
 

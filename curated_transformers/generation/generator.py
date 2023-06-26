@@ -68,16 +68,19 @@ class Generator(Generic[CacheT]):
 
         :param ids:
             Batch of piece identifiers to start generating from.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param config:
             Generator configuraton.
         :returns:
             An iterator over tuples. Each tuple contains a tensor with the
             sequence identifiers and a tensor with the next piece identier.
-            **Shape:** (batch_unfinished,)
+
+            **Shape:** ``(batch_unfinished,)``
         """
         self.model.eval()
 

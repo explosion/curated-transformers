@@ -75,12 +75,14 @@ class LLaMADecoderLayer(Module):
 
         :param input:
             Hidden representations to apply the layer to.
-            **Shape:** (batch_size,, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.

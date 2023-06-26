@@ -37,12 +37,14 @@ class AlbertLayerGroup(Module):
 
         :param input:
             Embeddings to apply the layer group to.
-            **Shape:** (batch_size,, seq_len, width)
+
+            **Shape:** ``(batch_size, seq_len, width)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         """
         layer_output = input
         for layer in self.group_layers:

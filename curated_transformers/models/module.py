@@ -27,12 +27,15 @@ class CausalLMModule(Generic[CacheT], Module):
 
         :param input_ids:
             Piece identifiers to apply the decoder to.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch_size,, seq_len)
+
+
+            **Shape:** ``(batch_size, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.
@@ -40,7 +43,8 @@ class CausalLMModule(Generic[CacheT], Module):
             Input positions. Positions are needed to look up rotary embeddings.
             Normally, these positions are calculated automatically. But if the
             positions deviate for some reason, they can be provided through this argument.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param store_cache:
             Whether to cache the key/value representations for future reuse.
         :returns:
@@ -68,12 +72,14 @@ class DecoderModule(Generic[CacheT], Module):
 
         :param input_ids:
             Piece identifiers to apply the decoder to.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.
@@ -81,7 +87,8 @@ class DecoderModule(Generic[CacheT], Module):
             Input positions. Positions are needed to look up rotary embeddings.
             Normally, these positions are calculated automatically. But if the
             positions deviate for some reason, they can be provided through this argument.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param store_cache:
             Whether to cache the key/value representations for future reuse.
         :returns:
@@ -107,17 +114,20 @@ class EncoderModule(Module):
 
         :param input_ids:
             Piece identifiers to apply the encoder to.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param token_type_ids:
             Token type identifiers to indicate the spans of different
             sequences in the input. Useful when performing tasks like
             sequence classification and question answering.
-            **Shape:** (batch_size,, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :returns:
             Encoder output.
         """

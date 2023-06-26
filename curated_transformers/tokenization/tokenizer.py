@@ -37,7 +37,8 @@ class PiecesWithIds:
             right-padded. Use left-padding when set to ``True``.
         :returns:
             The attention mask.
-            **Shape:** (batch_size, max_seq_len)
+
+            **Shape:** ``(batch_size, max_seq_len)``
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
@@ -58,7 +59,8 @@ class PiecesWithIds:
             right-padded. Use left-padding when set to ``True``.
         :returns:
             The padded piece ids.
-            **Shape:** (batch_size, max_seq_len)
+
+            **Shape:** ``(batch_size, max_seq_len)``
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)

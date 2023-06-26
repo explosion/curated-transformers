@@ -16,7 +16,8 @@ class CacheProtocol(Protocol):
 
         :param mask:
             Mask of batch items to retain.
-            **Shape:** (batch_size,,)
+
+            **Shape:** ``(batch_size,)``
         :returns:
             Filtered items.
         """
@@ -30,6 +31,11 @@ CacheT = TypeVar("CacheT", bound=CacheProtocol)
 class KeyValueCache:
     """
     Cache type for layers that cache keys and values.
+
+    :param key:
+        Key.
+    :param value:
+        Value.
     """
 
     key: Tensor
@@ -80,7 +86,8 @@ class ModelOutput:
 
         :returns:
             Embedding layer output.
-            **Shape:** (batch_size,, seq, width)
+
+            **Shape:** ``(batch_size, seq, width)``
         """
         return self.all_outputs[0]
 
@@ -91,8 +98,9 @@ class ModelOutput:
         :param idx:
             Layer index. Must be in ``[0, num_hidden_layers)``.
         :returns:
-            Hidden representation of the layer
-            **Shape:** (batch_size,, seq, width)
+            Hidden representation of the layer.
+
+            **Shape:** ``(batch_size, seq, width)``
         """
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
@@ -109,7 +117,8 @@ class ModelOutput:
 
         :returns:
             Last hidden representation of the last layer.
-            **Shape:** (batch_size,, seq, width)
+
+            **Shape:** ``(batch_size, seq, width)``
         """
         return self.all_outputs[-1]
 
@@ -120,7 +129,8 @@ class ModelOutput:
 
         :returns:
             Hidden representations of all the layers.
-            **Shape:** (batch_size,, seq, width)
+
+            **Shape:** ``(batch_size, seq, width)``
         """
         return self.all_outputs[1:]
 
@@ -129,7 +139,7 @@ class ModelOutputWithCache(Generic[CacheT], ModelOutput):
     """
     Output of decoder modules.
 
-    :cache:
+    :param cache:
         Model cache. The cache can be used with future calls to
         a model to reuse computations for efficiency.
     """
@@ -162,9 +172,10 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
     """
     Output of causal language model modules.
 
-    :logits:
+    :param logits:
         Logits of the distributions of predicted tokens.
-        **Shape:** (batch_size, seq_len, vocab_size)
+
+        **Shape:** ``(batch_size, seq_len, vocab_size)``
     """
 
     logits: Tensor

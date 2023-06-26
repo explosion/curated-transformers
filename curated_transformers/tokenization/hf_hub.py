@@ -3,9 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
 
-from huggingface_hub import hf_hub_download
-
 from .._compat import has_hf_transformers, transformers
+from ..util.hf import hf_hub_download
 
 HF_TOKENIZER_FILENAME = "tokenizer.json"
 

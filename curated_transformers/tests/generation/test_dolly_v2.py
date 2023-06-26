@@ -17,7 +17,7 @@ def dolly_generator():
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_deterministic(dolly_generator):
     prompts = [
@@ -37,7 +37,7 @@ def test_generate_deterministic(dolly_generator):
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_max_generated_pieces(dolly_generator):
     prompts = [
@@ -63,7 +63,7 @@ def test_generate_max_generated_pieces(dolly_generator):
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_sample(dolly_generator):
     prompts = [

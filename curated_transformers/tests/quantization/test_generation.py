@@ -49,7 +49,7 @@ def _check_quantized_generator_output(output, expected_keywords):
         assert all(keyword in output for keyword in keywords)
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 @pytest.mark.skipif(not has_bitsandbytes, reason="requires bitsandbytes")
 def test_8_bit_quantization(dolly_generator_8_bit):
@@ -68,7 +68,7 @@ def test_8_bit_quantization(dolly_generator_8_bit):
     _check_quantized_generator_output(generated, expected)
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 @pytest.mark.skipif(not has_bitsandbytes, reason="requires bitsandbytes")
 def test_4_bit_quantization(dolly_generator_4_bit):
@@ -87,7 +87,7 @@ def test_4_bit_quantization(dolly_generator_4_bit):
     _check_quantized_generator_output(generated, expected)
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not has_bitsandbytes, reason="requires bitsandbytes")
 def test_on_non_gpu():
     with pytest.raises(ValueError, match="only be performed on CUDA"):

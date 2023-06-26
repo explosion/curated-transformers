@@ -10,6 +10,10 @@ from .config import BertAttentionConfig, BertLayerConfig
 
 
 class BertEncoderLayer(Module):
+    """
+    BERT (Devlin et al., 2018) encoder layer.
+    """
+
     def __init__(
         self,
         layer_config: BertLayerConfig,
@@ -46,15 +50,24 @@ class BertEncoderLayer(Module):
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
 
-    def forward(self, x: Tensor, attention_mask: AttentionMask) -> Tensor:
+    def forward(self, input: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
-        Shapes:
-            x - (batch, seq_len, width)
-            attention_mask - (batch, seq_len)
+        Apply the BERT encoder layer to the input.
+
+        :param input:
+            Embeddings to apply the layer to.
+
+            **Shape:** ``(batch_size, seq_len, width)``
+        :param attention_mask:
+            Attention mask. Sequence elements for which the
+            corresponding mask element is set to ``False`` are ignored
+            during attention calculation.
+
+            **Shape:** ``(batch_size, seq_len)``
         """
-        attn_out, _ = self.mha(x, attention_mask)
+        attn_out, _ = self.mha(input, attention_mask)
         attn_out = self.attn_output_dropout(attn_out)
-        attn_out = self.attn_output_layernorm(x + attn_out)
+        attn_out = self.attn_output_layernorm(input + attn_out)
 
         ffn_out = self.ffn(attn_out)
         ffn_out = self.ffn_output_dropout(ffn_out)

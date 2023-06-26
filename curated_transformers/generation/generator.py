@@ -18,7 +18,9 @@ from .state import GeneratorState
 
 
 class Generator(Generic[CacheT]):
-    """Generator for causal language models."""
+    """
+    Generator base class for causal language models.
+    """
 
     model: CausalLMModule[CacheT]
 
@@ -39,7 +41,7 @@ class Generator(Generic[CacheT]):
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
         """
-        See the :meth:`.generate` method.
+        Alias for :meth:`.generate`.
         """
         return self.generate(
             attention_mask=attention_mask,
@@ -66,16 +68,19 @@ class Generator(Generic[CacheT]):
 
         :param ids:
             Batch of piece identifiers to start generating from.
-            **Shape:** (batch, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
-            **Shape:** (batch, seq_len)
+
+            **Shape:** ``(batch_size, seq_len)``
         :param config:
             Generator configuraton.
         :returns:
             An iterator over tuples. Each tuple contains a tensor with the
             sequence identifiers and a tensor with the next piece identier.
-            **Shape:** (batch_unfinished,)
+
+            **Shape:** ``(batch_unfinished,)``
         """
         self.model.eval()
 

@@ -12,7 +12,7 @@ class GeneratorWrapper(ABC):
 
     def __call__(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
         """
-        See the :meth:`.generate` method.
+        Alias for :meth:`.generate`.
         """
 
         return self.generate(prompts, config)
@@ -20,8 +20,7 @@ class GeneratorWrapper(ABC):
     @abstractmethod
     def generate(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
         """
-        Generate text using the given prompts. This method returns the
-        generated text for each prompt.
+        Generate text using the given prompts.
 
         :param prompts:
             Prompts to generate from.

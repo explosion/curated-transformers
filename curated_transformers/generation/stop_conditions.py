@@ -8,7 +8,9 @@ if TYPE_CHECKING:
 
 
 class StopCondition(ABC):
-    """Base class for generation stop conditions."""
+    """
+    Base class for generation stop conditions.
+    """
 
     @abstractmethod
     def update_completed(
@@ -21,12 +23,12 @@ class StopCondition(ABC):
         """
         Update completed sequences according to the stop condition.
 
-        :param completed_exclude: Output tensor marking which sequences are
-            completed and for which the last generated piece **should not**
-            be emitted.
-        :param completed_include: Output tensor marking which sequences are
-            completed and for which the last generated piece **should** be
-            emitted.
+        :param completed_exclude:
+            Output tensor marking which sequences are completed and
+            for which the last generated piece **should not** be emitted.
+        :param completed_include:
+            Output tensor marking which sequences are completed and
+            for which the last generated piece **should** be emitted.
         """
         ...
 
@@ -52,11 +54,13 @@ class CompoundStopCondition(List[StopCondition], StopCondition):
 
 
 class EndOfSequenceCondition(StopCondition):
-    """Stop when the end-of-sequence piece is predicted."""
+    """
+    Stop when the end-of-sequence piece is predicted.
+    """
 
     def __init__(self, eos_id: int):
         """
-        Construct the condition.
+        Construct the stop condition.
 
         :param eos_id:
             End-of-sequence identifier that marks the end of a generated
@@ -75,11 +79,13 @@ class EndOfSequenceCondition(StopCondition):
 
 
 class MaxGeneratedPiecesCondition(StopCondition):
-    """Stop after generating a maximum number of pieces."""
+    """
+    Stop after generating a maximum number of pieces.
+    """
 
     def __init__(self, max_generated_pieces: int):
         """
-        Construct the condition.
+        Construct the stop condition.
 
         :param max_generated_pieces:
             The maximum number of generated pieces. This condition is a noop

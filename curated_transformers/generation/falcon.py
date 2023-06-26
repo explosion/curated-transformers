@@ -21,10 +21,13 @@ Self = TypeVar("Self", bound="FalconGenerator")
 
 
 class FalconGenerator(GeneratorWrapper, FromHFHub):
-    """Falcon generator."""
+    """
+    Generator for Falcon model variants.
+    """
 
     def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: RefinedWebModelCausalLM):
-        """Construct a Falcon generator.
+        """
+        Construct a Falcon generator.
 
         :param tokenizer:
             A Falcon tokenizer.

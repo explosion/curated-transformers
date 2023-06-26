@@ -7,8 +7,10 @@ from .tokenizer import PiecesWithIds, Tokenizer
 
 
 class WordPieceTokenizer(Tokenizer):
-    """Piece tokenizer using WordPiece tokenization
-    (Delvin et al., 2018)"""
+    """
+    Piece tokenizer using WordPiece tokenization
+    (Delvin et al., 2018)
+    """
 
     def __init__(
         self,
@@ -16,7 +18,8 @@ class WordPieceTokenizer(Tokenizer):
         vocab: Dict[str, int],
         special_pieces: Optional[Dict[str, int]],
     ):
-        """Construct a tokenizer from a curated tokenizers WordPiece processor.
+        """
+        Construct a tokenizer from a curated tokenizers WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.
@@ -86,7 +89,8 @@ class WordPieceTokenizer(Tokenizer):
 
 
 def clean_up_decoded_string_like_hf(text: str) -> str:
-    """This method is provided to ensure that the decoded string
+    """
+    This method is provided to ensure that the decoded string
     is compatible with the decoded output of the corresponding HF
     WordPiece tokenizer.
 

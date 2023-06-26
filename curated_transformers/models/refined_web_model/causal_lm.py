@@ -17,15 +17,13 @@ Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
 
 
 class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
-    """Refined Web Model (eg. Falcon) causal language model."""
+    """
+    Refined Web Model (eg. Falcon) causal language model.
+    """
 
     def __init__(
         self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
     ) -> None:
-        """
-        :param config: Model configuration.
-        :param device: Device on which the module is to be initialized.
-        """
         super().__init__()
 
         self.decoder = RefinedWebModelDecoder(config, device=device)

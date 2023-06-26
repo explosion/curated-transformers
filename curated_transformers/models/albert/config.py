@@ -5,10 +5,22 @@ from ..bert import BertAttentionConfig, BertConfig, BertEmbeddingConfig, BertLay
 
 @dataclass
 class AlbertLayerConfig(BertLayerConfig):
+    """
+    ALBERT (Lan et al., 2022) layer configuration.
+    """
+
     inner_group_num: int
     num_hidden_groups: int
 
-    def __init__(self, *args, inner_group_num=1, num_hidden_groups=1, **kwargs):
+    def __init__(
+        self, *args, inner_group_num: int = 1, num_hidden_groups: int = 1, **kwargs
+    ):
+        """
+        :param inner_group_num:
+            Number of layers per layer group.
+        :param num_hidden_groups:
+            Number of hidden groups.
+        """
         super(AlbertLayerConfig, self).__init__(*args, **kwargs)
         self.inner_group_num = inner_group_num
         self.num_hidden_groups = num_hidden_groups
@@ -16,6 +28,10 @@ class AlbertLayerConfig(BertLayerConfig):
 
 @dataclass
 class AlbertConfig(BertConfig):
+    """
+    ALBERT (Lan et al., 2022) model configuration.
+    """
+
     layer: AlbertLayerConfig
 
     def __init__(
@@ -38,6 +54,42 @@ class AlbertConfig(BertConfig):
         layer_norm_eps: float = 1e-12,
         padding_id: int = 0,
     ):
+        """
+        :param embedding_width:
+            Width of the embedding representations.
+        :param hidden_width:
+            Width of the transformer hidden layers.
+        :param inner_group_num:
+            Number of layers per layer group.
+        :param intermediate_width:
+            Width of the intermediate projection layer in the
+            point-wise feed-forward layer.
+        :param num_attention_heads:
+            Number of self-attention heads.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param num_hidden_groups:
+            Number of hidden groups.
+        :param attention_probs_dropout_prob:
+            Dropout probabilty of the self-attention layers.
+        :param hidden_dropout_prob:
+            Dropout probabilty of the point-wise feed-forward and
+            embedding layers.
+        :param hidden_act:
+            Activation used by the point-wise feed-forward layers.
+        :param vocab_size:
+            Size of main vocabulary.
+        :param type_vocab_size:
+            Size of token type vocabulary.
+        :param max_position_embeddings:
+            Maximum length of position embeddings.
+        :param model_max_length:
+            Maximum length of model inputs.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param padding_id:
+            Index of the padding meta-token.
+        """
         self.embedding = BertEmbeddingConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,

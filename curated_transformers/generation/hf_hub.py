@@ -20,5 +20,18 @@ class FromHFHub(ABC):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
-        """Load a generator from Huggingface Hub."""
+        """
+        Construct a generator and load its parameters from Hugging Face Hub.
+
+        :param name:
+            Model name.
+        :param revsion:
+            Model revision.
+        :param device:
+            Device on which to initialize the model.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Generator with the parameters loaded.
+        """
         ...

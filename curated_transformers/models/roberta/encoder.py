@@ -17,7 +17,9 @@ Self = TypeVar("Self", bound="RobertaEncoder")
 
 
 class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
-    """RoBERTa encoder (Liu et al., 2019)"""
+    """
+    RoBERTa encoder (Liu et al., 2019).
+    """
 
     def __init__(self, config: RobertaConfig, *, device: Optional[torch.device] = None):
         super().__init__()
@@ -43,10 +45,6 @@ class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> ModelOutput:
-        """
-        Shapes:
-            input_ids, attention_mask, token_type_ids - (batch, seq_len)
-        """
         if attention_mask is None:
             attention_mask = self._create_attention_mask(input_ids)
 

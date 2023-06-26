@@ -5,6 +5,10 @@ from ..bert import BertConfig
 
 @dataclass
 class RobertaConfig(BertConfig):
+    """
+    RoBERTa (Liu et al., 2019) model configuration.
+    """
+
     def __init__(
         self,
         *args,
@@ -15,6 +19,38 @@ class RobertaConfig(BertConfig):
         vocab_size=50265,
         **kwargs
     ):
+        """
+        :param embedding_width:
+            Width of the embedding representations.
+        :param hidden_width:
+            Width of the transformer hidden layers.
+        :param intermediate_width:
+            Width of the intermediate projection layer in the
+            point-wise feed-forward layer.
+        :param num_attention_heads:
+            Number of self-attention heads.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param attention_probs_dropout_prob:
+            Dropout probabilty of the self-attention layers.
+        :param hidden_dropout_prob:
+            Dropout probabilty of the point-wise feed-forward and
+            embedding layers.
+        :param hidden_act:
+            Activation used by the point-wise feed-forward layers.
+        :param vocab_size:
+            Size of main vocabulary.
+        :param type_vocab_size:
+            Size of token type vocabulary.
+        :param max_position_embeddings:
+            Maximum length of position embeddings.
+        :param model_max_length:
+            Maximum length of model inputs.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param padding_id:
+            Index of the padding meta-token.
+        """
         super(RobertaConfig, self).__init__(
             *args,
             layer_norm_eps=layer_norm_eps,

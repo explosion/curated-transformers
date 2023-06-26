@@ -26,7 +26,8 @@ def load_model_from_checkpoints(
     tensor_to_param_converter: Optional[TensorToParameterConverterT] = None,
     device: Optional[torch.device] = None,
 ):
-    """Load parameters from PyTorch checkpoints with minimal copies.
+    """
+    Load parameters from PyTorch checkpoints with minimal copies.
 
     :param model:
         PyTorch module into which the parameters are to be loaded.
@@ -76,7 +77,8 @@ def default_tensor_to_parameter_converter(
     tensor: torch.Tensor,
     device: Optional[torch.device] = None,
 ) -> Parameter:
-    """Default tensor to parameter converter.
+    """
+    Default tensor to parameter converter.
 
     :param module:
         Parent module of the parameter being converted/replaced.
@@ -167,10 +169,13 @@ def _emplace_module_tensor(
     tensor_to_param_converter: TensorToParameterConverterT,
     device: Optional[torch.device] = None,
 ):
-    """Replaces a module's parameter or (persistent) buffer with the passed tensor and moves it
-    to the given device. This is a zero-copy operation (excluding D2H/H2D transfers) where the
-    input tensor is directly associated with the module. Unexpected behaviour can occur if the same
-    tensor is associated with multiple modules.
+    """
+    Replaces a module's parameter or (persistent) buffer with the
+    passed tensor and moves it to the given device.
+
+    This is a zero-copy operation (excluding D2H/H2D transfers) where
+    the input tensor is directly associated with the module. Unexpected
+    behaviour can occur if the same tensor is associated with multiple modules.
     """
     is_parameter = tensor_name in module._parameters
     is_buffer = tensor_name in module._buffers

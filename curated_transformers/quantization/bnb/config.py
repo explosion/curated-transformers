@@ -6,13 +6,22 @@ import torch
 
 
 class Dtype4Bit(str, Enum):
+    """
+    Data type to use for 4-bit quantization.
+    """
+
+    #: ``FP4`` - Float 4-bit.
     FP4 = "fp4"
+
+    #: ``NF4`` - NormalFloat 4-bit.
     NF4 = "nf4"
 
 
 @dataclass
 class _4BitConfig:
-    """Config for `fp4`/`nf4` quantization."""
+    """
+    Config for ``fp4``/``nf4`` quantization.
+    """
 
     quantization_dtype: Dtype4Bit
     compute_dtype: torch.dtype
@@ -21,7 +30,9 @@ class _4BitConfig:
 
 @dataclass
 class _8BitConfig:
-    """Config for `int8` quantization."""
+    """
+    Config for ``int8`` quantization.
+    """
 
     fine_tunable: bool
     outlier_threshold: float
@@ -29,13 +40,15 @@ class _8BitConfig:
 
 @dataclass
 class BitsAndBytesConfig:
-    """Config for quantization using `bitsandbytes`."""
+    """
+    Config for quantization using the ``bitsandbytes`` library.
+    """
 
     inner: Union[_4BitConfig, _8BitConfig]
 
     @staticmethod
     def for_8bit(outlier_threshold: float = 6.0, fine_tunable: bool = False):
-        """Construct a config for `int8` quantization.
+        """Construct a config for ``int8`` quantization.
 
         :param outlier_threshold:
             Threshold for outlier detection during weight
@@ -54,12 +67,13 @@ class BitsAndBytesConfig:
         compute_dtype: torch.dtype = torch.bfloat16,
         double_quantization: bool = True,
     ):
-        """Construct a config for `fp4`/`nf4` quantization.
+        """Construct a config for ``fp4``/``nf4`` quantization.
 
         :param quantization_dtype:
             Data type used for storing quantized weights.
         :param compute_dtype:
-            Data type used for performing computations. Supported types: `float16`, `bfloat16`, `float32`
+            Data type used for performing computations.
+            Supported types: ``float16``, ``bfloat16``, ``float32``.
         :param double_quantization:
             If the quantization constants should themselves be
             quantized.

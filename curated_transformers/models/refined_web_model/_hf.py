@@ -50,9 +50,11 @@ def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
 
 
 def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    """Convert state dict from HF paramater naming to ours.
+    """
+    Convert state dict from HF paramater naming to ours.
     The function is insensitive to prefixes, to allow loading
-    both the decoder and the full LM."""
+    both the decoder and the full LM.
+    """
     if issubclass(cls, DecoderModule):
         stripped_params = {
             re.sub(r"^transformer\.", "", k): v for k, v in params.items()

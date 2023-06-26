@@ -3,7 +3,9 @@ from dataclasses import dataclass
 
 @dataclass
 class RefinedWebModelAttentionConfig:
-    """Refined Web Model (eg. Falcon) attention configuration."""
+    """
+    Refined Web Model (eg. Falcon) attention configuration.
+    """
 
     dropout_prob: float
     hidden_width: int
@@ -25,15 +27,21 @@ class RefinedWebModelAttentionConfig:
         use_bias: bool = False,
     ):
         """
-        :param dropout_prob: Dropout to apply after attention.
-        :param hidden_width: Hidden width of the transformer.
-        :param multi_query: Use multiple query heads and single key and
-            value heads.
-        :param num_attention_heads: Number of attention heads.
-        :param rotary_base: Base in signifying the rotary embedding period.
-        :param rotary_fraction: Fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
-        :param use_bias: Use bias in linear layers.
+        :param dropout_prob:
+            Dropout to apply after attention.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param multi_query:
+            Use multiple query heads and single key and value heads.
+        :param num_attention_heads:
+            Number of attention heads.
+        :param rotary_base:
+            Base in signifying the rotary embedding period.
+        :param rotary_fraction:
+            Fraction of hidden width to apply rotary embeddings to.
+            Must be in ``[0,1]``.
+        :param use_bias:
+            Use bias in linear layers.
         """
 
         self.dropout_prob = dropout_prob
@@ -47,7 +55,9 @@ class RefinedWebModelAttentionConfig:
 
 @dataclass
 class RefinedWebModelEmbeddingConfig:
-    """Refined Web Model (eg. Falcon) embedding configuration."""
+    """
+    Refined Web Model (eg. Falcon) embedding configuration.
+    """
 
     dropout_prob: float
     embedding_width: int
@@ -63,10 +73,14 @@ class RefinedWebModelEmbeddingConfig:
         vocab_size: int = 50432,
     ) -> None:
         """
-        :param dropout_prob: Dropout to apply after attention.
-        :param embedding_width: Width of the embeddings.
-        :param layer_norm_eps: Epsilon for layer normalization.
-        :param vocab_size: Vocabulary size (number of embeddings).
+        :param dropout_prob:
+            Dropout to apply after attention.
+        :param embedding_width:
+            Width of the embeddings.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param vocab_size:
+            Vocabulary size (number of embeddings).
         """
 
         self.dropout_prob = dropout_prob
@@ -77,7 +91,9 @@ class RefinedWebModelEmbeddingConfig:
 
 @dataclass
 class RefinedWebModelLayerConfig:
-    """Refined Web Model (eg. Falcon) layer configuration."""
+    """
+    Refined Web Model (eg. Falcon) layer configuration.
+    """
 
     dropout_prob: float
     hidden_width: int
@@ -95,11 +111,16 @@ class RefinedWebModelLayerConfig:
         use_bias: bool = False,
     ) -> None:
         """
-        :param dropout_prob: Dropout to apply after hidden layers.
-        :param hidden_width: Hidden width of the transformer.
-        :param layer_norm_eps: Epsilon for layer normalization.
-        :param num_hidden_layers: Number of hidden layers.
-        :param use_bias: Use bias in linear layers.
+        :param dropout_prob:
+            Dropout to apply after hidden layers.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param use_bias:
+            Use bias in linear layers.
         """
 
         self.dropout_prob = dropout_prob
@@ -110,7 +131,9 @@ class RefinedWebModelLayerConfig:
 
 
 class RefinedWebModelConfig:
-    """Refined Web Model (eg. Falcon) model configuration."""
+    """
+    Refined Web Model (eg. Falcon) model configuration.
+    """
 
     attention: RefinedWebModelAttentionConfig
     embedding: RefinedWebModelEmbeddingConfig
@@ -132,19 +155,27 @@ class RefinedWebModelConfig:
         vocab_size: int = 50280,
     ):
         """
-        :param attention_probs_dropout_prob: Dropout to apply after attention.
-        :param hidden_dropout_prob: Dropout to apply to the hidden and
-            embedding layers.
-        :param hidden_width: Hidden width of the transformer.
-        :param layer_norm_eps: Epsilon for layer normalization.
-        :param multi_query: Use multiple query heads and single key and
-            value heads.
-        :param num_hidden_layers: Number of hidden layers.
-        :param rotary_embedding_base: Base in signifying the rotary embedding period.
-        :param rotary_embedding_fraction: Fraction of hidden width to apply rotary
-            embeddings to. Must be in [0,1].
-        :param use_bias: Use bias in linear layers.
-        :param vocab_size: Vocabulary size (number of embeddings).
+        :param attention_probs_dropout_prob:
+            Dropout to apply after attention.
+        :param hidden_dropout_prob:
+            Dropout to apply to the hidden and embedding layers.
+        :param hidden_width:
+            Hidden width of the transformer.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param multi_query:
+            Use multiple query heads and single key and value heads.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param rotary_embedding_base:
+            Base in signifying the rotary embedding period.
+        :param rotary_embedding_fraction:
+            Fraction of hidden width to apply rotary embeddings to.
+            Must be in ``[0,1]``.
+        :param use_bias:
+            Use bias in linear layers.
+        :param vocab_size:
+            Vocabulary size (number of embeddings).
         """
 
         # TODO: max_position_embeddings and model_max_length are currently

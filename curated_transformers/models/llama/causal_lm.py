@@ -18,15 +18,13 @@ Self = TypeVar("Self", bound="LLaMACausalLM")
 
 
 class LLaMACausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quantizable):
-    """LLaMa (Touvron et al., 2023) causal language model."""
+    """
+    LLaMa (Touvron et al., 2023) causal language model.
+    """
 
     def __init__(
         self, config: LLaMAConfig, *, device: Optional[torch.device] = None
     ) -> None:
-        """
-        :param config: Model configuration.
-        :param device: Device on which the module is to be initialized.
-        """
         super().__init__()
 
         self.decoder = LLaMADecoder(config, device=device)
@@ -77,5 +75,5 @@ class LLaMACausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quanti
 
     @classmethod
     def modules_to_not_quantize(cls) -> Set[str]:
-        # Ignore the LM head.
+        # Ignore the LM output embedding matrix.
         return {"output_embeddings"}

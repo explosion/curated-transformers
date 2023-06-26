@@ -6,6 +6,10 @@ from dataclasses import dataclass
 
 @dataclass
 class BertEmbeddingConfig:
+    """
+    BERT (Devlin et al., 2018) embedding configuration.
+    """
+
     embedding_width: int
     vocab_size: int
     type_vocab_size: int
@@ -23,6 +27,20 @@ class BertEmbeddingConfig:
         layer_norm_eps: float = 1e-12,
         dropout_prob: float = 0.1,
     ) -> None:
+        """
+        :param embedding_width:
+            Width of the embedding representations.
+        :param vocab_size:
+            Size of main vocabulary.
+        :param type_vocab_size:
+            Size of token type vocabulary.
+        :param max_position_embeddings:
+            Maximum length of position embeddings.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param dropout_prob:
+            Dropout probabilty for the embedding layer.
+        """
         self.embedding_width = embedding_width
         self.vocab_size = vocab_size
         self.type_vocab_size = type_vocab_size
@@ -33,6 +51,10 @@ class BertEmbeddingConfig:
 
 @dataclass
 class BertAttentionConfig:
+    """
+    BERT (Devlin et al., 2018) attention configuration.
+    """
+
     hidden_width: int
     num_attention_heads: int
     dropout_prob: float
@@ -44,6 +66,14 @@ class BertAttentionConfig:
         num_attention_heads: int = 12,
         dropout_prob: float = 0.1,
     ) -> None:
+        """
+        :param hidden_width:
+            Width of the projections for query, key and value.
+        :param num_attention_heads:
+            Number of self-attention heads.
+        :param dropout_prob:
+            Dropout probabilty for self-attention.
+        """
         self.hidden_width = hidden_width
         self.num_attention_heads = num_attention_heads
         self.dropout_prob = dropout_prob
@@ -51,6 +81,10 @@ class BertAttentionConfig:
 
 @dataclass
 class BertLayerConfig:
+    """
+    BERT (Devlin et al., 2018) layer configuration.
+    """
+
     hidden_width: int
     intermediate_width: int
     num_hidden_layers: int
@@ -68,6 +102,21 @@ class BertLayerConfig:
         layer_norm_eps: float = 1e-12,
         dropout_prob: float = 1.0,
     ) -> None:
+        """
+        :params hidden_width:
+            Hidden width of the transformer.
+        :params intermediate_width:
+            Intermediate width in the feed-forward layer.
+        :params num_hidden_layers:
+            Number of hidden layers.
+        :params hidden_act:
+            Activation used by the feed-forward layers.
+            Applied on the intermediate representation.
+        :params layer_norm_eps:
+            Epsilon for layer normalization.
+        :params dropout_prob:
+            Dropout probabilty to apply after hidden layers.
+        """
         self.hidden_width = hidden_width
         self.intermediate_width = intermediate_width
         self.num_hidden_layers = num_hidden_layers
@@ -78,6 +127,10 @@ class BertLayerConfig:
 
 @dataclass
 class BertConfig:
+    """
+    BERT (Devlin et al., 2018) model configuration.
+    """
+
     embedding: BertEmbeddingConfig
     attention: BertAttentionConfig
     layer: BertLayerConfig
@@ -102,6 +155,38 @@ class BertConfig:
         layer_norm_eps: float = 1e-12,
         padding_id: int = 0,
     ):
+        """
+        :param embedding_width:
+            Width of the embedding representations.
+        :param hidden_width:
+            Width of the transformer hidden layers.
+        :param intermediate_width:
+            Width of the intermediate projection layer in the
+            point-wise feed-forward layer.
+        :param num_attention_heads:
+            Number of self-attention heads.
+        :param num_hidden_layers:
+            Number of hidden layers.
+        :param attention_probs_dropout_prob:
+            Dropout probabilty of the self-attention layers.
+        :param hidden_dropout_prob:
+            Dropout probabilty of the point-wise feed-forward and
+            embedding layers.
+        :param hidden_act:
+            Activation used by the point-wise feed-forward layers.
+        :param vocab_size:
+            Size of main vocabulary.
+        :param type_vocab_size:
+            Size of token type vocabulary.
+        :param max_position_embeddings:
+            Maximum length of position embeddings.
+        :param model_max_length:
+            Maximum length of model inputs.
+        :param layer_norm_eps:
+            Epsilon for layer normalization.
+        :param padding_id:
+            Index of the padding meta-token.
+        """
         self.embedding = BertEmbeddingConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,

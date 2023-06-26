@@ -17,7 +17,9 @@ SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
 class FromHFHub(ABC):
     """
-    Mixin class for downloading tokenizers from Hugging Face Hub.
+    Mixin class for downloading tokenizers from Hugging Face Hub. It
+    directly queries the Hugging Face Hub to load the tokenizer from
+    its configuration file.
     """
 
     @classmethod
@@ -25,7 +27,8 @@ class FromHFHub(ABC):
         cls: Type[SelfFromHFHub],
         path: Path,
     ) -> SelfFromHFHub:
-        """Construct a tokenizer from a Hugging Face fast tokenizer JSON file.
+        """
+        Construct a tokenizer from a Hugging Face fast tokenizer JSON file.
 
         :param tokenizer_path:
             Path to the tokenizer JSON file.
@@ -67,7 +70,7 @@ class FromHFHub(ABC):
             Model name.
         :param revision:
             Model revision.
-        :return:
+        :returns:
             The tokenizer.
         """
         tokenizer_filename = _get_tokenizer_filepath(name, revision)
@@ -93,11 +96,15 @@ def _get_tokenizer_filepath(name: str, revision: str) -> str:
 
 
 class FromPretrainedHFTokenizer(ABC):
-    """Mixin class for downloading tokenizers from Hugging Face Hub.
+    """
+    Mixin class for downloading tokenizers from Hugging Face Hub. This differs
+    from :class:`curated_transformers.tokenization.hf_hub.FromHFHub` in that it
+    first constructs a Hugging Face tokenizer instance (using the ``transformers``
+    library) and then uses its metadata to initialize the curated tokenizer.
 
-    A module using this mixin can implement the `convert_hf_tokenizer`
-    method. The mixin will then provide the `from_hf_hub` method to
-    download a tokenizer from the Hugging Face Hub.
+    A module using this mixin can implement the ``_convert_hf_tokenizer`` method.
+    The mixin will then provide the ``from_hf_tokenizer`` method to download a
+    tokenizer from the Hugging Face Hub.
     """
 
     @classmethod
@@ -105,12 +112,13 @@ class FromPretrainedHFTokenizer(ABC):
     def _convert_hf_tokenizer(
         cls: Type[SelfFromPretrainedTokenizer], tokenizer: Any
     ) -> SelfFromPretrainedTokenizer:
-        """Create an instance of the tokenizer from the Hugging Face
+        """
+        Create an instance of the tokenizer from the Hugging Face
         tokenizer instance.
 
         :param tokenizer:
             Hugging Face tokenizer.
-        :return:
+        :returns:
             New tokenizer.
         """
         raise NotImplementedError
@@ -119,14 +127,15 @@ class FromPretrainedHFTokenizer(ABC):
     def from_hf_tokenizer(
         cls: Type[SelfFromPretrainedTokenizer], *, name: str, revision: str = "main"
     ) -> SelfFromPretrainedTokenizer:
-        """Construct a tokenizer and load its parameters from Hugging Face Hub.
+        """
+        Construct a tokenizer and load its parameters from Hugging Face Hub.
 
         :param name:
             Model name.
         :param revision:
             Model revision.
-        :return:
-            Module with the parameters loaded.
+        :returns:
+            New tokenizer.
         """
 
         # We cannot directly use the Hugging Face Hub downloader like we do for the model

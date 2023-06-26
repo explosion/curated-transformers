@@ -14,11 +14,12 @@ Self = TypeVar("Self", bound="FromPretrainedHFModel")
 
 
 class FromPretrainedHFModel(ABC):
-    """Mixin class for downloading models from Hugging Face Hub.
+    """
+    Mixin class for downloading models from Hugging Face Hub.
 
-    A module using this mixin can implement the `convert_hf_state_dict`
+    A module using this mixin can implement the ``convert_hf_state_dict``
     and `from_hf_config` methods. The mixin will then provide the
-    `from_hf_hub` method to download a model from the Hugging Face Hub.
+    ``from_hf_hub`` method to download a model from the Hugging Face Hub.
     """
 
     @classmethod
@@ -26,7 +27,8 @@ class FromPretrainedHFModel(ABC):
     def convert_hf_state_dict(
         cls, params: Mapping[str, Tensor]
     ) -> Mapping[str, Tensor]:
-        """Convert a state dict of a Hugging Face model to a valid
+        """
+        Convert a state dict of a Hugging Face model to a valid
         state dict for the module.
 
         :param params:
@@ -44,7 +46,8 @@ class FromPretrainedHFModel(ABC):
         hf_config: Any,
         device: Optional[torch.device] = None,
     ) -> Self:
-        """Create the module from a Hugging Face model JSON-deserialized
+        """
+        Create the module from a Hugging Face model JSON-deserialized
         model configuration.
 
         :param hf_config:
@@ -65,14 +68,15 @@ class FromPretrainedHFModel(ABC):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
-        """Construct a module and load its parameters from Hugging Face Hub.
+        """
+        Construct a module and load its parameters from Hugging Face Hub.
 
         :param name:
             Model name.
         :param revsion:
             Model revision.
         :param device:
-            Device on which to initialize the model.
+            Device on which the model is initialized.
         :param quantization_config:
             Configuration for loading quantized weights.
         :returns:
@@ -123,10 +127,11 @@ class FromPretrainedHFModel(ABC):
         dtype: Optional[torch.dtype] = None,
         non_blocking: bool = False,
     ):
-        """Moves and/or casts the parameters and buffers.
+        """
+        Moves and/or casts the parameters and buffers.
 
         This method is automatically implemented by also deriving from
-        `torch.nn.Module`. This mixin does not derive from `Module` in
+        ``torch.nn.Module``. This mixin does not derive from ``Module`` in
         order to be an abstract base class.
         """
         ...

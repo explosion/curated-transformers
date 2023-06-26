@@ -45,10 +45,13 @@ class XlmrPreDecoder(FairSeqPreDecoder):
         bos_id: int,
         eos_id: int,
     ):
-        """Construct a XLM-R pre-decoder.
+        """
+        Construct a XLM-R pre-decoder.
 
-        :param bos_id: The piece id used to mark the beginning of a sequence.
-        :param eos_id: The piece id used to mark the end of a sequence.
+        :param bos_id:
+            The piece id used to mark the beginning of a sequence.
+        :param eos_id:
+            The piece id used to mark the end of a sequence.
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
@@ -78,11 +81,15 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ):
-        """Construct a XLM-R tokenizer from a curated tokenizers SentencePiece processor.
+        """
+        Construct a XLM-R tokenizer.
 
-        :param processor: The processor to wrap.
-        :param bos_piece: The piece to use to mark the beginning of a sequence.
-        :param eos_piece: The piece to use to mark the end of a sequence.
+        :param processor: T
+            he processor to wrap.
+        :param bos_piece:
+            The piece to use to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece to use to mark the end of a sequence.
         """
         super().__init__(processor=processor)
 
@@ -108,11 +115,15 @@ class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
-        """Construct a tokenizer from vocabulary and merge files.
+        """
+        Construct a XLM-R tokenizer from vocabulary and merge files.
 
-        :param model_path: Path to the SentencePiece model file.
-        :param bos_piece: The piece to use to mark the beginning of a sequence.
-        :param eos_piece: The piece to use to mark the end of a sequence.
+        :param model_path:
+            Path to the SentencePiece model file.
+        :param bos_piece: T
+            he piece to use to mark the beginning of a sequence.
+        :param eos_piece:
+            The piece to use to mark the end of a sequence.
         """
         processor = SentencePieceProcessor.from_file(str(model_path))
         return cls(

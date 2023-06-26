@@ -46,6 +46,12 @@ class GeneratorConfig(ABC):
         ...
 
     def stop_condition(self) -> StopCondition:
+        """
+        Get the stop condition for the configuration.
+
+        :returns:
+            Stop condition. Usually multiple composed conditions.
+        """
         conditions = CompoundStopCondition()
         if self.eos_id is None:
             raise ValueError("End-of-sequence piece id is unset")

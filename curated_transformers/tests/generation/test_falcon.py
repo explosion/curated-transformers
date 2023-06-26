@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers.generation.config import (
     GreedyGeneratorConfig,
     SampleGeneratorConfig,
@@ -17,7 +16,7 @@ def falcon_generator():
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_deterministic(falcon_generator):
     prompts = [
@@ -37,7 +36,7 @@ def test_generate_deterministic(falcon_generator):
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_max_generated_pieces(falcon_generator):
     prompts = [
@@ -63,7 +62,7 @@ def test_generate_max_generated_pieces(falcon_generator):
     )
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 @pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
 def test_generate_sample(falcon_generator):
     prompts = [

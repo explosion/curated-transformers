@@ -1,5 +1,4 @@
 import pytest
-
 from curated_transformers.generation.dolly_v2 import DollyV2Generator
 from curated_transformers.generation.falcon import FalconGenerator
 from curated_transformers.models import (
@@ -66,7 +65,7 @@ def test_auto_causal_lm():
         AutoCausalLM.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")
 
 
-@pytest.mark.veryslow
+@pytest.mark.slow
 def test_auto_generator():
     model_causallm_map = {
         "databricks/dolly-v2-3b": DollyV2Generator,

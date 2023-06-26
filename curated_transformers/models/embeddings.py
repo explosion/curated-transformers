@@ -96,7 +96,7 @@ class RotaryEmbeddings(Module):
         :param seq_len:
             Number of positons to initially precompute.
         :param base:
-            The base used for ``Θ_i``.
+            The base used for :math:`\\theta_i`.
             Determines the cycle length of the embeddings.
         :param device:
             Device on which the module is to be initialized.

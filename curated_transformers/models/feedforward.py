@@ -25,14 +25,14 @@ class PointwiseFeedForward(Module):
 
     This layer is applied pointwise, meaning that the same
     transformation is applied to each sequence element. This
-    transformation is: ``g(xW_1 + b_1)W_2 + b_2``, where ``W_1`` and ``b_1``
-    transform the input to an intermediate width, ``g`` is a non-linear activation
-    function and ``W_2`` and ``b_2`` transform the output of the activation back to
+    transformation is: :math:`g(xW_1 + b_1)W_2 + b_2`, where :math:`W_1`` and :math:`b_1`
+    transform the input to an intermediate width, :math:`g` is a non-linear activation
+    function and :math:`W_2` and :math:`b_2` transform the output of the activation back to
     the input width.
 
     Gated Linear Units (Dauphin et al., 2016 and Shazeer, 2020) are also
     supported. Gating applies the transformation
-    ``(g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2``, where ``W_g`` and ``b_g``
+    :math:`(g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2`, where :math:`W_g` and :math:`b_g`
     are the affine transformations for the gate.
     """
 

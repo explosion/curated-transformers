@@ -9,7 +9,7 @@ from curated_transformers.tokenization.chunks import (
     SpecialPieceChunk,
     TextChunk,
 )
-from curated_transformers.tokenization.tokenizer import DefaultNormalizer
+from curated_transformers.tokenization.tokenizer import DefaultNormalizer, Tokenizer
 
 from ..util import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer
@@ -35,6 +35,13 @@ def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_from_hf_hub_equals_hf_tokenizer_short(short_sample_texts):
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        short_sample_texts, "bert-base-cased", BertTokenizer
+    )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
         sample_texts,
@@ -52,7 +59,8 @@ def test_from_json_file(toy_tokenizer_from_tokenizer_json, short_sample_texts):
 
     assert toy_tokenizer_from_tokenizer_json.decode(encoding.ids) == [
         "I saw a girl with a telescope.",
-        "Today we will eat pok [UNK] bowl, lots of it!",
+        "Today we will eat [UNK] bowl, lots of it!",
+        "Tokens which are unknown [UNK] [UNK] [UNK] alphabet [UNK] vocabularies.",
     ]
 
 
@@ -62,14 +70,15 @@ def test_from_files(toy_tokenizer_from_files, short_sample_texts):
 
     assert toy_tokenizer_from_files.decode(encoding.ids) == [
         "I saw a girl with a telescope.",
-        "Today we will eat pok [UNK] bowl, lots of it!",
+        "Today we will eat [UNK] bowl, lots of it!",
+        "Tokens which are unknown [UNK] [UNK] [UNK] alphabet [UNK] vocabularies.",
     ]
 
 
 def _check_toy_tokenizer(pieces):
     assert isinstance(pieces, PiecesWithIds)
-    assert len(pieces.ids) == 2
-    assert len(pieces.pieces) == 2
+    assert len(pieces.ids) == 3
+    assert len(pieces.pieces) == 3
 
     assert pieces.ids == [
         [2, 41, 818, 61, 67, 193, 88, 204, 61, 251, 909, 682, 102, 95, 17, 3],
@@ -82,8 +91,6 @@ def _check_toy_tokenizer(pieces):
             417,
             65,
             155,
-            503,
-            99,
             1,
             416,
             117,
@@ -95,6 +102,35 @@ def _check_toy_tokenizer(pieces):
             163,
             183,
             5,
+            3,
+        ],
+        [
+            2,
+            576,
+            159,
+            100,
+            365,
+            319,
+            356,
+            99,
+            93,
+            281,
+            1,
+            1,
+            1,
+            340,
+            102,
+            103,
+            608,
+            184,
+            1,
+            809,
+            90,
+            608,
+            328,
+            162,
+            742,
+            17,
             3,
         ],
     ]
@@ -126,8 +162,6 @@ def _check_toy_tokenizer(pieces):
             "will",
             "e",
             "##at",
-            "po",
-            "##k",
             "[UNK]",
             "bo",
             "##w",
@@ -139,6 +173,35 @@ def _check_toy_tokenizer(pieces):
             "of",
             "it",
             "!",
+            "[SEP]",
+        ],
+        [
+            "[CLS]",
+            "Tok",
+            "##en",
+            "##s",
+            "which",
+            "are",
+            "un",
+            "##k",
+            "##n",
+            "##own",
+            "[UNK]",
+            "[UNK]",
+            "[UNK]",
+            "al",
+            "##p",
+            "##h",
+            "##ab",
+            "##et",
+            "[UNK]",
+            "vo",
+            "##c",
+            "##ab",
+            "##ul",
+            "##ar",
+            "##ies",
+            ".",
             "[SEP]",
         ],
     ]
@@ -170,6 +233,11 @@ def _check_toy_tokenizer(pieces):
                     1,
                     1,
                     1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
                 ],
                 [
                     2,
@@ -180,8 +248,6 @@ def _check_toy_tokenizer(pieces):
                     417,
                     65,
                     155,
-                    503,
-                    99,
                     1,
                     416,
                     117,
@@ -193,6 +259,42 @@ def _check_toy_tokenizer(pieces):
                     163,
                     183,
                     5,
+                    3,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                ],
+                [
+                    2,
+                    576,
+                    159,
+                    100,
+                    365,
+                    319,
+                    356,
+                    99,
+                    93,
+                    281,
+                    1,
+                    1,
+                    1,
+                    340,
+                    102,
+                    103,
+                    608,
+                    184,
+                    1,
+                    809,
+                    90,
+                    608,
+                    328,
+                    162,
+                    742,
+                    17,
                     3,
                 ],
             ],
@@ -226,8 +328,47 @@ def _check_toy_tokenizer(pieces):
                     False,
                     False,
                     False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
                 ],
                 [
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                ],
+                [
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
                     True,
                     True,
                     True,

@@ -5,10 +5,18 @@ from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 from curated_tokenizers import WordPieceProcessor
 
-from .chunks import InputChunks, SpecialPieceChunk, TextChunk
+from ._hf_compat import clean_up_decoded_string_like_hf, tokenize_chinese_chars_bert
+from .chunks import (
+    InputChunks,
+    MergedInputChunks,
+    MergedSpecialPieceChunk,
+    SpecialPieceChunk,
+    TextChunk,
+)
 from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
 from .tokenizer import (
     DefaultNormalizer,
+    Normalizer,
     PiecesWithIds,
     PostDecoder,
     PostEncoder,
@@ -16,7 +24,7 @@ from .tokenizer import (
     PreEncoder,
 )
 from .util import remove_pieces_from_sequence
-from .wordpiece_tokenizer import WordPieceTokenizer, clean_up_decoded_string_like_hf
+from .wordpiece_tokenizer import WordPieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="BertTokenizer")
@@ -98,35 +106,6 @@ class BertPreEncoder(PreEncoder):
         return preprocessed
 
 
-class BertPostEncoder(PostEncoder):
-    def __init__(
-        self,
-        *,
-        unk_piece: str,
-        unk_id: int,
-    ):
-        """
-        Construct a BERT post-encoder.
-
-        :param unk_piece:
-            The piece used to mark unknown tokens.
-        :param unk_id:
-            The piece id used to mark unknown tokens.
-        """
-        self.unk_piece = unk_piece
-        self.unk_id = unk_id
-
-    def __call__(self, pieces_with_ids: PiecesWithIds) -> PiecesWithIds:
-        # Replace all unknown IDs and their corresponding pieces.
-        for ids, pieces in zip(pieces_with_ids.ids, pieces_with_ids.pieces):
-            for i in range(len(ids)):
-                piece_id = ids[i]
-                if piece_id == -1:
-                    ids[i] = self.unk_id
-                    pieces[i] = self.unk_piece
-        return pieces_with_ids
-
-
 class BertPreDecoder(PreDecoder):
     def __init__(
         self,
@@ -168,6 +147,45 @@ class BertPostDecoder(PostDecoder):
         return [clean_up_decoded_string_like_hf(string.strip()) for string in output]
 
 
+class BertNormalizer(Normalizer):
+    """
+    Performs BERT normalization operations on input chunks before encoding.
+    """
+
+    def __init__(
+        self,
+        *,
+        lowercase: bool = False,
+        strip_accents: bool = False,
+        tokenize_chinese_chars: bool = True,
+    ):
+        """
+        Construct a default normalizer.
+
+        :param lowercase:
+            Lowercase text.
+        :param strip_accents:
+            Remove accents from text.
+        :param tokenize_chinese_chars:
+            Tokenize Chinese characters.
+        """
+
+        self.default_normalizer = DefaultNormalizer(
+            lowercase=lowercase, strip_accents=strip_accents
+        )
+        self.tokenize_chinese_chars = tokenize_chinese_chars
+
+    def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
+        chunks = self.default_normalizer(chunks)
+        if self.tokenize_chinese_chars:
+            for chunk in chunks:
+                for piece_or_text in chunk:
+                    if not isinstance(piece_or_text, TextChunk):
+                        continue
+                    piece_or_text.text = tokenize_chinese_chars_bert(piece_or_text.text)
+        return chunks
+
+
 class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
     def __init__(
         self,
@@ -179,6 +197,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         unk_piece: str = "[UNK]",
         lowercase: bool = False,
         strip_accents: bool = False,
+        tokenize_chinese_chars: bool = True,
     ):
         """
         Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
@@ -197,24 +216,27 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
             Lowercase text.
         :param strip_accents:
             Strip accents from text.
+        :param tokenize_chinese_chars:
+            Tokenize Chinese characters.
         """
         super().__init__(vocab=vocab, special_pieces=special_pieces)
 
-        self.normalizer = DefaultNormalizer(
-            lowercase=lowercase, strip_accents=strip_accents
+        self.normalizer = BertNormalizer(
+            lowercase=lowercase,
+            strip_accents=strip_accents,
+            tokenize_chinese_chars=tokenize_chinese_chars,
         )
 
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
         unk_id = _get_piece_id_or_fail(self.processor, unk_piece)
 
+        self.unk_id = unk_id
+        self.unk_piece = unk_piece
+
         self.pre_encoder = BertPreEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
-        )
-        self.post_encoder = BertPostEncoder(
-            unk_piece=unk_piece,
-            unk_id=unk_id,
         )
         self.pre_decoder = BertPreDecoder(bos_id=bos_id, eos_id=eos_id)
         self.post_decoder = BertPostDecoder()
@@ -280,6 +302,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         normalizer = hf_tokenizer["normalizer"]
         lowercase = normalizer["lowercase"]
         strip_accents = normalizer["strip_accents"]
+        tokenize_chinese_chars = normalizer.get("handle_chinese_chars", True)
 
         # Huggingface BERT also strips accents when lowercasing is enabled
         # and accent stripping is not defined.
@@ -297,6 +320,7 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
             unk_piece=unk_piece,
             lowercase=lowercase,
             strip_accents=strip_accents,
+            tokenize_chinese_chars=tokenize_chinese_chars,
         )
 
     @classmethod
@@ -304,6 +328,36 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
         serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
         deserialized = json.loads(serialized)
         return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
+
+    def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
+        ids = []
+        pieces = []
+
+        for seq in input:
+            seq_ids = []
+            seq_pieces = []
+
+            for chunk in seq:
+                if isinstance(chunk, MergedSpecialPieceChunk):
+                    seq_ids.append(self.processor.get_initial(chunk.piece))
+                    seq_pieces.append(chunk.piece)
+                else:
+                    for token in chunk.text.split(" "):
+                        token_ids, token_pieces = self.processor.encode(token)
+                        # Replace tokens with an unknown piece by a single
+                        # unknown piece. Ideally, we'd use the pieces that
+                        # we found, but this is how existing BERT models
+                        # treat unknowns, so we should probably do the same.
+                        if any(token_id == -1 for token_id in token_ids):
+                            token_ids = [self.unk_id]
+                            token_pieces = [self.unk_piece]
+                        seq_ids.extend(token_ids)
+                        seq_pieces.extend(token_pieces)
+
+            ids.append(seq_ids)
+            pieces.append(seq_pieces)
+
+        return PiecesWithIds(ids=ids, pieces=pieces)
 
 
 def _get_piece_id_or_fail(processor: WordPieceProcessor, piece: str):

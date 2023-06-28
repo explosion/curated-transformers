@@ -46,6 +46,7 @@ def short_sample_texts():
     return [
         "I saw a girl with a telescope.",
         "Today we will eat poké bowl, lots of it!",
+        "Tokens which are unknown inペ mostで latinが alphabet際 vocabularies.",
     ]
 
 

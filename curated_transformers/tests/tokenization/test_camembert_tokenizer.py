@@ -35,7 +35,6 @@ def test_camembert_tokenizer_toy_tokenizer(toy_tokenizer, short_sample_texts):
     _check_toy_tokenizer(encoding)
 
     decoded = toy_tokenizer.decode(encoding.ids)
-    print(decoded)
     assert decoded == [
         "I saw a girl with a telescope.",
         "Today we will eat pok ⁇  bowl, lots of it!",

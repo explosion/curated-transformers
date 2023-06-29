@@ -22,11 +22,10 @@ def clean_up_decoded_string_like_hf(out_string: str) -> str:
     """
     Clean up a list of simple English tokenization artifacts like spaces before punctuations and abbreviated forms.
 
-    Args:
-        out_string (`str`): The text to clean up.
-
-    Returns:
-        `str`: The cleaned-up string.
+    :param out_string: 
+    	The text to clean up.
+    :returns:
+    	The cleaned-up string.
     """
     out_string = (
         out_string.replace(" .", ".")

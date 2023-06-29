@@ -6,7 +6,7 @@ import torch
 from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from ..quantization import BitsAndBytesConfig
 from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
-from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
+from ..tokenization.tokenizer import Tokenizer
 from .config import GeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
@@ -28,7 +28,7 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
     Generator for Dolly v2 model variants.
     """
 
-    def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: GPTNeoXCausalLM):
+    def __init__(self, tokenizer: Tokenizer, causal_lm: GPTNeoXCausalLM):
         """
         Construct a Dolly v2 generator.
 
@@ -40,7 +40,7 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         """
         super().__init__()
         self.generator = StringGenerator(tokenizer, Generator(causal_lm))
-        self.eos_id = tokenizer.processor.piece_id(END_KEY)
+        self.eos_id = tokenizer.tokenizer.token_to_id(END_KEY)
 
     @classmethod
     def from_hf_hub(
@@ -51,7 +51,7 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
-        tokenizer = GPTNeoXTokenizer.from_hf_hub(name=name, revision=revision)
+        tokenizer = Tokenizer.from_hf_hub(name=name, revision=revision)
         causal_lm = GPTNeoXCausalLM.from_hf_hub(
             name=name,
             revision=revision,

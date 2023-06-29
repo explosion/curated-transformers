@@ -43,6 +43,11 @@ Tokenizers
    :special-members: __call__
    :show-inheritance:
 
+.. autoclass:: curated_transformers.tokenization.TokenizerBase
+   :members:
+   :special-members: __call__
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.tokenization.ByteBPETokenizer
    :members:
    :inherited-members:

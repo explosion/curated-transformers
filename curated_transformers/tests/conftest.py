@@ -42,6 +42,14 @@ def test_dir(request):
 
 
 @pytest.fixture
+def french_sample_texts():
+    return [
+        "J'ai vu une fille avec un télescope.",
+        "Aujourd'hui, nous allons manger un poké bowl.",
+    ]
+
+
+@pytest.fixture
 def short_sample_texts():
     return [
         "I saw a girl with a telescope.",

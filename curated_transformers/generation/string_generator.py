@@ -4,7 +4,7 @@ from curated_transformers.generation.config import GeneratorConfig
 
 from ..models.output import CacheT
 from ..tokenization.chunks import InputChunks
-from ..tokenization.tokenizer import Tokenizer
+from ..tokenization.tokenizer import TokenizerBase
 from .generator import Generator
 
 
@@ -16,9 +16,9 @@ class StringGenerator(Generic[CacheT]):
     """
 
     inner: Generator[CacheT]
-    tokenizer: Tokenizer
+    tokenizer: TokenizerBase
 
-    def __init__(self, tokenizer: Tokenizer, generator: Generator[CacheT]) -> None:
+    def __init__(self, tokenizer: TokenizerBase, generator: Generator[CacheT]) -> None:
         """
         Construct a string generator.
 

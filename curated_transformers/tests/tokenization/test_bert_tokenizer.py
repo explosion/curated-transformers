@@ -9,7 +9,7 @@ from curated_transformers.tokenization.chunks import (
     SpecialPieceChunk,
     TextChunk,
 )
-from curated_transformers.tokenization.tokenizer import DefaultNormalizer, Tokenizer
+from curated_transformers.tokenization.tokenizer import DefaultNormalizer
 
 from ..util import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer

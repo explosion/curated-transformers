@@ -2,12 +2,22 @@ import unicodedata
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, List, Optional, TypeVar, Union
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union, cast
 
 import torch
+from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
-from .chunks import InputChunks, MergedInputChunks, SpecialPieceChunk, TextChunk
+from ._hf_compat import clean_up_decoded_string_like_hf
+from .chunks import (
+    InputChunks,
+    MergedInputChunks,
+    MergedSpecialPieceChunk,
+    SpecialPieceChunk,
+    TextChunk,
+)
+from .hf_hub import FromHFHub
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="Tokenizer")
@@ -71,6 +81,172 @@ class PiecesWithIds:
             else:
                 padded[idx, : len(seq_ids)] = torch.tensor(seq_ids)
         return padded
+
+
+class TokenizerBase(ABC):
+    """
+    Base class for all tokenizers.
+    """
+
+    def __call__(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> PiecesWithIds:
+        """
+        Split one or more texts into pieces.
+
+        :param input:
+            Sequences to tokenize. If the sequences are strings, they are
+            automatically converted to chunks.
+        :returns:
+            Pieces in each sequence.
+        """
+        return self.encode(input)
+
+    @abstractmethod
+    def decode(
+        self, input: Iterable[Iterable[int]], *, skip_special_pieces: bool = True
+    ) -> List[str]:
+        """
+        Reconstruct string sequences from piece identifiers.
+
+        :param input:
+            The piece identifiers to reconstruct the strings from.
+        :param skip_special_pieces:
+            Skip special pieces during decoding.
+        :returns:
+            The decoded strings.
+        """
+        ...
+
+    @abstractmethod
+    def encode(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> PiecesWithIds:
+        """
+        Split one or more texts into pieces.
+
+        :param input:
+            Sequences to tokenize. If the sequences are strings, they are
+            automatically converted to chunks.
+        :returns:
+            Pieces in each sequence.
+        """
+        ...
+
+
+class Tokenizer(TokenizerBase, FromHFHub):
+    """
+    This class wraps the tokenizers from the `tokenizers` package. It supports a
+    wide range of piece tokenizers, including word piece, byte pair encoding, and
+    sentencepiece unigram tokenizers. This is the tokenizer that should be used
+    in the majority of cases. The other tokenizers in the `curated-transformers`
+    package should only be used when you have a legacy tokenizer that is not in
+    Hugging Face `tokenizer.json` format.
+    """
+
+    def __init__(self, tokenizer: HFTokenizer):
+        """
+        Construct a tokenizer.
+
+        :param tokenizer:
+            The ``tokenizers`` tokenizer to use.
+        """
+        self.tokenizer = tokenizer
+
+    def decode(
+        self,
+        input: Iterable[Iterable[int]],
+        *,
+        skip_special_pieces: bool = True,
+    ) -> List[str]:
+        decoded = self.tokenizer.decode_batch(
+            input, skip_special_tokens=skip_special_pieces
+        )
+
+        decoded = [clean_up_decoded_string_like_hf(string) for string in decoded]
+
+        return decoded
+
+    def encode(
+        self, input: Union[Iterable[InputChunks], Iterable[str]]
+    ) -> PiecesWithIds:
+        input = cast(Union[List[InputChunks], List[str]], list(input))
+        if isinstance(input[0], str):
+            input = cast(List[str], input)
+            return self._encode_strings(input)
+        else:
+            input = cast(List[InputChunks], input)
+            return self._encode_chunks(input)
+
+    def _encode_strings(self, input: Iterable[str]) -> PiecesWithIds:
+        encodings = self.tokenizer.encode_batch(input)
+        ids = [encoding.ids for encoding in encodings]
+        pieces = [encoding.tokens for encoding in encodings]
+        return PiecesWithIds(ids=ids, pieces=pieces)
+
+    def _encode_chunks(self, input: Iterable[InputChunks]) -> PiecesWithIds:
+        merged_chunks = [seq_chunks.merge_text_chunks() for seq_chunks in input]
+
+        ids = []
+        pieces = []
+
+        for seq in merged_chunks:
+            seq_ids = []
+            seq_pieces = []
+
+            for chunk in seq:
+                if isinstance(chunk, MergedSpecialPieceChunk):
+                    piece_id = self.tokenizer.token_to_id(chunk.piece)
+                    seq_ids.append(piece_id)
+                    seq_pieces.append(chunk.piece)
+                else:
+                    encoding = self.tokenizer.encode(
+                        chunk.text,  # add_special_tokens=False
+                    )
+                    seq_ids.extend(encoding.ids)
+                    seq_pieces.extend(encoding.tokens)
+
+            ids.append(seq_ids)
+            pieces.append(seq_pieces)
+
+        return PiecesWithIds(ids=ids, pieces=pieces)
+
+    @classmethod
+    def from_file(cls: Type[Self], path: Path) -> Self:
+        """
+        Load the tokenizer from a ``tokenizer.json`` file.
+
+        :param path:
+            Path to the tokenizer file.
+        """
+        hf_tokenizer = HFTokenizer.from_file(str(path))
+        return cls(hf_tokenizer)
+
+    @classmethod
+    def from_hf_hub(cls: Type[Self], *, name, revision="main") -> Self:
+        hf_tokenizer = HFTokenizer.from_pretrained(name, revision)
+        return cls(hf_tokenizer)
+
+    @classmethod
+    def from_json(cls: Type[Self], json: str) -> Self:
+        """
+        Load the tokenizer from a serialized JSON string..
+
+        :param json:
+            The JSON string.
+        """
+        hf_tokenizer = HFTokenizer.from_str(json)
+        return cls(hf_tokenizer)
+
+    @classmethod
+    def _convert_hf_tokenizer_json(
+        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
+    ) -> Self:
+        # NOTE: we need to implement this method so that this class is raise not
+        #       abstract. It is not used, since we implement `from_hf_hub` here
+        #       directly. We can remove this method once we have ported the
+        #       legacy tokenizers away from using tokenizer.json.
+        raise NotImplemented
 
 
 class PreDecoder(ABC):
@@ -163,9 +339,9 @@ class Normalizer(ABC):
         ...
 
 
-class Tokenizer(ABC):
+class LegacyTokenizer(TokenizerBase):
     """
-    Base class for all tokenizers.
+    Base class for legacy tokenizers.
     """
 
     normalizer: Optional[Normalizer] = None
@@ -177,30 +353,11 @@ class Tokenizer(ABC):
     def __call__(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
     ) -> PiecesWithIds:
-        """
-        Split one or more texts into pieces.
-
-        :param input:
-            Sequences to tokenize. If the sequences are strings, they are
-            automatically converted to chunks.
-        :returns:
-            Pieces in each sequence.
-        """
         return self.encode(input)
 
     def decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool = True
     ) -> List[str]:
-        """
-        Reconstruct string sequences from piece identifiers.
-
-        :param input:
-            The piece identifiers to reconstruct the strings from.
-        :param skip_special_pieces:
-            Skip special pieces during decoding.
-        :returns:
-            The decoded strings.
-        """
         if self.pre_decoder is not None:
             input = self.pre_decoder(input)
 
@@ -214,15 +371,6 @@ class Tokenizer(ABC):
     def encode(
         self, input: Union[Iterable[InputChunks], Iterable[str]]
     ) -> PiecesWithIds:
-        """
-        Split one or more texts into pieces.
-
-        :param input:
-            Sequences to tokenize. If the sequences are strings, they are
-            automatically converted to chunks.
-        :returns:
-            Pieces in each sequence.
-        """
         chunks = self._convert_strings(input)
 
         if self.normalizer is not None:

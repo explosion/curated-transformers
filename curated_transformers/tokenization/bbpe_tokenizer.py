@@ -5,13 +5,13 @@ from curated_tokenizers import ByteBPEProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk
 from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
-from .tokenizer import PiecesWithIds, Tokenizer
+from .tokenizer import LegacyTokenizer, PiecesWithIds
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="ByteBPETokenizer")
 
 
-class ByteBPETokenizer(Tokenizer, FromHFHub, FromPretrainedHFTokenizer):
+class ByteBPETokenizer(LegacyTokenizer, FromHFHub, FromPretrainedHFTokenizer):
     """
     Piece tokenizer using byte-level byte pair encoding
     (Gage, 1994, Sennrich et al., 2016)

@@ -3,10 +3,10 @@ from typing import Iterable, List
 from curated_tokenizers import SentencePieceProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk
-from .tokenizer import PiecesWithIds, Tokenizer
+from .tokenizer import LegacyTokenizer, PiecesWithIds
 
 
-class SentencePieceTokenizer(Tokenizer):
+class SentencePieceTokenizer(LegacyTokenizer):
     """
     Piece tokenizer using SentencePiece encoding
     (Kudo et al., 2018)

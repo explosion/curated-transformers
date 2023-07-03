@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
-from .hf_hub import FromPretrainedHFTokenizer
+from .hf_hub import LegacyFromHFHub
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 from .tokenizer import AddBosEosPreEncoder
 
@@ -73,87 +73,59 @@ class XlmrPreDecoder(FairSeqPreDecoder):
             return piece_id - _XLMR_FAIRSEQ_OFFSET
 
 
-class XlmrTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
+class XlmrTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+    """
+    Legacy tokenizer for XLM-RoBERTa (Conneau et al., 2019).
+    """
+
+    vocab_files: Dict[str, str] = {"model": "sentencepiece.bpe.model"}
+
     def __init__(
         self,
         *,
         processor: SentencePieceProcessor,
-        bos_piece: str = "<s>",
-        eos_piece: str = "</s>",
     ):
         """
         Construct a XLM-R tokenizer.
 
-        :param processor: T
-            he processor to wrap.
-        :param bos_piece:
-            The piece to use to mark the beginning of a sequence.
-        :param eos_piece:
-            The piece to use to mark the end of a sequence.
+        :param processor:
+            The processor to wrap.
         """
         super().__init__(processor=processor)
 
         self.processor = processor
 
-        bos_id = _get_piece_id_or_fail(processor, bos_piece)
-        eos_id = _get_piece_id_or_fail(processor, eos_piece)
+        bos_id = processor.bos_id()
+        eos_id = processor.eos_id()
+        bos_piece = processor.id_to_piece(bos_id)
+        eos_piece = processor.id_to_piece(eos_id)
 
         self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
 
         self.post_encoder = XlmrPostEncoder()
 
-        self.pre_decoder = XlmrPreDecoder(
-            bos_id=bos_id,
-            eos_id=eos_id,
-        )
+        self.pre_decoder = XlmrPreDecoder(bos_id=bos_id, eos_id=eos_id)
 
     @classmethod
     def from_files(
         cls: Type[Self],
         *,
         model_path: Path,
-        bos_piece: str = "<s>",
-        eos_piece: str = "</s>",
     ) -> Self:
         """
-        Construct a XLM-R tokenizer from vocabulary and merge files.
+        Construct a XLM-R tokenizer from a sentencepiece model.
 
         :param model_path:
             Path to the SentencePiece model file.
-        :param bos_piece: T
-            he piece to use to mark the beginning of a sequence.
-        :param eos_piece:
-            The piece to use to mark the end of a sequence.
         """
         processor = SentencePieceProcessor.from_file(str(model_path))
-        return cls(
-            processor=processor,
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-        )
+        return cls(processor=processor)
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        if not hasattr(tokenizer, "vocab_file"):
-            raise ValueError(
-                f"Hugging Face tokenizer (`{type(tokenizer)}`) doesn't "
-                "contain the path to the SentencePiece model file"
-            )
-        model_path = tokenizer.vocab_file
-        processor = SentencePieceProcessor.from_file(model_path)
-        bos_piece = tokenizer.bos_token  # type: ignore
-        eos_piece = tokenizer.eos_token  # type: ignore
-        return cls(
-            processor=processor,
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-        )
-
-
-def _get_piece_id_or_fail(processor: SentencePieceProcessor, piece: str) -> int:
-    piece_id = processor.piece_to_id(piece)
-    if piece_id == processor.unk_id():
-        raise ValueError(
-            f"XLM-R piece encoder vocabulary doesn't contain '{piece}' piece"
-        )
-    return piece_id
+    def _load_from_vocab_files(
+        cls: Type[Self],
+        *,
+        vocab_files: Dict[str, Path],
+        tokenizer_config: Optional[Dict[str, Any]],
+    ) -> Self:
+        return cls.from_files(model_path=vocab_files["model"])

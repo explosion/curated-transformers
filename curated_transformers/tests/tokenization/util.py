@@ -10,17 +10,14 @@ def compare_tokenizer_outputs_with_hf_tokenizer(
     hf_name,
     tokenizer_cls,
     pad_token: Optional[str] = None,
-    from_hf_tokenizer: bool = False,
+    hf_use_fast: bool = True,
     revision: str = "main",
 ):
-    if from_hf_tokenizer:
-        tokenizer = tokenizer_cls.from_hf_tokenizer(name=hf_name, revision=revision)
-    else:
-        tokenizer = tokenizer_cls.from_hf_hub(name=hf_name, revision=revision)
+    tokenizer = tokenizer_cls.from_hf_hub(name=hf_name, revision=revision)
     pieces = tokenizer(sample_texts)
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained(
-        hf_name, revision=revision
+        hf_name, revision=revision, use_fast=hf_use_fast
     )
     if pad_token is not None:
         hf_tokenizer.add_special_tokens({"pad_token": pad_token})

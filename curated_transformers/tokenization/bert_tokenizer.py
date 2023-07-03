@@ -1,4 +1,3 @@
-import json
 import unicodedata
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
@@ -13,13 +12,12 @@ from .chunks import (
     SpecialPieceChunk,
     TextChunk,
 )
-from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
+from .hf_hub import LegacyFromHFHub
 from .tokenizer import (
     DefaultNormalizer,
     Normalizer,
     PiecesWithIds,
     PostDecoder,
-    PostEncoder,
     PreDecoder,
     PreEncoder,
 )
@@ -28,6 +26,14 @@ from .wordpiece_tokenizer import WordPieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="BertTokenizer")
+
+TOKENIZER_CONFIG_MAPPING: Dict[str, str] = {
+    "do_lower_case": "lowercase",
+    "strip_accents": "strip_accents",
+    "cls_token": "bos_piece",
+    "sep_token": "eos_piece",
+    "unk_token": "unk_piece",
+}
 
 
 class BertPreEncoder(PreEncoder):
@@ -186,7 +192,13 @@ class BertNormalizer(Normalizer):
         return chunks
 
 
-class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
+class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
+    """
+    Legacy tokenizer for BERT (Devlin et al., 2018) models.
+    """
+
+    vocab_files: Dict[str, str] = {"vocab": "vocab.txt"}
+
     def __init__(
         self,
         *,
@@ -273,61 +285,42 @@ class BertTokenizer(WordPieceTokenizer, FromHFHub, FromPretrainedHFTokenizer):
             for line in f:
                 vocab[line.strip()] = len(vocab)
 
-        return cls(
-            vocab=vocab,
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-            unk_piece=unk_piece,
-            lowercase=lowercase,
-            strip_accents=strip_accents,
-        )
-
-    @classmethod
-    def _convert_hf_tokenizer_json(
-        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
-    ) -> Self:
-        if hf_tokenizer["pre_tokenizer"]["type"] != "BertPreTokenizer":
-            raise ValueError(
-                "Attempted to load a non-BERT tokenizer as a BERT tokenizer"
-            )
-
-        model = hf_tokenizer["model"]
-        unk_piece = model["unk_token"]
-
-        vocab = model["vocab"]
+        # Add the standard special pieces to the special pieces dict.
         special_pieces = {
-            added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
+            piece: vocab[piece] for piece in [bos_piece, eos_piece, unk_piece]
         }
 
-        normalizer = hf_tokenizer["normalizer"]
-        lowercase = normalizer["lowercase"]
-        strip_accents = normalizer["strip_accents"]
-        tokenize_chinese_chars = normalizer.get("handle_chinese_chars", True)
-
-        # Huggingface BERT also strips accents when lowercasing is enabled
-        # and accent stripping is not defined.
-        strip_accents = strip_accents or (strip_accents is not False and lowercase)
-
-        special_tokens = hf_tokenizer["post_processor"]["special_tokens"]
-        bos_piece = special_tokens["[CLS]"]["id"]
-        eos_piece = special_tokens["[SEP]"]["id"]
-
         return cls(
             vocab=vocab,
-            special_pieces=special_pieces,
             bos_piece=bos_piece,
             eos_piece=eos_piece,
             unk_piece=unk_piece,
             lowercase=lowercase,
             strip_accents=strip_accents,
-            tokenize_chinese_chars=tokenize_chinese_chars,
+            special_pieces=special_pieces,
         )
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
-        deserialized = json.loads(serialized)
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
+    def _load_from_vocab_files(
+        cls: Type[Self],
+        *,
+        vocab_files: Dict[str, Path],
+        tokenizer_config: Optional[Dict[str, Any]],
+    ) -> Self:
+        extra_kwargs = {}
+        if tokenizer_config is not None:
+            for hf_key, curated_key in TOKENIZER_CONFIG_MAPPING.items():
+                value = tokenizer_config.get(hf_key)
+                if value is not None:
+                    extra_kwargs[curated_key] = value
+            if "strip_accents" in extra_kwargs:
+                strip_accents = extra_kwargs["strip_accents"]
+                lowercase = extra_kwargs.get("lowercase", False)
+                extra_kwargs["strip_accents"] = strip_accents or (
+                    strip_accents is not False and lowercase
+                )
+
+        return cls.from_files(vocab_path=vocab_files["vocab"], **extra_kwargs)
 
     def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
         ids = []

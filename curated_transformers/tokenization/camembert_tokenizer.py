@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Any, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
+from curated_transformers.tokenization.hf_hub import LegacyFromHFHub
+
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
-from .hf_hub import FromPretrainedHFTokenizer
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 from .tokenizer import AddBosEosPreEncoder
 
@@ -65,7 +66,13 @@ class CamembertPreDecoder(FairSeqPreDecoder):
             return piece_id - _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
+class CamembertTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+    """
+    Legacy tokenizer for CamemBERT (Martin et al., 2020) models.
+    """
+
+    vocab_files: Dict[str, str] = {"model": "sentencepiece.bpe.model"}
+
     def __init__(
         self,
         *,
@@ -125,21 +132,13 @@ class CamembertTokenizer(SentencePieceTokenizer, FromPretrainedHFTokenizer):
         )
 
     @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        if not hasattr(tokenizer, "vocab_file"):
-            raise ValueError(
-                f"Hugging Face tokenizer (`{type(tokenizer)}`) doesn't "
-                "contain the path to the SentencePiece model file"
-            )
-        model_path = tokenizer.vocab_file
-        processor = SentencePieceProcessor.from_file(model_path)
-        bos_piece = tokenizer.bos_token  # type: ignore
-        eos_piece = tokenizer.eos_token  # type: ignore
-        return cls(
-            processor=processor,
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
-        )
+    def _load_from_vocab_files(
+        cls: Type[Self],
+        *,
+        vocab_files: Dict[str, Path],
+        tokenizer_config: Optional[Dict[str, Any]],
+    ) -> Self:
+        return cls.from_files(model_path=vocab_files["model"])
 
 
 def _get_piece_id_or_fail(processor: SentencePieceProcessor, piece: str) -> int:

@@ -245,16 +245,6 @@ class Tokenizer(TokenizerBase, FromHFHub):
         hf_tokenizer = HFTokenizer.from_str(json)
         return cls(hf_tokenizer)
 
-    @classmethod
-    def _convert_hf_tokenizer_json(
-        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
-    ) -> Self:
-        # NOTE: we need to implement this method so that this class is raise not
-        #       abstract. It is not used, since we implement `from_hf_hub` here
-        #       directly. We can remove this method once we have ported the
-        #       legacy tokenizers away from using tokenizer.json.
-        raise NotImplemented
-
 
 class PreDecoder(ABC):
     """
@@ -420,16 +410,18 @@ class AddBosEosPreEncoder(PreEncoder):
     def __init__(
         self,
         *,
-        bos_piece: str,
-        eos_piece: str,
+        bos_piece: Optional[str],
+        eos_piece: Optional[str],
     ):
         """
         Construct a pre-encoder that adds beginning/end of sequence markers.
 
         :param bos_piece:
-            The piece used to mark the beginning of a sequence.
+            The piece used to mark the beginning of a sequence. The piece
+            is not added when its value is ``None``.
         :param eos_piece:
-            The piece used to mark the end of a sequence.
+            The piece used to mark the end of a sequence. The piece is not
+            added when its value is ``None``.
         """
         self.bos_piece = bos_piece
         self.eos_piece = eos_piece
@@ -437,15 +429,17 @@ class AddBosEosPreEncoder(PreEncoder):
     def __call__(self, chunks: Iterable[InputChunks]) -> List[InputChunks]:
         bos_eos_chunks = []
         for seq_chunks in chunks:
-            bos_eos_chunks.append(
-                InputChunks(
-                    [
-                        SpecialPieceChunk(self.bos_piece),
-                        *seq_chunks,
-                        SpecialPieceChunk(self.eos_piece),
-                    ]
-                )
+            bos_chunks = (
+                [SpecialPieceChunk(self.bos_piece)]
+                if self.bos_piece is not None
+                else []
             )
+            eos_chunks = (
+                [SpecialPieceChunk(self.eos_piece)]
+                if self.eos_piece is not None
+                else []
+            )
+            bos_eos_chunks.append(InputChunks([*bos_chunks, *seq_chunks, *eos_chunks]))
         return bos_eos_chunks
 
 

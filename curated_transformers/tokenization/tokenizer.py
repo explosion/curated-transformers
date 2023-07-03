@@ -209,9 +209,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
                     seq_ids.append(piece_id)
                     seq_pieces.append(chunk.piece)
                 else:
-                    encoding = self.tokenizer.encode(
-                        chunk.text,  # add_special_tokens=False
-                    )
+                    encoding = self.tokenizer.encode(chunk.text)
                     seq_ids.extend(encoding.ids)
                     seq_pieces.extend(encoding.tokens)
 

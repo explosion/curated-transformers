@@ -17,7 +17,9 @@ def toy_tokenizer_from_files(test_dir):
 
 @pytest.fixture
 def toy_tokenizer_from_tokenizer_json(test_dir):
-    return RobertaTokenizer.from_tokenizer_json_file(test_dir / "toy-roberta.json")
+    return RobertaTokenizer.from_tokenizer_json_file(
+        test_dir / "toy-roberta" / "tokenizer.json"
+    )
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

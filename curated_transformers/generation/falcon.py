@@ -6,7 +6,7 @@ import torch
 from ..models.refined_web_model.causal_lm import RefinedWebModelCausalLM
 from ..quantization.bnb.config import BitsAndBytesConfig
 from ..tokenization.chunks import InputChunks, TextChunk
-from ..tokenization.gpt_neox_tokenizer import GPTNeoXTokenizer
+from ..tokenization.tokenizer import Tokenizer
 from .config import GeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
@@ -25,7 +25,7 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
     Generator for Falcon model variants.
     """
 
-    def __init__(self, tokenizer: GPTNeoXTokenizer, causal_lm: RefinedWebModelCausalLM):
+    def __init__(self, tokenizer: Tokenizer, causal_lm: RefinedWebModelCausalLM):
         """
         Construct a Falcon generator.
 
@@ -37,7 +37,7 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
         """
         super().__init__()
         self.generator = StringGenerator(tokenizer, Generator(causal_lm))
-        self.eos_id = tokenizer.processor.piece_id(END_KEY)
+        self.eos_id = tokenizer.tokenizer.token_to_id(END_KEY)
 
     @classmethod
     def from_hf_hub(
@@ -48,7 +48,7 @@ class FalconGenerator(GeneratorWrapper, FromHFHub):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
-        tokenizer = GPTNeoXTokenizer.from_hf_hub(name=name, revision=revision)
+        tokenizer = Tokenizer.from_hf_hub(name=name, revision=revision)
         causal_lm = RefinedWebModelCausalLM.from_hf_hub(
             name=name,
             revision=revision,

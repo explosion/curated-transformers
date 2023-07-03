@@ -179,12 +179,21 @@ class Tokenizer(TokenizerBase, FromHFHub):
             return self._encode_chunks(input)
 
     def _encode_strings(self, input: Iterable[str]) -> PiecesWithIds:
+        non_str = {type(seq).__name__ for seq in input if not isinstance(seq, str)}
+        if non_str:
+            raise ValueError(f"Non-string inputs: {', '.join(list(sorted(non_str)))}")
         encodings = self.tokenizer.encode_batch(input)
         ids = [encoding.ids for encoding in encodings]
         pieces = [encoding.tokens for encoding in encodings]
         return PiecesWithIds(ids=ids, pieces=pieces)
 
     def _encode_chunks(self, input: Iterable[InputChunks]) -> PiecesWithIds:
+        non_str = {
+            type(seq).__name__ for seq in input if not isinstance(seq, InputChunks)
+        }
+        if non_str:
+            raise ValueError(f"Non-chunk inputs: {', '.join(list(sorted(non_str)))}")
+
         merged_chunks = [seq_chunks.merge_text_chunks() for seq_chunks in input]
 
         ids = []

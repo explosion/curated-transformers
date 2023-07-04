@@ -97,6 +97,16 @@ def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
 
 
 def get_tokenizer_config(*, name: str, revision="main") -> Dict[str, Any]:
+    """
+    Get a tokenizer configuration.
+
+    :param name:
+        Model name.
+    :param revision:
+        Model revision.
+    :returns:
+        Deserialized tokenizer configuration.
+    """
     config_path = hf_hub_download(
         repo_id=name, filename=HF_TOKENIZER_CONFIG, revision=revision
     )

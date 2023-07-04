@@ -113,7 +113,7 @@ class XlmrTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         model_path: Path,
     ) -> Self:
         """
-        Construct a XLM-R tokenizer from a sentencepiece model.
+        Construct a XLM-R tokenizer from a SentencePiece model.
 
         :param model_path:
             Path to the SentencePiece model file.

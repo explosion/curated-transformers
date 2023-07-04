@@ -316,6 +316,8 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
             if "strip_accents" in extra_kwargs:
                 strip_accents = extra_kwargs["strip_accents"]
                 lowercase = extra_kwargs.get("lowercase", False)
+				# Huggingface BERT also strips accents when lowercasing is enabled
+				# and accent stripping is not defined.
                 extra_kwargs["strip_accents"] = strip_accents or (
                     strip_accents is not False and lowercase
                 )

@@ -1,13 +1,10 @@
-import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, TypeVar
 
 from huggingface_hub.utils import EntryNotFoundError
 
-from ..util.hf import hf_hub_download
-
-HF_TOKENIZER_CONFIG_FILENAME = "tokenizer_config.json"
+from ..util.hf import get_tokenizer_config, hf_hub_download
 
 SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
@@ -94,14 +91,9 @@ class LegacyFromHFHub(FromHFHub):
 
         # Try to get the tokenizer configuration.
         try:
-            config_path = hf_hub_download(
-                repo_id=name, filename=HF_TOKENIZER_CONFIG_FILENAME, revision=revision
-            )
+            tokenizer_config = get_tokenizer_config(name=name, revision=revision)
         except EntryNotFoundError:
             tokenizer_config = None
-        else:
-            with open(config_path, encoding="utf-8") as f:
-                tokenizer_config = json.load(f)
 
         return cls._load_from_vocab_files(
             vocab_files=vocab_files, tokenizer_config=tokenizer_config

@@ -1,3 +1,4 @@
+from .auto_tokenizer import AutoTokenizer
 from .bbpe_tokenizer import ByteBPETokenizer
 from .bert_tokenizer import BertTokenizer
 from .camembert_tokenizer import CamembertTokenizer

@@ -14,6 +14,16 @@ HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = "weight_map"
 HF_TOKENIZER_CONFIG = "tokenizer_config.json"
 
 
+def get_hf_config_model_type(name: str, revision: str) -> Any:
+    config_filename = get_model_config_filepath(name, revision)
+    with open(config_filename, "r") as f:
+        config = json.load(f)
+        model_type = config.get("model_type")
+        if model_type is None:
+            raise ValueError("Model type not found in Hugging Face model config")
+        return model_type
+
+
 def get_model_config_filepath(name: str, revision: str) -> str:
     """Returns the local file path of the Hugging Face model's config.
     If the config is not found in the cache, it is downloaded from

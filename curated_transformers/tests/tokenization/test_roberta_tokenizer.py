@@ -15,43 +15,11 @@ def toy_tokenizer_from_files(test_dir):
     )
 
 
-@pytest.fixture
-def toy_tokenizer_from_tokenizer_json(test_dir):
-    return RobertaTokenizer.from_tokenizer_json_file(
-        test_dir / "toy-roberta" / "tokenizer.json"
-    )
-
-
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
         sample_texts, "roberta-base", RobertaTokenizer
     )
-
-
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
-    compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts,
-        "roberta-base",
-        RobertaTokenizer,
-        from_hf_tokenizer=True,
-        # Use a revision from before tokenizer.json.
-        revision="2a6355b35ee37259407a8bb78148ad37ea87e39f",
-    )
-
-
-def test_roberta_tokenizer_roundtrip(sample_texts):
-    tokenizer = RobertaTokenizer.from_hf_hub(name="roberta-base")
-    pieces = tokenizer(sample_texts)
-    decoded = tokenizer.decode(pieces.ids)
-
-    assert decoded == sample_texts
-
-
-def test_from_json_file(toy_tokenizer_from_tokenizer_json, short_sample_texts):
-    encoding = toy_tokenizer_from_tokenizer_json(short_sample_texts)
-    _check_toy_tokenizer(encoding)
 
 
 def test_from_files(toy_tokenizer_from_files, short_sample_texts):

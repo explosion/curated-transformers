@@ -4,7 +4,10 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, ca
 
 from curated_tokenizers import ByteBPEProcessor
 
+from curated_transformers.tokenization.hf_hub import LegacyFromHFHub
+
 from .bbpe_tokenizer import ByteBPETokenizer
+from .hf_hub import LegacyFromHFHub
 from .tokenizer import AddBosEosPreEncoder, PreDecoder
 from .util import remove_pieces_from_sequence
 
@@ -37,7 +40,13 @@ class RobertaPreDecoder(PreDecoder):
         ]
 
 
-class RobertaTokenizer(ByteBPETokenizer):
+class RobertaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
+    """
+    Legacy tokenizer for RoBERTa (Liu et al., 2019) models.
+    """
+
+    vocab_files: Dict[str, str] = {"vocab": "vocab.json", "merges": "merges.txt"}
+
     def __init__(
         self,
         *,
@@ -107,41 +116,15 @@ class RobertaTokenizer(ByteBPETokenizer):
         )
 
     @classmethod
-    def _convert_hf_tokenizer_json(
-        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
+    def _load_from_vocab_files(
+        cls: Type[Self],
+        *,
+        vocab_files: Dict[str, Path],
+        tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
-        if hf_tokenizer["post_processor"]["type"] != "RobertaProcessing":
-            raise ValueError(
-                "Attempted to load a non-RoBERTa tokenizer as a RoBERTa tokenizer"
-            )
-
-        model = hf_tokenizer["model"]
-        vocab = model["vocab"]
-        merges = [
-            cast(Tuple[str, str], tuple(merge.split(" ", maxsplit=2)))
-            for merge in model["merges"]
-        ]
-        special_pieces = {
-            added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
-        }
-
-        post_processor = hf_tokenizer["post_processor"]
-        bos_piece = post_processor["cls"][0]
-        eos_piece = post_processor["sep"][0]
-
-        return cls(
-            vocab=vocab,
-            merges=merges,
-            special_pieces=special_pieces,
-            bos_piece=bos_piece,
-            eos_piece=eos_piece,
+        return cls.from_files(
+            vocab_path=vocab_files["vocab"], merges_path=vocab_files["merges"]
         )
-
-    @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
-        deserialized = json.loads(serialized)
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)
 
 
 def _get_piece_id_or_fail(processor: ByteBPEProcessor, piece: str):

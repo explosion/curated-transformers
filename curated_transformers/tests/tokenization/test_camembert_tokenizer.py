@@ -17,15 +17,12 @@ def toy_tokenizer(test_dir):
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts, french_sample_texts):
+def test_from_hf_hub_equals_hf_tokenizer(sample_texts, french_sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "camembert-base", CamembertTokenizer, from_hf_tokenizer=True
+        sample_texts, "camembert-base", CamembertTokenizer
     )
     compare_tokenizer_outputs_with_hf_tokenizer(
-        french_sample_texts,
-        "camembert-base",
-        CamembertTokenizer,
-        from_hf_tokenizer=True,
+        french_sample_texts, "camembert-base", CamembertTokenizer
     )
 
 

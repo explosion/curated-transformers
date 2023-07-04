@@ -1,17 +1,11 @@
-import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
-from .._compat import has_hf_transformers, transformers
-from ..util.hf import hf_hub_download
+from huggingface_hub.utils import EntryNotFoundError
 
-HF_TOKENIZER_FILENAME = "tokenizer.json"
+from ..util.hf import get_tokenizer_config, hf_hub_download
 
-# Only provided as typing.Self in Python 3.11+.
-SelfFromPretrainedTokenizer = TypeVar(
-    "SelfFromPretrainedTokenizer", bound="FromPretrainedHFTokenizer"
-)
 SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
 
@@ -23,44 +17,7 @@ class FromHFHub(ABC):
     """
 
     @classmethod
-    def from_tokenizer_json_file(
-        cls: Type[SelfFromHFHub],
-        path: Path,
-    ) -> SelfFromHFHub:
-        """
-        Construct a tokenizer from a Hugging Face fast tokenizer JSON file.
-
-        :param tokenizer_path:
-            Path to the tokenizer JSON file.
-        :returns:
-            The tokenizer.
-        """
-        with open(path, "r", encoding="utf8") as f:
-            hf_tokenizer = json.load(f)
-        if not isinstance(hf_tokenizer, dict):
-            raise ValueError(
-                f"Tokenizer must be a json dict, was: {type(hf_tokenizer).__name__}"
-            )
-
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=hf_tokenizer)
-
-    @classmethod
     @abstractmethod
-    def _convert_hf_tokenizer_json(
-        cls: Type[SelfFromHFHub], *, hf_tokenizer: Dict[str, Any]
-    ) -> SelfFromHFHub:
-        """
-        Construct a tokenizer from a deserialized Hugging Face fast tokenizer
-        deserialized JSON file.
-
-        :param hf_tokenizer:
-            Deserialized tokenizer JSON.
-        :returns:
-            The tokenizer.
-        """
-        raise NotImplementedError
-
-    @classmethod
     def from_hf_hub(
         cls: Type[SelfFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfFromHFHub:
@@ -73,78 +30,71 @@ class FromHFHub(ABC):
         :returns:
             The tokenizer.
         """
-        tokenizer_filename = _get_tokenizer_filepath(name, revision)
-        with open(tokenizer_filename, "r", encoding="utf8") as f:
-            hf_tokenizer = json.load(f)
-        if not isinstance(hf_tokenizer, dict):
-            raise ValueError(
-                f"Tokenizer must be a json dict, was: {type(hf_tokenizer).__name__}"
-            )
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=hf_tokenizer)
+        raise NotImplementedError
 
 
-def _get_tokenizer_filepath(name: str, revision: str) -> str:
-    try:
-        return hf_hub_download(
-            repo_id=name, filename=HF_TOKENIZER_FILENAME, revision=revision
-        )
-    except:
-        raise ValueError(
-            f"Couldn't find a valid tokenizer config for model `{name}` "
-            f"(revision `{revision}`) on HuggingFace Model Hub"
-        )
+SelfLegacyFromHFHub = TypeVar("SelfLegacyFromHFHub", bound="LegacyFromHFHub")
 
 
-class FromPretrainedHFTokenizer(ABC):
+class LegacyFromHFHub(FromHFHub):
     """
-    Mixin class for downloading tokenizers from Hugging Face Hub. This differs
-    from :class:`curated_transformers.tokenization.hf_hub.FromHFHub` in that it
-    first constructs a Hugging Face tokenizer instance (using the ``transformers``
-    library) and then uses its metadata to initialize the curated tokenizer.
+    Subclass of :class:`.FromHFHub` for legacy tokenizers. This subclass
+    implements the ``from_hf_hub`` method and provides through the abstract
+    ``_load_from_vocab_files`` method:
 
-    A module using this mixin can implement the ``_convert_hf_tokenizer`` method.
-    The mixin will then provide the ``from_hf_tokenizer`` method to download a
-    tokenizer from the Hugging Face Hub.
+    * The vocabulary files requested by a tokenizer through the
+      ``vocab_files`` member variable.
+    * The tokenizer configuration (when available).
     """
+
+    vocab_files: Dict[str, str] = {}
 
     @classmethod
     @abstractmethod
-    def _convert_hf_tokenizer(
-        cls: Type[SelfFromPretrainedTokenizer], tokenizer: Any
-    ) -> SelfFromPretrainedTokenizer:
+    def _load_from_vocab_files(
+        cls: Type[SelfLegacyFromHFHub],
+        *,
+        vocab_files: Dict[str, Path],
+        tokenizer_config: Optional[Dict[str, Any]]
+    ) -> SelfLegacyFromHFHub:
         """
-        Create an instance of the tokenizer from the Hugging Face
-        tokenizer instance.
+        Construct a tokenizer from its vocabulary files and optional
+        configuration.
 
-        :param tokenizer:
-            Hugging Face tokenizer.
+        :param vocab_files:
+            The resolved vocabulary files (in a local cache).
+        :param tokenizer_config:
+            The tokenizer configuration (when available).
         :returns:
-            New tokenizer.
+            The tokenizer.
         """
         raise NotImplementedError
 
     @classmethod
-    def from_hf_tokenizer(
-        cls: Type[SelfFromPretrainedTokenizer], *, name: str, revision: str = "main"
-    ) -> SelfFromPretrainedTokenizer:
-        """
-        Construct a tokenizer and load its parameters from Hugging Face Hub.
+    def from_hf_hub(
+        cls: Type[SelfLegacyFromHFHub], *, name: str, revision: str = "main"
+    ) -> SelfLegacyFromHFHub:
+        """Construct a tokenizer and load its parameters from Hugging Face Hub.
 
         :param name:
             Model name.
         :param revision:
             Model revision.
         :returns:
-            New tokenizer.
+            The tokenizer.
         """
-
-        # We cannot directly use the Hugging Face Hub downloader like we do for the model
-        # checkpoints as the tokenizer implementations do not use a consistent serialization
-        # interface with stable filenames for artifacts.
-        if not has_hf_transformers:
-            raise ValueError(
-                "`Loading tokenizers from Hugging Face Hub requires `transformers` package to be installed"
+        vocab_files = {}
+        for vocab_file, filename in cls.vocab_files.items():
+            vocab_files[vocab_file] = Path(
+                hf_hub_download(repo_id=name, filename=filename, revision=revision)
             )
 
-        tokenizer = transformers.AutoTokenizer.from_pretrained(name, revision=revision)
-        return cls._convert_hf_tokenizer(tokenizer)
+        # Try to get the tokenizer configuration.
+        try:
+            tokenizer_config = get_tokenizer_config(name=name, revision=revision)
+        except EntryNotFoundError:
+            tokenizer_config = None
+
+        return cls._load_from_vocab_files(
+            vocab_files=vocab_files, tokenizer_config=tokenizer_config
+        )

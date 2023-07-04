@@ -66,12 +66,6 @@ Tokenizers
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenization.GPTNeoXTokenizer
-   :members:
-   :inherited-members:
-   :special-members: __call__
-   :show-inheritance:
-
 .. autoclass:: curated_transformers.tokenization.RobertaTokenizer
    :members:
    :inherited-members:
@@ -85,6 +79,12 @@ Tokenizers
    :show-inheritance:
 
 .. autoclass:: curated_transformers.tokenization.CamembertTokenizer
+   :members:
+   :inherited-members:
+   :special-members: __call__
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.tokenization.LLaMATokenizer
    :members:
    :inherited-members:
    :special-members: __call__

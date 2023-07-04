@@ -22,11 +22,6 @@ def toy_tokenizer_from_files(test_dir):
     )
 
 
-@pytest.fixture
-def toy_tokenizer_from_tokenizer_json(test_dir):
-    return BertTokenizer.from_tokenizer_json_file(test_dir / "toy-bert.json")
-
-
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
@@ -41,34 +36,17 @@ def test_from_hf_hub_equals_hf_tokenizer_short(short_sample_texts):
     )
 
 
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_from_hf_tokenizer_equals_hf_tokenizer(sample_texts):
-    compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts,
-        "bert-base-cased",
-        BertTokenizer,
-        from_hf_tokenizer=True,
-        # Use a revision from before tokenizer.json.
-        revision="6c38be42d6b3ed125933ca95fd0165fb9df8e414",
-    )
-
-
-def test_from_json_file(toy_tokenizer_from_tokenizer_json, short_sample_texts):
-    encoding = toy_tokenizer_from_tokenizer_json(short_sample_texts)
-    _check_toy_tokenizer(encoding)
-
-    assert toy_tokenizer_from_tokenizer_json.decode(encoding.ids) == [
-        "I saw a girl with a telescope.",
-        "Today we will eat [UNK] bowl, lots of it!",
-        "Tokens which are unknown [UNK] [UNK] [UNK] alphabet [UNK] vocabularies.",
-    ]
-
-
 def test_from_files(toy_tokenizer_from_files, short_sample_texts):
     encoding = toy_tokenizer_from_files(short_sample_texts)
     _check_toy_tokenizer(encoding)
 
     assert toy_tokenizer_from_files.decode(encoding.ids) == [
+        "I saw a girl with a telescope.",
+        "Today we will eat bowl, lots of it!",
+        "Tokens which are unknown alphabet vocabularies.",
+    ]
+
+    assert toy_tokenizer_from_files.decode(encoding.ids, skip_special_pieces=False) == [
         "I saw a girl with a telescope.",
         "Today we will eat [UNK] bowl, lots of it!",
         "Tokens which are unknown [UNK] [UNK] [UNK] alphabet [UNK] vocabularies.",

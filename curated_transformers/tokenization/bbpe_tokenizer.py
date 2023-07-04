@@ -4,14 +4,14 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, ca
 from curated_tokenizers import ByteBPEProcessor
 
 from .chunks import MergedInputChunks, MergedSpecialPieceChunk
-from .hf_hub import FromHFHub, FromPretrainedHFTokenizer
+from .hf_hub import LegacyFromHFHub
 from .tokenizer import LegacyTokenizer, PiecesWithIds
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="ByteBPETokenizer")
 
 
-class ByteBPETokenizer(LegacyTokenizer, FromHFHub, FromPretrainedHFTokenizer):
+class ByteBPETokenizer(LegacyTokenizer):
     """
     Piece tokenizer using byte-level byte pair encoding
     (Gage, 1994, Sennrich et al., 2016)
@@ -79,29 +79,3 @@ class ByteBPETokenizer(LegacyTokenizer, FromHFHub, FromPretrainedHFTokenizer):
             pieces.append(seq_pieces)
 
         return PiecesWithIds(ids=ids, pieces=pieces)
-
-    @classmethod
-    def _convert_hf_tokenizer_json(
-        cls: Type[Self], *, hf_tokenizer: Dict[str, Any]
-    ) -> Self:
-        model = hf_tokenizer["model"]
-        if model["type"] != "BPE":
-            raise ValueError(
-                "Attempted to load a non-Byte BPE tokenizer as a Byte BPE tokenizer"
-            )
-
-        vocab = model["vocab"]
-        merges = [
-            cast(Tuple[str, str], tuple(merge.split(" ", maxsplit=2)))
-            for merge in model["merges"]
-        ]
-        special_pieces = {
-            added["content"]: added["id"] for added in hf_tokenizer["added_tokens"]
-        }
-        return cls(vocab=vocab, merges=merges, special_pieces=special_pieces)
-
-    @classmethod
-    def _convert_hf_tokenizer(cls: Type[Self], tokenizer: Any) -> Self:
-        serialized = tokenizer.backend_tokenizer.to_str(True)  # type: ignore
-        deserialized = json.loads(serialized)
-        return cls._convert_hf_tokenizer_json(hf_tokenizer=deserialized)

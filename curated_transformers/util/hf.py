@@ -1,7 +1,7 @@
 import json
 import re
 import warnings
-from typing import List, Mapping
+from typing import Any, Dict, List, Mapping
 
 import huggingface_hub
 import torch
@@ -11,6 +11,7 @@ HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX = "pytorch_model.bin.index.json"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = "weight_map"
+HF_TOKENIZER_CONFIG = "tokenizer_config.json"
 
 
 def get_model_config_filepath(name: str, revision: str) -> str:
@@ -93,6 +94,24 @@ def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
         filepaths.append(resolved_filename)
 
     return sorted(filepaths)
+
+
+def get_tokenizer_config(*, name: str, revision="main") -> Dict[str, Any]:
+    """
+    Get a tokenizer configuration.
+
+    :param name:
+        Model name.
+    :param revision:
+        Model revision.
+    :returns:
+        Deserialized tokenizer configuration.
+    """
+    config_path = hf_hub_download(
+        repo_id=name, filename=HF_TOKENIZER_CONFIG, revision=revision
+    )
+    with open(config_path, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def hf_hub_download(repo_id: str, filename: str, revision: str) -> str:

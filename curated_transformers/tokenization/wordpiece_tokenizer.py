@@ -55,7 +55,7 @@ class WordPieceTokenizer(LegacyTokenizer):
             tokens = []
             for piece_id in piece_ids:
                 if skip_special_pieces and piece_id in self.id_to_special_piece:
-                	continue
+                    continue
 
                 token, is_initial = self.processor.id_to_piece(piece_id)
                 if is_initial:

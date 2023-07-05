@@ -73,7 +73,7 @@ class FromPretrainedHFModel(ABC):
 
         :param name:
             Model name.
-        :param revsion:
+        :param revision:
             Model revision.
         :param device:
             Device on which the model is initialized.

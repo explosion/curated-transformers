@@ -18,6 +18,7 @@ from ..models.refined_web_model import RefinedWebModelCausalLM, RefinedWebModelD
 from ..models.roberta import RobertaEncoder
 from ..models.xlm_roberta import XlmRobertaEncoder
 from ..quantization import BitsAndBytesConfig
+from ..util.hf import get_hf_config_model_type
 from .hf import get_model_config_filepath
 
 ModelT = TypeVar("ModelT")
@@ -61,7 +62,7 @@ class AutoModel(ABC, Generic[ModelT]):
         quantization_config: Optional[BitsAndBytesConfig],
         model_type_to_class_map: Mapping[str, Type],
     ) -> FromPretrainedHFModel:
-        model_type = _get_hf_config_model_type(name, revision)
+        model_type = get_hf_config_model_type(name, revision)
         module_cls = model_type_to_class_map.get(model_type)
         if module_cls is None:
             raise ValueError(
@@ -200,13 +201,3 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
         assert generator is not None
         assert isinstance(generator, GeneratorWrapper)
         return generator
-
-
-def _get_hf_config_model_type(name: str, revision: str) -> Any:
-    config_filename = get_model_config_filepath(name, revision)
-    with open(config_filename, "r") as f:
-        config = json.load(f)
-        model_type = config.get("model_type")
-        if model_type is None:
-            raise ValueError("Model type not found in Hugging Face model config")
-        return model_type

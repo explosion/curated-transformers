@@ -1,9 +1,8 @@
 from typing import Dict, Optional, Type, cast
 
-from huggingface_hub import HfFileMetadata, get_hf_file_metadata, hf_hub_url
 from huggingface_hub.utils import EntryNotFoundError
 
-from ..util.hf import get_hf_config_model_type
+from ..util.hf import TOKENIZER_JSON, get_file_metadata, get_hf_config_model_type
 from .bert_tokenizer import BertTokenizer
 from .camembert_tokenizer import CamembertTokenizer
 from .hf_hub import FromHFHub, get_tokenizer_config
@@ -11,8 +10,6 @@ from .llama_tokenizer import LLaMATokenizer
 from .roberta_tokenizer import RobertaTokenizer
 from .tokenizer import Tokenizer, TokenizerBase
 from .xlmr_tokenizer import XlmrTokenizer
-
-TOKENIZER_JSON = "tokenizer.json"
 
 HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
     "BertTokenizer": BertTokenizer,
@@ -56,7 +53,9 @@ class AutoTokenizer:
 
         tokenizer_cls: Optional[Type[FromHFHub]] = None
         try:
-            _get_hf_file_metadata(filename=TOKENIZER_JSON, name=name, revision=revision)
+            # We will try to fetch metadata to avoid potentially downloading
+            # the tokenizer file twice (here and Tokenizer.from_hf_hub).
+            get_file_metadata(filename=TOKENIZER_JSON, name=name, revision=revision)
         except EntryNotFoundError:
             pass
         else:
@@ -84,21 +83,6 @@ class AutoTokenizer:
             return cast(
                 TokenizerBase, tokenizer_cls.from_hf_hub(name=name, revision=revision)
             )
-
-
-def _get_hf_file_metadata(*, filename: str, name: str, revision: str) -> HfFileMetadata:
-    """
-    Get the metadata for a file on Huggingface Hub.
-
-    :param filename:
-        The file to get the metadata for.
-    :param name:
-        Model name.
-    :param revision:
-        Model revision.
-    """
-    url = hf_hub_url(name, filename, revision=revision)
-    return get_hf_file_metadata(url)
 
 
 def _get_tokenizer_class_from_config(

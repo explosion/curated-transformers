@@ -12,6 +12,24 @@ HF_MODEL_CHECKPOINT = "pytorch_model.bin"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX = "pytorch_model.bin.index.json"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = "weight_map"
 HF_TOKENIZER_CONFIG = "tokenizer_config.json"
+TOKENIZER_JSON = "tokenizer.json"
+
+
+def get_file_metadata(
+    *, filename: str, name: str, revision: str
+) -> huggingface_hub.HfFileMetadata:
+    """
+    Get the metadata for a file on Huggingface Hub.
+
+    :param filename:
+        The file to get the metadata for.
+    :param name:
+        Model name.
+    :param revision:
+        Model revision.
+    """
+    url = huggingface_hub.hf_hub_url(name, filename, revision=revision)
+    return huggingface_hub.get_hf_file_metadata(url)
 
 
 def get_hf_config_model_type(name: str, revision: str) -> Any:

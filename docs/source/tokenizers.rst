@@ -40,9 +40,9 @@ Downloading tokenizers
 
 Each tokenizer type provides a ``from_hf_hub`` function that will load a
 tokenizer from Hugging Face Hub. If you want to load a tokenizer without
-committing to a specific tokelizer type, you can use the :class:`.AutoTokenizer`
+committing to a specific tokenizer type, you can use the :class:`.AutoTokenizer`
 class. This class also provides a ``from_hf_hub`` method to load a tokenizer,
-but will try to infer the tokelizer type automatically.
+but will try to infer the tokenizer type automatically.
 
 .. autoclass:: curated_transformers.tokenization.AutoTokenizer
    :members:

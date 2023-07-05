@@ -32,7 +32,15 @@ def get_file_metadata(
     return huggingface_hub.get_hf_file_metadata(url)
 
 
-def get_hf_config_model_type(name: str, revision: str) -> Any:
+def get_hf_config_model_type(name: str, revision: str) -> str:
+    """
+    Get the type of a model on Hugging Face Hub.
+
+    :param filename:
+        The file to get the type of.
+    :param name:
+        Model name.
+    """
     config_filename = get_model_config_filepath(name, revision)
     with open(config_filename, "r") as f:
         config = json.load(f)

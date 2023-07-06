@@ -149,7 +149,7 @@ class TokenizerBase(ABC):
         Get the ID for a single piece.
 
         :param piece:
-            The piece to look up the ID for.
+            The piece to look up the identifier for.
         :returns:
             The piece identifier or ``None`` when the piece is unknown.
         """

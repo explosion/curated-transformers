@@ -18,7 +18,7 @@ Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 class RoBERTaEncoder(EncoderModule, FromHFHub):
     """
-    RoBERTa encoder (Liu et al., 2019).
+    RoBERTa (Liu et al., 2019) encoder.
     """
 
     def __init__(self, config: RoBERTaConfig, *, device: Optional[torch.device] = None):

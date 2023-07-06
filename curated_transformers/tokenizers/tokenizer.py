@@ -56,7 +56,7 @@ class PiecesWithIds:
         :returns:
             The attention mask.
 
-            **Shape:** ``(batch_size, max_seq_len)``
+            *Shape:* ``(batch_size, max_seq_len)``
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
@@ -78,7 +78,7 @@ class PiecesWithIds:
         :returns:
             The padded piece ids.
 
-            **Shape:** ``(batch_size, max_seq_len)``
+            *Shape:* ``(batch_size, max_seq_len)``
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
@@ -168,12 +168,12 @@ class TokenizerBase(ABC):
 
 class Tokenizer(TokenizerBase, FromHFHub):
     """
-    This class wraps the tokenizers from the `tokenizers` package. It supports a
+    Wraps the tokenizers from the ``tokenizers`` package. It supports a
     wide range of piece tokenizers, including word piece, byte pair encoding, and
     sentencepiece unigram tokenizers. This is the tokenizer that should be used
-    in the majority of cases. The other tokenizers in the `curated-transformers`
+    in the majority of cases. The other tokenizers in the ``curated-transformers``
     package should only be used when you have a legacy tokenizer that is not in
-    Hugging Face `tokenizer.json` format.
+    Hugging Face ``tokenizer.json`` format.
     """
 
     def __init__(

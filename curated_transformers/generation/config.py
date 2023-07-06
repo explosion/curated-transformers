@@ -92,13 +92,13 @@ class SampleGeneratorConfig(GeneratorConfig):
     output.
 
     :param temperature:
-        Softmax temperature. For a temperature T:
+        Softmax temperature. For a temperature ``T``:
 
-        - T = 1: the distribution is not changed.
-        - T < 1: the entropy of the distribution is decreased.
-        - T > 1: the entropy of the distribution is increased.
+        - ``T = 1``: the distribution is not changed.
+        - ``T < 1``: the entropy of the distribution is decreased.
+        - ``T > 1``: the entropy of the distribution is increased.
     :param top_k:
-        Sample from top-k highest-probability pieces. k < 1 disables top-k
+        Sample from top-k highest-probability pieces. ``top_k < 1`` disables top-k
         filtering.
     """
 

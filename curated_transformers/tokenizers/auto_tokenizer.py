@@ -34,14 +34,17 @@ HF_MODEL_MAPPING: Dict[str, Type[FromHFHub]] = {
 
 
 class AutoTokenizer:
-    """Tokenizer loaded from the Hugging Face Model Hub."""
+    """
+    Tokenizer loaded from the Hugging Face Model Hub.
+    """
 
     # NOTE: We do not inherit from FromHFHub, because its from_hf_hub method
     #       requires that the return type is Self.
 
     @classmethod
     def from_hf_hub(cls, *, name: str, revision: str = "main") -> TokenizerBase:
-        """Infer a tokenizer type and load it from Hugging Face Hub.
+        """
+        Infer a tokenizer type and load it from Hugging Face Hub.
 
         :param name:
             Model name.

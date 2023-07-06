@@ -43,7 +43,7 @@ class LegacyFromHFHub(FromHFHub):
     ``_load_from_vocab_files`` method:
 
     * The vocabulary files requested by a tokenizer through the
-      ``vocab_files`` member variable.
+    ``vocab_files`` member variable.
     * The tokenizer configuration (when available).
     """
 

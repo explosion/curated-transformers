@@ -37,7 +37,7 @@ class ModelOutput:
         :returns:
             Embedding layer output.
 
-            **Shape:** ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq, width)``
         """
         return self.all_outputs[0]
 
@@ -50,7 +50,7 @@ class ModelOutput:
         :returns:
             Hidden representation of the layer.
 
-            **Shape:** ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq, width)``
         """
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
@@ -68,7 +68,7 @@ class ModelOutput:
         :returns:
             Last hidden representation of the last layer.
 
-            **Shape:** ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq, width)``
         """
         return self.all_outputs[-1]
 
@@ -80,7 +80,7 @@ class ModelOutput:
         :returns:
             Hidden representations of all the layers.
 
-            **Shape:** ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq, width)``
         """
         return self.all_outputs[1:]
 
@@ -128,7 +128,7 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
     :param logits:
         Logits of the distributions of predicted tokens.
 
-        **Shape:** ``(batch_size, seq_len, vocab_size)``
+        *Shape:* ``(batch_size, seq_len, vocab_size)``
     """
 
     logits: Tensor

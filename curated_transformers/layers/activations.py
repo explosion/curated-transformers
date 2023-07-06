@@ -17,7 +17,7 @@ class GeluNew(Module):
         :param input:
             Input tensor.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return (
             0.5
@@ -45,7 +45,7 @@ class GeluFast(Module):
         :param input:
             Input tensor.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return (
             0.5

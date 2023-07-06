@@ -71,18 +71,18 @@ class BERTEmbeddings(Module):
         :param input_ids:
             Piece identifiers to embed.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param token_type_ids:
             Token type identifiers to indicate the spans of different
             sequences in the input. Useful when performing tasks like
             sequence classification and question answering.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param position_ids:
             Positional identifiers with which to fetch the positional
             embeddings for the sequences.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         """
         if token_type_ids is None:
             token_type_ids = self._get_token_type_ids(input_ids)

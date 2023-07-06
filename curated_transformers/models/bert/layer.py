@@ -57,13 +57,13 @@ class BERTEncoderLayer(Module):
         :param input:
             Embeddings to apply the layer to.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         :param attention_mask:
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         """
         attn_out, _ = self.mha(input, attention_mask)
         attn_out = self.attn_output_dropout(attn_out)

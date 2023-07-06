@@ -1,3 +1,4 @@
+import json
 import unicodedata
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -6,9 +7,18 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union, cast
 
 import torch
+from huggingface_hub.utils import EntryNotFoundError
 from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
+from ..util.hf import (
+    HF_TOKENIZER_CONFIG,
+    SPECIAL_TOKENS_MAP,
+    TOKENIZER_JSON,
+    get_special_piece,
+    get_special_tokens_map,
+    get_tokenizer_config,
+)
 from ._hf_compat import clean_up_decoded_string_like_hf
 from .chunks import (
     InputChunks,
@@ -133,6 +143,30 @@ class TokenizerBase(ABC):
         """
         ...
 
+    @abstractmethod
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        """
+        Get the ID for a single piece.
+
+        :param piece:
+            The piece to look up the ID for.
+        :returns:
+            The piece identifier or ``None`` when the piece is unknown.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def eos_piece(self) -> Optional[str]:
+        """
+        Get the end-of-sequence piece.
+
+        :returns:
+            The end-of-sequence piece or ``None`` when this piece is not
+            defined.
+        """
+        ...
+
 
 class Tokenizer(TokenizerBase, FromHFHub):
     """
@@ -144,14 +178,57 @@ class Tokenizer(TokenizerBase, FromHFHub):
     Hugging Face `tokenizer.json` format.
     """
 
-    def __init__(self, tokenizer: HFTokenizer):
+    def __init__(
+        self,
+        *,
+        tokenizer: HFTokenizer,
+        config: Optional[Dict[str, Any]],
+        special_tokens_map: Optional[Dict[str, Any]],
+    ):
         """
         Construct a tokenizer.
 
         :param tokenizer:
             The ``tokenizers`` tokenizer to use.
+        :param config:
+            Additional tokenizer configuration.
+        :param special_tokens_map:
+            Map of special tokens.
         """
         self.tokenizer = tokenizer
+        self._eos_piece = self._get_special_piece(
+            piece_name="eos_token",
+            tokenizer_config=config,
+            special_tokens_map=special_tokens_map,
+        )
+
+    def _get_special_piece(
+        self,
+        *,
+        piece_name: str,
+        tokenizer_config: Optional[Dict[str, Any]],
+        special_tokens_map: Optional[Dict[str, Any]],
+    ) -> Optional[str]:
+        """
+        Attempt to get the special piece identifier from the special tokens
+        mapping or the tokenizer configuration.
+
+        :param piece_name:
+            The name of the special piece to look up.
+        :param tokenizer_config:
+            The tokenizer configuration.
+        :param special_piece_map:
+            Special pieces mapping.
+        :returns:
+            The special piece, if defined in the special tokens mapping or
+            the tokenizer configuration.
+        """
+        piece = None
+        if special_tokens_map is not None:
+            piece = get_special_piece(special_tokens_map, piece_name)
+        if piece is None and tokenizer_config is not None:
+            get_special_piece(tokenizer_config, piece_name)
+        return piece
 
     def decode(
         self,
@@ -218,32 +295,82 @@ class Tokenizer(TokenizerBase, FromHFHub):
 
         return PiecesWithIds(ids=ids, pieces=pieces)
 
+    @property
+    def eos_piece(self) -> Optional[str]:
+        return self._eos_piece
+
     @classmethod
-    def from_file(cls: Type[Self], path: Path) -> Self:
+    def from_dir(cls: Type[Self], path: Path) -> Self:
         """
-        Load the tokenizer from a ``tokenizer.json`` file.
+        Load the tokenizer from a directory with a ``tokenizer.json`` file.
 
         :param path:
             Path to the tokenizer file.
         """
-        hf_tokenizer = HFTokenizer.from_file(str(path))
-        return cls(hf_tokenizer)
+        tokenizer_path = path / TOKENIZER_JSON
+        config_path = path / HF_TOKENIZER_CONFIG
+        special_tokens_map_path = path / SPECIAL_TOKENS_MAP
+        hf_tokenizer = HFTokenizer.from_file(str(tokenizer_path))
+        config = None
+        if config_path.is_file():
+            with open(config_path, encoding="utf-8") as f:
+                config = json.load(f)
+        special_tokens_map = None
+        if special_tokens_map_path.is_file():
+            with open(special_tokens_map_path, encoding="utf-8") as f:
+                special_tokens_map = json.load(f)
+        return cls(
+            tokenizer=hf_tokenizer,
+            config=config,
+            special_tokens_map=special_tokens_map,
+        )
 
     @classmethod
-    def from_hf_hub(cls: Type[Self], *, name, revision="main") -> Self:
+    def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:
         hf_tokenizer = HFTokenizer.from_pretrained(name, revision)
-        return cls(hf_tokenizer)
+
+        try:
+            config = get_tokenizer_config(name=name, revision=revision)
+        except EntryNotFoundError:
+            config = None
+        try:
+            special_tokens_map = get_special_tokens_map(name=name, revision=revision)
+        except EntryNotFoundError:
+            special_tokens_map = None
+        return cls(
+            tokenizer=hf_tokenizer,
+            config=config,
+            special_tokens_map=special_tokens_map,
+        )
 
     @classmethod
-    def from_json(cls: Type[Self], json: str) -> Self:
+    def from_json(
+        cls: Type[Self],
+        tokenizer_json: str,
+        config_json: Optional[str] = None,
+        special_tokens_map_json: Optional[str] = None,
+    ) -> Self:
         """
         Load the tokenizer from a serialized JSON string..
 
         :param json:
             The JSON string.
         """
-        hf_tokenizer = HFTokenizer.from_str(json)
-        return cls(hf_tokenizer)
+        hf_tokenizer = HFTokenizer.from_str(tokenizer_json)
+        config = json.loads(config_json) if config_json is not None else None
+        special_tokens_map = (
+            json.loads(special_tokens_map_json)
+            if special_tokens_map_json is not None
+            else None
+        )
+        return cls(
+            tokenizer=hf_tokenizer,
+            config=config,
+            special_tokens_map=special_tokens_map,
+        )
+
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        return self.tokenizer.token_to_id(piece)
 
 
 class PreDecoder(ABC):

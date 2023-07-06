@@ -19,6 +19,7 @@ def compare_tokenizer_outputs_with_hf_tokenizer(
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained(
         hf_name, revision=revision, use_fast=hf_use_fast
     )
+    hf_tokenizer.padding_side = "right"
     if pad_token is not None:
         hf_tokenizer.add_special_tokens({"pad_token": pad_token})
 

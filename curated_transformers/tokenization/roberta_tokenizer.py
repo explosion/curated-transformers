@@ -75,6 +75,8 @@ class RobertaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
         bos_id = _get_piece_id_or_fail(self.processor, bos_piece)
         eos_id = _get_piece_id_or_fail(self.processor, eos_piece)
 
+        self._eos_piece = eos_piece
+
         self.pre_decoder = RobertaPreDecoder(
             bos_id=bos_id,
             eos_id=eos_id,
@@ -114,6 +116,13 @@ class RobertaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
             bos_piece=bos_piece,
             eos_piece=eos_piece,
         )
+
+    @property
+    def eos_piece(self) -> Optional[str]:
+        return self._eos_piece
+
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        return self.processor.token_to_id(piece)
 
     @classmethod
     def _load_from_vocab_files(

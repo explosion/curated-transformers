@@ -1,4 +1,5 @@
-from typing import Callable, Optional, Set, Union
+import warnings
+from typing import Any, Callable, Dict, Optional, Set, Union
 
 import torch
 from torch import Tensor
@@ -133,14 +134,17 @@ def _init_8bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
 ) -> "bnb.nn.Linear8bitLt":
     assert isinstance(config, _8BitConfig)
-    quantized_module = bnb.nn.Linear8bitLt(
-        input_features=source.in_features,
-        output_features=source.out_features,
-        bias=source.bias is not None,
-        has_fp16_weights=config.fine_tunable,
-        threshold=config.outlier_threshold,
-        device=device,
-    )
+    kwargs: Dict[str, Any] = {
+        "input_features": source.in_features,
+        "output_features": source.out_features,
+        "bias": source.bias is not None,
+        "has_fp16_weights": config.fine_tunable,
+        "threshold": config.outlier_threshold,
+    }
+    if has_bitsandbytes_linear_device:
+        kwargs["device"] = device
+
+    quantized_module = bnb.nn.Linear8bitLt(**kwargs)
     return quantized_module
 
 
@@ -148,15 +152,18 @@ def _init_4bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
 ) -> "bnb.nn.Linear4bit":
     assert isinstance(config, _4BitConfig)
-    quantized_module = bnb.nn.Linear4bit(
-        input_features=source.in_features,
-        output_features=source.out_features,
-        bias=source.bias is not None,
-        compute_dtype=config.compute_dtype,
-        compress_statistics=config.double_quantization,
-        quant_type=config.quantization_dtype.value,
-        device=device,
-    )
+    kwargs: Dict[str, Any] = {
+        "input_features": source.in_features,
+        "output_features": source.out_features,
+        "bias": source.bias is not None,
+        "compute_dtype": config.compute_dtype,
+        "compress_statistics": config.double_quantization,
+        "quant_type": config.quantization_dtype.value,
+    }
+    if has_bitsandbytes_linear_device:
+        kwargs["device"] = device
+
+    quantized_module = bnb.nn.Linear4bit(**kwargs)
     return quantized_module
 
 
@@ -166,8 +173,10 @@ def _assert_bitsandbytes_installed():
             "The `bitsandbytes` Python library is required for quantization support"
         )
     elif not has_bitsandbytes_linear_device:
-        raise ValueError(
-            "The currently installed `bitsandbytes` library does not support "
-            "passing device parameters to its modules. Refer to the readme "
-            "for more information on the requirements"
+        msg = (
+            "The installed version of the `bitsandbytes` library does not support passing "
+            "device parameters to its modules. This can result in increased memory usage "
+            "during model initialization. Please refer to the README for more information."
         )
+        warnings.filterwarnings("once", msg)
+        warnings.warn(msg)

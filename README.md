@@ -42,6 +42,10 @@ pip install curated-transformers
 
 ### Installation
 
-Since `curated-transformers` requires functionality that isn't currently present in `bitsandbytes` (as of `v0.39.0`), one needs to install the library
-from source by cloning the [following branch](https://github.com/shadeMe/bitsandbytes/tree/linear-layer-device) of our fork. Installation instructions
+`curated-transformers` requires functionality that isn't currently present in `bitsandbytes` (as of `v0.39.1`). While the said functionality is optional, we recommend users
+to build the library from source by cloning the [following branch](https://github.com/shadeMe/bitsandbytes/tree/linear-layer-device) of our fork. Installation instructions
 can be found [here](https://github.com/shadeMe/bitsandbytes/blob/linear-layer-device/compile_from_source.md).
+
+Users can still use the quantization feature without building the `bitsandbytes` library from our fork. However, this will result in increased CPU memory usage during the model
+initialization phase. The extra overhead amounts to about 2x the memory required for each model parameter, but this value is not cumulative as parameters are deserialized one-by-one.
+GPU memory usage remains unaffected.

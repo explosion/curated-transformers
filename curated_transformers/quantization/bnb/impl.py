@@ -176,7 +176,7 @@ def _assert_bitsandbytes_installed():
         msg = (
             "The installed version of the `bitsandbytes` library does not support passing "
             "device parameters to its modules. This can result in increased memory usage "
-            "during model initialization. Please refer to the readme for more information."
+            "during model initialization. Please refer to the README for more information."
         )
         warnings.filterwarnings("once", msg)
         warnings.warn(msg)

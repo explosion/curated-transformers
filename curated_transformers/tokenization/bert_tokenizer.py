@@ -305,9 +305,6 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     def eos_piece(self) -> Optional[str]:
         return self._eos_piece
 
-    def piece_to_id(self, piece: str) -> Optional[int]:
-        return self.processor.piece_to_id(piece)
-
     @classmethod
     def _load_from_vocab_files(
         cls: Type[Self],

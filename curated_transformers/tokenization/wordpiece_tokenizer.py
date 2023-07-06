@@ -47,6 +47,9 @@ class WordPieceTokenizer(LegacyTokenizer):
 
         self.processor = WordPieceProcessor(pieces)
 
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        return self.processor.piece_to_id(piece)
+
     def _decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool
     ) -> List[str]:

@@ -101,10 +101,10 @@ class XlmrTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         eos_piece = processor.id_to_piece(eos_id)
 
         self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
-
         self.post_encoder = XlmrPostEncoder()
-
         self.pre_decoder = XlmrPreDecoder(bos_id=bos_id, eos_id=eos_id)
+
+        self._eos_piece = eos_piece
 
     @classmethod
     def from_files(

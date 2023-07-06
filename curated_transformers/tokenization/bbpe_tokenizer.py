@@ -39,6 +39,9 @@ class ByteBPETokenizer(LegacyTokenizer):
         vocab.update(self.special_piece_to_id)
         self.processor = ByteBPEProcessor(vocab, merges)
 
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        return self.processor.token_to_id(piece)
+
     def _decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool
     ) -> List[str]:

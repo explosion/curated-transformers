@@ -7,6 +7,7 @@ import pytest
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.tokenization import Tokenizer
 from curated_transformers.tokenization.chunks import InputChunks, TextChunk
+from curated_transformers.util.hf import TOKENIZER_JSON
 
 from ..util import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer
@@ -16,14 +17,18 @@ from .util import compare_tokenizer_outputs_with_hf_tokenizer
 class _TestModel:
     model: str
     pad_token: Optional[str] = None
+    eos_piece: Optional[str] = None
 
 
 _MODELS = [
     _TestModel("bert-base-cased"),
     _TestModel("camembert-base"),
-    _TestModel("EleutherAI/gpt-neox-20b", pad_token="[PAD]"),
+    _TestModel("EleutherAI/gpt-neox-20b", pad_token="[PAD]", eos_piece="<|endoftext|>"),
+    _TestModel("ausboss/llama-30b-supercot", pad_token="</s>", eos_piece="</s>"),
     _TestModel("roberta-base"),
-    _TestModel("tiiuae/falcon-7b", pad_token="<|endoftext|>"),
+    _TestModel(
+        "tiiuae/falcon-7b", pad_token="<|endoftext|>", eos_piece="<|endoftext|>"
+    ),
     _TestModel("xlm-roberta-base"),
 ]
 
@@ -32,12 +37,12 @@ _FRENCH_MODELS = [_TestModel("camembert-base")]
 
 @pytest.fixture
 def toy_tokenizer_path():
-    return Path(__file__).parent / "toy-roberta" / "tokenizer.json"
+    return Path(__file__).parent / "toy-roberta"
 
 
 @pytest.fixture
 def toy_tokenizer(toy_tokenizer_path):
-    return Tokenizer.from_file(toy_tokenizer_path)
+    return Tokenizer.from_dir(toy_tokenizer_path)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
@@ -64,10 +69,16 @@ def test_against_hf_tokenizers_french(model, french_sample_texts):
     )
 
 
+@pytest.mark.parametrize("model", _MODELS)
+def test_special_pieces(model):
+    tokenizer = Tokenizer.from_hf_hub(name=model.model)
+    assert tokenizer.eos_piece == model.eos_piece
+
+
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-def test_from_file(toy_tokenizer, toy_tokenizer_path, sample_texts):
+def test_from_dir(toy_tokenizer, toy_tokenizer_path, sample_texts):
     hf_tokenizer = transformers.RobertaTokenizerFast.from_pretrained(
-        str(toy_tokenizer_path.parent)
+        str(toy_tokenizer_path)
     )
 
     pieces = toy_tokenizer(sample_texts)
@@ -80,10 +91,10 @@ def test_from_file(toy_tokenizer, toy_tokenizer_path, sample_texts):
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_json(toy_tokenizer_path, sample_texts):
-    with open(toy_tokenizer_path, encoding="utf-8") as f:
+    with open(toy_tokenizer_path / TOKENIZER_JSON, encoding="utf-8") as f:
         tokenizer = Tokenizer.from_json(f.read())
     hf_tokenizer = transformers.RobertaTokenizerFast.from_pretrained(
-        str(toy_tokenizer_path.parent)
+        str(toy_tokenizer_path)
     )
 
     pieces = tokenizer(sample_texts)

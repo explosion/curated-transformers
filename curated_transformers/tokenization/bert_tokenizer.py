@@ -245,6 +245,7 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
 
         self.unk_id = unk_id
         self.unk_piece = unk_piece
+        self._eos_piece = eos_piece
 
         self.pre_encoder = BertPreEncoder(
             bos_piece=bos_piece,
@@ -299,6 +300,10 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
             strip_accents=strip_accents,
             special_pieces=special_pieces,
         )
+
+    @property
+    def eos_piece(self) -> Optional[str]:
+        return self._eos_piece
 
     @classmethod
     def _load_from_vocab_files(

@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from curated_tokenizers import SentencePieceProcessor
 
@@ -24,6 +24,14 @@ class SentencePieceTokenizer(LegacyTokenizer):
             The processor to wrap.
         """
         self.processor = processor
+        self._eos_piece = processor.id_to_piece(processor.bos_id())
+
+    @property
+    def eos_piece(self) -> Optional[str]:
+        return self._eos_piece
+
+    def piece_to_id(self, piece: str) -> Optional[int]:
+        return self.processor.piece_to_id(piece)
 
     def _decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool

@@ -1,7 +1,7 @@
 import json
 import re
 import warnings
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 
 import huggingface_hub
 import torch
@@ -12,6 +12,7 @@ HF_MODEL_CHECKPOINT = "pytorch_model.bin"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX = "pytorch_model.bin.index.json"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = "weight_map"
 HF_TOKENIZER_CONFIG = "tokenizer_config.json"
+SPECIAL_TOKENS_MAP = "special_tokens_map.json"
 TOKENIZER_JSON = "tokenizer.json"
 
 
@@ -132,6 +133,42 @@ def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
     return sorted(filepaths)
 
 
+def get_special_piece(
+    special_tokens_map: Dict[str, Any], piece_name: str
+) -> Optional[str]:
+    """
+    Get a special piece from the special tokens map or the tokenizer
+    configuration.
+
+    :param special_tokens_map:
+        The special tokens map.
+    :param piece_name:
+        The piece to look up.
+    :returns:
+        The piece or ``None`` if this particular piece was not defined.
+    """
+    piece = special_tokens_map.get(piece_name)
+    if isinstance(piece, dict):
+        piece = piece.get("content")
+    return piece
+
+
+def get_special_tokens_map(*, name: str, revision="main") -> Dict[str, Any]:
+    """
+    Get a tokenizer's special token mapping.
+
+    :param name:
+        Model name.
+    :param revision:
+        Model revision.
+    :returns:
+        Deserialized special token_map.
+    """
+    return _get_and_parse_json_file(
+        name=name, revision=revision, filename=SPECIAL_TOKENS_MAP
+    )
+
+
 def get_tokenizer_config(*, name: str, revision="main") -> Dict[str, Any]:
     """
     Get a tokenizer configuration.
@@ -143,9 +180,27 @@ def get_tokenizer_config(*, name: str, revision="main") -> Dict[str, Any]:
     :returns:
         Deserialized tokenizer configuration.
     """
-    config_path = hf_hub_download(
-        repo_id=name, filename=HF_TOKENIZER_CONFIG, revision=revision
+    return _get_and_parse_json_file(
+        name=name, revision=revision, filename=HF_TOKENIZER_CONFIG
     )
+
+
+def _get_and_parse_json_file(
+    *, name: str, revision: str, filename: str
+) -> Dict[str, Any]:
+    """
+    Get and parse a JSON file.
+
+    :param name:
+        Model name.
+    :param revision:
+        Model revision.
+    :param filename:
+        File to download and parse.
+    :returns:
+        Deserialized JSON file.
+    """
+    config_path = hf_hub_download(repo_id=name, filename=filename, revision=revision)
     with open(config_path, encoding="utf-8") as f:
         return json.load(f)
 

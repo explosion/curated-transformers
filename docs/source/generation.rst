@@ -22,6 +22,6 @@ Generation models
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.util.auto_model.AutoGenerator
+.. autoclass:: curated_transformers.generation.auto_generator.AutoGenerator
    :members:
    :show-inheritance:

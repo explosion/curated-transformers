@@ -1,7 +1,5 @@
 import pytest
 
-from curated_transformers.generation.dolly_v2 import DollyV2Generator
-from curated_transformers.generation.falcon import FalconGenerator
 from curated_transformers.models import (
     AlbertEncoder,
     BertEncoder,
@@ -13,12 +11,7 @@ from curated_transformers.models import (
     RobertaEncoder,
     XlmRobertaEncoder,
 )
-from curated_transformers.util.auto_model import (
-    AutoCausalLM,
-    AutoDecoder,
-    AutoEncoder,
-    AutoGenerator,
-)
+from curated_transformers.util.auto_model import AutoCausalLM, AutoDecoder, AutoEncoder
 
 
 def test_auto_encoder():
@@ -64,18 +57,3 @@ def test_auto_causal_lm():
 
     with pytest.raises(ValueError, match="Unsupported model type"):
         AutoCausalLM.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")
-
-
-@pytest.mark.slow
-def test_auto_generator():
-    model_causallm_map = {
-        "databricks/dolly-v2-3b": DollyV2Generator,
-        "tiiuae/falcon-7b": FalconGenerator,
-    }
-
-    for name, generator_cls in model_causallm_map.items():
-        generator = AutoGenerator.from_hf_hub(name)
-        assert isinstance(generator, generator_cls)
-
-    with pytest.raises(ValueError, match="Unsupported generator"):
-        AutoGenerator.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")

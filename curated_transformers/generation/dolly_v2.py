@@ -1,17 +1,11 @@
-import dataclasses
-from typing import List, Optional, Type, TypeVar
+from typing import List, TypeVar
 
-import torch
+from curated_transformers.generation.default_generator import DefaultGenerator
 
 from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
-from ..quantization import BitsAndBytesConfig
 from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
 from ..tokenization.tokenizer import Tokenizer
-from .config import GeneratorConfig
-from .generator import Generator
-from .generator_wrapper import GeneratorWrapper
-from .hf_hub import FromHFHub
-from .string_generator import StringGenerator
+from .config import SampleGeneratorConfig
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
@@ -23,7 +17,7 @@ INTRO_BLURB = "Below is an instruction that describes a task. Write a response t
 Self = TypeVar("Self", bound="DollyV2Generator")
 
 
-class DollyV2Generator(GeneratorWrapper, FromHFHub):
+class DollyV2Generator(DefaultGenerator):
     """
     Generator for Dolly v2 model variants.
     """
@@ -38,53 +32,27 @@ class DollyV2Generator(GeneratorWrapper, FromHFHub):
             A Dolly v2 causal language model.
 
         """
-        super().__init__()
-        self.generator = StringGenerator(tokenizer, Generator(causal_lm))
-        self.eos_id = tokenizer.tokenizer.token_to_id(END_KEY)
-
-    @classmethod
-    def from_hf_hub(
-        cls: Type[Self],
-        *,
-        name: str,
-        revision: str = "main",
-        device: Optional[torch.device] = None,
-        quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> Self:
-        tokenizer = Tokenizer.from_hf_hub(name=name, revision=revision)
-        causal_lm = GPTNeoXCausalLM.from_hf_hub(
-            name=name,
-            revision=revision,
-            device=device,
-            quantization_config=quantization_config,
-        )
-        return cls(tokenizer, causal_lm)
-
-    def generate(self, prompts: List[str], config: GeneratorConfig) -> List[str]:
-        # Fill config when necessary.
-        eos_id = self.eos_id if config.eos_id is None else config.eos_id
-        max_generated_pieces = (
-            256 if config.max_generated_pieces is None else config.max_generated_pieces
-        )
-        config = dataclasses.replace(
-            config, eos_id=eos_id, max_generated_pieces=max_generated_pieces
+        eos_id = tokenizer.tokenizer.token_to_id(END_KEY)
+        super().__init__(
+            tokenizer,
+            causal_lm,
+            default_config=SampleGeneratorConfig(
+                eos_id=eos_id, max_generated_pieces=256
+            ),
         )
 
-        prompts_with_instructions = [
-            _to_prompt_with_instructions(prompt) for prompt in prompts
+    def preprocess_prompts(self, prompts: List[str]) -> List[InputChunks]:
+        return [
+            InputChunks(
+                [
+                    TextChunk(INTRO_BLURB),
+                    # Dolly is really picky about getting the correct number of line
+                    # breaks, so the double line breaks in this chunk and the last
+                    # chunk are intentional.
+                    SpecialPieceChunk(INSTRUCTION_KEY, before="\n\n", after="\n"),
+                    TextChunk(prompt),
+                    SpecialPieceChunk(RESPONSE_KEY, before="\n\n", after="\n"),
+                ]
+            )
+            for prompt in prompts
         ]
-        return self.generator(prompts_with_instructions, config=config)
-
-
-def _to_prompt_with_instructions(prompt):
-    return InputChunks(
-        [
-            TextChunk(INTRO_BLURB),
-            # Dolly is really picky about getting the correct number of line
-            # breaks, so the double line breaks in this chunk and the last
-            # chunk are intentional.
-            SpecialPieceChunk(INSTRUCTION_KEY, before="\n\n", after="\n"),
-            TextChunk(prompt),
-            SpecialPieceChunk(RESPONSE_KEY, before="\n\n", after="\n"),
-        ]
-    )

@@ -23,10 +23,12 @@ GENERATOR_MAP: Dict[str, Type[FromHFHub]] = {
 class AutoGenerator(AutoModel[GeneratorWrapper]):
     """Causal LM generator loaded from the Hugging Face Model Hub.
 
-    **NOTE** - This class can currently only be used with the following models:
-        - Models based on Dolly v2 (contain ``dolly-v2``` in the name).
-        - Models based on Falcon (contain ``falcon`` in the name).
-        - Models based on LLaMA (contain ``llama`` in the name).
+    .. attention::
+            This class can currently only be used with the following models:
+
+            - Models based on Dolly v2 (contain ``dolly-v2`` in the name).
+            - Models based on Falcon (contain ``falcon`` in the name).
+            - Models based on LLaMA (contain ``llama`` in the name).
     """
 
     _DOLLY_V2_SUBSTRING = "dolly-v2"

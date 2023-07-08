@@ -14,6 +14,7 @@ Supported encoder-only models:
 Supported decoder-only models:
 
 - GPT-NeoX
+- LLaMA
 - Refined Web Model (Falcon)
 
 Generator wrappers:

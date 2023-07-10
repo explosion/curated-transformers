@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 from ...layers.attention import AttentionMask
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -16,7 +16,7 @@ from .layer import BERTEncoderLayer
 Self = TypeVar("Self", bound="BERTEncoder")
 
 
-class BERTEncoder(EncoderModule, FromPretrainedHFModel):
+class BERTEncoder(EncoderModule, FromHFHub):
     """
     BERT (Devlin et al., 2018) encoder.
     """

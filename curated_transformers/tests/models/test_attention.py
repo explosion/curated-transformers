@@ -37,7 +37,9 @@ def test_context_manager():
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp(torch_device):
-    model = BERTEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
+    model = BERTEncoder.from_hf_hub(
+        name="explosion-testing/bert-test", device=torch_device
+    )
     model.eval()
 
     torch.manual_seed(0)
@@ -52,7 +54,9 @@ def test_torch_sdp(torch_device):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp_mask(torch_device):
-    model = BERTEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
+    model = BERTEncoder.from_hf_hub(
+        name="explosion-testing/bert-test", device=torch_device
+    )
     model.eval()
 
     torch.manual_seed(0)
@@ -73,7 +77,7 @@ def test_torch_sdp_mask(torch_device):
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp_causal(torch_device):
     model = GPTNeoXDecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 
@@ -90,7 +94,7 @@ def test_torch_sdp_causal(torch_device):
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp_causal_with_mask(torch_device):
     model = GPTNeoXDecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 

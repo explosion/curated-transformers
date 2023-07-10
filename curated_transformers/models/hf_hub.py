@@ -10,10 +10,10 @@ from ..util.hf import get_model_checkpoint_filepaths, get_model_config_filepath
 from ..util.serde import load_model_from_checkpoints
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="FromPretrainedHFModel")
+Self = TypeVar("Self", bound="FromHFHub")
 
 
-class FromPretrainedHFModel(ABC):
+class FromHFHub(ABC):
     """
     Mixin class for downloading models from Hugging Face Hub.
 
@@ -62,9 +62,9 @@ class FromPretrainedHFModel(ABC):
     @classmethod
     def from_hf_hub(
         cls: Type[Self],
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:

@@ -7,7 +7,7 @@ from torch.nn import Dropout, Embedding, ModuleList
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
 from ...layers.normalization import RMSNorm
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -18,7 +18,7 @@ from .layer import LLaMADecoderLayer
 Self = TypeVar("Self", bound="LLaMADecoder")
 
 
-class LLaMADecoder(DecoderModule, FromPretrainedHFModel):
+class LLaMADecoder(DecoderModule, FromHFHub):
     """
     LLaMa (Touvron et al., 2023) decoder.
     """

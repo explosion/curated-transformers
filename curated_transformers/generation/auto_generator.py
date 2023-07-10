@@ -37,9 +37,9 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
     @classmethod
     def from_hf_hub(
         cls,
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> GeneratorWrapper:

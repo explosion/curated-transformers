@@ -19,7 +19,7 @@ def test_decoder(torch_device):
     hf_model.eval()
 
     model = LLaMADecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
     )
     model.eval()
 
@@ -43,7 +43,7 @@ def test_decoder_with_cache(torch_device):
     hf_model.eval()
 
     model = LLaMADecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
     )
     model.eval()
 
@@ -70,7 +70,7 @@ def test_decoder_with_positions(torch_device):
     hf_model.eval()
 
     model = LLaMADecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
     )
     model.eval()
 
@@ -94,7 +94,7 @@ def test_decoder_with_mask(torch_device):
     hf_model.eval()
 
     model = LLaMADecoder.from_hf_hub(
-        "trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-LlamaForCausalLM", device=torch_device
     )
     model.eval()
 

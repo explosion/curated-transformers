@@ -10,7 +10,7 @@ from .albert import ALBERTEncoder
 from .bert import BERTEncoder
 from .camembert import CamemBERTEncoder
 from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
-from .hf_hub import FromPretrainedHFModel
+from .hf_hub import FromHFHub
 from .llama import LLaMACausalLM, LLaMADecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
 from .refined_web_model import RefinedWebModelCausalLM, RefinedWebModelDecoder
@@ -28,9 +28,9 @@ class AutoModel(ABC, Generic[ModelT]):
     @abstractmethod
     def from_hf_hub(
         cls,
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> ModelT:
@@ -57,7 +57,7 @@ class AutoModel(ABC, Generic[ModelT]):
         device: Optional[torch.device],
         quantization_config: Optional[BitsAndBytesConfig],
         model_type_to_class_map: Mapping[str, Type],
-    ) -> FromPretrainedHFModel:
+    ) -> FromHFHub:
         model_type = get_hf_config_model_type(name, revision)
         module_cls = model_type_to_class_map.get(model_type)
         if module_cls is None:
@@ -65,9 +65,12 @@ class AutoModel(ABC, Generic[ModelT]):
                 f"Unsupported model type `{model_type}` for {cls.__name__}. "
                 f"Supported model types: {tuple(model_type_to_class_map.keys())}"
             )
-        assert issubclass(module_cls, FromPretrainedHFModel)
+        assert issubclass(module_cls, FromHFHub)
         module = module_cls.from_hf_hub(
-            name, revision, device=device, quantization_config=quantization_config
+            name=name,
+            revision=revision,
+            device=device,
+            quantization_config=quantization_config,
         )
         return module
 
@@ -86,9 +89,9 @@ class AutoEncoder(AutoModel[EncoderModule]):
     @classmethod
     def from_hf_hub(
         cls,
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> EncoderModule:
@@ -112,9 +115,9 @@ class AutoDecoder(AutoModel[DecoderModule]):
     @classmethod
     def from_hf_hub(
         cls,
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> DecoderModule:
@@ -138,9 +141,9 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
     @classmethod
     def from_hf_hub(
         cls,
+        *,
         name: str,
         revision: str = "main",
-        *,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> CausalLMModule[KeyValueCache]:

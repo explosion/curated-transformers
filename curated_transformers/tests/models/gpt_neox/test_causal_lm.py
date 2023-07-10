@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.gpt_neox.causal_lm import GPTNeoXCausalLM
@@ -19,7 +18,7 @@ def test_causal_lm_against_hf(torch_device):
     hf_model.to(torch_device)
 
     model = GPTNeoXCausalLM.from_hf_hub(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
+        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
     )
     model.eval()
 

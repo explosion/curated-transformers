@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.refined_web_model.decoder import RefinedWebModelDecoder
@@ -39,7 +38,7 @@ def test_decoder(torch_device):
     hf_model.eval()
 
     model = RefinedWebModelDecoder.from_hf_hub(
-        "explosion-testing/refined-web-model-test", device=torch_device
+        name="explosion-testing/refined-web-model-test", device=torch_device
     )
     model.eval()
 
@@ -57,7 +56,7 @@ def test_decoder(torch_device):
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_decoder_with_cache(torch_device):
     model = RefinedWebModelDecoder.from_hf_hub(
-        "explosion-testing/refined-web-model-test", device=torch_device
+        name="explosion-testing/refined-web-model-test", device=torch_device
     )
     model.eval()
 

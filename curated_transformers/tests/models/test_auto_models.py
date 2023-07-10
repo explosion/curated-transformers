@@ -1,5 +1,4 @@
 import pytest
-
 from curated_transformers.models import (
     ALBERTEncoder,
     BERTEncoder,
@@ -28,11 +27,11 @@ def test_auto_encoder():
     }
 
     for name, encoder_cls in model_encoder_map.items():
-        encoder = AutoEncoder.from_hf_hub(name)
+        encoder = AutoEncoder.from_hf_hub(name=name)
         assert isinstance(encoder, encoder_cls)
 
     with pytest.raises(ValueError, match="Unsupported model type"):
-        AutoEncoder.from_hf_hub("explosion-testing/refined-web-model-test")
+        AutoEncoder.from_hf_hub(name="explosion-testing/refined-web-model-test")
 
 
 def test_auto_decoder():
@@ -42,11 +41,11 @@ def test_auto_decoder():
     }
 
     for name, decoder_cls in model_decoder_map.items():
-        decoder = AutoDecoder.from_hf_hub(name)
+        decoder = AutoDecoder.from_hf_hub(name=name)
         assert isinstance(decoder, decoder_cls)
 
     with pytest.raises(ValueError, match="Unsupported model type"):
-        AutoDecoder.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")
+        AutoDecoder.from_hf_hub(name="trl-internal-testing/tiny-random-GPT2Model")
 
 
 def test_auto_causal_lm():
@@ -56,8 +55,8 @@ def test_auto_causal_lm():
     }
 
     for name, causal_lm_cls in model_causallm_map.items():
-        causal_lm = AutoCausalLM.from_hf_hub(name)
+        causal_lm = AutoCausalLM.from_hf_hub(name=name)
         assert isinstance(causal_lm, causal_lm_cls)
 
     with pytest.raises(ValueError, match="Unsupported model type"):
-        AutoCausalLM.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")
+        AutoCausalLM.from_hf_hub(name="trl-internal-testing/tiny-random-GPT2Model")

@@ -3,21 +3,19 @@ from typing import Generic, Mapping, Optional, Type, TypeVar
 
 import torch
 
-from curated_transformers.models.llama.decoder import LLaMADecoder
-
 from ..layers.cache import KeyValueCache
-from ..models.albert import ALBERTEncoder
-from ..models.bert import BERTEncoder
-from ..models.camembert import CamemBERTEncoder
-from ..models.gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
-from ..models.hf_hub import FromPretrainedHFModel
-from ..models.llama import LLaMACausalLM
-from ..models.module import CausalLMModule, DecoderModule, EncoderModule
-from ..models.refined_web_model import RefinedWebModelCausalLM, RefinedWebModelDecoder
-from ..models.roberta import RoBERTaEncoder
-from ..models.xlm_roberta import XLMREncoder
 from ..quantization import BitsAndBytesConfig
 from ..util.hf import get_hf_config_model_type
+from .albert import ALBERTEncoder
+from .bert import BERTEncoder
+from .camembert import CamemBERTEncoder
+from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
+from .hf_hub import FromPretrainedHFModel
+from .llama import LLaMACausalLM, LLaMADecoder
+from .module import CausalLMModule, DecoderModule, EncoderModule
+from .refined_web_model import RefinedWebModelCausalLM, RefinedWebModelDecoder
+from .roberta import RoBERTaEncoder
+from .xlm_roberta import XLMREncoder
 
 ModelT = TypeVar("ModelT")
 

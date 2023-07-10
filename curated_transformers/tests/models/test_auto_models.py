@@ -11,7 +11,11 @@ from curated_transformers.models import (
     RoBERTaEncoder,
     XLMREncoder,
 )
-from curated_transformers.util.auto_model import AutoCausalLM, AutoDecoder, AutoEncoder
+from curated_transformers.models.auto_model import (
+    AutoCausalLM,
+    AutoDecoder,
+    AutoEncoder,
+)
 
 
 def test_auto_encoder():

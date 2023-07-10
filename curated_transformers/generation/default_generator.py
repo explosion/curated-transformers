@@ -3,12 +3,12 @@ from typing import List, Optional, Type, TypeVar
 
 import torch
 
+from ..models.auto_model import AutoCausalLM
 from ..models.module import CausalLMModule
 from ..quantization import BitsAndBytesConfig
 from ..tokenizers.auto_tokenizer import AutoTokenizer
 from ..tokenizers.chunks import InputChunks, TextChunk
 from ..tokenizers.tokenizer import TokenizerBase
-from ..util.auto_model import AutoCausalLM
 from .config import GeneratorConfig, SampleGeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper

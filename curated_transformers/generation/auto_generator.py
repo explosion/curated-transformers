@@ -2,14 +2,13 @@ from typing import Dict, Optional, Type, cast
 
 import torch
 
-from curated_transformers.generation.default_generator import DefaultGenerator
-from curated_transformers.generation.hf_hub import FromHFHub
-
+from ..models.auto_model import AutoModel
 from ..quantization import BitsAndBytesConfig
-from ..util.auto_model import AutoModel
+from .default_generator import DefaultGenerator
 from .dolly_v2 import DollyV2Generator
 from .falcon import FalconGenerator
 from .generator_wrapper import GeneratorWrapper
+from .hf_hub import FromHFHub
 
 # For the time being, we enable support for a generator on a case-by-case basis.
 # In the future we might defer all unknown generators to DefaultGenerator.

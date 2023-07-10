@@ -4,16 +4,11 @@ import torch
 from torch import Tensor
 from torch.distributions import Categorical
 
-from curated_transformers.generation.config import (
-    GeneratorConfig,
-    GreedyGeneratorConfig,
-    SampleGeneratorConfig,
-)
-from curated_transformers.generation.logits import LogitsTransform
-
 from ..layers.attention import AttentionMask
 from ..models.module import CausalLMModule
 from ..models.output import CacheT, CausalLMOutputWithCache
+from .config import GeneratorConfig, GreedyGeneratorConfig, SampleGeneratorConfig
+from .logits import LogitsTransform
 from .state import GeneratorState
 
 

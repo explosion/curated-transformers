@@ -1,10 +1,9 @@
 from typing import Generic, Iterable, List
 
-from curated_transformers.generation.config import GeneratorConfig
-
 from ..models.output import CacheT
 from ..tokenizers.chunks import InputChunks
 from ..tokenizers.tokenizer import TokenizerBase
+from .config import GeneratorConfig
 from .generator import Generator
 
 

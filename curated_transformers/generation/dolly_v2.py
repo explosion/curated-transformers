@@ -1,11 +1,10 @@
 from typing import List, TypeVar
 
-from curated_transformers.generation.default_generator import DefaultGenerator
-
 from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from ..tokenizers.chunks import InputChunks, SpecialPieceChunk, TextChunk
 from ..tokenizers.tokenizer import Tokenizer
 from .config import SampleGeneratorConfig
+from .default_generator import DefaultGenerator
 
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"

@@ -7,7 +7,7 @@ from curated_transformers.models.attention import (
     AttentionMask,
     enable_torch_sdp,
 )
-from curated_transformers.models.bert.encoder import BertEncoder
+from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.models.gpt_neox.decoder import GPTNeoXDecoder
 from curated_transformers.tests.util import torch_assertclose
 
@@ -37,7 +37,7 @@ def test_context_manager():
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp(torch_device):
-    model = BertEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
+    model = BERTEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
     model.eval()
 
     torch.manual_seed(0)
@@ -52,7 +52,7 @@ def test_torch_sdp(torch_device):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_torch_sdp_mask(torch_device):
-    model = BertEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
+    model = BERTEncoder.from_hf_hub("explosion-testing/bert-test", device=torch_device)
     model.eval()
 
     torch.manual_seed(0)

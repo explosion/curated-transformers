@@ -9,10 +9,10 @@ from .bbpe_tokenizer import ByteBPETokenizer
 from .legacy_tokenizer import AddBosEosPreEncoder, PreDecoder
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="RobertaTokenizer")
+Self = TypeVar("Self", bound="RoBERTaTokenizer")
 
 
-class RobertaPreDecoder(PreDecoder):
+class RoBERTaPreDecoder(PreDecoder):
     def __init__(
         self,
         *,
@@ -37,7 +37,7 @@ class RobertaPreDecoder(PreDecoder):
         ]
 
 
-class RobertaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
+class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     """
     Legacy tokenizer for RoBERTa (Liu et al., 2019) models.
     """
@@ -74,7 +74,7 @@ class RobertaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
 
         self._eos_piece = eos_piece
 
-        self.pre_decoder = RobertaPreDecoder(
+        self.pre_decoder = RoBERTaPreDecoder(
             bos_id=bos_id,
             eos_id=eos_id,
         )

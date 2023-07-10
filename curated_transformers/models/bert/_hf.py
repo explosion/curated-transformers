@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 from torch import Tensor
 
-from .config import BertConfig
+from .config import BERTConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {
@@ -33,7 +33,7 @@ HF_CONFIG_KEY_MAPPING = {
 }
 
 
-def convert_hf_config(hf_config: Any) -> BertConfig:
+def convert_hf_config(hf_config: Any) -> BERTConfig:
     missing_keys = tuple(
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
@@ -43,7 +43,7 @@ def convert_hf_config(hf_config: Any) -> BertConfig:
         )
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
-    return BertConfig(
+    return BERTConfig(
         embedding_width=hf_config["hidden_size"],
         model_max_length=hf_config["max_position_embeddings"],
         **kwargs,

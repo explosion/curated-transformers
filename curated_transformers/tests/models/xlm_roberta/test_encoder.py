@@ -1,7 +1,7 @@
 import pytest
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.models.xlm_roberta.encoder import XlmRobertaEncoder
+from curated_transformers.models.xlm_roberta.encoder import XLMREncoder
 
 from ...conftest import TORCH_DEVICES
 from ..util import assert_encoder_output_equals_hf
@@ -11,5 +11,5 @@ from ..util import assert_encoder_output_equals_hf
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_encoder(torch_device):
     assert_encoder_output_equals_hf(
-        XlmRobertaEncoder, "explosion-testing/xlm-roberta-test", torch_device
+        XLMREncoder, "explosion-testing/xlm-roberta-test", torch_device
     )

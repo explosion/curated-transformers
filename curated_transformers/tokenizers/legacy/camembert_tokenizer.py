@@ -10,21 +10,21 @@ from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="CamembertTokenizer")
+Self = TypeVar("Self", bound="CamemBERTTokenizer")
 
 
 _CAMEMBERT_FAIRSEQ_OFFSET = 4
 
 
-class CamembertPostEncoder(FairSeqPostEncoder):
+class CamemBERTPostEncoder(FairSeqPostEncoder):
     def __init__(
         self,
     ):
         """
         Construct a CamemBERT post-encoder.
         """
-        super(CamembertPostEncoder, self).__init__(
-            piece_updater=CamembertPostEncoder._sentencepiece_to_fairseq,
+        super(CamemBERTPostEncoder, self).__init__(
+            piece_updater=CamemBERTPostEncoder._sentencepiece_to_fairseq,
         )
 
     @staticmethod
@@ -35,7 +35,7 @@ class CamembertPostEncoder(FairSeqPostEncoder):
             return piece_id + _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class CamembertPreDecoder(FairSeqPreDecoder):
+class CamemBERTPreDecoder(FairSeqPreDecoder):
     def __init__(
         self,
         *,
@@ -52,10 +52,10 @@ class CamembertPreDecoder(FairSeqPreDecoder):
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
-        super(CamembertPreDecoder, self).__init__(
+        super(CamemBERTPreDecoder, self).__init__(
             bos_id=bos_id,
             eos_id=eos_id,
-            piece_updater=CamembertPreDecoder._fairseq_to_sentencepiece,
+            piece_updater=CamemBERTPreDecoder._fairseq_to_sentencepiece,
         )
 
     @staticmethod
@@ -66,7 +66,7 @@ class CamembertPreDecoder(FairSeqPreDecoder):
             return piece_id - _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class CamembertTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
     Legacy tokenizer for CamemBERT (Martin et al., 2020) models.
     """
@@ -99,9 +99,9 @@ class CamembertTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
 
         self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
 
-        self.post_encoder = CamembertPostEncoder()
+        self.post_encoder = CamemBERTPostEncoder()
 
-        self.pre_decoder = CamembertPreDecoder(
+        self.pre_decoder = CamemBERTPreDecoder(
             bos_id=bos_id,
             eos_id=eos_id,
         )

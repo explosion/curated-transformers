@@ -1,7 +1,7 @@
-from ..roberta.encoder import RobertaEncoder
+from ..roberta.encoder import RoBERTaEncoder
 
 
-class CamembertEncoder(RobertaEncoder):
+class CamemBERTEncoder(RoBERTaEncoder):
     """
     CamemBERT (Martin et al., 2020) encoder.
     """

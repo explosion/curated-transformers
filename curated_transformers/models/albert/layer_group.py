@@ -5,20 +5,20 @@ from torch import Tensor
 from torch.nn import Module, ModuleList
 
 from ..attention import AttentionMask
-from ..bert.config import BertAttentionConfig
-from ..bert.layer import BertAttentionConfig, BertEncoderLayer
-from .config import AlbertLayerConfig
+from ..bert.config import BERTAttentionConfig
+from ..bert.layer import BERTAttentionConfig, BERTEncoderLayer
+from .config import ALBERTLayerConfig
 
 
-class AlbertLayerGroup(Module):
+class ALBERTLayerGroup(Module):
     """
     ALBERT (Lan et al., 2022) layer group.
     """
 
     def __init__(
         self,
-        layer_config: AlbertLayerConfig,
-        attention_config: BertAttentionConfig,
+        layer_config: ALBERTLayerConfig,
+        attention_config: BERTAttentionConfig,
         *,
         device: Optional[torch.device] = None
     ) -> None:
@@ -26,7 +26,7 @@ class AlbertLayerGroup(Module):
 
         self.group_layers = ModuleList(
             [
-                BertEncoderLayer(layer_config, attention_config, device=device)
+                BERTEncoderLayer(layer_config, attention_config, device=device)
                 for _ in range(layer_config.inner_group_num)
             ]
         )

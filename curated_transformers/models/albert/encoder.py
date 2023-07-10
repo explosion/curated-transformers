@@ -4,24 +4,24 @@ import torch
 from torch import Tensor
 
 from ..attention import AttentionMask
-from ..bert.embeddings import BertEmbeddings
+from ..bert.embeddings import BERTEmbeddings
 from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import AlbertConfig
-from .layer_group import AlbertLayerGroup
+from .config import ALBERTConfig
+from .layer_group import ALBERTLayerGroup
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="AlbertEncoder")
+Self = TypeVar("Self", bound="ALBERTEncoder")
 
 
-class AlbertEncoder(EncoderModule, FromPretrainedHFModel):
+class ALBERTEncoder(EncoderModule, FromPretrainedHFModel):
     """
     ALBERT (Lan et al., 2022) encoder.
     """
 
-    def __init__(self, config: AlbertConfig, *, device: Optional[torch.device] = None):
+    def __init__(self, config: ALBERTConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
         self.padding_id = config.padding_id
@@ -36,12 +36,12 @@ class AlbertEncoder(EncoderModule, FromPretrainedHFModel):
                 f"({num_hidden_groups})"
             )
 
-        self.embeddings = BertEmbeddings(config.embedding, config.layer, device=device)
+        self.embeddings = BERTEmbeddings(config.embedding, config.layer, device=device)
 
         # Parameters are shared by groups of layers.
         self.groups = torch.nn.ModuleList(
             [
-                AlbertLayerGroup(config.layer, config.attention, device=device)
+                ALBERTLayerGroup(config.layer, config.attention, device=device)
                 for _ in range(num_hidden_groups)
             ]
         )

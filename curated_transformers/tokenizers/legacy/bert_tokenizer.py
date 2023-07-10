@@ -25,7 +25,7 @@ from .legacy_tokenizer import (
 from .wordpiece_tokenizer import WordPieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="BertTokenizer")
+Self = TypeVar("Self", bound="BERTTokenizer")
 
 TOKENIZER_CONFIG_MAPPING: Dict[str, str] = {
     "do_lower_case": "lowercase",
@@ -36,7 +36,7 @@ TOKENIZER_CONFIG_MAPPING: Dict[str, str] = {
 }
 
 
-class BertPreEncoder(PreEncoder):
+class BERTPreEncoder(PreEncoder):
     def __init__(
         self,
         *,
@@ -112,7 +112,7 @@ class BertPreEncoder(PreEncoder):
         return preprocessed
 
 
-class BertPreDecoder(PreDecoder):
+class BERTPreDecoder(PreDecoder):
     def __init__(
         self,
         *,
@@ -137,7 +137,7 @@ class BertPreDecoder(PreDecoder):
         ]
 
 
-class BertPostDecoder(PostDecoder):
+class BERTPostDecoder(PostDecoder):
     def __init__(
         self,
     ):
@@ -153,7 +153,7 @@ class BertPostDecoder(PostDecoder):
         return [clean_up_decoded_string_like_hf(string.strip()) for string in output]
 
 
-class BertNormalizer(Normalizer):
+class BERTNormalizer(Normalizer):
     """
     Performs BERT normalization operations on input chunks before encoding.
     """
@@ -192,7 +192,7 @@ class BertNormalizer(Normalizer):
         return chunks
 
 
-class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
+class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     """
     Legacy tokenizer for BERT (Devlin et al., 2018) models.
     """
@@ -212,7 +212,7 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
         tokenize_chinese_chars: bool = True,
     ):
         """
-        Construct a Bert tokenizer from a curated tokenizers WordPiece processor.
+        Construct a BERT tokenizer from a curated tokenizers WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.
@@ -233,7 +233,7 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
         """
         super().__init__(vocab=vocab, special_pieces=special_pieces)
 
-        self.normalizer = BertNormalizer(
+        self.normalizer = BERTNormalizer(
             lowercase=lowercase,
             strip_accents=strip_accents,
             tokenize_chinese_chars=tokenize_chinese_chars,
@@ -247,12 +247,12 @@ class BertTokenizer(WordPieceTokenizer, LegacyFromHFHub):
         self.unk_piece = unk_piece
         self._eos_piece = eos_piece
 
-        self.pre_encoder = BertPreEncoder(
+        self.pre_encoder = BERTPreEncoder(
             bos_piece=bos_piece,
             eos_piece=eos_piece,
         )
-        self.pre_decoder = BertPreDecoder(bos_id=bos_id, eos_id=eos_id)
-        self.post_decoder = BertPostDecoder()
+        self.pre_decoder = BERTPreDecoder(bos_id=bos_id, eos_id=eos_id)
+        self.post_decoder = BERTPostDecoder()
 
     @classmethod
     def from_files(

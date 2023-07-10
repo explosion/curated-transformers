@@ -4,18 +4,18 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, Linear, Module
 
-from .config import BertEmbeddingConfig, BertLayerConfig
+from .config import BERTEmbeddingConfig, BERTLayerConfig
 
 
-class BertEmbeddings(Module):
+class BERTEmbeddings(Module):
     """
     BERT (Devlin et al., 2018) embedding layer.
     """
 
     def __init__(
         self,
-        embedding_config: BertEmbeddingConfig,
-        layer_config: BertLayerConfig,
+        embedding_config: BERTEmbeddingConfig,
+        layer_config: BERTLayerConfig,
         *,
         device: Optional[torch.device] = None
     ) -> None:

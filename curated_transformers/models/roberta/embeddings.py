@@ -4,25 +4,25 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..bert import BertEmbeddingConfig, BertEmbeddings, BertLayerConfig
+from ..bert import BERTEmbeddingConfig, BERTEmbeddings, BERTLayerConfig
 
 
-class RobertaEmbeddings(Module):
+class RoBERTaEmbeddings(Module):
     """
     RoBERTa (Liu et al., 2019) embedding layer.
     """
 
     def __init__(
         self,
-        embedding_config: BertEmbeddingConfig,
-        layer_config: BertLayerConfig,
+        embedding_config: BERTEmbeddingConfig,
+        layer_config: BERTLayerConfig,
         *,
         padding_id: int,
         device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
 
-        self.inner = BertEmbeddings(embedding_config, layer_config, device=device)
+        self.inner = BERTEmbeddings(embedding_config, layer_config, device=device)
         self.padding_id = padding_id
 
     def _get_position_ids(self, x: Tensor) -> Tensor:

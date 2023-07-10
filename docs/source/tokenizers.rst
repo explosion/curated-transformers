@@ -78,19 +78,19 @@ Tokenizers
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.RobertaTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.RoBERTaTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.BertTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.BERTTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.CamembertTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.CamemBERTTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
@@ -102,7 +102,7 @@ Tokenizers
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.XlmrTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.XLMRTokenizer
    :members:
    :inherited-members:
    :special-members: __call__

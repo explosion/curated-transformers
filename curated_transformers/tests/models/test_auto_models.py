@@ -1,26 +1,26 @@
 import pytest
 
 from curated_transformers.models import (
-    AlbertEncoder,
-    BertEncoder,
-    CamembertEncoder,
+    ALBERTEncoder,
+    BERTEncoder,
+    CamemBERTEncoder,
     GPTNeoXCausalLM,
     GPTNeoXDecoder,
     RefinedWebModelCausalLM,
     RefinedWebModelDecoder,
-    RobertaEncoder,
-    XlmRobertaEncoder,
+    RoBERTaEncoder,
+    XLMREncoder,
 )
 from curated_transformers.util.auto_model import AutoCausalLM, AutoDecoder, AutoEncoder
 
 
 def test_auto_encoder():
     model_encoder_map = {
-        "explosion-testing/bert-test": BertEncoder,
-        "explosion-testing/albert-test": AlbertEncoder,
-        "explosion-testing/roberta-test": RobertaEncoder,
-        "explosion-testing/camembert-test": CamembertEncoder,
-        "explosion-testing/xlm-roberta-test": XlmRobertaEncoder,
+        "explosion-testing/bert-test": BERTEncoder,
+        "explosion-testing/albert-test": ALBERTEncoder,
+        "explosion-testing/roberta-test": RoBERTaEncoder,
+        "explosion-testing/camembert-test": CamemBERTEncoder,
+        "explosion-testing/xlm-roberta-test": XLMREncoder,
     }
 
     for name, encoder_cls in model_encoder_map.items():

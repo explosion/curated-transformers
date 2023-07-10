@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class BertEmbeddingConfig:
+class BERTEmbeddingConfig:
     """
     BERT (Devlin et al., 2018) embedding configuration.
     """
@@ -50,7 +50,7 @@ class BertEmbeddingConfig:
 
 
 @dataclass
-class BertAttentionConfig:
+class BERTAttentionConfig:
     """
     BERT (Devlin et al., 2018) attention configuration.
     """
@@ -80,7 +80,7 @@ class BertAttentionConfig:
 
 
 @dataclass
-class BertLayerConfig:
+class BERTLayerConfig:
     """
     BERT (Devlin et al., 2018) layer configuration.
     """
@@ -126,14 +126,14 @@ class BertLayerConfig:
 
 
 @dataclass
-class BertConfig:
+class BERTConfig:
     """
     BERT (Devlin et al., 2018) model configuration.
     """
 
-    embedding: BertEmbeddingConfig
-    attention: BertAttentionConfig
-    layer: BertLayerConfig
+    embedding: BERTEmbeddingConfig
+    attention: BERTAttentionConfig
+    layer: BERTLayerConfig
     model_max_length: int
     padding_id: int
 
@@ -187,7 +187,7 @@ class BertConfig:
         :param padding_id:
             Index of the padding meta-token.
         """
-        self.embedding = BertEmbeddingConfig(
+        self.embedding = BERTEmbeddingConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,
             type_vocab_size=type_vocab_size,
@@ -195,12 +195,12 @@ class BertConfig:
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
-        self.attention = BertAttentionConfig(
+        self.attention = BERTAttentionConfig(
             hidden_width=hidden_width,
             num_attention_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
         )
-        self.layer = BertLayerConfig(
+        self.layer = BERTLayerConfig(
             hidden_width=hidden_width,
             intermediate_width=intermediate_width,
             num_hidden_layers=num_hidden_layers,

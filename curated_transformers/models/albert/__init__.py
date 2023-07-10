@@ -1,2 +1,2 @@
-from .config import AlbertConfig, AlbertLayerConfig
-from .encoder import AlbertEncoder, AlbertLayerGroup
+from .config import ALBERTConfig, ALBERTLayerConfig
+from .encoder import ALBERTEncoder, ALBERTLayerGroup

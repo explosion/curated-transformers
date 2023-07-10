@@ -8,28 +8,28 @@ from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import BertConfig
-from .embeddings import BertEmbeddings
-from .layer import BertEncoderLayer
+from .config import BERTConfig
+from .embeddings import BERTEmbeddings
+from .layer import BERTEncoderLayer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="BertEncoder")
+Self = TypeVar("Self", bound="BERTEncoder")
 
 
-class BertEncoder(EncoderModule, FromPretrainedHFModel):
+class BERTEncoder(EncoderModule, FromPretrainedHFModel):
     """
     BERT (Devlin et al., 2018) encoder.
     """
 
-    def __init__(self, config: BertConfig, *, device: Optional[torch.device] = None):
+    def __init__(self, config: BERTConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
-        self.embeddings = BertEmbeddings(config.embedding, config.layer, device=device)
+        self.embeddings = BERTEmbeddings(config.embedding, config.layer, device=device)
         self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BertEncoderLayer(config.layer, config.attention, device=device)
+                BERTEncoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )

@@ -1,1 +1,1 @@
-from .encoder import CamembertEncoder
+from .encoder import CamemBERTEncoder

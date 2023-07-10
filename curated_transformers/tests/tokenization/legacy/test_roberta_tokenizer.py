@@ -2,10 +2,11 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.tokenizers import PiecesWithIds, RobertaTokenizer
+from curated_transformers.tokenizers import PiecesWithIds
+from curated_transformers.tokenizers.legacy import RobertaTokenizer
 
-from ..util import torch_assertclose
-from .util import compare_tokenizer_outputs_with_hf_tokenizer
+from ...util import torch_assertclose
+from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.fixture

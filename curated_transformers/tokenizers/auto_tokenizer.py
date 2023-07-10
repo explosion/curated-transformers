@@ -3,13 +3,13 @@ from typing import Dict, Optional, Type, cast
 from huggingface_hub.utils import EntryNotFoundError
 
 from ..util.hf import TOKENIZER_JSON, get_file_metadata, get_hf_config_model_type
-from .bert_tokenizer import BertTokenizer
-from .camembert_tokenizer import CamembertTokenizer
 from .hf_hub import FromHFHub, get_tokenizer_config
-from .llama_tokenizer import LLaMATokenizer
-from .roberta_tokenizer import RobertaTokenizer
+from .legacy.bert_tokenizer import BertTokenizer
+from .legacy.camembert_tokenizer import CamembertTokenizer
+from .legacy.llama_tokenizer import LLaMATokenizer
+from .legacy.roberta_tokenizer import RobertaTokenizer
+from .legacy.xlmr_tokenizer import XlmrTokenizer
 from .tokenizer import Tokenizer, TokenizerBase
-from .xlmr_tokenizer import XlmrTokenizer
 
 HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
     "BertTokenizer": BertTokenizer,

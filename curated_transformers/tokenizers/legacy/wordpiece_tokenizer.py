@@ -2,8 +2,8 @@ from typing import Dict, Iterable, List, Optional
 
 from curated_tokenizers import WordPieceProcessor
 
-from .chunks import MergedInputChunks, MergedSpecialPieceChunk
-from .tokenizer import LegacyTokenizer, PiecesWithIds
+from ..chunks import MergedInputChunks, MergedSpecialPieceChunk
+from ..tokenizer import LegacyTokenizer, PiecesWithIds
 
 
 class WordPieceTokenizer(LegacyTokenizer):

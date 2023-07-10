@@ -3,9 +3,9 @@ from typing import Any, Dict, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
-from .hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHFHub
 from .sentencepiece_tokenizer import SentencePieceTokenizer
-from .tokenizer import AddBosEosPreEncoder
+from ..tokenizer import AddBosEosPreEncoder
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="LLaMATokenizer")

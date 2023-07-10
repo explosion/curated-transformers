@@ -1,9 +1,9 @@
 import pytest
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.tokenizers import LLaMATokenizer
+from curated_transformers.tokenizers.legacy import LLaMATokenizer
 
-from .util import compare_tokenizer_outputs_with_hf_tokenizer
+from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

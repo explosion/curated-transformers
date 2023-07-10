@@ -2,14 +2,14 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.tokenization import BertTokenizer, PiecesWithIds
-from curated_transformers.tokenization.bert_tokenizer import BertPreEncoder
-from curated_transformers.tokenization.chunks import (
+from curated_transformers.tokenizers import BertTokenizer, PiecesWithIds
+from curated_transformers.tokenizers.bert_tokenizer import BertPreEncoder
+from curated_transformers.tokenizers.chunks import (
     InputChunks,
     SpecialPieceChunk,
     TextChunk,
 )
-from curated_transformers.tokenization.tokenizer import DefaultNormalizer
+from curated_transformers.tokenizers.tokenizer import DefaultNormalizer
 
 from ..util import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer

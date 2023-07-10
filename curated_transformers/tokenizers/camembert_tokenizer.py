@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
-from curated_transformers.tokenization.hf_hub import LegacyFromHFHub
+from curated_transformers.tokenizers.hf_hub import LegacyFromHFHub
 
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer

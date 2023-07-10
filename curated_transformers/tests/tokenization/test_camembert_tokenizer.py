@@ -2,8 +2,8 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.tokenization import PiecesWithIds
-from curated_transformers.tokenization.camembert_tokenizer import CamembertTokenizer
+from curated_transformers.tokenizers import PiecesWithIds
+from curated_transformers.tokenizers.camembert_tokenizer import CamembertTokenizer
 
 from ..util import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer

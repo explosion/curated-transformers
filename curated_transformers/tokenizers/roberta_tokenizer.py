@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, ca
 
 from curated_tokenizers import ByteBPEProcessor
 
-from curated_transformers.tokenization.hf_hub import LegacyFromHFHub
+from curated_transformers.tokenizers.hf_hub import LegacyFromHFHub
 
 from .bbpe_tokenizer import ByteBPETokenizer
 from .hf_hub import LegacyFromHFHub

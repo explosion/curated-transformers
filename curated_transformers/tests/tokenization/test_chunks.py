@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from curated_transformers.tokenization.chunks import (
+from curated_transformers.tokenizers.chunks import (
     InputChunks,
     MergedSpecialPieceChunk,
     SpecialPieceChunk,

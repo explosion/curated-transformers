@@ -1,6 +1,6 @@
 import pytest
 
-from curated_transformers.tokenization import AutoTokenizer
+from curated_transformers.tokenizers import AutoTokenizer
 
 _MODELS = [
     # tokenizer.json-only

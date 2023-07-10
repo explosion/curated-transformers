@@ -12,7 +12,7 @@ from curated_transformers.tokenizers.legacy.bert_tokenizer import (
     BertPreEncoder,
     BertTokenizer,
 )
-from curated_transformers.tokenizers.tokenizer import DefaultNormalizer
+from curated_transformers.tokenizers.legacy.legacy_tokenizer import DefaultNormalizer
 
 from ...util import torch_assertclose
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer

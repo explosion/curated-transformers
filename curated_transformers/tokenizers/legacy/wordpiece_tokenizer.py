@@ -3,7 +3,8 @@ from typing import Dict, Iterable, List, Optional
 from curated_tokenizers import WordPieceProcessor
 
 from ..chunks import MergedInputChunks, MergedSpecialPieceChunk
-from ..tokenizer import LegacyTokenizer, PiecesWithIds
+from ..tokenizer import PiecesWithIds
+from .legacy_tokenizer import LegacyTokenizer
 
 
 class WordPieceTokenizer(LegacyTokenizer):

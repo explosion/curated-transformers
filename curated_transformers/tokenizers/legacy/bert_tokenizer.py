@@ -13,15 +13,15 @@ from ..chunks import (
     TextChunk,
 )
 from ..hf_hub import LegacyFromHFHub
-from ..tokenizer import (
+from ..tokenizer import PiecesWithIds
+from ..util import remove_pieces_from_sequence
+from .legacy_tokenizer import (
     DefaultNormalizer,
     Normalizer,
-    PiecesWithIds,
     PostDecoder,
     PreDecoder,
     PreEncoder,
 )
-from ..util import remove_pieces_from_sequence
 from .wordpiece_tokenizer import WordPieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.

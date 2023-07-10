@@ -3,7 +3,8 @@ from typing import Iterable, List, Optional
 from curated_tokenizers import SentencePieceProcessor
 
 from ..chunks import MergedInputChunks, MergedSpecialPieceChunk
-from ..tokenizer import LegacyTokenizer, PiecesWithIds
+from ..tokenizer import PiecesWithIds
+from .legacy_tokenizer import LegacyTokenizer
 
 
 class SentencePieceTokenizer(LegacyTokenizer):

@@ -10,4 +10,5 @@ API
    decoders
    generation
    tokenizers
+   quantization
    utils

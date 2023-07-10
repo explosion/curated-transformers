@@ -21,18 +21,18 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
     """
     Enables Torch scaled dot product attention.
 
-        Torch provides an implementation of scaled dot product attention that
-        has many optimizations. For instance, in some scenarios Flash Attention
-        is applied (Dao et al., 2022). We do not use the Torch implementation
-        by default, because it is still in beta.
+    Torch provides an implementation of scaled dot product attention that
+    has many optimizations. For instance, in some scenarios Flash Attention
+    is applied (Dao et al., 2022). We do not use the Torch implementation
+    by default, because it is still in beta.
 
-        This context manager enables use of the Torch implementation of scaled
-        dot product attention.
+    This context manager enables use of the Torch implementation of scaled
+    dot product attention.
 
-        .. code-block:: python
+    .. code-block:: python
 
-            with enable_torch_sdp():
-                Y = bert_encoder(X)
+        with enable_torch_sdp():
+            Y = bert_encoder(X)
     """
     token = _TORCH_SDP.set(use_torch_sdp)
     try:
@@ -153,7 +153,7 @@ class QkvHeadSharing(IntEnum):
 class QkvMode(IntEnum):
     """
     How the query, key and value projections are handled in
-        the self-attention layer.
+    the self-attention layer.
     """
 
     #: ``SEPARATE`` - Use separate projections for query, key and value.

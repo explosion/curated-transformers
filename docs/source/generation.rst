@@ -1,5 +1,8 @@
+.. _generation:
+
 Generation
 ==========
+
 
 Generation models
 -----------------

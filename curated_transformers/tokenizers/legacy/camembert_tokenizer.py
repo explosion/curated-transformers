@@ -5,8 +5,8 @@ from curated_tokenizers import SentencePieceProcessor
 
 from curated_transformers.tokenizers.hf_hub import LegacyFromHFHub
 
-from .legacy_tokenizer import AddBosEosPreEncoder
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
+from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.

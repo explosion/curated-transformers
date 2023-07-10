@@ -35,6 +35,6 @@ language model with the ``cache`` argument::
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.util.auto_model.AutoCausalLM
+.. autoclass:: curated_transformers.models.auto_model.AutoCausalLM
    :members:
    :show-inheritance:

@@ -13,6 +13,6 @@ Encoders
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.util.auto_model.AutoEncoder
+.. autoclass:: curated_transformers.models.auto_model.AutoEncoder
    :members:
    :show-inheritance:

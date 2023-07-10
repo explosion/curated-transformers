@@ -1,7 +1,7 @@
 import pytest
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.models.bert.encoder import BertEncoder
+from curated_transformers.models.bert.encoder import BERTEncoder
 
 from ...conftest import TORCH_DEVICES
 from ..util import assert_encoder_output_equals_hf
@@ -11,5 +11,5 @@ from ..util import assert_encoder_output_equals_hf
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_encoder(torch_device):
     assert_encoder_output_equals_hf(
-        BertEncoder, "explosion-testing/bert-test", torch_device
+        BERTEncoder, "explosion-testing/bert-test", torch_device
     )

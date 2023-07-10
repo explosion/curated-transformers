@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 from torch import Tensor
 
-from .config import AlbertConfig
+from .config import ALBERTConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {
@@ -38,7 +38,7 @@ HF_CONFIG_KEY_MAPPING = {
 }
 
 
-def convert_hf_config(hf_config: Any) -> AlbertConfig:
+def convert_hf_config(hf_config: Any) -> ALBERTConfig:
     missing_keys = tuple(
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
@@ -48,7 +48,7 @@ def convert_hf_config(hf_config: Any) -> AlbertConfig:
         )
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
-    return AlbertConfig(model_max_length=hf_config["max_position_embeddings"], **kwargs)
+    return ALBERTConfig(model_max_length=hf_config["max_position_embeddings"], **kwargs)
 
 
 def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:

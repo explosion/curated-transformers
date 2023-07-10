@@ -5,17 +5,17 @@ import torch
 
 from curated_transformers.models.llama.decoder import LLaMADecoder
 
-from ..models.albert import AlbertEncoder
-from ..models.bert import BertEncoder
-from ..models.camembert import CamembertEncoder
+from ..models.albert import ALBERTEncoder
+from ..models.bert import BERTEncoder
+from ..models.camembert import CamemBERTEncoder
 from ..models.gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from ..models.hf_hub import FromPretrainedHFModel
 from ..models.llama import LLaMACausalLM
 from ..models.module import CausalLMModule, DecoderModule, EncoderModule
 from ..models.output import KeyValueCache
 from ..models.refined_web_model import RefinedWebModelCausalLM, RefinedWebModelDecoder
-from ..models.roberta import RobertaEncoder
-from ..models.xlm_roberta import XlmRobertaEncoder
+from ..models.roberta import RoBERTaEncoder
+from ..models.xlm_roberta import XLMREncoder
 from ..quantization import BitsAndBytesConfig
 from ..util.hf import get_hf_config_model_type
 
@@ -78,11 +78,11 @@ class AutoEncoder(AutoModel[EncoderModule]):
     """Encoder module loaded from the Hugging Face Model Hub."""
 
     _HF_MODEL_TYPE_TO_CURATED = {
-        "bert": BertEncoder,
-        "albert": AlbertEncoder,
-        "camembert": CamembertEncoder,
-        "roberta": RobertaEncoder,
-        "xlm-roberta": XlmRobertaEncoder,
+        "bert": BERTEncoder,
+        "albert": ALBERTEncoder,
+        "camembert": CamemBERTEncoder,
+        "roberta": RoBERTaEncoder,
+        "xlm-roberta": XLMREncoder,
     }
 
     @classmethod

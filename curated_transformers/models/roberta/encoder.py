@@ -4,34 +4,34 @@ import torch
 from torch import Tensor
 
 from ..attention import AttentionMask
-from ..bert.layer import BertEncoderLayer
+from ..bert.layer import BERTEncoderLayer
 from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import RobertaConfig
-from .embeddings import RobertaEmbeddings
+from .config import RoBERTaConfig
+from .embeddings import RoBERTaEmbeddings
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="RobertaEncoder")
+Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 
-class RobertaEncoder(EncoderModule, FromPretrainedHFModel):
+class RoBERTaEncoder(EncoderModule, FromPretrainedHFModel):
     """
     RoBERTa encoder (Liu et al., 2019).
     """
 
-    def __init__(self, config: RobertaConfig, *, device: Optional[torch.device] = None):
+    def __init__(self, config: RoBERTaConfig, *, device: Optional[torch.device] = None):
         super().__init__()
 
-        self.embeddings = RobertaEmbeddings(
+        self.embeddings = RoBERTaEmbeddings(
             config.embedding, config.layer, padding_id=config.padding_id, device=device
         )
         self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BertEncoderLayer(config.layer, config.attention, device=device)
+                BERTEncoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )

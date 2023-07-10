@@ -1,15 +1,15 @@
 Encoders
 ========
 
-.. autoclass:: curated_transformers.models.AlbertEncoder
+.. autoclass:: curated_transformers.models.ALBERTEncoder
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.BertEncoder
+.. autoclass:: curated_transformers.models.BERTEncoder
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.RobertaEncoder
+.. autoclass:: curated_transformers.models.RoBERTaEncoder
    :members:
    :show-inheritance:
 

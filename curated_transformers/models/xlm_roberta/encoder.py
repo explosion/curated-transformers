@@ -1,7 +1,7 @@
-from ..roberta.encoder import RobertaEncoder
+from ..roberta.encoder import RoBERTaEncoder
 
 
-class XlmRobertaEncoder(RobertaEncoder):
+class XLMREncoder(RoBERTaEncoder):
     """
     XLM-RoBERTa (Conneau et al., 2019) encoder.
     """

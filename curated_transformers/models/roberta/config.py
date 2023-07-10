@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from ..bert import BertConfig
+from ..bert import BERTConfig
 
 
 @dataclass
-class RobertaConfig(BertConfig):
+class RoBERTaConfig(BERTConfig):
     """
     RoBERTa (Liu et al., 2019) model configuration.
     """
@@ -51,7 +51,7 @@ class RobertaConfig(BertConfig):
         :param padding_id:
             Index of the padding meta-token.
         """
-        super(RobertaConfig, self).__init__(
+        super(RoBERTaConfig, self).__init__(
             *args,
             layer_norm_eps=layer_norm_eps,
             max_position_embeddings=max_position_embeddings,

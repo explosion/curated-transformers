@@ -6,18 +6,18 @@ from torch.nn import Module
 
 from ..attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
 from ..feedforward import PointwiseFeedForward
-from .config import BertAttentionConfig, BertLayerConfig
+from .config import BERTAttentionConfig, BERTLayerConfig
 
 
-class BertEncoderLayer(Module):
+class BERTEncoderLayer(Module):
     """
     BERT (Devlin et al., 2018) encoder layer.
     """
 
     def __init__(
         self,
-        layer_config: BertLayerConfig,
-        attention_config: BertAttentionConfig,
+        layer_config: BERTLayerConfig,
+        attention_config: BERTAttentionConfig,
         *,
         device: Optional[torch.device] = None
     ):

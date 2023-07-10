@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 from torch import Tensor
 
-from .config import RobertaConfig
+from .config import RoBERTaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {
@@ -33,7 +33,7 @@ HF_CONFIG_KEY_MAPPING = {
 }
 
 
-def convert_hf_config(hf_config: Any) -> RobertaConfig:
+def convert_hf_config(hf_config: Any) -> RoBERTaConfig:
     missing_keys = tuple(
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
@@ -43,7 +43,7 @@ def convert_hf_config(hf_config: Any) -> RobertaConfig:
         )
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
-    return RobertaConfig(
+    return RoBERTaConfig(
         embedding_width=hf_config["hidden_size"],
         # Positions embeddings for 0..padding_id are reserved.
         model_max_length=hf_config["max_position_embeddings"]
@@ -55,7 +55,7 @@ def convert_hf_config(hf_config: Any) -> RobertaConfig:
 def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     out = {}
 
-    # Strip the `roberta` prefix from XLM-Roberta model parameters.
+    # Strip the `roberta` prefix from XLM-RoBERTa model parameters.
     stripped_params = {re.sub(r"^roberta\.", "", k): v for k, v in params.items()}
 
     for name, parameter in stripped_params.items():

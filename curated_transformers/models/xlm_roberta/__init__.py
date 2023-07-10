@@ -1,1 +1,1 @@
-from .encoder import XlmRobertaEncoder
+from .encoder import XLMREncoder

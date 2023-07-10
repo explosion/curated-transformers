@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from ..bert import BertAttentionConfig, BertConfig, BertEmbeddingConfig, BertLayerConfig
+from ..bert import BERTAttentionConfig, BERTConfig, BERTEmbeddingConfig, BERTLayerConfig
 
 
 @dataclass
-class AlbertLayerConfig(BertLayerConfig):
+class ALBERTLayerConfig(BERTLayerConfig):
     """
     ALBERT (Lan et al., 2022) layer configuration.
     """
@@ -21,18 +21,18 @@ class AlbertLayerConfig(BertLayerConfig):
         :param num_hidden_groups:
             Number of hidden groups.
         """
-        super(AlbertLayerConfig, self).__init__(*args, **kwargs)
+        super(ALBERTLayerConfig, self).__init__(*args, **kwargs)
         self.inner_group_num = inner_group_num
         self.num_hidden_groups = num_hidden_groups
 
 
 @dataclass
-class AlbertConfig(BertConfig):
+class ALBERTConfig(BERTConfig):
     """
     ALBERT (Lan et al., 2022) model configuration.
     """
 
-    layer: AlbertLayerConfig
+    layer: ALBERTLayerConfig
 
     def __init__(
         self,
@@ -90,7 +90,7 @@ class AlbertConfig(BertConfig):
         :param padding_id:
             Index of the padding meta-token.
         """
-        self.embedding = BertEmbeddingConfig(
+        self.embedding = BERTEmbeddingConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,
             type_vocab_size=type_vocab_size,
@@ -98,12 +98,12 @@ class AlbertConfig(BertConfig):
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
-        self.attention = BertAttentionConfig(
+        self.attention = BERTAttentionConfig(
             hidden_width=hidden_width,
             num_attention_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
         )
-        self.layer = AlbertLayerConfig(
+        self.layer = ALBERTLayerConfig(
             hidden_width=hidden_width,
             inner_group_num=inner_group_num,
             intermediate_width=intermediate_width,

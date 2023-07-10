@@ -3,8 +3,8 @@ from typing import Generic, Iterable, List
 from curated_transformers.generation.config import GeneratorConfig
 
 from ..models.output import CacheT
-from ..tokenization.chunks import InputChunks
-from ..tokenization.tokenizer import TokenizerBase
+from ..tokenizers.chunks import InputChunks
+from ..tokenizers.tokenizer import TokenizerBase
 from .generator import Generator
 
 

@@ -1,6 +1,6 @@
 from typing import List, TypeVar
 
-from ..tokenization.chunks import InputChunks, TextChunk
+from ..tokenizers.chunks import InputChunks, TextChunk
 from .default_generator import DefaultGenerator
 from .hf_hub import FromHFHub
 

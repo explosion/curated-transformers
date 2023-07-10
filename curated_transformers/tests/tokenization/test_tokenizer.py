@@ -5,8 +5,8 @@ from typing import Optional
 import pytest
 
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.tokenization import Tokenizer
-from curated_transformers.tokenization.chunks import InputChunks, TextChunk
+from curated_transformers.tokenizers import Tokenizer
+from curated_transformers.tokenizers.chunks import InputChunks, TextChunk
 from curated_transformers.util.hf import TOKENIZER_JSON
 
 from ..util import torch_assertclose

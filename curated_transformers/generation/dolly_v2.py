@@ -3,8 +3,8 @@ from typing import List, TypeVar
 from curated_transformers.generation.default_generator import DefaultGenerator
 
 from ..models.gpt_neox.causal_lm import GPTNeoXCausalLM
-from ..tokenization.chunks import InputChunks, SpecialPieceChunk, TextChunk
-from ..tokenization.tokenizer import Tokenizer
+from ..tokenizers.chunks import InputChunks, SpecialPieceChunk, TextChunk
+from ..tokenizers.tokenizer import Tokenizer
 from .config import SampleGeneratorConfig
 
 INSTRUCTION_KEY = "### Instruction:"

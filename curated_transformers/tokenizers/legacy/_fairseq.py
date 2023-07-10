@@ -1,7 +1,8 @@
 from typing import Callable, Iterable, List
 
-from .tokenizer import PiecesWithIds, PostEncoder, PreDecoder
-from .util import remove_pieces_from_sequence
+from ..tokenizer import PiecesWithIds
+from ..util import remove_pieces_from_sequence
+from .legacy_tokenizer import PostEncoder, PreDecoder
 
 
 class FAIRSEQ_PIECE_IDS:

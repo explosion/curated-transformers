@@ -4,24 +4,24 @@ from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 from curated_tokenizers import WordPieceProcessor
 
-from ._hf_compat import clean_up_decoded_string_like_hf, tokenize_chinese_chars_bert
-from .chunks import (
+from .._hf_compat import clean_up_decoded_string_like_hf, tokenize_chinese_chars_bert
+from ..chunks import (
     InputChunks,
     MergedInputChunks,
     MergedSpecialPieceChunk,
     SpecialPieceChunk,
     TextChunk,
 )
-from .hf_hub import LegacyFromHFHub
-from .tokenizer import (
+from ..hf_hub import LegacyFromHFHub
+from ..tokenizer import PiecesWithIds
+from ..util import remove_pieces_from_sequence
+from .legacy_tokenizer import (
     DefaultNormalizer,
     Normalizer,
-    PiecesWithIds,
     PostDecoder,
     PreDecoder,
     PreEncoder,
 )
-from .util import remove_pieces_from_sequence
 from .wordpiece_tokenizer import WordPieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.

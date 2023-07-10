@@ -1,15 +1,12 @@
-import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from curated_tokenizers import ByteBPEProcessor
 
-from curated_transformers.tokenization.hf_hub import LegacyFromHFHub
-
+from ..hf_hub import LegacyFromHFHub
+from ..util import remove_pieces_from_sequence
 from .bbpe_tokenizer import ByteBPETokenizer
-from .hf_hub import LegacyFromHFHub
-from .tokenizer import AddBosEosPreEncoder, PreDecoder
-from .util import remove_pieces_from_sequence
+from .legacy_tokenizer import AddBosEosPreEncoder, PreDecoder
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="RobertaTokenizer")

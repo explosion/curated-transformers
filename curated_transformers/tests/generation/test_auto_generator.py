@@ -6,7 +6,7 @@ from curated_transformers.generation.dolly_v2 import DollyV2Generator
 from curated_transformers.generation.falcon import FalconGenerator
 
 
-# @pytest.mark.slow
+@pytest.mark.slow
 def test_auto_generator():
     model_causallm_map = {
         "databricks/dolly-v2-3b": DollyV2Generator,

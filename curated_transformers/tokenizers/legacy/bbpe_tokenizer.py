@@ -64,7 +64,7 @@ class ByteBPETokenizer(LegacyTokenizer):
 
             for chunk in seq:
                 if isinstance(chunk, MergedSpecialPieceChunk):
-                    piece_id = self.processor.piece_id(chunk.piece)
+                    piece_id = self.processor.piece_to_id(chunk.piece)
                     if piece_id is None:
                         raise ValueError(f"Unknown special piece: {chunk.piece}")
                     seq_ids.append(piece_id)

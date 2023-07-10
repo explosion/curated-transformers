@@ -131,7 +131,7 @@ class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
 
 
 def _get_piece_id_or_fail(processor: ByteBPEProcessor, piece: str):
-    piece_id = processor.piece_id(piece)
+    piece_id = processor.piece_to_id(piece)
     if piece_id is None:
         raise ValueError(
             f"RoBERTa piece encoder vocabulary doesn't contain '{piece}' piece"

@@ -52,12 +52,8 @@ class SentencePieceTokenizer(LegacyTokenizer):
 
             for chunk in seq:
                 if isinstance(chunk, MergedSpecialPieceChunk):
-                    # TODO: this is not ideal. piece_id() should probably return
-                    # None for unknown pieces.
-                    unk_id = self.processor.unk_id()
-                    unk_piece = self.processor.id_to_piece(unk_id)
                     piece_id = self.processor.piece_to_id(chunk.piece)
-                    if piece_id == unk_id and chunk.piece != unk_piece:
+                    if piece_id is None:
                         raise ValueError(f"Unknown special piece: {chunk.piece}")
                     seq_ids.append(piece_id)
                     seq_pieces.append(chunk.piece)

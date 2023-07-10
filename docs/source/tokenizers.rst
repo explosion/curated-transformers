@@ -60,49 +60,49 @@ Tokenizers
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.ByteBPETokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.ByteBPETokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.WordPieceTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.WordPieceTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.SentencePieceTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.SentencePieceTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.RobertaTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.RobertaTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.BertTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.BertTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.CamembertTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.CamembertTokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.LLaMATokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.LLaMATokenizer
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.XlmrTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.XlmrTokenizer
    :members:
    :inherited-members:
    :special-members: __call__

@@ -9,8 +9,8 @@ from curated_transformers.tokenizers.chunks import (
     TextChunk,
 )
 from curated_transformers.tokenizers.legacy.bert_tokenizer import (
-    BertPreEncoder,
-    BertTokenizer,
+    BERTPreEncoder,
+    BERTTokenizer,
 )
 from curated_transformers.tokenizers.legacy.legacy_tokenizer import DefaultNormalizer
 
@@ -20,7 +20,7 @@ from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 @pytest.fixture
 def toy_tokenizer_from_files(test_dir):
-    return BertTokenizer.from_files(
+    return BERTTokenizer.from_files(
         vocab_path=test_dir / "toy.wordpieces",
     )
 
@@ -28,14 +28,14 @@ def toy_tokenizer_from_files(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "bert-base-cased", BertTokenizer
+        sample_texts, "bert-base-cased", BERTTokenizer
     )
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer_short(short_sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        short_sample_texts, "bert-base-cased", BertTokenizer
+        short_sample_texts, "bert-base-cased", BERTTokenizer
     )
 
 
@@ -380,7 +380,7 @@ def _check_toy_tokenizer(pieces):
 
 def test_bert_tokenizer_normalizer_preencoder():
     normalizer = DefaultNormalizer(lowercase=False, strip_accents=True)
-    preencoder = BertPreEncoder(bos_piece="[CLS]", eos_piece="[SEP]")
+    preencoder = BERTPreEncoder(bos_piece="[CLS]", eos_piece="[SEP]")
 
     def apply(input):
         return preencoder(normalizer(input))

@@ -3,7 +3,7 @@ import torch
 
 from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenizers import PiecesWithIds
-from curated_transformers.tokenizers.legacy import RobertaTokenizer
+from curated_transformers.tokenizers.legacy import RoBERTaTokenizer
 
 from ...util import torch_assertclose
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer
@@ -11,7 +11,7 @@ from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 @pytest.fixture
 def toy_tokenizer_from_files(test_dir):
-    return RobertaTokenizer.from_files(
+    return RoBERTaTokenizer.from_files(
         vocab_path=test_dir / "toy-vocab.json", merges_path=test_dir / "toy-merges.txt"
     )
 
@@ -19,7 +19,7 @@ def toy_tokenizer_from_files(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "roberta-base", RobertaTokenizer
+        sample_texts, "roberta-base", RoBERTaTokenizer
     )
 
 

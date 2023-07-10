@@ -3,7 +3,7 @@ import torch
 
 from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenizers import PiecesWithIds
-from curated_transformers.tokenizers.legacy.xlmr_tokenizer import XlmrTokenizer
+from curated_transformers.tokenizers.legacy.xlmr_tokenizer import XLMRTokenizer
 
 from ...util import torch_assertclose
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer
@@ -11,7 +11,7 @@ from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 @pytest.fixture
 def toy_tokenizer(test_dir):
-    return XlmrTokenizer.from_files(
+    return XLMRTokenizer.from_files(
         model_path=test_dir / "toy.model",
     )
 
@@ -19,7 +19,7 @@ def toy_tokenizer(test_dir):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
     compare_tokenizer_outputs_with_hf_tokenizer(
-        sample_texts, "xlm-roberta-base", XlmrTokenizer
+        sample_texts, "xlm-roberta-base", XLMRTokenizer
     )
 
 

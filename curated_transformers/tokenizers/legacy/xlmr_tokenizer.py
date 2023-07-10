@@ -9,21 +9,21 @@ from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="XlmrTokenizer")
+Self = TypeVar("Self", bound="XLMRTokenizer")
 
 
 _XLMR_FAIRSEQ_OFFSET = 1
 
 
-class XlmrPostEncoder(FairSeqPostEncoder):
+class XLMRPostEncoder(FairSeqPostEncoder):
     def __init__(
         self,
     ):
         """
         Construct a XLM-R post-encoder.
         """
-        super(XlmrPostEncoder, self).__init__(
-            piece_updater=XlmrPostEncoder._sentencepiece_to_fairseq,
+        super(XLMRPostEncoder, self).__init__(
+            piece_updater=XLMRPostEncoder._sentencepiece_to_fairseq,
         )
 
     @staticmethod
@@ -38,7 +38,7 @@ class XlmrPostEncoder(FairSeqPostEncoder):
             return piece_id + _XLMR_FAIRSEQ_OFFSET
 
 
-class XlmrPreDecoder(FairSeqPreDecoder):
+class XLMRPreDecoder(FairSeqPreDecoder):
     def __init__(
         self,
         *,
@@ -55,10 +55,10 @@ class XlmrPreDecoder(FairSeqPreDecoder):
         """
         self.bos_id = bos_id
         self.eos_id = eos_id
-        super(XlmrPreDecoder, self).__init__(
+        super(XLMRPreDecoder, self).__init__(
             bos_id=bos_id,
             eos_id=eos_id,
-            piece_updater=XlmrPreDecoder._fairseq_to_sentencepiece,
+            piece_updater=XLMRPreDecoder._fairseq_to_sentencepiece,
         )
 
     @staticmethod
@@ -73,7 +73,7 @@ class XlmrPreDecoder(FairSeqPreDecoder):
             return piece_id - _XLMR_FAIRSEQ_OFFSET
 
 
-class XlmrTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
     Legacy tokenizer for XLM-RoBERTa (Conneau et al., 2019).
     """
@@ -101,8 +101,8 @@ class XlmrTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         eos_piece = processor.id_to_piece(eos_id)
 
         self.pre_encoder = AddBosEosPreEncoder(bos_piece=bos_piece, eos_piece=eos_piece)
-        self.post_encoder = XlmrPostEncoder()
-        self.pre_decoder = XlmrPreDecoder(bos_id=bos_id, eos_id=eos_id)
+        self.post_encoder = XLMRPostEncoder()
+        self.pre_decoder = XLMRPreDecoder(bos_id=bos_id, eos_id=eos_id)
 
         self._eos_piece = eos_piece
 

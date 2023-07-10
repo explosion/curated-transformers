@@ -4,32 +4,32 @@ from huggingface_hub.utils import EntryNotFoundError
 
 from ..util.hf import TOKENIZER_JSON, get_file_metadata, get_hf_config_model_type
 from .hf_hub import FromHFHub, get_tokenizer_config
-from .legacy.bert_tokenizer import BertTokenizer
-from .legacy.camembert_tokenizer import CamembertTokenizer
+from .legacy.bert_tokenizer import BERTTokenizer
+from .legacy.camembert_tokenizer import CamemBERTTokenizer
 from .legacy.llama_tokenizer import LLaMATokenizer
-from .legacy.roberta_tokenizer import RobertaTokenizer
-from .legacy.xlmr_tokenizer import XlmrTokenizer
+from .legacy.roberta_tokenizer import RoBERTaTokenizer
+from .legacy.xlmr_tokenizer import XLMRTokenizer
 from .tokenizer import Tokenizer, TokenizerBase
 
 HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
-    "BertTokenizer": BertTokenizer,
-    "BertTokenizerFast": BertTokenizer,
-    "CamembertTokenizer": CamembertTokenizer,
-    "CamembertTokenizerFast": CamembertTokenizer,
+    "BertTokenizer": BERTTokenizer,
+    "BertTokenizerFast": BERTTokenizer,
+    "CamembertTokenizer": CamemBERTTokenizer,
+    "CamembertTokenizerFast": CamemBERTTokenizer,
     "LlamaTokenizer": LLaMATokenizer,
     "LlamaTokenizerFast": LLaMATokenizer,
-    "RobertaTokenizer": RobertaTokenizer,
-    "RobertaTokenizerFast": RobertaTokenizer,
-    "XLMRobertaTokenizer": XlmrTokenizer,
-    "XLMRobertaTokenizerFast": XlmrTokenizer,
+    "RobertaTokenizer": RoBERTaTokenizer,
+    "RobertaTokenizerFast": RoBERTaTokenizer,
+    "XLMRobertaTokenizer": XLMRTokenizer,
+    "XLMRobertaTokenizerFast": XLMRTokenizer,
 }
 
 HF_MODEL_MAPPING: Dict[str, Type[FromHFHub]] = {
-    "bert": BertTokenizer,
-    "camembert": CamembertTokenizer,
+    "bert": BERTTokenizer,
+    "camembert": CamemBERTTokenizer,
     "llama": LLaMATokenizer,
-    "roberta": RobertaTokenizer,
-    "xlm-roberta": XlmrTokenizer,
+    "roberta": RoBERTaTokenizer,
+    "xlm-roberta": XLMRTokenizer,
 }
 
 

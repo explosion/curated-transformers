@@ -11,7 +11,7 @@ from curated_transformers.generation.config import (
     GreedyGeneratorConfig,
     SampleGeneratorConfig,
 )
-from curated_transformers.models.attention import enable_torch_sdp
+from curated_transformers.layers.attention import enable_torch_sdp
 from curated_transformers.util.auto_model import AutoGenerator
 
 EPILOG = """This program takes a JSON list of strings from the standard inputs as prompts. For example:

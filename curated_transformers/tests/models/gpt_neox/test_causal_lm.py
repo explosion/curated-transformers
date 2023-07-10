@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers, transformers
-from curated_transformers.models.attention import AttentionMask
+from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.gpt_neox.causal_lm import GPTNeoXCausalLM
 from curated_transformers.tests.util import torch_assertclose
 

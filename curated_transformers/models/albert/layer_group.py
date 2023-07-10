@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
 
-from ..attention import AttentionMask
+from ...layers.attention import AttentionMask
 from ..bert.config import BERTAttentionConfig
 from ..bert.layer import BERTAttentionConfig, BERTEncoderLayer
 from .config import ALBERTLayerConfig

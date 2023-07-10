@@ -7,35 +7,35 @@ models.
 Attention
 ---------
 
-.. autoclass:: curated_transformers.models.attention.AttentionMask
+.. autoclass:: curated_transformers.layers.attention.AttentionMask
    :members:
 
-.. autoclass:: curated_transformers.models.output.KeyValueCache
+.. autoclass:: curated_transformers.layers.cache.KeyValueCache
    :members:
 
-.. autoclass:: curated_transformers.models.attention.ScaledDotProductAttention
+.. autoclass:: curated_transformers.layers.attention.ScaledDotProductAttention
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.attention.SelfAttention
+.. autoclass:: curated_transformers.layers.attention.SelfAttention
    :members:
    :show-inheritance:
 
 Embeddings
 ----------
 
-.. autoclass:: curated_transformers.models.embeddings.SinusoidalPositionalEmbedding
+.. autoclass:: curated_transformers.layers.embeddings.SinusoidalPositionalEmbedding
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.embeddings.RotaryEmbeddings
+.. autoclass:: curated_transformers.layers.embeddings.RotaryEmbeddings
    :members:
    :show-inheritance:
 
 Feed-forward layers
 -------------------
 
-.. autoclass:: curated_transformers.models.feedforward.PointwiseFeedForward
+.. autoclass:: curated_transformers.layers.feedforward.PointwiseFeedForward
    :members:
    :show-inheritance:
 

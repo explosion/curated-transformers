@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..attention import (
+from ...layers.attention import (
     AttentionMask,
     KeyValueCache,
     QkvHeadSharing,
@@ -12,7 +12,7 @@ from ..attention import (
     RotaryEmbeddingConfig,
     SelfAttention,
 )
-from ..feedforward import PointwiseFeedForward
+from ...layers.feedforward import PointwiseFeedForward
 from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
 
 

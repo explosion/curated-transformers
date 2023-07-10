@@ -10,8 +10,8 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module
 
+from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings
-from .output import KeyValueCache
 
 _TORCH_SDP: ContextVar[bool] = ContextVar("torch_sdp", default=False)
 

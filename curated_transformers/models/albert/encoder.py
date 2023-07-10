@@ -3,7 +3,7 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 import torch
 from torch import Tensor
 
-from ..attention import AttentionMask
+from ...layers.attention import AttentionMask
 from ..bert.embeddings import BERTEmbeddings
 from ..hf_hub import FromPretrainedHFModel
 from ..module import EncoderModule

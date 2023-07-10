@@ -4,12 +4,12 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, ModuleList
 
-from curated_transformers.models.normalization import RMSNorm
-
-from ..attention import AttentionMask
+from ...layers.attention import AttentionMask
+from ...layers.cache import KeyValueCache
+from ...layers.normalization import RMSNorm
 from ..hf_hub import FromPretrainedHFModel
 from ..module import DecoderModule
-from ..output import KeyValueCache, ModelOutputWithCache
+from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import LLaMAConfig
 from .layer import LLaMADecoderLayer

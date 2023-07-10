@@ -6,7 +6,7 @@ from torch.nn import Linear
 
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -17,7 +17,7 @@ from .decoder import RefinedWebModelDecoder
 Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
 
 
-class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
+class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromHFHub):
     """
     Refined Web Model (eg. Falcon) causal language model.
     """

@@ -6,7 +6,7 @@ from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -17,7 +17,7 @@ from .layer import RefinedWebModelDecoderLayer
 Self = TypeVar("Self", bound="RefinedWebModelDecoder")
 
 
-class RefinedWebModelDecoder(DecoderModule, FromPretrainedHFModel):
+class RefinedWebModelDecoder(DecoderModule, FromHFHub):
     """
     Refined Web Model (eg. Falcon) decoder.
     """

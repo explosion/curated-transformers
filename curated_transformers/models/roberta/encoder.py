@@ -5,7 +5,7 @@ from torch import Tensor
 
 from ...layers.attention import AttentionMask
 from ..bert.layer import BERTEncoderLayer
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -16,7 +16,7 @@ from .embeddings import RoBERTaEmbeddings
 Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 
-class RoBERTaEncoder(EncoderModule, FromPretrainedHFModel):
+class RoBERTaEncoder(EncoderModule, FromHFHub):
     """
     RoBERTa encoder (Liu et al., 2019).
     """

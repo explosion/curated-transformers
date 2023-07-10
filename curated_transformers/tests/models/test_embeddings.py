@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.models.embeddings import RotaryEmbeddings
+from curated_transformers.layers.embeddings import RotaryEmbeddings
 
 from ..conftest import TORCH_DEVICES
 from ..util import torch_assertclose

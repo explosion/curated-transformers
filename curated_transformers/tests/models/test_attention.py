@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from curated_transformers._compat import has_hf_transformers
-from curated_transformers.models.attention import (
+from curated_transformers.layers.attention import (
     _TORCH_SDP,
     AttentionMask,
     enable_torch_sdp,

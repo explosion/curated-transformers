@@ -4,8 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
-from ..feedforward import PointwiseFeedForward
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
+from ...layers.feedforward import PointwiseFeedForward
 from .config import BERTAttentionConfig, BERTLayerConfig
 
 

@@ -4,10 +4,11 @@ import torch
 from torch import Tensor
 from torch.nn import Linear
 
-from ..attention import AttentionMask
+from ...layers.attention import AttentionMask
+from ...layers.cache import KeyValueCache
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
-from ..output import CausalLMOutputWithCache, KeyValueCache
+from ..output import CausalLMOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import RefinedWebModelConfig
 from .decoder import RefinedWebModelDecoder

@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from .output import KeyValueCache
+from .cache import KeyValueCache
 
 
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html

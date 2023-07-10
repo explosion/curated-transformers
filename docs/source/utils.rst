@@ -1,4 +1,4 @@
 Utilities
 =========
 
-.. autofunction:: curated_transformers.models.attention.enable_torch_sdp
+.. autofunction:: curated_transformers.layers.attention.enable_torch_sdp

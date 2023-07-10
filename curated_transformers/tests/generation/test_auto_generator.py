@@ -1,4 +1,5 @@
 import pytest
+
 from curated_transformers.generation import AutoGenerator
 from curated_transformers.generation.default_generator import DefaultGenerator
 from curated_transformers.generation.dolly_v2 import DollyV2Generator

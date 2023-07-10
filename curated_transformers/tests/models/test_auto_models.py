@@ -1,4 +1,5 @@
 import pytest
+
 from curated_transformers.models import (
     ALBERTEncoder,
     BERTEncoder,

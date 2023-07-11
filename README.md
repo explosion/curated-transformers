@@ -2,8 +2,8 @@
 
 **Only one attention layer in eight models**
 
-Curated Transformers is a transformer library for PyTorch. Curated Transformers
-provides state-of-the-art models that are composed from a set of reusable
+Curated Transformers is a transformer library for PyTorch. It provides
+state-of-the-art models that are composed from a set of reusable
 components. The stand-out features of Curated Transformer are:
 
 - ⚡️ Supports state-of-the art transformer models, including LLMs such
@@ -12,8 +12,8 @@ components. The stand-out features of Curated Transformer are:
   providing many benefits:
   - Implementing a feature or bugfix benefits all models. For example,
     all models support 4/8-bit inference through the
-    [`bitsandbytes`](https://github.com/TimDettmers/bitsandbytes) and
-    each model can use the Torch `meta` device to avoid unnecessary
+    [`bitsandbytes`](https://github.com/TimDettmers/bitsandbytes) library
+    and each model can use the PyTorch `meta` device to avoid unnecessary
     allocations and initialization.
   - Adding new models to the library is low-effort.
   - Do you want to try a new transformer architecture? A BERT encoder
@@ -24,9 +24,8 @@ components. The stand-out features of Curated Transformer are:
 - 🎓 Great for education, because the building blocks are easy to study.
 - 📦 Minimal dependencies.
 
-Curated Transformers has been production-tested by
-[Explosion](http://explosion.ai/) and will be used at the default transformer
-implementation in spaCy 3.7.
+Curated Transformers has been production-tested by [Explosion](http://explosion.ai/) 
+and will be used as the default transformer implementation in spaCy 3.7.
 
 ## Supported model architectures
 

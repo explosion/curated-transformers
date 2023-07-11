@@ -34,7 +34,7 @@ class _8BitConfig:
     Config for ``int8`` quantization.
     """
 
-    fine_tunable: bool
+    finetunable: bool
     outlier_threshold: float
 
 
@@ -47,18 +47,18 @@ class BitsAndBytesConfig:
     inner: Union[_4BitConfig, _8BitConfig]
 
     @staticmethod
-    def for_8bit(outlier_threshold: float = 6.0, fine_tunable: bool = False):
+    def for_8bit(outlier_threshold: float = 6.0, finetunable: bool = False):
         """Construct a config for ``int8`` quantization.
 
         :param outlier_threshold:
             Threshold for outlier detection during weight
             decomposition.
-        :param fine_tunable:
+        :param finetunable:
             If the quantized model should support fine-tuning after
             quantization.
         """
         return BitsAndBytesConfig(
-            _8BitConfig(fine_tunable=fine_tunable, outlier_threshold=outlier_threshold)
+            _8BitConfig(finetunable=finetunable, outlier_threshold=outlier_threshold)
         )
 
     @staticmethod

@@ -138,7 +138,7 @@ def _init_8bit_linear(
         "input_features": source.in_features,
         "output_features": source.out_features,
         "bias": source.bias is not None,
-        "has_fp16_weights": config.fine_tunable,
+        "has_fp16_weights": config.finetunable,
         "threshold": config.outlier_threshold,
     }
     if has_bitsandbytes_linear_device:

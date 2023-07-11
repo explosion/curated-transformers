@@ -26,6 +26,16 @@ class LLaMACausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     def __init__(
         self, config: LLaMAConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a LLaMA causal LM.
+
+        :param config:
+            Causal LM configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The causal LM.
+        """
         super().__init__()
 
         self.decoder = LLaMADecoder(config, device=device)

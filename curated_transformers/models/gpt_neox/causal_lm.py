@@ -26,6 +26,16 @@ class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     def __init__(
         self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a GPT-NeoX causal LM.
+
+        :param config:
+            Causal LM configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The causal LM.
+        """
         super().__init__()
 
         self.decoder = GPTNeoXDecoder(config, device=device)

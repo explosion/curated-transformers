@@ -1,5 +1,8 @@
 # 🤖 Curated Transformers
 
+[![Documentation Status](https://readthedocs.org/projects/button/badge/?version=latest)](https://button.readthedocs.io/en/latest/?badge=latest)
+[![pypi Version](https://img.shields.io/pypi/v/curated-transformers.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/curated-transformers/)
+
 **Only one attention layer in eight models**
 
 Curated Transformers is a transformer library for PyTorch. It provides

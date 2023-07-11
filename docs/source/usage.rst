@@ -19,6 +19,44 @@ If support for quantization is required, also install the `bitsandbytes`_ librar
    (.venv) $ pip install bitsandbytes scipy
 
 
+Text Generation Using Causal LMs
+--------------------------------
+
+Curated Transformers provides infrastructure to perform open-ended text generation using decoder-only causal language models. 
+The :py:class:`~curated_transformers.generation.generator.Generator` class wraps a :py:class:`~curated_transformers.models.modules.CausalLMModule` 
+and its corresponding tokenizer. It provides a generic interface to generate outputs from the wrapped module in an auto-regressive fashion. 
+:py:class:`~curated_transformers.generation.config.GeneratorConfig` specifies the parameters used by the generator such as stopping conditions 
+and sampling parameters.
+
+The :py:class:`~curated_transformers.generation.auto_generator.AutoGenerator` class can be used to directly load a supported causal 
+LM model and generate text with it.
+
+.. code-block:: python
+
+      from curated_transformers.generation.config import (
+         GreedyGeneratorConfig,
+         SampleGeneratorConfig,
+      )
+      from curated_transformers.generation.auto_generator import AutoGenerator
+
+      generator = AutoGenerator.from_hf_hub(
+         name="databricks/dolly-v2-3b", device=torch.device("cuda", index=0)
+      )
+
+      sample_config = SampleGeneratorConfig(temperature=1.0, top_k=2)
+      greedy_config = GreedyGeneratorConfig()
+
+      prompts = [
+         "To which David Bowie song do these lyrics belong: \"Oh man, look at those cavemen go! It's the freakiest show\"?",
+         "What is spaCy?"
+      ]
+      sample_outputs = generator(prompts, config=sample_config)
+      greedy_outputs = generator(prompts, config=greedy_config)
+
+
+For more information about the different configs and generators supported by Curated Transformers, see :ref:`generation`.
+
+
 Loading a Model
 ---------------
 
@@ -120,44 +158,6 @@ interface.
 
 .. _Hugging Face tokenizers: https://github.com/huggingface/tokenizers
 .. _Hugging Face transformers: https://github.com/huggingface/transformers
-
-
-Text Generation Using Causal LMs
---------------------------------
-
-Curated Transformers also provides infrastructure to perform open-ended text generation using decoder-only causal language models. 
-The :py:class:`~curated_transformers.generation.generator.Generator` class wraps a :py:class:`~curated_transformers.models.modules.CausalLMModule` 
-and its corresponding tokenizer. It provides a generic interface to generate outputs from the wrapped module in an auto-regressive fashion. 
-:py:class:`~curated_transformers.generation.config.GeneratorConfig` specifies the parameters used by the generator such as stopping conditions 
-and sampling parameters.
-
-The :py:class:`~curated_transformers.generation.auto_generator.AutoGenerator` class can be used to directly load a supported causal 
-LM model and generate text with it.
-
-.. code-block:: python
-
-      from curated_transformers.generation.config import (
-         GreedyGeneratorConfig,
-         SampleGeneratorConfig,
-      )
-      from curated_transformers.generation.auto_generator import AutoGenerator
-
-      generator = AutoGenerator.from_hf_hub(
-         name="databricks/dolly-v2-3b", device=torch.device("cuda", index=0)
-      )
-
-      sample_config = SampleGeneratorConfig(temperature=1.0, top_k=2)
-      greedy_config = GreedyGeneratorConfig()
-
-      prompts = [
-         "To which David Bowie song do these lyrics belong: \"Oh man, look at those cavemen go! It's the freakiest show\"?",
-         "What is spaCy?"
-      ]
-      sample_outputs = generator(prompts, config=sample_config)
-      greedy_outputs = generator(prompts, config=greedy_config)
-
-
-For more information about the different configs and generators supported by Curated Transformers, see :ref:`generation`.
 
 
 Text Encoding

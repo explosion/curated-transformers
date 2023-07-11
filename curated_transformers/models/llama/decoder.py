@@ -26,6 +26,16 @@ class LLaMADecoder(DecoderModule, FromHFHub):
     def __init__(
         self, config: LLaMAConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a LLaMA decoder.
+
+        :param config:
+            Decoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The decoder.
+        """
         super().__init__()
 
         self.embeddings = Embedding(

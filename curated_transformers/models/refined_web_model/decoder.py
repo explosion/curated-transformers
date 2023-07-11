@@ -25,6 +25,16 @@ class RefinedWebModelDecoder(DecoderModule, FromHFHub):
     def __init__(
         self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a Refined Web Model decoder.
+
+        :param config:
+            Decoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The decoder.
+        """
         super().__init__()
 
         self.embeddings = Embedding(

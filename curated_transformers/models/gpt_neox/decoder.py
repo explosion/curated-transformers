@@ -25,6 +25,16 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
     def __init__(
         self, config: GPTNeoXConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a GPT-NeoX decoder.
+
+        :param config:
+            Decoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The decoder.
+        """
         super().__init__()
 
         self.embeddings = Embedding(

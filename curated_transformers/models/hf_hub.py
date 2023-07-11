@@ -18,7 +18,7 @@ class FromHFHub(ABC):
     Mixin class for downloading models from Hugging Face Hub.
 
     A module using this mixin can implement the ``convert_hf_state_dict``
-    and `from_hf_config` methods. The mixin will then provide the
+    and ``from_hf_config`` methods. The mixin will then provide the
     ``from_hf_hub`` method to download a model from the Hugging Face Hub.
     """
 

@@ -1,4 +1,4 @@
-Building blocks
+Building Blocks
 ===============
 
 Curated Transformers provides building blocks to create your own transformer
@@ -6,6 +6,14 @@ models.
 
 Attention
 ---------
+
+These modules and their helper classes implement the Transformer attention mechanism.
+
+.. autoclass:: curated_transformers.layers.attention.QkvMode
+   :members:
+
+.. autoclass:: curated_transformers.layers.attention.QkvHeadSharing
+   :members:
 
 .. autoclass:: curated_transformers.layers.attention.AttentionMask
    :members:
@@ -24,6 +32,8 @@ Attention
 Embeddings
 ----------
 
+These modules implement various positional embeddings used by the Transformer.
+
 .. autoclass:: curated_transformers.layers.embeddings.SinusoidalPositionalEmbedding
    :members:
    :show-inheritance:
@@ -32,7 +42,11 @@ Embeddings
    :members:
    :show-inheritance:
 
-Feed-forward layers
+.. autoclass:: curated_transformers.layers.embeddings.QueryKeyRotaryEmbeddings
+   :members:
+   :show-inheritance:
+
+Feed-forward Layers
 -------------------
 
 .. autoclass:: curated_transformers.layers.feedforward.PointwiseFeedForward
@@ -40,8 +54,30 @@ Feed-forward layers
    :show-inheritance:
 
 
-Model outputs
+Activations
+-----------
+
+.. autoclass:: curated_transformers.layers.activations.GeluNew
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.layers.activations.GeluFast
+   :members:
+   :show-inheritance:
+
+
+Normalization
 -------------
+
+.. autoclass:: curated_transformers.layers.normalization.RMSNorm
+   :members:
+   :show-inheritance:
+
+
+Model Outputs
+-------------
+
+These dataclasses encapsulate the outputs produced by the different modules.
 
 .. autoclass:: curated_transformers.models.output.ModelOutput
    :members:

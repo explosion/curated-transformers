@@ -19,7 +19,8 @@ class Quantizable(ABC):
         modules are to be ignored during quantization.
 
         :returns:
-            Set of module prefixes. If empty, all
-            submodules will be quantized.
+            Set of module prefixes.
+
+            If empty, all submodules will be quantized.
         """
         raise NotImplementedError

@@ -6,8 +6,7 @@ from .config import GeneratorConfig
 
 class GeneratorWrapper(ABC):
     """
-    Model-specific wrapper for
-    :class:`curated_transformers.generation.Generator`.
+    Model-specific wrapper for :class:`curated_transformers.generation.Generator`.
     """
 
     def __call__(self, prompts: List[str], config: GeneratorConfig) -> List[str]:

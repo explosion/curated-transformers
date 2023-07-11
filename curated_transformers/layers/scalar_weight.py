@@ -47,11 +47,11 @@ class ScalarWeight(Module):
         :param layer_outputs:
             Outputs of the hidden layers.
 
-            **Shape:** ``(batch_size, seq_len, num_layers, width)``
+            *Shape:* ``(batch_size, seq_len, num_layers, width)``
         :returns:
             Weighted tensor of the layer outputs.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         if layer_outputs.shape[2] != self.layer_weights.shape[0]:
             raise ValueError(

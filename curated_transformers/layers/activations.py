@@ -17,7 +17,7 @@ class GeluNew(Module):
         :param input:
             Input tensor.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return (
             0.5
@@ -35,6 +35,7 @@ class GeluNew(Module):
 class GeluFast(Module):
     """
     GELU approximation used by GPT-NeoX (EleutherAI/gpt-neox-20b).
+
     See: https://github.com/hendrycks/GELUs
     """
 
@@ -45,7 +46,7 @@ class GeluFast(Module):
         :param input:
             Input tensor.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return (
             0.5

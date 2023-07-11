@@ -54,9 +54,11 @@ class Generator(Generic[CacheT]):
         """
         Generate text, starting from the given piece identifiers.
 
-        The generator returns an iterator over tuples. Each tuple contains (1) a
-        tensor with sequence identifiers; (2) a tensor with the next piece
-        identifiers. The sequence identifiers are numbered 0..batch and are
+        The generator returns an iterator over tuples. Each tuple contains:
+         1. A tensor with sequence identifiers.
+         2. A tensor with the next piece identifiers.
+
+        The sequence identifiers are numbered ``0..batch`` and are
         necessary because some sequences may finish generation earliers than
         others. The sequence identifiers allow the caller to map the generated
         pieces back to the original input sequences.
@@ -64,18 +66,18 @@ class Generator(Generic[CacheT]):
         :param ids:
             Batch of piece identifiers to start generating from.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param config:
             Generator configuraton.
         :returns:
             An iterator over tuples. Each tuple contains a tensor with the
             sequence identifiers and a tensor with the next piece identier.
 
-            **Shape:** ``(batch_unfinished,)``
+            *Shape:* ``(batch_unfinished,)``
         """
         self.model.eval()
 

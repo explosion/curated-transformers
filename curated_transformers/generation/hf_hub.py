@@ -10,6 +10,13 @@ Self = TypeVar("Self", bound="FromHFHub")
 
 
 class FromHFHub(ABC):
+    """
+    Mixin class for downloading generators from Hugging Face Hub.
+
+    It automatically infers the tokenizer and model type and loads
+    the parameters and the configuration from the hub.
+    """
+
     @classmethod
     @abstractmethod
     def from_hf_hub(

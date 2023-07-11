@@ -6,7 +6,8 @@ from torch.nn import Module
 
 @dataclass
 class ModuleIterator:
-    """Represents the details of a module when travesing a PyTorch module graph.
+    """
+    Represents the details of a module when travesing a PyTorch module graph.
 
     :param module:
         Current module.
@@ -25,7 +26,8 @@ class ModuleIterator:
 
 
 def apply_to_module(module: Module, func: Callable[[ModuleIterator], None]):
-    """Apply a function the module and its submodules in a breadth-first
+    """
+    Apply a function the module and its submodules in a breadth-first
     fashion.
 
     :param module:

@@ -22,6 +22,16 @@ class BERTEncoder(EncoderModule, FromHFHub):
     """
 
     def __init__(self, config: BERTConfig, *, device: Optional[torch.device] = None):
+        """
+        Construct a BERT encoder.
+
+        :param config:
+            Encoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The encoder.
+        """
         super().__init__()
 
         self.embeddings = BERTEmbeddings(config.embedding, config.layer, device=device)

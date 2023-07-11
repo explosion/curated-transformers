@@ -19,14 +19,14 @@ class LogitsTransform(ABC):
         :param logits:
             The logits array.
 
-            **Shape:** ``(..., n_class)``
+            *Shape:* ``(..., n_class)``
         :param inplace:
             Transform logits in-place.
         :returns:
             The transformed logits. This will be the same tensor object as
             the ``logits`` argument when ``inplace`` is set.
 
-            **Shape:** ``(..., n_class)``
+            *Shape:* ``(..., n_class)``
         """
         if not inplace:
             logits = logits.clone()
@@ -41,7 +41,7 @@ class LogitsTransform(ABC):
         :param logits:
             The logits array.
 
-            **Shape:** ``(..., n_class)``
+            *Shape:* ``(..., n_class)``
         """
         ...
 
@@ -89,17 +89,17 @@ class TopKTransform(LogitsTransform):
 
 class TemperatureTransform(LogitsTransform):
     """
-    Apply temperature to the softmax distribution. Given the temperature *T*
-    and logits z(y|x):
+    Apply temperature to the softmax distribution. Given the temperature ``T``
+    and logits ``z(y|x)``:
 
     .. math::
         p(y|x) = softmax(z(y|x)/T)
 
-    For a temperature T:
+    For a temperature ``T``:
 
-    - T = 1: the distribution is not changed.
-    - T < 1: the entropy of the distribution is decreased.
-    - T > 1: the entropy of the distribution is increased.
+    - ``T = 1``: the distribution is not changed.
+    - ``T < 1``: the entropy of the distribution is decreased.
+    - ``T > 1``: the entropy of the distribution is increased.
     """
 
     def __init__(self, temperature: float = 1.0):

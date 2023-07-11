@@ -60,7 +60,7 @@ class PointwiseFeedForward(Module):
         :param intermediate_width:
             The width of the projection to which the non-linearity is applied.
         :param use_bias:
-            Use biases.
+            Use biases for linear layers.
         :param use_gate:
             Use Gated Linear Units.
         :param device:
@@ -95,11 +95,11 @@ class PointwiseFeedForward(Module):
         :param input:
             Input.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         :returns:
             Layer output.
 
-            **Shape:** ``(batch_size, seq_len, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         if self.gate is None:
             return self.output(self.activation(self.intermediate(input)))

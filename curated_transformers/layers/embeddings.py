@@ -59,11 +59,11 @@ class SinusoidalPositionalEmbedding(Module):
         :param input:
             Input.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :returns:
             Positional embedding for the input.
 
-            **Shape:** ``(seq_len, width)``
+            *Shape:* ``(seq_len, width)``
         """
         return self.pe[input.size(1), :]
 
@@ -140,11 +140,11 @@ class RotaryEmbeddings(Module):
         :param input:
             Tensor to rotate.
 
-            **Shape:** ``(..., width)``
+            *Shape:* ``(..., width)``
         :returns:
             Rotated tensor.
 
-            **Shape:** ``(.., width)``
+            *Shape:* ``(.., width)``
 
         :meta private:
         """
@@ -160,16 +160,16 @@ class RotaryEmbeddings(Module):
         :param input:
             Input to apply the rotary embeddings to.
 
-            **Shape:** ``(batch_size, num_heads, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, num_heads, seq_len, width_per_head)``
         :param positions:
             Positions of the inputs. If no positions are
             provided, they are assumed to be ``[0, seq_len)``.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :returns:
             Input with the rotary embeddings applied.
 
-            **Shape:** ``(batch_size, num_heads, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, num_heads, seq_len, width_per_head)``
         """
         batch_size, _, seq_len, width = input.shape
 
@@ -201,8 +201,7 @@ class RotaryEmbeddings(Module):
 
 class QueryKeyRotaryEmbeddings(Module):
     """
-    Rotary embeddings (Su et al., 2021) applied
-    to key and value representations.
+    Rotary embeddings (Su et al., 2021) applied to key and value representations.
     """
 
     def __init__(
@@ -251,11 +250,11 @@ class QueryKeyRotaryEmbeddings(Module):
         :param query:
             Query representations.
 
-            **Shape:** ``(batch_size, head, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, head, seq_len, width_per_head)``
         :param key:
             Key representations.
 
-            **Shape:** ``(batch_size, head, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, head, seq_len, width_per_head)``
         :param cache: Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
         :param positions: Input positions. Positions are needed to
@@ -263,11 +262,11 @@ class QueryKeyRotaryEmbeddings(Module):
             automatically. But if the positions deviate for some reason, they
             can be provided through this argument.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :returns:
             Query and key with the rotary embeddings applied.
 
-            **Shape:** ``(batch_size, head, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, head, seq_len, width_per_head)``
         """
         dims_per_head = self.dims_per_head
         rotary_dims = self.rotary_dims

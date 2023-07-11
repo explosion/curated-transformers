@@ -18,10 +18,20 @@ Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 class RoBERTaEncoder(EncoderModule, FromHFHub):
     """
-    RoBERTa encoder (Liu et al., 2019).
+    RoBERTa (Liu et al., 2019) encoder.
     """
 
     def __init__(self, config: RoBERTaConfig, *, device: Optional[torch.device] = None):
+        """
+        Construct a RoBERTa encoder.
+
+        :param config:
+            Encoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The encoder.
+        """
         super().__init__()
 
         self.embeddings = RoBERTaEmbeddings(

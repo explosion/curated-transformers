@@ -52,7 +52,8 @@ def get_hf_config_model_type(name: str, revision: str) -> str:
 
 
 def get_model_config_filepath(name: str, revision: str) -> str:
-    """Returns the local file path of the Hugging Face model's config.
+    """
+    Returns the local file path of the Hugging Face model's config.
     If the config is not found in the cache, it is downloaded from
     Hugging Face Hub.
 
@@ -75,7 +76,8 @@ def get_model_config_filepath(name: str, revision: str) -> str:
 
 
 def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
-    """Returns a list of local file paths to PyTorch checkpoints that belong
+    """
+    Returns a list of local file paths to PyTorch checkpoints that belong
     to the Hugging Face model. In case of non-sharded models, a single file path
     is returned. In case of sharded models, multiple file paths are returned.
 

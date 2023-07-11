@@ -26,6 +26,16 @@ class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantiza
     def __init__(
         self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
     ) -> None:
+        """
+        Construct a Refined Web Model causal LM.
+
+        :param config:
+            Causal LM configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The causal LM.
+        """
         super().__init__()
 
         self.decoder = RefinedWebModelDecoder(config, device=device)

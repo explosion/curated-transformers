@@ -45,18 +45,18 @@ class RoBERTaEmbeddings(Module):
         :param input_ids:
             Piece identifiers to embed.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param token_type_ids:
             Token type identifiers to indicate the spans of different
             sequences in the input. Useful when performing tasks like
             sequence classification and question answering.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param position_ids:
             Positional identifiers with which to fetch the positional
             embeddings for the sequences.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         """
         if position_ids is None:
             position_ids = self._get_position_ids(input_ids)

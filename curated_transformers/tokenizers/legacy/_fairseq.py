@@ -45,6 +45,11 @@ class FairSeqPostEncoder(PostEncoder):
 
 
 class FairSeqPreDecoder(PreDecoder):
+    """
+    Performs fixups of SentencePiece piece identifiers for models that use
+    the fairseq vocabulary.
+    """
+
     def __init__(
         self,
         *,

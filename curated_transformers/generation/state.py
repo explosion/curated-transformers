@@ -9,8 +9,8 @@ from .stop_conditions import StopCondition
 
 class GeneratorState(Generic[CacheT]):
     """
-    Stores the state of the generation process
-    and tracks the sequences being generated.
+    Stores the state of the generation process and tracks
+    the sequences being generated.
     """
 
     attention_mask: Tensor
@@ -33,13 +33,13 @@ class GeneratorState(Generic[CacheT]):
         :param attention_mask:
             Atention mask for the prompts.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         :param cache:
             Transformer model cache.
         :param prompt_ids:
             Batch of prompts.
 
-            **Shape:** ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, seq_len)``
         """
         device = prompt_ids.device
         assert (
@@ -93,13 +93,13 @@ class GeneratorState(Generic[CacheT]):
         :param generated_ids:
             Tensor containing generated IDs.
 
-            **Shape:** ``(batch_size, 1)``
+            *Shape:* ``(batch_size, 1)``
         :param stop_condition:
             Generation stop condition.
         :returns:
             Sequence identifiers and piece IDs.
 
-            **Shape:** ``(batch_size), (batch_size, 1)``
+            *Shape:* ``(batch_size), (batch_size, 1)``
         """
         # We update the state before removing completed sequences, so that
         # stopping conditions get a consistent view.

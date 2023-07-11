@@ -22,6 +22,16 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
     """
 
     def __init__(self, config: ALBERTConfig, *, device: Optional[torch.device] = None):
+        """
+        Construct an ALBERT encoder.
+
+        :param config:
+            Encoder configuration.
+        :param device:
+            Device to which the module is to be moved.
+        :returns:
+            The encoder.
+        """
         super().__init__()
 
         self.padding_id = config.padding_id

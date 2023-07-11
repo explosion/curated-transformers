@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Set, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -6,6 +6,7 @@ from torch.nn import Linear
 
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
+from ...quantization.quantizable import Quantizable
 from ..hf_hub import FromPretrainedHFModel
 from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
@@ -17,7 +18,9 @@ from .decoder import RefinedWebModelDecoder
 Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
 
 
-class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFModel):
+class RefinedWebModelCausalLM(
+    CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quantizable
+):
     """
     Refined Web Model (eg. Falcon) causal language model.
     """
@@ -72,3 +75,8 @@ class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromPretrainedHFMod
     ) -> Self:
         config = convert_hf_config(hf_config)
         return cls(config, device=device)
+
+    @classmethod
+    def modules_to_not_quantize(cls) -> Set[str]:
+        # Ignore the output embedding matrix.
+        return {"output_embeddings"}

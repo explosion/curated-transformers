@@ -24,6 +24,7 @@ from curated_transformers.generation.config import (
 )
 from curated_transformers.generation.falcon import FalconGenerator
 from curated_transformers.layers.attention import enable_torch_sdp
+from curated_transformers.quantization.bnb.config import BitsAndBytesConfig
 
 EPILOG = """This program takes passive sentences as a JSON list of strings
 from the standard inputs. For example:
@@ -69,6 +70,14 @@ parser.add_argument(
     type=int,
     default=0,
     help="top-k pieces to consider in sampling (default: disabled)",
+)
+parser.add_argument(
+    "--quantize",
+    "-q",
+    metavar="B",
+    type=int,
+    choices=[4, 8],
+    help="quantizate model to B bits",
 )
 parser.add_argument(
     "--sample",
@@ -122,10 +131,18 @@ def preprocess_passives(passives: List[str]) -> List[str]:
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    quantization_config = None
+    if args.quantize == 4:
+        quantization_config = BitsAndBytesConfig.for_4bit()
+    elif args.quantize == 8:
+        quantization_config = BitsAndBytesConfig.for_8bit()
+
     passives = read_passives()
 
     generator = FalconGenerator.from_hf_hub(
-        name=args.model, device=torch.device(args.device)
+        name=args.model,
+        device=torch.device(args.device),
+        quantization_config=quantization_config,
     )
 
     config = (

@@ -19,7 +19,7 @@ If support for quantization is required, also install the `bitsandbytes`_ librar
    (.venv) $ pip install bitsandbytes scipy
 
 
-Loading A Model
+Loading a Model
 ---------------
 
 Curated Transformers allows users to easily load model weights from the `Hugging Face Model Hub`_. All models 
@@ -97,7 +97,7 @@ loaded to a CUDA GPU by additionally passing the ``device`` argument to the meth
 
 
 
-Loading A Tokenizer
+Loading a Tokenizer
 -------------------
 
 To train or run inference on the models, one has to tokenize the inputs with a compatible tokenizer. Curated Transformers supports 

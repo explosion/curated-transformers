@@ -9,7 +9,7 @@ Context Managers
 Hugging Face
 ------------
 
-Loading Models From Hugging Face Hub
+Loading Models from Hugging Face Hub
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These mixin classes are used to implement support for loading models and

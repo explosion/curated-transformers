@@ -1,6 +1,37 @@
 Causal Language Models
 ======================
 
+Architectures
+-------------
+
+These modules represent the supported causal LM architectures. Generally, every 
+decoder-only architecture has a corresponding causal LM architecture.
+
+.. autoclass:: curated_transformers.models.GPTNeoXCausalLM
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.models.LLaMACausalLM
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.models.RefinedWebModelCausalLM
+   :members:
+   :show-inheritance:
+
+Downloading
+-----------
+
+Each causal LM type provides a ``from_hf_hub`` function that will load a model
+from Hugging Face Hub. If you want to load a causal LM without committing to a 
+specific causal LM type, you can use the :class:`~.auto_model.AutoCausalLM`
+class. This class also provides a ``from_hf_hub`` method but will try to infer 
+the correct type automatically.
+
+.. autoclass:: curated_transformers.models.auto_model.AutoCausalLM
+   :members:
+
+
 Caching
 -------
 
@@ -23,18 +54,8 @@ language model with the ``cache`` argument::
       cache = output.cache
       ...
 
-.. autoclass:: curated_transformers.models.GPTNeoXCausalLM
-   :members:
-   :show-inheritance:
 
-.. autoclass:: curated_transformers.models.LLaMACausalLM
-   :members:
-   :show-inheritance:
+Configuration
+-------------
 
-.. autoclass:: curated_transformers.models.RefinedWebModelCausalLM
-   :members:
-   :show-inheritance:
-
-.. autoclass:: curated_transformers.models.auto_model.AutoCausalLM
-   :members:
-   :show-inheritance:
+See :ref:`decoder model configuration<decoder config>`.

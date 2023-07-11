@@ -44,12 +44,32 @@ These modules implement various positional embeddings used by the Transformer.
 
 .. autoclass:: curated_transformers.layers.embeddings.QueryKeyRotaryEmbeddings
    :members:
-   :show-inheritance:   
+   :show-inheritance:
 
 Feed-forward Layers
 -------------------
 
 .. autoclass:: curated_transformers.layers.feedforward.PointwiseFeedForward
+   :members:
+   :show-inheritance:
+
+
+Activations
+-----------
+
+.. autoclass:: curated_transformers.layers.activations.GeluNew
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.layers.activations.GeluFast
+   :members:
+   :show-inheritance:
+
+
+Normalization
+-------------
+
+.. autoclass:: curated_transformers.layers.normalization.RMSNorm
    :members:
    :show-inheritance:
 

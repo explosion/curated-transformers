@@ -160,8 +160,8 @@ LM model and generate text with it.
 For more information about the different configs and generators supported by Curated Transformers, see :ref:`generation`.
 
 
-Generating Model Outputs
-------------------------
+Text Encoding
+-------------
 
 .. note::
    Currently, Curated Transformers only supports inference with models.

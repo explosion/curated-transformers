@@ -7,7 +7,7 @@ from torch.nn import Linear
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
 from ...quantization import Quantizable
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -18,9 +18,7 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(
-    CausalLMModule[KeyValueCache], FromPretrainedHFModel, Quantizable
-):
+class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
     GPT-NeoX (Black et al., 2022) causal language model.
     """

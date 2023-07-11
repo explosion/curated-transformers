@@ -5,7 +5,7 @@ from torch import Tensor
 
 from ...layers.attention import AttentionMask
 from ..bert.embeddings import BERTEmbeddings
-from ..hf_hub import FromPretrainedHFModel
+from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
 from ._hf import convert_hf_config, convert_hf_state_dict
@@ -16,7 +16,7 @@ from .layer_group import ALBERTLayerGroup
 Self = TypeVar("Self", bound="ALBERTEncoder")
 
 
-class ALBERTEncoder(EncoderModule, FromPretrainedHFModel):
+class ALBERTEncoder(EncoderModule, FromHFHub):
     """
     ALBERT (Lan et al., 2022) encoder.
     """

@@ -15,8 +15,8 @@ def test_auto_generator():
     }
 
     for name, generator_cls in model_causallm_map.items():
-        generator = AutoGenerator.from_hf_hub(name)
+        generator = AutoGenerator.from_hf_hub(name=name)
         assert isinstance(generator, generator_cls)
 
     with pytest.raises(ValueError, match="Unsupported generator"):
-        AutoGenerator.from_hf_hub("trl-internal-testing/tiny-random-GPT2Model")
+        AutoGenerator.from_hf_hub(name="trl-internal-testing/tiny-random-GPT2Model")

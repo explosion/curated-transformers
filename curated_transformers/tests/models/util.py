@@ -4,20 +4,20 @@ import torch
 
 from curated_transformers._compat import transformers
 from curated_transformers.layers.attention import AttentionMask
-from curated_transformers.models.hf_hub import FromPretrainedHFModel
+from curated_transformers.models.hf_hub import FromHFHub
 
 from ..util import torch_assertclose
 
 
 def assert_encoder_output_equals_hf(
-    model_class: Type[FromPretrainedHFModel],
+    model_class: Type[FromHFHub],
     model_name: str,
     torch_device: torch.device,
     *,
     atol=1e-5,
     rtol=1e-5
 ):
-    model = model_class.from_hf_hub(model_name, device=torch_device)
+    model = model_class.from_hf_hub(name=model_name, device=torch_device)
     model.eval()
 
     for _, param in model.state_dict().items():

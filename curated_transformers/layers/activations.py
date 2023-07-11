@@ -35,6 +35,7 @@ class GeluNew(Module):
 class GeluFast(Module):
     """
     GELU approximation used by GPT-NeoX (EleutherAI/gpt-neox-20b).
+
     See: https://github.com/hendrycks/GELUs
     """
 

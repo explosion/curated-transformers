@@ -11,8 +11,9 @@ SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
 class FromHFHub(ABC):
     """
-    Mixin class for downloading tokenizers from Hugging Face Hub. It
-    directly queries the Hugging Face Hub to load the tokenizer from
+    Mixin class for downloading tokenizers from Hugging Face Hub.
+
+    It directly queries the Hugging Face Hub to load the tokenizer from
     its configuration file.
     """
 
@@ -21,7 +22,8 @@ class FromHFHub(ABC):
     def from_hf_hub(
         cls: Type[SelfFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfFromHFHub:
-        """Construct a tokenizer and load its parameters from Hugging Face Hub.
+        """
+        Construct a tokenizer and load its parameters from Hugging Face Hub.
 
         :param name:
             Model name.
@@ -74,7 +76,8 @@ class LegacyFromHFHub(FromHFHub):
     def from_hf_hub(
         cls: Type[SelfLegacyFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfLegacyFromHFHub:
-        """Construct a tokenizer and load its parameters from Hugging Face Hub.
+        """
+        Construct a tokenizer and load its parameters from Hugging Face Hub.
 
         :param name:
             Model name.

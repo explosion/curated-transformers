@@ -146,6 +146,7 @@ class QkvHeadSharing(IntEnum):
     NONE = 0
 
     #: Key shares heads, value shares heads, query has separate heads.
+    #:
     #: See Shazeer, 2019: https://arxiv.org/abs/1911.02150
     KEY_VALUE = 1
 

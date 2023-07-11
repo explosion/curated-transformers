@@ -21,8 +21,10 @@ ModelT = TypeVar("ModelT")
 
 
 class AutoModel(ABC, Generic[ModelT]):
-    """Base class for models that can be loaded from the Hugging
-    Face Model Hub."""
+    """
+    Base class for models that can be loaded from the Hugging
+    Face Model Hub.
+    """
 
     @classmethod
     @abstractmethod
@@ -34,7 +36,8 @@ class AutoModel(ABC, Generic[ModelT]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> ModelT:
-        """Construct and load a module or a generator from Hugging Face Hub.
+        """
+        Construct and load a module or a generator from Hugging Face Hub.
 
         :param name:
             Model name.
@@ -76,7 +79,9 @@ class AutoModel(ABC, Generic[ModelT]):
 
 
 class AutoEncoder(AutoModel[EncoderModule]):
-    """Encoder module loaded from the Hugging Face Model Hub."""
+    """
+    Encoder module loaded from the Hugging Face Model Hub.
+    """
 
     _HF_MODEL_TYPE_TO_CURATED = {
         "bert": BERTEncoder,
@@ -103,7 +108,9 @@ class AutoEncoder(AutoModel[EncoderModule]):
 
 
 class AutoDecoder(AutoModel[DecoderModule]):
-    """Decoder module loaded from the Hugging Face Model Hub."""
+    """
+    Decoder module loaded from the Hugging Face Model Hub.
+    """
 
     _HF_MODEL_TYPE_TO_CURATED = {
         "gpt_neox": GPTNeoXDecoder,
@@ -129,7 +136,9 @@ class AutoDecoder(AutoModel[DecoderModule]):
 
 
 class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
-    """Causal LM module loaded from the Hugging Face Model Hub."""
+    """
+    Causal LM module loaded from the Hugging Face Model Hub.
+    """
 
     _HF_MODEL_TYPE_TO_CURATED = {
         "gpt_neox": GPTNeoXCausalLM,

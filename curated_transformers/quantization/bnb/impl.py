@@ -10,10 +10,7 @@ from ...util.serde import TensorToParameterConverterT
 from .config import BitsAndBytesConfig, _4BitConfig, _8BitConfig
 
 if TYPE_CHECKING:
-    try:
-        import bitsandbytes as bnb
-    except ImportError:
-        bnb = None
+    import bitsandbytes as bnb
 else:
     bnb = None
 

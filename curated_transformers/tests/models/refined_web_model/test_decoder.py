@@ -47,7 +47,7 @@ def test_decoder(torch_device):
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
 
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_states
+        Y = model(X).last_hidden_layer_state
         Y_hf = hf_model(X).last_hidden_state
 
     torch_assertclose(Y, Y_hf)
@@ -67,7 +67,7 @@ def test_decoder_with_cache(torch_device):
 
     with torch.no_grad():
         Y = model(X, store_cache=True)
-        Y = model(X_rest, cache=Y.cache).last_hidden_layer_states
-        Y_no_cache = model(torch.cat([X, X_rest], dim=1)).last_hidden_layer_states
+        Y = model(X_rest, cache=Y.cache).last_hidden_layer_state
+        Y_no_cache = model(torch.cat([X, X_rest], dim=1)).last_hidden_layer_state
 
     torch_assertclose(Y, Y_no_cache[:, 10:, :])

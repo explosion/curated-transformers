@@ -31,7 +31,7 @@ def assert_encoder_output_equals_hf(
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
 
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_states
+        Y = model(X).last_hidden_layer_state
         Y_hf = hf_model(X).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
@@ -40,6 +40,6 @@ def assert_encoder_output_equals_hf(
     with torch.no_grad():
         Y = model(
             X, attention_mask=AttentionMask(mask)
-        ).last_hidden_layer_states * mask.unsqueeze(-1)
+        ).last_hidden_layer_state * mask.unsqueeze(-1)
         Y_hf = hf_model(X, attention_mask=mask).last_hidden_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_hf)

@@ -45,9 +45,9 @@ def test_torch_sdp(torch_device):
     torch.manual_seed(0)
     X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_states
+        Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
-            Y_sdp = model(X).last_hidden_layer_states
+            Y_sdp = model(X).last_hidden_layer_state
     torch_assertclose(Y, Y_sdp)
 
 
@@ -65,11 +65,11 @@ def test_torch_sdp_mask(torch_device):
     with torch.no_grad():
         Y = model(
             X, attention_mask=AttentionMask(mask)
-        ).last_hidden_layer_states * mask.unsqueeze(-1)
+        ).last_hidden_layer_state * mask.unsqueeze(-1)
         with enable_torch_sdp():
             Y_sdp = model(
                 X, attention_mask=AttentionMask(mask)
-            ).last_hidden_layer_states * mask.unsqueeze(-1)
+            ).last_hidden_layer_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_sdp)
 
 
@@ -84,9 +84,9 @@ def test_torch_sdp_causal(torch_device):
     torch.manual_seed(0)
     X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_states
+        Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
-            Y_sdp = model(X).last_hidden_layer_states
+            Y_sdp = model(X).last_hidden_layer_state
     torch_assertclose(Y, Y_sdp)
 
 
@@ -104,9 +104,9 @@ def test_torch_sdp_causal_with_mask(torch_device):
     with torch.no_grad():
         Y = model(
             X, attention_mask=AttentionMask(mask)
-        ).last_hidden_layer_states * mask.unsqueeze(-1)
+        ).last_hidden_layer_state * mask.unsqueeze(-1)
         with enable_torch_sdp():
             Y_sdp = model(
                 X, attention_mask=AttentionMask(mask)
-            ).last_hidden_layer_states * mask.unsqueeze(-1)
+            ).last_hidden_layer_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_sdp)

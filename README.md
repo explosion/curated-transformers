@@ -79,7 +79,8 @@ pip install curated-transformers
 ```
 
 You can find more [usage examples](https://curated-transformers.readthedocs.io/en/latest/usage.html)
-in the documentation.
+in the documentation. You can also find example programs that use Curated Transformers in the
+[`examples`](examples/) directory.
 
 ## 📚 Documentation
 

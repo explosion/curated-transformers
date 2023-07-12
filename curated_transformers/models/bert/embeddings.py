@@ -9,7 +9,9 @@ from .config import BERTEmbeddingConfig, BERTLayerConfig
 
 class BERTEmbeddings(Module):
     """
-    BERT (Devlin et al., 2018) embedding layer.
+    BERT (`Devlin et al., 2018`_) embedding layer.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     def __init__(
@@ -66,7 +68,7 @@ class BERTEmbeddings(Module):
         position_ids: Optional[Tensor] = None,
     ) -> Tensor:
         """
-        Apply the ALBERT embedding layer to the input.
+        Apply the BERT embedding layer to the piece identifiers.
 
         :param input_ids:
             Piece identifiers to embed.

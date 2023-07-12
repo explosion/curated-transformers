@@ -39,7 +39,9 @@ class RoBERTaPreDecoder(PreDecoder):
 
 class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for RoBERTa (Liu et al., 2019) models.
+    Legacy tokenizer for RoBERTa (`Liu et al., 2019`_) models.
+
+    .. _Liu et al., 2019: https://arxiv.org/abs/1907.11692
     """
 
     vocab_files: Dict[str, str] = {"vocab": "vocab.json", "merges": "merges.txt"}

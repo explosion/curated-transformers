@@ -9,7 +9,9 @@ from ..bert import BERTEmbeddingConfig, BERTEmbeddings, BERTLayerConfig
 
 class RoBERTaEmbeddings(Module):
     """
-    RoBERTa (Liu et al., 2019) embedding layer.
+    RoBERTa (`Liu et al., 2019`_) embedding layer.
+
+    .. _Liu et al., 2019: https://arxiv.org/abs/1907.11692
     """
 
     def __init__(
@@ -40,7 +42,7 @@ class RoBERTaEmbeddings(Module):
         position_ids: Optional[Tensor] = None,
     ) -> Tensor:
         """
-        Apply the RoBERTa embedding layer to the input.
+        Apply the RoBERTa embedding layer to the piece identifiers.
 
         :param input_ids:
             Piece identifiers to embed.

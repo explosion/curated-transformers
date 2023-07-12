@@ -6,7 +6,9 @@ from ..bert import BERTConfig
 @dataclass
 class RoBERTaConfig(BERTConfig):
     """
-    RoBERTa (Liu et al., 2019) model configuration.
+    RoBERTa (`Liu et al., 2019`_) model configuration.
+
+    .. _Liu et al., 2019: https://arxiv.org/abs/1907.11692
     """
 
     def __init__(

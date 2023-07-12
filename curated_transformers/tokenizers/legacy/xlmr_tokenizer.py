@@ -75,7 +75,9 @@ class XLMRPreDecoder(FairSeqPreDecoder):
 
 class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for XLM-RoBERTa (Conneau et al., 2019).
+    Legacy tokenizer for XLM-RoBERTa (`Conneau et al., 2019`_) models.
+
+    .. _Conneau et al., 2019: https://arxiv.org/abs/1911.02116
     """
 
     vocab_files: Dict[str, str] = {"model": "sentencepiece.bpe.model"}

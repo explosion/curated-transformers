@@ -18,7 +18,9 @@ Self = TypeVar("Self", bound="BERTEncoder")
 
 class BERTEncoder(EncoderModule, FromHFHub):
     """
-    BERT (Devlin et al., 2018) encoder.
+    BERT (`Devlin et al., 2018`_) encoder.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     def __init__(self, config: BERTConfig, *, device: Optional[torch.device] = None):

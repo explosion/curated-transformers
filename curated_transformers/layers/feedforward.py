@@ -21,7 +21,7 @@ _ACTIVATIONS: Dict[str, Type[Module]] = {
 
 class PointwiseFeedForward(Module):
     """
-    Point-wise feed-forward layer (Vaswani et al., 2017).
+    Point-wise feed-forward layer (`Vaswani et al., 2017`_).
 
     This layer is applied pointwise, meaning that the same
     transformation is applied to each sequence element. This
@@ -30,10 +30,14 @@ class PointwiseFeedForward(Module):
     function and :math:`W_2` and :math:`b_2` transform the output of the activation back to
     the input width.
 
-    Gated Linear Units (Dauphin et al., 2016 and Shazeer, 2020) are also
+    Gated Linear Units (`Dauphin et al., 2016`_, `Shazeer, 2020`_) are also
     supported. Gating applies the transformation
     :math:`(g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2`, where :math:`W_g` and :math:`b_g`
     are the affine transformations for the gate.
+
+    .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
+    .. _Dauphin et al., 2016: https://arxiv.org/abs/1612.08083
+    .. _Shazeer, 2020: https://arxiv.org/abs/2002.05202
     """
 
     gate: Optional[Linear]

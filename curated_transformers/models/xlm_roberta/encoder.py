@@ -8,7 +8,9 @@ from ..roberta.encoder import RoBERTaEncoder
 
 class XLMREncoder(RoBERTaEncoder):
     """
-    XLM-RoBERTa (Conneau et al., 2019) encoder.
+    XLM-RoBERTa (`Conneau et al., 2019`_) encoder.
+
+    .. _Conneau et al., 2019: https://arxiv.org/abs/1911.02116
     """
 
     def __init__(self, config: RoBERTaConfig, *, device: Optional[torch.device] = None):

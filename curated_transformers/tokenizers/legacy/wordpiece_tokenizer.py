@@ -9,7 +9,9 @@ from .legacy_tokenizer import LegacyTokenizer
 
 class WordPieceTokenizer(LegacyTokenizer):
     """
-    Piece tokenizer using WordPiece tokenization (Delvin et al., 2018)
+    Piece tokenizer using WordPiece tokenization (`Devlin et al., 2018`_).
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     def __init__(

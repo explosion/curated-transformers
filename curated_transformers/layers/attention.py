@@ -23,7 +23,7 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
 
     Torch provides an implementation of scaled dot product attention that
     has many optimizations. For instance, in some scenarios Flash Attention
-    is applied (Dao et al., 2022). We do not use the Torch implementation
+    is applied (`Dao et al., 2022`_). We do not use the Torch implementation
     by default, because it is still in beta.
 
     This context manager enables use of the Torch implementation of scaled
@@ -33,6 +33,8 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
 
         with enable_torch_sdp():
             Y = bert_encoder(X)
+
+    .. _Dao et al., 2022:  https://arxiv.org/abs/2205.14135
     """
     token = _TORCH_SDP.set(use_torch_sdp)
     try:
@@ -145,9 +147,10 @@ class QkvHeadSharing(IntEnum):
     #: No parameters are shared between heads.
     NONE = 0
 
-    #: Key shares heads, value shares heads, query has separate heads.
+    #: Multi-query attention: Key shares heads, value shares heads,
+    #: query has separate heads (`Shazeer et al., 2019`_).
     #:
-    #: See Shazeer, 2019: https://arxiv.org/abs/1911.02150
+    #: .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
     KEY_VALUE = 1
 
 
@@ -160,17 +163,23 @@ class QkvMode(IntEnum):
     #: ``SEPARATE`` - Use separate projections for query, key and value.
     SEPARATE = (0,)
 
-    #: ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query, key and value, and split heads before splitting the query, key and value representations.
+    #: ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query,
+    # key and value, and split heads before splitting the query, key
+    # and value representations.
     MERGED_SPLIT_BEFORE = (1,)
 
-    #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query, key and value, and split heads after splitting the query, key and value representations.
+    #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query,
+    # key and value, and split heads after splitting the query, key
+    # and value representations.
     MERGED_SPLIT_AFTER = (2,)
 
 
 # https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
 class ScaledDotProductAttention(Module):
     """
-    Scaled dot-product attention (Vaswani et al., 2017).
+    Scaled dot-product attention (`Vaswani et al., 2017`_).
+
+    .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
     def __init__(self, *, dropout_prob: float = 0.1):
@@ -253,7 +262,9 @@ class RotaryEmbeddingConfig:
 
 class SelfAttention(Module):
     """
-    Transformer self-attention layer (Vaswani et al., 2017).
+    Transformer self-attention layer (`Vaswani et al., 2017`_).
+
+    .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
     rotary_embeds: Optional[QueryKeyRotaryEmbeddings]

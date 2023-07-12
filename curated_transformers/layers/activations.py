@@ -7,7 +7,9 @@ from torch.nn import Module
 
 class GeluNew(Module):
     """
-    GELU approximation, called `gelu_new` in many transformer models.
+    GELU (`Hendrycks et al., 2016`_) approximation, called ``gelu_new`` in many transformer models.
+
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
     """
 
     def forward(self, input: Tensor) -> Tensor:
@@ -34,9 +36,10 @@ class GeluNew(Module):
 
 class GeluFast(Module):
     """
-    GELU approximation used by GPT-NeoX (EleutherAI/gpt-neox-20b).
+    GELU (`Hendrycks et al., 2016`_) approximation used by GPT-NeoX (`Black et al., 2022`_).
 
-    See: https://github.com/hendrycks/GELUs
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     def forward(self, input: Tensor) -> Tensor:

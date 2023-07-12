@@ -20,7 +20,9 @@ Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
 
 class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
-    Refined Web Model (eg. Falcon) causal language model.
+    `Refined Web Model`_ (eg. Falcon) causal language model.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(

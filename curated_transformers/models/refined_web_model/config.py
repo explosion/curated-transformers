@@ -4,7 +4,9 @@ from dataclasses import dataclass
 @dataclass
 class RefinedWebModelAttentionConfig:
     """
-    Refined Web Model (eg. Falcon) attention configuration.
+    `Refined Web Model`_ (eg. Falcon) attention configuration.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -56,7 +58,9 @@ class RefinedWebModelAttentionConfig:
 @dataclass
 class RefinedWebModelEmbeddingConfig:
     """
-    Refined Web Model (eg. Falcon) embedding configuration.
+    `Refined Web Model`_ (eg. Falcon) embedding configuration.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -92,7 +96,9 @@ class RefinedWebModelEmbeddingConfig:
 @dataclass
 class RefinedWebModelLayerConfig:
     """
-    Refined Web Model (eg. Falcon) layer configuration.
+    `Refined Web Model`_ (eg. Falcon) layer configuration.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -132,7 +138,9 @@ class RefinedWebModelLayerConfig:
 
 class RefinedWebModelConfig:
     """
-    Refined Web Model (eg. Falcon) model configuration.
+    `Refined Web Model`_ (eg. Falcon) model configuration.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     attention: RefinedWebModelAttentionConfig

@@ -11,7 +11,9 @@ from .cache import KeyValueCache
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class SinusoidalPositionalEmbedding(Module):
     """
-    Sinusoidal positional embeddings (Vaswani et al., 2017).
+    Sinusoidal positional embeddings (`Vaswani et al., 2017`_).
+
+    .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
     def __init__(
@@ -70,7 +72,9 @@ class SinusoidalPositionalEmbedding(Module):
 
 class RotaryEmbeddings(Module):
     """
-    Rotary embeddings (Su et al., 2021).
+    Rotary embeddings (`Su et al., 2021`_).
+
+    .. _Su et al., 2021: https://arxiv.org/abs/2104.09864
     """
 
     cos: Tensor
@@ -201,7 +205,9 @@ class RotaryEmbeddings(Module):
 
 class QueryKeyRotaryEmbeddings(Module):
     """
-    Rotary embeddings (Su et al., 2021) applied to key and value representations.
+    Rotary embeddings (`Su et al., 2021`_) applied to key and value representations.
+
+    .. _Su et al., 2021: https://arxiv.org/abs/2104.09864
     """
 
     def __init__(

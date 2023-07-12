@@ -20,7 +20,9 @@ Self = TypeVar("Self", bound="LLaMACausalLM")
 
 class LLaMACausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
-    LLaMa (Touvron et al., 2023) causal language model.
+    LLaMa (`Touvron et al., 2023`_) causal language model.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     def __init__(

@@ -7,7 +7,9 @@ from dataclasses import dataclass
 @dataclass
 class BERTEmbeddingConfig:
     """
-    BERT (Devlin et al., 2018) embedding configuration.
+    BERT (`Devlin et al., 2018`_) embedding configuration.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     embedding_width: int
@@ -52,7 +54,9 @@ class BERTEmbeddingConfig:
 @dataclass
 class BERTAttentionConfig:
     """
-    BERT (Devlin et al., 2018) attention configuration.
+    BERT (`Devlin et al., 2018`_) attention configuration.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     hidden_width: int
@@ -82,7 +86,9 @@ class BERTAttentionConfig:
 @dataclass
 class BERTLayerConfig:
     """
-    BERT (Devlin et al., 2018) layer configuration.
+    BERT (`Devlin et al., 2018`_) layer configuration.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     hidden_width: int
@@ -128,7 +134,9 @@ class BERTLayerConfig:
 @dataclass
 class BERTConfig:
     """
-    BERT (Devlin et al., 2018) model configuration.
+    BERT (`Devlin et al., 2018`_) model configuration.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     embedding: BERTEmbeddingConfig

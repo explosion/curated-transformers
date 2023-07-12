@@ -9,7 +9,9 @@ from torch.nn import Module
 # https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/scalar_weighting.rs#L62
 class ScalarWeight(Module):
     """
-    Scalar weighting (Peters et al., 2018).
+    Scalar weighting (`Peters et al., 2018`_).
+
+    .. _Peters et al., 2018 : https://aclanthology.org/N18-1202/
     """
 
     def __init__(

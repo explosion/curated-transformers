@@ -15,7 +15,9 @@ DEFAULT_BOS_PIECE = "<s>"
 
 class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for LLaMA (Touvron et al., 2023).
+    Legacy tokenizer for LLaMA (`Touvron et al., 2023`_) models.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     vocab_files: Dict[str, str] = {"model": "tokenizer.model"}

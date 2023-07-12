@@ -6,7 +6,9 @@ from ..bert import BERTAttentionConfig, BERTConfig, BERTEmbeddingConfig, BERTLay
 @dataclass
 class ALBERTLayerConfig(BERTLayerConfig):
     """
-    ALBERT (Lan et al., 2022) layer configuration.
+    ALBERT (`Lan et al., 2022`_) layer configuration.
+
+    .. _Lan et al., 2022: https://arxiv.org/abs/1909.11942
     """
 
     inner_group_num: int
@@ -29,7 +31,9 @@ class ALBERTLayerConfig(BERTLayerConfig):
 @dataclass
 class ALBERTConfig(BERTConfig):
     """
-    ALBERT (Lan et al., 2022) model configuration.
+    ALBERT (`Lan et al., 2022`_) model configuration.
+
+    .. _Lan et al., 2022: https://arxiv.org/abs/1909.11942
     """
 
     layer: ALBERTLayerConfig

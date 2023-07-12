@@ -32,7 +32,7 @@ class FromHFHub(ABC):
 
         :param name:
             Model name.
-        :param revsion:
+        :param revision:
             Model revision.
         :param device:
             Device on which to initialize the model.

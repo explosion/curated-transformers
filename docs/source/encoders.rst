@@ -35,7 +35,7 @@ Downloading
 -----------
 
 Each encoder type provides a ``from_hf_hub`` function that will load a model
-from Hugging Face Hub. If you want to load a encoder without committing to a 
+from Hugging Face Hub. If you want to load an encoder without committing to a 
 specific encoder type, you can use the :class:`~.auto_model.AutoEncoder`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.

@@ -38,7 +38,7 @@ class DefaultGenerator(GeneratorWrapper, FromHFHub):
         :param causal_lm:
             A causal language model.
         :param default_config:
-            Configuration to use as a default whe the configuration provided
+            Configuration to use as a default when the configuration provided
             to the ``generate`` method is underspecified. For instance, if the
             end-of-sequence identifier is ``None`` in the generation
             configuration, it will be taken from the default configuration.

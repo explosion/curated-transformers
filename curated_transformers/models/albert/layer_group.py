@@ -60,6 +60,10 @@ class ALBERTLayerGroup(Module):
             during attention calculation.
 
             *Shape:* ``(batch_size, seq_len)``
+        :returns:
+            Layer output.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         layer_output = input
         for layer in self.group_layers:

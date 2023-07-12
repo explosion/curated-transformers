@@ -1,8 +1,8 @@
 import pytest
 
-from curated_transformers._compat import has_hf_transformers
 from curated_transformers.models.bert.encoder import BERTEncoder
 
+from ...compat import has_hf_transformers
 from ...conftest import TORCH_DEVICES
 from ..util import assert_encoder_output_equals_hf
 

@@ -1,7 +1,6 @@
 from typing import Optional
 
-from curated_transformers._compat import transformers
-
+from ..compat import transformers
 from ..util import torch_assertclose
 
 

@@ -1,7 +1,6 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers
 from curated_transformers.layers.attention import (
     _TORCH_SDP,
     AttentionMask,
@@ -11,6 +10,7 @@ from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.models.gpt_neox.decoder import GPTNeoXDecoder
 from curated_transformers.tests.util import torch_assertclose
 
+from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES
 
 VOCAB_SIZE = 1024

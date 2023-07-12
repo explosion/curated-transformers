@@ -1,7 +1,6 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers
 from curated_transformers.tokenizers import PiecesWithIds
 from curated_transformers.tokenizers.chunks import (
     InputChunks,
@@ -14,6 +13,7 @@ from curated_transformers.tokenizers.legacy.bert_tokenizer import (
 )
 from curated_transformers.tokenizers.legacy.legacy_tokenizer import DefaultNormalizer
 
+from ...compat import has_hf_transformers
 from ...util import torch_assertclose
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 

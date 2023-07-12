@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from curated_transformers._compat import has_hf_transformers, transformers
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.llama.causal_lm import LLaMACausalLM
 from curated_transformers.tests.util import torch_assertclose
 
+from ...compat import has_hf_transformers, transformers
 from ...conftest import TORCH_DEVICES
 
 

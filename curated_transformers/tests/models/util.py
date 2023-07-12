@@ -2,10 +2,10 @@ from typing import Type
 
 import torch
 
-from curated_transformers._compat import transformers
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.hf_hub import FromHFHub
 
+from ..compat import transformers
 from ..util import torch_assertclose
 
 

@@ -26,7 +26,7 @@ components. The stand-out features of Curated Transformer are:
     with rotary embeddings? You can make it in a pinch.
 - 💎 Consistent type annotations of all public APIs:
 
-  - Get great feedback from your IDE.
+  - Get great coding support from your IDE.
   - Integrates well with your existing type-checked code.
 - 🎓 Great for education, because the building blocks are easy to study.
 - 📦 Minimal dependencies.

@@ -1,5 +1,6 @@
 import pytest
 import torch
+
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.refined_web_model.decoder import RefinedWebModelDecoder
 from curated_transformers.tests.util import torch_assertclose

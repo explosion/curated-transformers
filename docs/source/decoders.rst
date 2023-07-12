@@ -6,6 +6,10 @@ Architectures
 
 These modules represent the supported decoder-only architectures.
 
+.. autoclass:: curated_transformers.models.module.DecoderModule
+   :members:
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.models.GPTNeoXDecoder
    :members:
    :show-inheritance:

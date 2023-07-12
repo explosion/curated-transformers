@@ -6,6 +6,10 @@ Architectures
 
 These modules represent the supported encoder-only architectures.
 
+.. autoclass:: curated_transformers.models.module.EncoderModule
+   :members:
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.models.ALBERTEncoder
    :members:
    :show-inheritance:

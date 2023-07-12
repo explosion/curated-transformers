@@ -23,7 +23,7 @@ Text Generation Using Causal LMs
 --------------------------------
 
 Curated Transformers provides infrastructure to perform open-ended text generation using decoder-only causal language models. 
-The :py:class:`~curated_transformers.generation.generator.Generator` class wraps a :py:class:`~curated_transformers.models.modules.CausalLMModule` 
+The :py:class:`~curated_transformers.generation.generator.Generator` class wraps a :py:class:`~curated_transformers.models.module.CausalLMModule` 
 and its corresponding tokenizer. It provides a generic interface to generate outputs from the wrapped module in an auto-regressive fashion. 
 :py:class:`~curated_transformers.generation.config.GeneratorConfig` specifies the parameters used by the generator such as stopping conditions 
 and sampling parameters.
@@ -110,7 +110,7 @@ Quantization
 ------------
 
 Curated Transformers implements dynamic 8-bit and 4-bit quantization of models by leveraging the `bitsandbytes`_ library.
-When loading models using the ``from_hf_hub`` method, an optional :py:class:`~curated_transformers.quantization.bnb.BitsAndBytesConfig`
+When loading models using the ``from_hf_hub`` method, an optional :py:class:`~curated_transformers.quantization.bnb.config.BitsAndBytesConfig`
 instance can be passed to the method to opt into dynamic quantization of model parameters. Quantization requires the model to be
 loaded to a CUDA GPU by additionally passing the ``device`` argument to the method.
 
@@ -208,11 +208,11 @@ In addition to text generation, one can also run inference on the inputs to prod
    last_hidden_repr = model_output.last_hidden_layer_state
 
 
-The :py:class:`~curated_transformers.models.outputs.ModelOutput` instance returned by the encoder contains all of 
+The :py:class:`~curated_transformers.models.output.ModelOutput` instance returned by the encoder contains all of 
 transformer's outputs, i.e., the hidden representations of all transformer layers and the ouput of the embedding
-layer. Decoder models (:py:class:`~curated_transformers.models.modules.DecoderModule`) and causal language models 
-(:py:class:`~curated_transformers.models.modules.CausalLMModule`) produce additional outputs such as the key-value 
-cache used during attention calculation (:py:class:`~curated_transformers.models.outputs.ModelOutputWithCache`) and 
-logits (:py:class:`~curated_transformers.models.outputs.CausalLMOutputWithCache`).
+layer. Decoder models (:py:class:`~curated_transformers.models.module.DecoderModule`) and causal language models 
+(:py:class:`~curated_transformers.models.module.CausalLMModule`) produce additional outputs such as the key-value 
+cache used during attention calculation (:py:class:`~curated_transformers.models.output.ModelOutputWithCache`) and 
+logits (:py:class:`~curated_transformers.models.output.CausalLMOutputWithCache`).
 
 

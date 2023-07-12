@@ -4,6 +4,14 @@ Building Blocks
 Curated Transformers provides building blocks to create your own transformer
 models.
 
+Encoder/Decoder Layers
+----------------------
+
+These modules implement full encoder/decoder layers.
+
+.. autoclass:: curated_transformers.layers.encoder.EncoderLayer
+   :members:
+
 Attention
 ---------
 

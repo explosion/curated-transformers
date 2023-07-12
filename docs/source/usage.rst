@@ -33,6 +33,7 @@ LM model and generate text with it.
 
 .. code-block:: python
 
+      import torch
       from curated_transformers.generation.config import (
          GreedyGeneratorConfig,
          SampleGeneratorConfig,
@@ -52,6 +53,9 @@ LM model and generate text with it.
       ]
       sample_outputs = generator(prompts, config=sample_config)
       greedy_outputs = generator(prompts, config=greedy_config)
+
+      print(f"Sampling outputs: {sample_outputs}")
+      print(f"Greedy outputs: {greedy_outputs}")
 
 
 For more information about the different configs and generators supported by Curated Transformers, see :ref:`generation`.
@@ -78,10 +82,7 @@ Model Hub.
       device=torch.device("cuda", index=0),
    )
 
-   decoder = GPTNeoXDecoder.from_hf_hub(
-      name="databricks/dolly-v2-3b",
-      revision="main"
-   )
+   decoder = GPTNeoXDecoder.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
 
 
 The :py:class:`~curated_transformers.models.auto_model.AutoEncoder`, :py:class:`~curated_transformers.models.auto_model.AutoDecoder` 
@@ -89,19 +90,20 @@ and :py:class:`~curated_transformers.models.auto_model.AutoCausalLM` classes can
 
 .. code-block:: python
 
-   import torch
-   from curated_transformers.models.auto_model import AutoEncoder, AutoDecoder, AutoCausalLM
+   from curated_transformers.models.auto_model import (
+      AutoCausalLM,
+      AutoDecoder,
+      AutoEncoder,
+   )
 
    encoder = AutoEncoder.from_hf_hub(
       name="bert-base-uncased",
       revision="main",
    )
 
-   lm = AutoCausalLM.from_hf_hub(
-      name="databricks/dolly-v2-3b",
-      revision="main"
-   )
+   decoder = AutoDecoder.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
 
+   lm = AutoCausalLM.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
 
 
 Quantization
@@ -116,23 +118,27 @@ loaded to a CUDA GPU by additionally passing the ``device`` argument to the meth
 
 .. code-block:: python
 
-    import torch
-    from curated_transformers.generation.auto_generator import AutoGenerator
-    from curated_transformers.quantization.bnb.config import BitsAndBytesConfig, Dtype4Bit
+   import torch
+   from curated_transformers.generation.auto_generator import AutoGenerator
+   from curated_transformers.quantization.bnb.config import BitsAndBytesConfig, Dtype4Bit
 
-    generator_8bit = AutoGenerator.from_hf_hub(
-      name="databricks/dolly-v2-3b",
-      device=torch.device("cuda", index=0),
-      quantization_config=BitsAndBytesConfig.for_8bit(outlier_threshold=6.0, fine_tunable=False)
-    )
-
-    generator_4bit = AutoGenerator.from_hf_hub(
+   generator_8bit = AutoGenerator.from_hf_hub(
       name="databricks/dolly-v2-3b",
       device=torch.device("cuda", index=0),
       quantization_config=BitsAndBytesConfig.for_8bit(
-        quantization_dtype=Dtype4Bit.FP4, compute_dtype=torch.bfloat16, double_quantization=True
-    ))
+         outlier_threshold=6.0, finetunable=False
+      ),
+   )
 
+   generator_4bit = AutoGenerator.from_hf_hub(
+      name="databricks/dolly-v2-3b",
+      device=torch.device("cuda", index=0),
+      quantization_config=BitsAndBytesConfig.for_4bit(
+         quantization_dtype=Dtype4Bit.FP4,
+         compute_dtype=torch.bfloat16,
+         double_quantization=True,
+      ),
+   )
 
 
 Loading a Tokenizer
@@ -170,38 +176,36 @@ In addition to text generation, one can also run inference on the inputs to prod
 
 .. code-block:: python
 
-      import torch
+   import torch
+   from curated_transformers.models.auto_model import AutoEncoder
+   from curated_transformers.tokenizers.auto_tokenizer import AutoTokenizer
 
-      from curated_transformers.models.auto_model import AutoEncoder
-      from curated_transformers.tokenizers.auto_tokenizer import AutoTokenizer
+   device = torch.device("cpu")
+   encoder = AutoEncoder.from_hf_hub(
+      name="bert-base-uncased", revision="main", device=device
+   )
+   # Set module state to evaluation mode.
+   encoder.eval()
 
-      device = torch.device("cpu")
-      encoder = AutoEncoder.from_hf_hub(
-         name="bert-base-uncased",
-         revision="main",
-         device=device
-      )
-      # Set module state to evaluation mode.
-      encoder.eval()
+   tokenizer = AutoTokenizer.from_hf_hub(
+      name="bert-base-uncased",
+      revision="main",
+   )
 
-      tokenizer = AutoTokenizer.from_hf_hub(
-         name="bert-base-uncased",
-         revision="main",
-      )
-
-      input_pieces = tokenizer([
+   input_pieces = tokenizer(
+      [
          "Straight jacket fitting a little too tight",
-         "Space shuttle, snail shell, merry go round, conveyor belt!"
-      ])
+         "Space shuttle, snail shell, merry go round, conveyor belt!",
+      ]
+   )
 
-      # Don't allocate gradients since we're only running inference.
-      with torch.no_grad():
-         ids = input_pieces.padded_tensor(padding_id=0, pad_left=True).to(device)
-         attention_mask = input_pieces.attention_mask(pad_left=True).to(device)
-         model_output = encoder(input_ids=ids, attention_mask=attention_mask)
+   # Don't allocate gradients since we're only running inference.
+   with torch.no_grad():
+      ids = input_pieces.padded_tensor(padding_id=0, pad_left=True).to(device)
+      model_output = encoder(input_ids=ids)
 
-      # [batch, seq, width]
-      last_hidden_repr = model_output.last_hidden_layer_states
+   # [batch, seq, width]
+   last_hidden_repr = model_output.last_hidden_layer_state
 
 
 The :py:class:`~curated_transformers.models.outputs.ModelOutput` instance returned by the encoder contains all of 

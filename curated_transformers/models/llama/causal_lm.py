@@ -61,7 +61,7 @@ class LLaMACausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
             store_cache=store_cache,
             positions=positions,
         )
-        logits = self.output_embeddings(decoder_output.last_hidden_layer_states)
+        logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
 
         return CausalLMOutputWithCache(
             cache=decoder_output.cache,

@@ -61,7 +61,7 @@ class ModelOutput:
             )
 
     @property
-    def last_hidden_layer_states(self) -> Tensor:
+    def last_hidden_layer_state(self) -> Tensor:
         """
         Returns the hidden representation of the last layer.
 

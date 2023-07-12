@@ -30,7 +30,7 @@ components. The stand-out features of Curated Transformer are:
 Curated Transformers has been production-tested by [Explosion](http://explosion.ai/)
 and will be used as the default transformer implementation in spaCy 3.7.
 
-## Supported model architectures
+## 🧰 Supported Model Architectures
 
 Supported encoder-only models:
 
@@ -57,7 +57,7 @@ spaCy integration for curated transformers is provided by the
 [`spacy-curated-transformers`](https://github.com/explosion/spacy-curated-transformers)
 package.
 
-## ⚠️ Warning: tech preview
+## ⚠️ Warning: Tech Preview
 
 Curated Transformers 0.9.x is a tech preview, we will release Curated Transformers
 1.0.0 with a stable API and semver guarantees over the coming weeks.
@@ -68,7 +68,7 @@ Curated Transformers 0.9.x is a tech preview, we will release Curated Transforme
 pip install curated-transformers
 ```
 
-## 🏃‍♀️ Usage example
+## 🏃‍♀️ Usage Example
 
 ```python-console
 >>> from curated_transformers.generation import AutoGenerator, GreedyGeneratorConfig

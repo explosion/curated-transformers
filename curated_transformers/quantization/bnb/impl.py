@@ -1,15 +1,21 @@
-import warnings
-from typing import Any, Callable, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Callable, Optional, Set, Union
 
 import torch
 from torch import Tensor
 from torch.nn import Module, Parameter
 
-from ..._compat import bitsandbytes as bnb
 from ..._compat import has_bitsandbytes
 from ...util.pytorch import ModuleIterator, apply_to_module
 from ...util.serde import TensorToParameterConverterT
 from .config import BitsAndBytesConfig, _4BitConfig, _8BitConfig
+
+if TYPE_CHECKING:
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        bnb = None
+else:
+    bnb = None
 
 
 def prepare_for_quantization(
@@ -100,6 +106,8 @@ def _convert_tensor_to_quantized_parameter(
             f"Expected size of replacement for `{module_prefix}` to be {old_param.shape}, but got {tensor.shape}"
         )
 
+    import bitsandbytes as bnb
+
     # Bias is stored as a regular, non-quantized parameter.
     is_bias_param = parameter_name == "bias"
     # All parameters need to be of dtype `float16` for quantization.
@@ -134,6 +142,8 @@ def _init_8bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
 ) -> "bnb.nn.Linear8bitLt":
     assert isinstance(config, _8BitConfig)
+    import bitsandbytes as bnb
+
     quantized_module = bnb.nn.Linear8bitLt(
         input_features=source.in_features,
         output_features=source.out_features,
@@ -149,6 +159,8 @@ def _init_4bit_linear(
     source: Module, config: Union[_8BitConfig, _4BitConfig], device: torch.device
 ) -> "bnb.nn.Linear4bit":
     assert isinstance(config, _4BitConfig)
+    import bitsandbytes as bnb
+
     quantized_module = bnb.nn.Linear4bit(
         input_features=source.in_features,
         output_features=source.out_features,

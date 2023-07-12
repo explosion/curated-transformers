@@ -20,7 +20,9 @@ Self = TypeVar("Self", bound="LLaMADecoder")
 
 class LLaMADecoder(DecoderModule, FromHFHub):
     """
-    LLaMa (Touvron et al., 2023) decoder.
+    LLaMa (`Touvron et al., 2023`_) decoder.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     def __init__(

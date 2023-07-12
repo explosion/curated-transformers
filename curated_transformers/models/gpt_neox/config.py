@@ -4,7 +4,9 @@ from dataclasses import dataclass
 @dataclass
 class GPTNeoXAttentionConfig:
     """
-    GPT-NeoX (Black et al., 2022) attention configuration.
+    GPT-NeoX (`Black et al., 2022`_) attention configuration.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     dropout_prob: float
@@ -46,7 +48,9 @@ class GPTNeoXAttentionConfig:
 @dataclass
 class GPTNeoXEmbeddingConfig:
     """
-    GPT-NeoX (Black et al., 2022) embedding configuration.
+    GPT-NeoX (`Black et al., 2022`_) embedding configuration.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     dropout_prob: float
@@ -82,7 +86,9 @@ class GPTNeoXEmbeddingConfig:
 @dataclass
 class GPTNeoXLayerConfig:
     """
-    GPT-NeoX (Black et al., 2022) layer configuration.
+    GPT-NeoX (`Black et al., 2022`_) layer configuration.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     dropout_prob: float
@@ -130,7 +136,9 @@ class GPTNeoXLayerConfig:
 
 class GPTNeoXConfig:
     """
-    GPT-NeoX (Black et al., 2022) model configuration.
+    GPT-NeoX (`Black et al., 2022`_) model configuration.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     attention: GPTNeoXAttentionConfig

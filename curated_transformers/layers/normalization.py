@@ -7,7 +7,9 @@ from torch.nn import Module, Parameter
 
 class RMSNorm(Module):
     """
-    Root Mean Square (RMS) normalization (Zhang & Sennrich, 2019).
+    Root Mean Square (RMS) normalization (`Zhang et al., 2019`_).
+
+    .. _Zhang et al., 2019: https://arxiv.org/abs/1910.07467
     """
 
     def __init__(self, dim: int, *, eps: float, device: Optional[torch.device] = None):

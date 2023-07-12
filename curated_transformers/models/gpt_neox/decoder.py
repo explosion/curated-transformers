@@ -19,7 +19,9 @@ Self = TypeVar("Self", bound="GPTNeoXDecoder")
 
 class GPTNeoXDecoder(DecoderModule, FromHFHub):
     """
-    GPT-NeoX (Black et al., 2022) decoder.
+    GPT-NeoX (`Black et al., 2022`_) decoder.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     def __init__(

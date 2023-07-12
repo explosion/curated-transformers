@@ -18,7 +18,9 @@ from .config import GPTNeoXAttentionConfig, GPTNeoXLayerConfig
 
 class GPTNeoXDecoderLayer(Module):
     """
-    GPT-NeoX (Black et al., 2022) decoder layer.
+    GPT-NeoX (`Black et al., 2022`_) decoder layer.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     def __init__(

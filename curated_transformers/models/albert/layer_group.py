@@ -12,7 +12,9 @@ from .config import ALBERTLayerConfig
 
 class ALBERTLayerGroup(Module):
     """
-    ALBERT (Lan et al., 2022) layer group.
+    ALBERT (`Lan et al., 2022`_) layer group.
+
+    .. _Lan et al., 2022: https://arxiv.org/abs/1909.11942
     """
 
     def __init__(
@@ -33,10 +35,10 @@ class ALBERTLayerGroup(Module):
 
     def forward(self, input: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
-        Apply the ALBERT layer group to the input.
+        Apply the ALBERT layer group to the given piece hidden representations.
 
         :param input:
-            Embeddings to apply the layer group to.
+            Hidden representations to apply the layer group to.
 
             *Shape:* ``(batch_size, seq_len, width)``
         :param attention_mask:

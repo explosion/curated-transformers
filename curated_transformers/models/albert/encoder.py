@@ -18,7 +18,9 @@ Self = TypeVar("Self", bound="ALBERTEncoder")
 
 class ALBERTEncoder(EncoderModule, FromHFHub):
     """
-    ALBERT (Lan et al., 2022) encoder.
+    ALBERT (`Lan et al., 2022`_) encoder.
+
+    .. _Lan et al., 2022: https://arxiv.org/abs/1909.11942
     """
 
     def __init__(self, config: ALBERTConfig, *, device: Optional[torch.device] = None):

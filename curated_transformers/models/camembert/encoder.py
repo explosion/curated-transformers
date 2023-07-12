@@ -8,7 +8,9 @@ from ..roberta.encoder import RoBERTaEncoder
 
 class CamemBERTEncoder(RoBERTaEncoder):
     """
-    CamemBERT (Martin et al., 2020) encoder.
+    CamemBERT (`Martin et al., 2020`_) encoder.
+
+    .. _Martin et al., 2020: https://arxiv.org/abs/1911.03894
     """
 
     def __init__(self, config: RoBERTaConfig, *, device: Optional[torch.device] = None):

@@ -67,7 +67,9 @@ class CamemBERTPreDecoder(FairSeqPreDecoder):
 
 class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for CamemBERT (Martin et al., 2020) models.
+    Legacy tokenizer for CamemBERT (`Martin et al., 2020`_) models.
+
+    .. _Martin et al., 2020: https://arxiv.org/abs/1911.03894
     """
 
     vocab_files: Dict[str, str] = {"model": "sentencepiece.bpe.model"}

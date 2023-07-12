@@ -18,7 +18,9 @@ from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
 
 class RefinedWebModelDecoderLayer(Module):
     """
-    Refined Web Model (eg. Falcon) layer.
+    `Refined Web Model`_ (eg. Falcon) layer.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(

@@ -20,7 +20,9 @@ Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
-    GPT-NeoX (Black et al., 2022) causal language model.
+    GPT-NeoX (`Black et al., 2022`_) causal language model.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
     def __init__(

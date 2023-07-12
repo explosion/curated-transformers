@@ -245,14 +245,3 @@ def hf_hub_download(repo_id: str, filename: str, revision: str) -> str:
                 f"Couldn't reach Hugging Face Hub; using cached artifact for '{repo_id}@{revision}:{filename}'"
             )
     return resolved
-
-
-def _rename_old_hf_names(
-    params: Mapping[str, torch.Tensor],
-) -> Mapping[str, torch.Tensor]:
-    out = {}
-    for name, parameter in params.items():
-        name = re.sub(r"\.gamma$", ".weight", name)
-        name = re.sub(r"\.beta$", ".bias", name)
-        out[name] = parameter
-    return out

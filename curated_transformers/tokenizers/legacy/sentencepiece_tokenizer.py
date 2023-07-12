@@ -9,7 +9,9 @@ from .legacy_tokenizer import LegacyTokenizer
 
 class SentencePieceTokenizer(LegacyTokenizer):
     """
-    Piece tokenizer using SentencePiece encoding (Kudo et al., 2018)
+    Piece tokenizer using SentencePiece encoding (`Kudo et al., 2018`_).
+
+    .. _Kudo et al., 2018: https://arxiv.org/abs/1808.06226
     """
 
     def __init__(

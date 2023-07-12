@@ -13,7 +13,10 @@ Self = TypeVar("Self", bound="ByteBPETokenizer")
 class ByteBPETokenizer(LegacyTokenizer):
     """
     Piece tokenizer using byte-level byte pair encoding
-    (Gage, 1994, Sennrich et al., 2016)
+    (`Gage, 1994`_, `Sennrich et al., 2016`_).
+
+    .. _Gage, 1994: https://dl.acm.org/doi/10.5555/177910.177914
+    .. _Sennrich et al., 2016: https://arxiv.org/abs/1508.07909
     """
 
     def __init__(

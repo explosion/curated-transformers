@@ -19,7 +19,9 @@ Self = TypeVar("Self", bound="RefinedWebModelDecoder")
 
 class RefinedWebModelDecoder(DecoderModule, FromHFHub):
     """
-    Refined Web Model (eg. Falcon) decoder.
+    `Refined Web Model`_ (eg. Falcon) decoder.
+
+    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(

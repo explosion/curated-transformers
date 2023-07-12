@@ -194,7 +194,9 @@ class BERTNormalizer(Normalizer):
 
 class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for BERT (Devlin et al., 2018) models.
+    Legacy tokenizer for BERT (`Devlin et al., 2018`_) models.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     vocab_files: Dict[str, str] = {"vocab": "vocab.txt"}

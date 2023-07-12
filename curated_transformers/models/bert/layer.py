@@ -11,7 +11,9 @@ from .config import BERTAttentionConfig, BERTLayerConfig
 
 class BERTEncoderLayer(Module):
     """
-    BERT (Devlin et al., 2018) encoder layer.
+    BERT (`Devlin et al., 2018`_) encoder layer.
+
+    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
     def __init__(
@@ -52,10 +54,10 @@ class BERTEncoderLayer(Module):
 
     def forward(self, input: Tensor, attention_mask: AttentionMask) -> Tensor:
         """
-        Apply the BERT encoder layer to the input.
+        Apply the BERT encoder layer to the given piece hidden representations.
 
         :param input:
-            Embeddings to apply the layer to.
+            Hidden representations to apply the layer to.
 
             *Shape:* ``(batch_size, seq_len, width)``
         :param attention_mask:

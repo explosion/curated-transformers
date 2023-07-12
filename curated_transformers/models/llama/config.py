@@ -4,7 +4,9 @@ from dataclasses import dataclass
 @dataclass
 class LLaMAAttentionConfig:
     """
-    LLaMA (Touvron et al., 2023) attention configuration.
+    LLaMA (`Touvron et al., 2023`_) attention configuration.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     dropout_prob: float
@@ -46,7 +48,9 @@ class LLaMAAttentionConfig:
 @dataclass
 class LLaMAEmbeddingConfig:
     """
-    LLaMA (Touvron et al., 2023) embedding configuration.
+    LLaMA (`Touvron et al., 2023`_) embedding configuration.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     dropout_prob: float
@@ -82,7 +86,9 @@ class LLaMAEmbeddingConfig:
 @dataclass
 class LLaMALayerConfig:
     """
-    LLaMA (Touvron et al., 2023) layer configuration.
+    LLaMA (`Touvron et al., 2023`_) layer configuration.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     dropout_prob: float
@@ -130,7 +136,9 @@ class LLaMALayerConfig:
 
 class LLaMAConfig:
     """
-    LLaMA (Touvron et al., 2023) model configuration.
+    LLaMA (`Touvron et al., 2023`_) model configuration.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     attention: LLaMAAttentionConfig

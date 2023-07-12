@@ -19,7 +19,9 @@ from .config import LLaMAAttentionConfig, LLaMALayerConfig
 
 class LLaMADecoderLayer(Module):
     """
-    LLaMa (Touvron et al., 2023) decoder layer.
+    LLaMa (`Touvron et al., 2023`_) decoder layer.
+
+    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
     def __init__(

@@ -118,11 +118,11 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         """
         Construct a tokenizer from vocabulary and merge files.
 
-        :params model_path:
+        :param model_path:
             Path to the SentencePiece model file.
-        :params bos_piece:
+        :param bos_piece:
             The piece to use to mark the beginning of a sequence.
-        :params eos_piece:
+        :param eos_piece:
             The piece to use to mark the end of a sequence.
         """
         processor = SentencePieceProcessor.from_file(str(model_path))

@@ -4,9 +4,9 @@ import torch
 from torch import Tensor
 from torch.nn import Module, ModuleList
 
-from ...layers.attention import AttentionMask
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode
+from ...layers.encoder import EncoderLayer
 from ..bert.config import BERTAttentionConfig
-from ..bert.layer import BERTAttentionConfig, BERTEncoderLayer
 from .config import ALBERTLayerConfig
 
 
@@ -28,7 +28,20 @@ class ALBERTLayerGroup(Module):
 
         self.group_layers = ModuleList(
             [
-                BERTEncoderLayer(layer_config, attention_config, device=device)
+                EncoderLayer(
+                    attention_dropout=attention_config.dropout_prob,
+                    hidden_act=layer_config.hidden_act,
+                    hidden_dropout=layer_config.dropout_prob,
+                    hidden_width=layer_config.hidden_width,
+                    intermediate_width=layer_config.intermediate_width,
+                    layer_norm_eps=layer_config.layer_norm_eps,
+                    num_attention_heads=attention_config.num_attention_heads,
+                    qkv_head_sharing=QkvHeadSharing.NONE,
+                    qkv_mode=QkvMode.SEPARATE,
+                    rotary_embeds=None,
+                    use_bias=True,
+                    device=device,
+                )
                 for _ in range(layer_config.inner_group_num)
             ]
         )

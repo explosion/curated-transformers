@@ -3,8 +3,8 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 import torch
 from torch import Tensor
 
-from ...layers.attention import AttentionMask
-from ..bert.layer import BERTEncoderLayer
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode
+from ...layers.encoder import EncoderLayer
 from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
@@ -43,7 +43,20 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(
             [
-                BERTEncoderLayer(config.layer, config.attention, device=device)
+                EncoderLayer(
+                    attention_dropout=config.attention.dropout_prob,
+                    hidden_act=config.layer.hidden_act,
+                    hidden_dropout=config.layer.dropout_prob,
+                    hidden_width=config.layer.hidden_width,
+                    intermediate_width=config.layer.intermediate_width,
+                    layer_norm_eps=config.layer.layer_norm_eps,
+                    num_attention_heads=config.attention.num_attention_heads,
+                    qkv_head_sharing=QkvHeadSharing.NONE,
+                    qkv_mode=QkvMode.SEPARATE,
+                    rotary_embeds=None,
+                    use_bias=True,
+                    device=device,
+                )
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )

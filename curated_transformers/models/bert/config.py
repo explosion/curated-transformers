@@ -109,18 +109,18 @@ class BERTLayerConfig:
         dropout_prob: float = 1.0,
     ) -> None:
         """
-        :params hidden_width:
+        :param hidden_width:
             Hidden width of the transformer.
-        :params intermediate_width:
+        :param intermediate_width:
             Intermediate width in the feed-forward layer.
-        :params num_hidden_layers:
+        :param num_hidden_layers:
             Number of hidden layers.
-        :params hidden_act:
+        :param hidden_act:
             Activation used by the feed-forward layers.
             Applied on the intermediate representation.
-        :params layer_norm_eps:
+        :param layer_norm_eps:
             Epsilon for layer normalization.
-        :params dropout_prob:
+        :param dropout_prob:
             Dropout probabilty to apply after hidden layers.
         """
         self.hidden_width = hidden_width

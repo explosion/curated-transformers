@@ -40,10 +40,11 @@ if _check_scipy_presence():
     except ImportError:
         bitsandbytes = None  # type: ignore
         has_bitsandbytes = False
-elif _check_bnb_presence():
-    warnings.warn(
-        "The `bitsandbytes` library is installed but its dependency "
-        "`scipy` isn't. Please install `scipy` to correctly load `bitsandbytes`."
-    )
+else:
+    if _check_bnb_presence():
+        warnings.warn(
+            "The `bitsandbytes` library is installed but its dependency "
+            "`scipy` isn't. Please install `scipy` to correctly load `bitsandbytes`."
+        )
     bitsandbytes = None  # type: ignore
     has_bitsandbytes = False

@@ -7,6 +7,10 @@ Architectures
 These modules represent the supported causal LM architectures. Generally, every 
 decoder-only architecture has a corresponding causal LM architecture.
 
+.. autoclass:: curated_transformers.models.module.CausalLMModule
+   :members:
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.models.GPTNeoXCausalLM
    :members:
    :show-inheritance:

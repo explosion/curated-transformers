@@ -16,7 +16,9 @@ from .feedforward import PointwiseFeedForward
 
 class EncoderLayer(Module):
     """
-    Transformer encoder layer (Vaswani et al., 2017).
+    Transformer encoder layer (`Vaswani et al., 2017`_).
+
+    .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
     def __init__(
@@ -43,7 +45,7 @@ class EncoderLayer(Module):
         :param hidden_act:
             Activation used by the feed-forward layers.
             Applied on the intermediate representation.
-            See :class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
+            See :py:class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
             for supported activations.
         :param hidden_dropout:
             Dropout probabilty to apply after hidden layers.

@@ -95,6 +95,8 @@ class GPTNeoXDecoderLayer(Module):
             Whether to cache the key/value representations for future reuse.
         :returns:
             Layer output and the key/value cache.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         attn_out, cache = self.mha(
             self.input_layer_norm(input),

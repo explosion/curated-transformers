@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar
 
 import torch
@@ -5,21 +6,28 @@ from torch import Tensor
 
 from ..layers.cache import CacheProtocol
 
+CacheT = TypeVar("CacheT", bound=CacheProtocol)
+
 
 @torch.jit.script
 class ModelOutput:
     """
     Base class for model outputs.
+
+    :param all_outputs:
+        The first element is the output of the embedding layer. The
+        rest of the elements are the states of each encoder hidden
+        layer respectively.
     """
 
-    # The first element is the output of the embedding layer with shape (batch, seq, width).
-    # The rest of the elements are the states of each encoder hidden layer respectively with shape (batch, seq, width).
     all_outputs: List[Tensor]
 
     def __init__(
         self, *, embedding_output: Tensor, layer_hidden_states: List[Tensor]
     ) -> None:
         """
+        Construct model output.
+
         :param embedding_output:
             Output of the embedding layer.
         :param layer_hidden_states:
@@ -37,7 +45,7 @@ class ModelOutput:
         :returns:
             Embedding layer output.
 
-            *Shape:* ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return self.all_outputs[0]
 
@@ -50,7 +58,7 @@ class ModelOutput:
         :returns:
             Hidden representation of the layer.
 
-            *Shape:* ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         if 0 <= idx < len(self.all_outputs) - 1:
             return self.all_outputs[idx + 1]
@@ -68,7 +76,7 @@ class ModelOutput:
         :returns:
             Last hidden representation of the last layer.
 
-            *Shape:* ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return self.all_outputs[-1]
 
@@ -80,12 +88,9 @@ class ModelOutput:
         :returns:
             Hidden representations of all the layers.
 
-            *Shape:* ``(batch_size, seq, width)``
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         return self.all_outputs[1:]
-
-
-CacheT = TypeVar("CacheT", bound=CacheProtocol)
 
 
 class ModelOutputWithCache(Generic[CacheT], ModelOutput):
@@ -93,8 +98,8 @@ class ModelOutputWithCache(Generic[CacheT], ModelOutput):
     Output of decoder modules.
 
     :param cache:
-        Model cache. The cache can be used with future calls to
-        a model to reuse computations for efficiency.
+        Model cache. The cache can be used with future calls
+        to a model to reuse computations for efficiency
     """
 
     cache: Optional[List[CacheT]]
@@ -107,12 +112,21 @@ class ModelOutputWithCache(Generic[CacheT], ModelOutput):
         cache: Optional[List[CacheT]],
     ) -> None:
         """
+        Construct model output.
+
         :param embedding_output:
             Output of the embedding layer.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         :param layer_hidden_states:
             Outputs of the hidden layers.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         :param cache:
             Model cache.
+
+            The cache can be used with future calls to
+            a model to reuse computations for efficiency
         """
 
         super().__init__(
@@ -127,8 +141,6 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
 
     :param logits:
         Logits of the distributions of predicted tokens.
-
-        *Shape:* ``(batch_size, seq_len, vocab_size)``
     """
 
     logits: Tensor
@@ -142,12 +154,20 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
         cache: Optional[List[CacheT]],
     ) -> None:
         """
+        Construct model output.
+
         :param embedding_output:
             Output of the embedding layer.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         :param layer_hidden_states:
             Outputs of the hidden layers.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         :param logits:
             Logits of the distributions of predicted tokens.
+
+            *Shape:* ``(batch_size, seq_len, vocab_size)``
         :param cache:
             Model cache.
         """

@@ -58,7 +58,7 @@ class CompoundLogitTransforms(UserList, LogitsTransform):
 
 class TopKTransform(LogitsTransform):
     """
-    Set the probability of non-top-k classs to zero. The probability of
+    Set the probability of non-top-k classes to zero. The probability of
     the classes that are zeroed out is redistributed across the top-k
     classes.
     """

@@ -145,9 +145,9 @@ Loading a Tokenizer
 -------------------
 
 To train or run inference on the models, one has to tokenize the inputs with a compatible tokenizer. Curated Transformers supports 
-tokenizers implemented by the `Hugging Face tokenizers`_ library and certain model-specific tokenizers that are bundled with 
-the `Hugging Face transformers`_ library. The  class encapsulates the former and the :py:class:`~curated_transformers.tokenizers.legacy.legacy_tokenizer.LegacyTokenizer` 
-class the latter.
+tokenizers implemented by the `Hugging Face tokenizers`_ library and certain model-specific tokenizers that are implemented 
+using the `Curated Tokenizers`_ library. The :py:class:`~curated_transformers.tokenizers.tokenizer.Tokenizer` class encapsulates the 
+former and the :py:class:`~curated_transformers.tokenizers.legacy.legacy_tokenizer.LegacyTokenizer` class the latter.
 
 In both cases, one can use the :py:class:`~curated_transformers.tokenizers.auto_tokenizer.AutoTokenizer` class to automatically 
 infer the correct tokenizer type and construct a Curated Transformers tokenizer that implements the :py:class:`~curated_transformers.tokenizers.tokenizer.TokenizerBase` 
@@ -163,7 +163,7 @@ interface.
    )
 
 .. _Hugging Face tokenizers: https://github.com/huggingface/tokenizers
-.. _Hugging Face transformers: https://github.com/huggingface/transformers
+.. _Curated Tokenizers: https://github.com/explosion/curated-tokenizers
 
 
 Text Encoding
@@ -204,12 +204,12 @@ In addition to text generation, one can also run inference on the inputs to prod
       ids = input_pieces.padded_tensor(padding_id=0, pad_left=True).to(device)
       model_output = encoder(input_ids=ids)
 
-   # [batch, seq, width]
+   # [batch, seq_len, width]
    last_hidden_repr = model_output.last_hidden_layer_state
 
 
 The :py:class:`~curated_transformers.models.output.ModelOutput` instance returned by the encoder contains all of 
-transformer's outputs, i.e., the hidden representations of all transformer layers and the ouput of the embedding
+transformer's outputs, i.e., the hidden representations of all transformer layers and the output of the embedding
 layer. Decoder models (:py:class:`~curated_transformers.models.module.DecoderModule`) and causal language models 
 (:py:class:`~curated_transformers.models.module.CausalLMModule`) produce additional outputs such as the key-value 
 cache used during attention calculation (:py:class:`~curated_transformers.models.output.ModelOutputWithCache`) and 

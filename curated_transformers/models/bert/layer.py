@@ -66,6 +66,10 @@ class BERTEncoderLayer(Module):
             during attention calculation.
 
             *Shape:* ``(batch_size, seq_len)``
+        :returns:
+            Layer output.
+
+            *Shape:* ``(batch_size, seq_len, width)``
         """
         attn_out, _ = self.mha(input, attention_mask)
         attn_out = self.attn_output_dropout(attn_out)

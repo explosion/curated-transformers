@@ -1,4 +1,4 @@
-.. image:: logo.svg
+.. image:: logo.png
   :width: 100
   :align: right
   :alt: Curated Transformers logo

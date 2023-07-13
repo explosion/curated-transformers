@@ -72,7 +72,7 @@ LLaMA
    :members:
 
 Falcon
-^^^^^^^^^^^^^^^^^
+^^^^^^
 
 .. autoclass:: curated_transformers.models.falcon.config.FalconConfig
    :members:

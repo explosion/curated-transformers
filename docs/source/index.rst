@@ -1,5 +1,11 @@
-🤖 Curated Transformers
-=======================
+.. image:: logo.svg
+  :width: 100
+  :align: right
+  :alt: Curated Transformers logo
+
+
+Curated Transformers
+====================
 
 **State-of-the-art transformers, brick by brick**
 

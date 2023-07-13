@@ -1,4 +1,4 @@
-<img src="docs/source/logo.svg" width="100" align="right"/>
+<img src="docs/source/logo.png" width="100" align="right"/>
 
 # Curated Transformers
 

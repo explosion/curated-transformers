@@ -19,7 +19,7 @@ decoder-only architecture has a corresponding causal LM architecture.
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.RefinedWebModelCausalLM
+.. autoclass:: curated_transformers.models.FalconCausalLM
    :members:
    :show-inheritance:
 

@@ -23,6 +23,6 @@ def test_cannot_infer():
     # legacy tokenizer.
     with pytest.raises(ValueError, match=r"Cannot infer tokenizer for repo"):
         AutoTokenizer.from_hf_hub(
-            name="explosion-testing/refined-web-model-test",
+            name="explosion-testing/falcon-test",
             revision="235f4b64c489e33ae7e40163ab1f266bbe355651",
         )

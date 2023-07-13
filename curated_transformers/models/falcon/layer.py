@@ -13,20 +13,20 @@ from ...layers.attention import (
     SelfAttention,
 )
 from ...layers.feedforward import PointwiseFeedForward
-from .config import RefinedWebModelAttentionConfig, RefinedWebModelLayerConfig
+from .config import FalconAttentionConfig, FalconLayerConfig
 
 
-class RefinedWebModelDecoderLayer(Module):
+class FalconDecoderLayer(Module):
     """
-    `Refined Web Model`_ (eg. Falcon) layer.
+    `Falcon`_ layer.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(
         self,
-        layer_config: RefinedWebModelLayerConfig,
-        attention_config: RefinedWebModelAttentionConfig,
+        layer_config: FalconLayerConfig,
+        attention_config: FalconAttentionConfig,
         *,
         device: Optional[torch.device] = None
     ):
@@ -71,7 +71,7 @@ class RefinedWebModelDecoderLayer(Module):
         store_cache: bool = False,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
-        Apply the Refined Web Model layer to the given piece hidden representations.
+        Apply the Falcon layer to the given piece hidden representations.
 
         :param input:
             Hidden representations to apply the layer to.

@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from curated_transformers.layers.attention import AttentionMask
-from curated_transformers.models.refined_web_model.decoder import RefinedWebModelDecoder
+from curated_transformers.models.falcon.decoder import FalconDecoder
 from curated_transformers.tests.util import torch_assertclose
 
 from ...compat import has_hf_transformers, transformers
@@ -29,7 +29,7 @@ VOCAB_SIZE = 1024
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_decoder(torch_device):
     hf_model = transformers.AutoModel.from_pretrained(
-        "explosion-testing/refined-web-model-test",
+        "explosion-testing/falcon-test",
         # Safe because it is under our control.
         trust_remote_code=True,
         # Avoid warnings about trusting remote code without a revision.
@@ -38,8 +38,8 @@ def test_decoder(torch_device):
     hf_model.to(torch_device)
     hf_model.eval()
 
-    model = RefinedWebModelDecoder.from_hf_hub(
-        name="explosion-testing/refined-web-model-test", device=torch_device
+    model = FalconDecoder.from_hf_hub(
+        name="explosion-testing/falcon-test", device=torch_device
     )
     model.eval()
 
@@ -56,8 +56,8 @@ def test_decoder(torch_device):
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_decoder_with_cache(torch_device):
-    model = RefinedWebModelDecoder.from_hf_hub(
-        name="explosion-testing/refined-web-model-test", device=torch_device
+    model = FalconDecoder.from_hf_hub(
+        name="explosion-testing/falcon-test", device=torch_device
     )
     model.eval()
 

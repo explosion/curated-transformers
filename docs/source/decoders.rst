@@ -18,7 +18,7 @@ These modules represent the supported decoder-only architectures.
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.RefinedWebModelDecoder
+.. autoclass:: curated_transformers.models.FalconDecoder
    :members:
    :show-inheritance:
 
@@ -71,17 +71,17 @@ LLaMA
 .. autoclass:: curated_transformers.models.llama.config.LLaMAAttentionConfig
    :members:
 
-Refined Web Model
+Falcon
 ^^^^^^^^^^^^^^^^^
 
-.. autoclass:: curated_transformers.models.refined_web_model.config.RefinedWebModelConfig
+.. autoclass:: curated_transformers.models.falcon.config.FalconConfig
    :members:
 
-.. autoclass:: curated_transformers.models.refined_web_model.config.RefinedWebModelLayerConfig
+.. autoclass:: curated_transformers.models.falcon.config.FalconLayerConfig
    :members:
 
-.. autoclass:: curated_transformers.models.refined_web_model.config.RefinedWebModelEmbeddingConfig
+.. autoclass:: curated_transformers.models.falcon.config.FalconEmbeddingConfig
    :members:
 
-.. autoclass:: curated_transformers.models.refined_web_model.config.RefinedWebModelAttentionConfig
+.. autoclass:: curated_transformers.models.falcon.config.FalconAttentionConfig
    :members:

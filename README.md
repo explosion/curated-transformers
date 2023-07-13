@@ -1,4 +1,6 @@
-# 🤖 Curated Transformers
+<img src="docs/source/logo.svg" width="100" align="right"/>
+
+# Curated Transformers
 
 [![Documentation Status](https://readthedocs.org/projects/button/badge/?version=latest)](https://curated-transformers.readthedocs.io/en/latest/?badge=latest)
 [![pypi Version](https://img.shields.io/pypi/v/curated-transformers.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/curated-transformers/)

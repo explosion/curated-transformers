@@ -4,10 +4,10 @@ from curated_transformers.models import (
     ALBERTEncoder,
     BERTEncoder,
     CamemBERTEncoder,
+    FalconCausalLM,
+    FalconDecoder,
     GPTNeoXCausalLM,
     GPTNeoXDecoder,
-    RefinedWebModelCausalLM,
-    RefinedWebModelDecoder,
     RoBERTaEncoder,
     XLMREncoder,
 )
@@ -32,12 +32,12 @@ def test_auto_encoder():
         assert isinstance(encoder, encoder_cls)
 
     with pytest.raises(ValueError, match="Unsupported model type"):
-        AutoEncoder.from_hf_hub(name="explosion-testing/refined-web-model-test")
+        AutoEncoder.from_hf_hub(name="explosion-testing/falcon-test")
 
 
 def test_auto_decoder():
     model_decoder_map = {
-        "explosion-testing/refined-web-model-test": RefinedWebModelDecoder,
+        "explosion-testing/falcon-test": FalconDecoder,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM": GPTNeoXDecoder,
     }
 
@@ -51,7 +51,7 @@ def test_auto_decoder():
 
 def test_auto_causal_lm():
     model_causallm_map = {
-        "explosion-testing/refined-web-model-test": RefinedWebModelCausalLM,
+        "explosion-testing/falcon-test": FalconCausalLM,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM": GPTNeoXCausalLM,
     }
 

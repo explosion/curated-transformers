@@ -11,25 +11,25 @@ from ..hf_hub import FromHFHub
 from ..module import CausalLMModule
 from ..output import CausalLMOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import RefinedWebModelConfig
-from .decoder import RefinedWebModelDecoder
+from .config import FalconConfig
+from .decoder import FalconDecoder
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="RefinedWebModelCausalLM")
+Self = TypeVar("Self", bound="FalconCausalLM")
 
 
-class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
+class FalconCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
-    `Refined Web Model`_ (eg. Falcon) causal language model.
+    `Falcon`_ causal language model.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(
-        self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
+        self, config: FalconConfig, *, device: Optional[torch.device] = None
     ) -> None:
         """
-        Construct a Refined Web Model causal LM.
+        Construct a Falcon causal LM.
 
         :param config:
             Causal LM configuration.
@@ -40,7 +40,7 @@ class RefinedWebModelCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantiza
         """
         super().__init__()
 
-        self.decoder = RefinedWebModelDecoder(config, device=device)
+        self.decoder = FalconDecoder(config, device=device)
         self.output_embeddings = Linear(
             in_features=config.layer.hidden_width,
             out_features=config.embedding.vocab_size,

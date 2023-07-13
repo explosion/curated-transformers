@@ -10,25 +10,25 @@ from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import RefinedWebModelConfig
-from .layer import RefinedWebModelDecoderLayer
+from .config import FalconConfig
+from .layer import FalconDecoderLayer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="RefinedWebModelDecoder")
+Self = TypeVar("Self", bound="FalconDecoder")
 
 
-class RefinedWebModelDecoder(DecoderModule, FromHFHub):
+class FalconDecoder(DecoderModule, FromHFHub):
     """
-    `Refined Web Model`_ (eg. Falcon) decoder.
+    `Falcon`_ decoder.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(
-        self, config: RefinedWebModelConfig, *, device: Optional[torch.device] = None
+        self, config: FalconConfig, *, device: Optional[torch.device] = None
     ) -> None:
         """
-        Construct a Refined Web Model decoder.
+        Construct a Falcon decoder.
 
         :param config:
             Decoder configuration.
@@ -46,9 +46,7 @@ class RefinedWebModelDecoder(DecoderModule, FromHFHub):
 
         self.layers = ModuleList(
             [
-                RefinedWebModelDecoderLayer(
-                    config.layer, config.attention, device=device
-                )
+                FalconDecoderLayer(config.layer, config.attention, device=device)
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )

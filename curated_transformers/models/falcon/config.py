@@ -2,11 +2,11 @@ from dataclasses import dataclass
 
 
 @dataclass
-class RefinedWebModelAttentionConfig:
+class FalconAttentionConfig:
     """
-    `Refined Web Model`_ (eg. Falcon) attention configuration.
+    `Falcon`_ attention configuration.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -56,11 +56,11 @@ class RefinedWebModelAttentionConfig:
 
 
 @dataclass
-class RefinedWebModelEmbeddingConfig:
+class FalconEmbeddingConfig:
     """
-    `Refined Web Model`_ (eg. Falcon) embedding configuration.
+    `Falcon`_ embedding configuration.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -94,11 +94,11 @@ class RefinedWebModelEmbeddingConfig:
 
 
 @dataclass
-class RefinedWebModelLayerConfig:
+class FalconLayerConfig:
     """
-    `Refined Web Model`_ (eg. Falcon) layer configuration.
+    `Falcon`_ layer configuration.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
     dropout_prob: float
@@ -136,16 +136,16 @@ class RefinedWebModelLayerConfig:
         self.use_bias = use_bias
 
 
-class RefinedWebModelConfig:
+class FalconConfig:
     """
-    `Refined Web Model`_ (eg. Falcon) model configuration.
+    `Falcon`_ model configuration.
 
-    .. _Refined Web Model: https://arxiv.org/abs/2306.01116
+    .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
-    attention: RefinedWebModelAttentionConfig
-    embedding: RefinedWebModelEmbeddingConfig
-    layer: RefinedWebModelLayerConfig
+    attention: FalconAttentionConfig
+    embedding: FalconEmbeddingConfig
+    layer: FalconLayerConfig
 
     def __init__(
         self,
@@ -191,7 +191,7 @@ class RefinedWebModelConfig:
         #       values in the future. We should check empirically if the auto
         #       resizing in rotary embeddings makes sense.
 
-        self.attention = RefinedWebModelAttentionConfig(
+        self.attention = FalconAttentionConfig(
             dropout_prob=attention_probs_dropout_prob,
             hidden_width=hidden_width,
             multi_query=multi_query,
@@ -200,13 +200,13 @@ class RefinedWebModelConfig:
             rotary_base=rotary_embedding_base,
             use_bias=use_bias,
         )
-        self.embedding = RefinedWebModelEmbeddingConfig(
+        self.embedding = FalconEmbeddingConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
             vocab_size=vocab_size,
             layer_norm_eps=layer_norm_eps,
         )
-        self.layer = RefinedWebModelLayerConfig(
+        self.layer = FalconLayerConfig(
             dropout_prob=hidden_dropout_prob,
             hidden_width=hidden_width,
             layer_norm_eps=layer_norm_eps,

@@ -2,9 +2,10 @@ import re
 from typing import Any, Mapping
 
 from torch import Tensor
+from torch.nn import parallel
 
 from ..module import DecoderModule
-from .config import RefinedWebModelConfig
+from .config import FalconConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
@@ -15,34 +16,43 @@ HF_CONFIG_KEY_MAPPING = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
     "multi_query": "multi_query",
-    "n_head": "num_attention_heads",
-    "n_layer": "num_hidden_layers",
+    "num_attention_heads": "num_attention_heads",
+    "num_hidden_layers": "num_hidden_layers",
     "bias": "use_bias",
     "vocab_size": "vocab_size",
 }
 
 
-def convert_hf_config(hf_config: Any) -> RefinedWebModelConfig:
+def convert_hf_config(hf_config: Any) -> FalconConfig:
     missing_keys = tuple(
         sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
     )
     if len(missing_keys) != 0:
-        raise ValueError(
-            f"Missing keys in Hugging Face Refined Web Model config: {missing_keys}"
-        )
+        raise ValueError(f"Missing keys in Hugging Face Falcon config: {missing_keys}")
 
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     # Handle config options that are not set in all models.
     kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
 
-    if "parallel_attn" in hf_config and not hf_config["parallel_attn"]:
+    parallel_attention = hf_config.get("parallel_attn", True)
+
+    # When new_decoder_architecture is set, the multi_query and parallel_attn
+    # options in the configuration are ignored and set to True.
+    if (
+        "new_decoder_architecture" in hf_config
+        and hf_config["new_decoder_architecture"]
+    ):
+        kwargs["multi_query"] = True
+        parallel_attention = True
+
+    if not parallel_attention:
         raise ValueError(
-            "Refined Web Models without parallel attention are currently not supported"
+            "Falcon models without parallel attention are currently not supported"
         )
     if "alibi" in hf_config and hf_config["alibi"]:
-        raise ValueError("Refined Web Models with ALiBi are currently not supported")
+        raise ValueError("Falcon models with ALiBi are currently not supported")
 
-    return RefinedWebModelConfig(
+    return FalconConfig(
         rotary_embedding_base=10000,
         rotary_embedding_fraction=1.0,
         **kwargs,

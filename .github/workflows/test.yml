@@ -92,7 +92,7 @@ jobs:
           python -m pip install '${{ env.hf-transformers-pip }}'
         shell: bash
 
-      # Upstream Refined Web Model imports this, but doesn't use it. 😭
+      # Upstream Falcon imports this, but doesn't use it. 😭
       - name: Install einops
         run: |
           python -m pip install einops

@@ -116,6 +116,8 @@ class AutoDecoder(AutoModel[DecoderModule]):
         "gpt_neox": GPTNeoXDecoder,
         "llama": LLaMADecoder,
         "falcon": FalconDecoder,
+        "RefinedWeb": FalconDecoder,
+        "RefinedWebModel": FalconDecoder,
     }
 
     @classmethod
@@ -143,6 +145,8 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         "gpt_neox": GPTNeoXCausalLM,
         "llama": LLaMACausalLM,
         "falcon": FalconCausalLM,
+        "RefinedWeb": FalconCausalLM,
+        "RefinedWebModel": FalconCausalLM,
     }
 
     @classmethod

@@ -12,20 +12,26 @@ HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 
+# There are multiple versions of Falcon with different names
+# for the same options.
+HF_CONFIG_KEY_MAPPING_WITH_COMPAT = {
+    frozenset({"num_attention_heads", "n_head"}): "num_attention_heads",
+    frozenset({"num_hidden_layers", "n_layer"}): "num_hidden_layers",
+}
+
 HF_CONFIG_KEY_MAPPING = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
     "multi_query": "multi_query",
-    "num_attention_heads": "num_attention_heads",
-    "num_hidden_layers": "num_hidden_layers",
     "bias": "use_bias",
     "vocab_size": "vocab_size",
 }
 
 
 def convert_hf_config(hf_config: Any) -> FalconConfig:
+    hf_config_keys = set(hf_config.keys())
     missing_keys = tuple(
-        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
+        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(hf_config_keys))
     )
     if len(missing_keys) != 0:
         raise ValueError(f"Missing keys in Hugging Face Falcon config: {missing_keys}")
@@ -33,6 +39,16 @@ def convert_hf_config(hf_config: Any) -> FalconConfig:
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     # Handle config options that are not set in all models.
     kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
+
+    for hf_keys, curated in HF_CONFIG_KEY_MAPPING_WITH_COMPAT.items():
+        key_overlap = list(hf_keys.intersection(hf_config_keys))
+        if not key_overlap:
+            raise ValueError(
+                f"Hugging Face Falcon config must contain one of: {', '.join(sorted(hf_keys))}"
+            )
+        # Ideally, we'd check that we only have one overlapping key, but
+        # I bet that someone will then add both keys 'just to be sure'.
+        kwargs[curated] = hf_config[key_overlap[0]]
 
     parallel_attention = hf_config.get("parallel_attn", True)
 

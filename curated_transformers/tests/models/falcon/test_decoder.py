@@ -28,7 +28,7 @@ VOCAB_SIZE = 1024
 FALCON_TEST_MODELS = [
     (
         "explosion-testing/falcon-no-parallel-attn-test",
-        "54e8cc90bd51c1caf2177d7222e14f3b9a29ff24",
+        "f9122de6cafad10159af214786fa11b89cc37a89",
     ),
     ("explosion-testing/falcon-test", "24ff3d5fd83b4d174888356f20e61349f6cbf467"),
     (

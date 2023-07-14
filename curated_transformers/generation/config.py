@@ -21,21 +21,24 @@ class GeneratorConfig(ABC):
     """
     Configuration of the generator.
 
+    :param default_logits_transform:
+        The logits transform that are unconditionally applied to all
+        generations. Usually multiple composed transforms, can be
+        empty.
     :param eos_id:
         End-of-sequence identifier that should end the generation of a sequence
         when predicted. When this value is set to `None`, it is the
         responsibility of the generator to set it.
-
     :param max_generated_pieces:
         The maximum number of generation steps. This condition is a noop
         for values less than 1. When this value is set to `None`, it is the
         responsibility of the generator to set it.
     """
 
+    default_logits_transform: LogitsTransform = CompoundLogitTransforms([])
     eos_id: Optional[int] = None
     max_generated_pieces: Optional[int] = None
 
-    @abstractmethod
     def logits_transform(self) -> LogitsTransform:
         """
         Get logit transform for the configuration.
@@ -43,7 +46,7 @@ class GeneratorConfig(ABC):
         :returns:
             Logits transform. Usually multiple composed transforms.
         """
-        ...
+        return self.default_logits_transform
 
     def stop_condition(self) -> StopCondition:
         """
@@ -70,6 +73,7 @@ class GeneratorConfig(ABC):
         return conditions
 
 
+@dataclass
 class GreedyGeneratorConfig(GeneratorConfig):
     """
     Configuration for greedy generation.
@@ -78,8 +82,7 @@ class GreedyGeneratorConfig(GeneratorConfig):
     to deterministic generation.
     """
 
-    def logits_transform(self) -> LogitsTransform:
-        return CompoundLogitTransforms([])
+    pass
 
 
 @dataclass
@@ -108,6 +111,7 @@ class SampleGeneratorConfig(GeneratorConfig):
     def logits_transform(self) -> LogitsTransform:
         return CompoundLogitTransforms(
             [
+                self.default_logits_transform,
                 TemperatureTransform(self.temperature),
                 TopKTransform(self.top_k),
             ]

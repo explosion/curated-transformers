@@ -124,7 +124,8 @@ class Generator(Generic[CacheT]):
         logits_transform: LogitsTransform,
         output: CausalLMOutputWithCache[CacheT],
     ) -> Tensor:
-        return output.logits[:, -1:, :].argmax(-1)
+        logits = logits_transform(output.logits[:, -1:, :], inplace=True)
+        return logits.argmax(-1)
 
     def _decode_sample(
         self, logits_transform: LogitsTransform, output: CausalLMOutputWithCache[CacheT]

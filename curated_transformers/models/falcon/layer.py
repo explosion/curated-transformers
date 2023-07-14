@@ -32,6 +32,8 @@ class FalconDecoderLayer(Module):
     ):
         super().__init__()
 
+        self.parallel_attention = attention_config.parallel_attention
+
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=attention_config.hidden_width,
@@ -43,14 +45,23 @@ class FalconDecoderLayer(Module):
                 base=attention_config.rotary_base,
                 fraction=attention_config.rotary_fraction,
             ),
-            qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
+            qkv_mode=QkvMode.MERGED_SPLIT_AFTER
+            if attention_config.multi_query
+            else QkvMode.MERGED_SPLIT_BEFORE,
             use_bias=attention_config.use_bias,
             device=device,
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
-        self.input_layer_norm = torch.nn.LayerNorm(
+        self.attn_layer_norm = torch.nn.LayerNorm(
             layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
+
+        if not self.parallel_attention:
+            self.ffn_layer_norm = torch.nn.LayerNorm(
+                layer_config.hidden_width,
+                eps=layer_config.layer_norm_eps,
+                device=device,
+            )
 
         self.ffn = PointwiseFeedForward(
             hidden_act="gelu",
@@ -96,18 +107,28 @@ class FalconDecoderLayer(Module):
         :returns:
             Layer output and the key/value cache.
         """
-        # NOTE: we currently only support parallel attention.
-        input_layer_norm = self.input_layer_norm(input)
+        residual = input
+
+        attn_layer_norm = self.attn_layer_norm(input)
 
         attn_out, cache = self.mha(
-            input_layer_norm,
+            attn_layer_norm,
             attention_mask,
             cache=cache,
             store_cache=store_cache,
             positions=positions,
             use_causal_mask=True,
         )
-        attn_out = self.attn_output_dropout(attn_out)
 
-        ffn_out = self.ffn(input_layer_norm)
-        return self.ffn_output_dropout(ffn_out + attn_out) + input, cache
+        if self.parallel_attention:
+            ffn_layer_norm = attn_layer_norm
+        else:
+            residual = residual + self.attn_output_dropout(attn_out)
+            ffn_layer_norm = self.ffn_layer_norm(residual)
+
+        ffn_out = self.ffn(ffn_layer_norm)
+
+        if self.parallel_attention:
+            ffn_out += attn_out
+
+        return residual + self.ffn_output_dropout(ffn_out), cache

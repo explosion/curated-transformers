@@ -13,6 +13,7 @@ class FalconAttentionConfig:
     hidden_width: int
     multi_query: bool
     num_attention_heads: int
+    parallel_attention: bool
     rotary_fraction: float
     rotary_base: int
     use_bias: bool
@@ -24,6 +25,7 @@ class FalconAttentionConfig:
         hidden_width: int = 2560,
         multi_query: bool = True,
         num_attention_heads: int = 71,
+        parallel_attention: bool = True,
         rotary_base=10000,
         rotary_fraction=0.25,
         use_bias: bool = False,
@@ -37,6 +39,8 @@ class FalconAttentionConfig:
             Use multiple query heads and single key and value heads.
         :param num_attention_heads:
             Number of attention heads.
+        :param parallel_attention:
+            Use parallel attention.
         :param rotary_base:
             Base in signifying the rotary embedding period.
         :param rotary_fraction:
@@ -50,6 +54,7 @@ class FalconAttentionConfig:
         self.hidden_width = hidden_width
         self.multi_query = multi_query
         self.num_attention_heads = num_attention_heads
+        self.parallel_attention = parallel_attention
         self.rotary_base = rotary_base
         self.rotary_fraction = rotary_fraction
         self.use_bias = use_bias
@@ -157,6 +162,7 @@ class FalconConfig:
         multi_query: bool = True,
         num_attention_heads: int = 71,
         num_hidden_layers: int = 32,
+        parallel_attention: bool = True,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
         use_bias: bool = False,
@@ -175,6 +181,8 @@ class FalconConfig:
             Use multiple query heads and single key and value heads.
         :param num_hidden_layers:
             Number of hidden layers.
+        :param parallel_attention:
+            Use parallel attention.
         :param rotary_embedding_base:
             Base in signifying the rotary embedding period.
         :param rotary_embedding_fraction:
@@ -196,6 +204,7 @@ class FalconConfig:
             hidden_width=hidden_width,
             multi_query=multi_query,
             num_attention_heads=num_attention_heads,
+            parallel_attention=parallel_attention,
             rotary_fraction=rotary_embedding_fraction,
             rotary_base=rotary_embedding_base,
             use_bias=use_bias,

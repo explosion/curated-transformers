@@ -2,7 +2,6 @@ import re
 from typing import Any, Mapping
 
 from torch import Tensor
-from torch.nn import parallel
 
 from ..module import DecoderModule
 from .config import FalconConfig
@@ -23,6 +22,7 @@ HF_CONFIG_KEY_MAPPING = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
     "multi_query": "multi_query",
+    "parallel_attn": "parallel_attention",
     "bias": "use_bias",
     "vocab_size": "vocab_size",
 }
@@ -50,21 +50,16 @@ def convert_hf_config(hf_config: Any) -> FalconConfig:
         # I bet that someone will then add both keys 'just to be sure'.
         kwargs[curated] = hf_config[key_overlap[0]]
 
-    parallel_attention = hf_config.get("parallel_attn", True)
-
     # When new_decoder_architecture is set, the multi_query and parallel_attn
     # options in the configuration are ignored and set to True.
     if (
         "new_decoder_architecture" in hf_config
         and hf_config["new_decoder_architecture"]
     ):
+        # TODO: use num_kv_heads instead
         kwargs["multi_query"] = True
-        parallel_attention = True
+        kwargs["parallel_attention"] = True
 
-    if not parallel_attention:
-        raise ValueError(
-            "Falcon models without parallel attention are currently not supported"
-        )
     if "alibi" in hf_config and hf_config["alibi"]:
         raise ValueError("Falcon models with ALiBi are currently not supported")
 
@@ -110,7 +105,8 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
         name = re.sub(r"\.dense_4h_to_h", r".output", name)
 
         # Layer norms
-        name = re.sub(r"\.input_layernorm", r".input_layer_norm", name)
+        name = re.sub(r"\.input_layernorm", r".attn_layer_norm", name)
+        name = re.sub(r"\.post_attention_layernorm", r".ffn_layer_norm", name)
         name = re.sub(r"ln_f\.", r"output_layer_norm.", name)
 
         # Embeddings

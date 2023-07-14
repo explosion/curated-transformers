@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import UserList
+from typing import Iterable, List
 
 import torch
 from torch import Tensor
@@ -68,7 +69,7 @@ class TopKTransform(LogitsTransform):
         Construct a top-k logits transform.
 
         :param k:
-            The value of k in top-k. The transform is a noop for values
+            The value of k in top-k. The transform is a no-op for values
             less than 1.
         """
         super().__init__()
@@ -121,3 +122,43 @@ class TemperatureTransform(LogitsTransform):
             return
 
         logits /= self.temperature
+
+
+class MaskTransform(LogitsTransform):
+    """
+    Set the probability of specific classes to zero.
+    """
+
+    def __init__(self, classes_to_mask: List[int]):
+        """
+        Construct a mask logits transform.
+
+        :param classes_to_mask:
+            Identifers pertaining to the classes that need to be masked.
+            An empty list results in a no-op.
+        """
+        super().__init__()
+        self.classes_to_mask = torch.tensor(
+            classes_to_mask, dtype=torch.long
+        )  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
+        if self.classes_to_mask.dim() != 1:
+            raise ValueError("Class selector tensor for mask transform must be 1D")
+        elif (
+            self.classes_to_mask.size(dim=-1) != 0
+            and int(self.classes_to_mask.min(dim=-1).values) < 0
+        ):
+            raise ValueError("Class indentifiers for mask transform must be >= 0")
+
+    def _process_logits(self, logits: Tensor):
+        if self.classes_to_mask.size(dim=-1) == 0:
+            return
+
+        max_expected = logits.size(dim=-1)
+        max_received = int(self.classes_to_mask.max(dim=-1).values)
+        if max_received >= max_expected:
+            raise ValueError(
+                f"Class identifiers for mask transform must be < {max_expected}, but got {max_received}"
+            )
+
+        mask = torch.finfo(logits.dtype).min
+        logits[..., self.classes_to_mask] = mask

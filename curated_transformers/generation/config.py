@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from abc import ABC
+from dataclasses import dataclass, field
 from typing import Optional
 
 from .logits import (
@@ -35,7 +35,9 @@ class GeneratorConfig(ABC):
         responsibility of the generator to set it.
     """
 
-    default_logits_transform: LogitsTransform = CompoundLogitTransforms([])
+    default_logits_transform: LogitsTransform = field(
+        default_factory=CompoundLogitTransforms
+    )
     eos_id: Optional[int] = None
     max_generated_pieces: Optional[int] = None
 

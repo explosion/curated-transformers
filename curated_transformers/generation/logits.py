@@ -139,28 +139,28 @@ class VocabMaskTransform(LogitsTransform):
         """
         super().__init__()
 
-        self.classes_to_mask = torch.tensor(
+        self.pieces_to_mask = torch.tensor(
             list(pieces_to_mask), dtype=torch.long
         )  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
 
-        if self.classes_to_mask.dim() != 1:
+        if self.pieces_to_mask.dim() != 1:
             raise ValueError("Vocabulary piece mask must be 1D")
         elif (
-            self.classes_to_mask.size(dim=-1) != 0
-            and int(self.classes_to_mask.min(dim=-1).values) < 0
+            self.pieces_to_mask.size(dim=-1) != 0
+            and int(self.pieces_to_mask.min(dim=-1).values) < 0
         ):
             raise ValueError("Vocabulary piece identifiers must be >= 0")
 
     def _process_logits(self, logits: Tensor):
-        if self.classes_to_mask.size(dim=-1) == 0:
+        if self.pieces_to_mask.size(dim=-1) == 0:
             return
 
         try:
             mask = torch.finfo(logits.dtype).min
-            logits[..., self.classes_to_mask] = mask
+            logits[..., self.pieces_to_mask] = mask
         except IndexError:
             max_expected = logits.size(dim=-1)
-            max_received = int(self.classes_to_mask.max(dim=-1).values)
+            max_received = int(self.pieces_to_mask.max(dim=-1).values)
             if max_received >= max_expected:
                 raise ValueError(
                     f"Vocabulary piece identifiers must be < {max_expected}, but got {max_received}"

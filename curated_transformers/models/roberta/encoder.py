@@ -1,10 +1,12 @@
+from functools import partial
 from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
+from torch.nn import LayerNorm
 
 from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode
-from ...layers.encoder import EncoderLayer
+from ...layers.transformer import EncoderLayer, TransformerLayerNorms
 from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
@@ -41,6 +43,13 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
         )
         self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
+
+        layer_norm = partial(
+            LayerNorm,
+            config.layer.hidden_width,
+            config.layer.layer_norm_eps,
+            device=device,
+        )
         self.layers = torch.nn.ModuleList(
             [
                 EncoderLayer(
@@ -49,12 +58,17 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
                     hidden_dropout=config.layer.dropout_prob,
                     hidden_width=config.layer.hidden_width,
                     intermediate_width=config.layer.intermediate_width,
-                    layer_norm_eps=config.layer.layer_norm_eps,
+                    layer_norms=TransformerLayerNorms(
+                        attn_residual_layer_norm=layer_norm(),
+                        ffn_residual_layer_norm=layer_norm(),
+                    ),
                     num_attention_heads=config.attention.num_attention_heads,
+                    parallel_attention=False,
                     qkv_head_sharing=QkvHeadSharing.NONE,
                     qkv_mode=QkvMode.SEPARATE,
                     rotary_embeds=None,
                     use_bias=True,
+                    use_gate=False,
                     device=device,
                 )
                 for _ in range(config.layer.num_hidden_layers)
@@ -78,7 +92,7 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
 
         layer_outputs = []
         for layer in self.layers:
-            layer_output = layer(layer_output, attention_mask)
+            layer_output, _ = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
         return ModelOutput(

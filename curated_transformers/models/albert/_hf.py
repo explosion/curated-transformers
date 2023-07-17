@@ -80,7 +80,7 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
 
         # Attention blocks.
         name = re.sub(r"\.attention\.", ".mha.", name)
-        name = re.sub(r"\.mha\.LayerNorm", r".attn_output_layernorm", name)
+        name = re.sub(r"\.mha\.LayerNorm", r".attn_residual_layer_norm", name)
         name = re.sub(r"\.mha\.dense\.", r".mha.output.", name)
 
         # Pointwise feed-forward layers.
@@ -88,7 +88,7 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         name = re.sub(r"\.ffn_output\.", r".ffn.output.", name)
         name = re.sub(
             r"\.full_layer_layer_norm\.",
-            r".ffn_output_layernorm.",
+            r".ffn_residual_layer_norm.",
             name,
         )
 

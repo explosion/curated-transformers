@@ -1,11 +1,12 @@
+from functools import partial
 from typing import Optional
 
 import torch
 from torch import Tensor
-from torch.nn import Module, ModuleList
+from torch.nn import LayerNorm, Module, ModuleList
 
 from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode
-from ...layers.encoder import EncoderLayer
+from ...layers.transformer import EncoderLayer, TransformerLayerNorms
 from ..bert.config import BERTAttentionConfig
 from .config import ALBERTLayerConfig
 
@@ -26,6 +27,12 @@ class ALBERTLayerGroup(Module):
     ) -> None:
         super().__init__()
 
+        layer_norm = partial(
+            LayerNorm,
+            layer_config.hidden_width,
+            layer_config.layer_norm_eps,
+            device=device,
+        )
         self.group_layers = ModuleList(
             [
                 EncoderLayer(
@@ -34,12 +41,17 @@ class ALBERTLayerGroup(Module):
                     hidden_dropout=layer_config.dropout_prob,
                     hidden_width=layer_config.hidden_width,
                     intermediate_width=layer_config.intermediate_width,
-                    layer_norm_eps=layer_config.layer_norm_eps,
+                    layer_norms=TransformerLayerNorms(
+                        attn_residual_layer_norm=layer_norm(),
+                        ffn_residual_layer_norm=layer_norm(),
+                    ),
                     num_attention_heads=attention_config.num_attention_heads,
+                    parallel_attention=False,
                     qkv_head_sharing=QkvHeadSharing.NONE,
                     qkv_mode=QkvMode.SEPARATE,
                     rotary_embeds=None,
                     use_bias=True,
+                    use_gate=False,
                     device=device,
                 )
                 for _ in range(layer_config.inner_group_num)

@@ -9,7 +9,13 @@ Encoder/Decoder Layers
 
 These modules implement full encoder/decoder layers.
 
-.. autoclass:: curated_transformers.layers.encoder.EncoderLayer
+.. autoclass:: curated_transformers.layers.transformer.TransformerLayerNorms
+   :members:
+
+.. autoclass:: curated_transformers.layers.transformer.DecoderLayer
+   :members:
+
+.. autoclass:: curated_transformers.layers.transformer.EncoderLayer
    :members:
 
 Attention

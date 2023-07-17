@@ -1,12 +1,13 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional, Set
 
 from .logits import (
     CompoundLogitTransforms,
     LogitsTransform,
     TemperatureTransform,
     TopKTransform,
+    VocabMaskTransform,
 )
 from .stop_conditions import (
     CompoundStopCondition,
@@ -21,10 +22,8 @@ class GeneratorConfig(ABC):
     """
     Configuration of the generator.
 
-    :param default_logits_transform:
-        The logits transform that are unconditionally applied to all
-        generations. Usually multiple composed transforms, can be
-        empty.
+    :param masked_pieces:
+        Vocabulary pieces that should be masked out.
     :param eos_id:
         End-of-sequence identifier that should end the generation of a sequence
         when predicted. When this value is set to `None`, it is the
@@ -35,12 +34,11 @@ class GeneratorConfig(ABC):
         responsibility of the generator to set it.
     """
 
-    default_logits_transform: LogitsTransform = field(
-        default_factory=CompoundLogitTransforms
-    )
+    masked_pieces: Optional[Set[int]] = None
     eos_id: Optional[int] = None
     max_generated_pieces: Optional[int] = None
 
+    @abstractmethod
     def logits_transform(self) -> LogitsTransform:
         """
         Get logit transform for the configuration.
@@ -48,7 +46,7 @@ class GeneratorConfig(ABC):
         :returns:
             Logits transform. Usually multiple composed transforms.
         """
-        return self.default_logits_transform
+        raise NotImplementedError
 
     def stop_condition(self) -> StopCondition:
         """
@@ -84,7 +82,11 @@ class GreedyGeneratorConfig(GeneratorConfig):
     to deterministic generation.
     """
 
-    pass
+    def logits_transform(self) -> LogitsTransform:
+        if self.masked_pieces is not None:
+            return VocabMaskTransform(self.masked_pieces)
+        else:
+            return CompoundLogitTransforms([])
 
 
 @dataclass
@@ -111,10 +113,12 @@ class SampleGeneratorConfig(GeneratorConfig):
     top_k: int = 0
 
     def logits_transform(self) -> LogitsTransform:
-        return CompoundLogitTransforms(
-            [
-                self.default_logits_transform,
-                TemperatureTransform(self.temperature),
-                TopKTransform(self.top_k),
-            ]
-        )
+        transforms: List[LogitsTransform] = []
+        if self.masked_pieces is not None:
+            transforms.append(VocabMaskTransform(self.masked_pieces))
+        transforms += [
+            TemperatureTransform(self.temperature),
+            TopKTransform(self.top_k),
+        ]
+
+        return CompoundLogitTransforms(transforms)

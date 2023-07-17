@@ -21,8 +21,8 @@ class TransformerLayerNorms:
     """
     Layer normalizations used in a transformer layer.
 
-    By default all the normalizations are disabled by setting the layer
-    normalization to the Torch `Identity` module. Therefore, only
+    By default, all the normalizations are disabled by setting the layer
+    normalization to the Torch ``Identity`` module. Therefore, only
     normalizations that are needed have to be set.
     """
 
@@ -76,7 +76,7 @@ class _TransformerLayer(Module):
         device: Optional[torch.device] = None
     ):
         """
-        Construct an decoder layer.
+        Construct a transformer layer.
 
         :param attention_dropout:
             Dropout probabilty for self-attention.
@@ -235,7 +235,7 @@ class DecoderLayer(_TransformerLayer):
         device: Optional[torch.device] = None
     ):
         """
-        Construct an decoder layer.
+        Construct a decoder layer.
 
         :param attention_dropout:
             Dropout probabilty for self-attention.
@@ -297,7 +297,7 @@ class DecoderLayer(_TransformerLayer):
         store_cache: bool = False,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
-        Apply the transformer layer to the given piece hidden representations.
+        Apply the decoder layer to the given piece hidden representations.
 
         :param input:
             Hidden representations to apply the layer to.
@@ -352,7 +352,7 @@ class EncoderLayer(_TransformerLayer):
         device: Optional[torch.device] = None
     ):
         """
-        Construct an decoder layer.
+        Construct an encoder layer.
 
         :param attention_dropout:
             Dropout probabilty for self-attention.

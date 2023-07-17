@@ -5,13 +5,10 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...layers.attention import (
-    AttentionMask,
-    QkvHeadSharing,
-    QkvMode,
-    RotaryEmbeddingConfig,
-)
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
 from ...layers.cache import KeyValueCache
+from ...layers.embeddings import QueryKeyRotaryEmbeddings
+from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import DecoderLayer, TransformerLayerNorms
 from ..hf_hub import FromHFHub
 from ..module import DecoderModule
@@ -50,6 +47,8 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
         )
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
+        hidden_width = config.layer.hidden_width
+        num_attention_heads = config.attention.num_attention_heads
         layer_norm = partial(
             LayerNorm,
             config.layer.hidden_width,
@@ -59,33 +58,41 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
         self.layers = ModuleList(
             [
                 DecoderLayer(
-                    attention_dropout=config.attention.dropout_prob,
-                    hidden_act=config.layer.hidden_act,
+                    attention_layer=SelfAttention(
+                        dropout_prob=config.attention.dropout_prob,
+                        hidden_width=hidden_width,
+                        num_attention_heads=num_attention_heads,
+                        qkv_head_sharing=QkvHeadSharing.NONE,
+                        qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
+                        rotary_embeds=QueryKeyRotaryEmbeddings(
+                            fraction=config.attention.rotary_fraction,
+                            base=config.attention.rotary_base,
+                            dims_per_head=hidden_width // num_attention_heads,
+                        ),
+                        use_bias=True,
+                        device=device,
+                    ),
+                    feed_forward_layer=PointwiseFeedForward(
+                        hidden_act=config.layer.hidden_act,
+                        hidden_width=hidden_width,
+                        intermediate_width=config.layer.intermediate_width,
+                        use_bias=True,
+                        use_gate=False,
+                        device=device,
+                    ),
                     hidden_dropout=config.layer.dropout_prob,
-                    hidden_width=config.layer.hidden_width,
-                    intermediate_width=config.layer.intermediate_width,
                     layer_norms=TransformerLayerNorms(
                         attn_input_layer_norm=layer_norm(),
                         ffn_input_layer_norm=layer_norm(),
                     ),
-                    num_attention_heads=config.attention.num_attention_heads,
                     parallel_attention=True,
-                    qkv_head_sharing=QkvHeadSharing.NONE,
-                    qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
-                    rotary_embeds=RotaryEmbeddingConfig(
-                        fraction=config.attention.rotary_fraction,
-                        base=config.attention.rotary_base,
-                    ),
-                    use_bias=True,
-                    use_gate=False,
-                    device=device,
                 )
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
 
         self.output_layer_norm = LayerNorm(
-            config.layer.hidden_width, config.layer.layer_norm_eps, device=device
+            hidden_width, config.layer.layer_norm_eps, device=device
         )
 
     def forward(

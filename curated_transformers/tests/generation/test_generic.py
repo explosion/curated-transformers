@@ -93,7 +93,7 @@ def test_generate_masked_output(falcon_generator):
     prompt = [
         "Repeat the following word: Madagascar\n",
     ]
-    classes_to_mask = [
+    pieces_to_mask = [
         58588,  # ĠMadagascar
         18704,  # Mad
         54453,  # agascar
@@ -103,7 +103,7 @@ def test_generate_masked_output(falcon_generator):
         prompt,
         config=GreedyGeneratorConfig(
             max_generated_pieces=50,
-            default_logits_transform=VocabMaskTransform(classes_to_mask),
+            masked_pieces=pieces_to_mask,
         ),
     )
     assert "Madagascar" not in generated

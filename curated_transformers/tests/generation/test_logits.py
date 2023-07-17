@@ -1,5 +1,6 @@
 import pytest
 import torch
+
 from curated_transformers.generation.logits import (
     TemperatureTransform,
     TopKTransform,

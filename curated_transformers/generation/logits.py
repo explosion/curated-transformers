@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import UserList
-from typing import Iterable, List
+from typing import Iterable
 
 import torch
 from torch import Tensor
@@ -124,41 +124,44 @@ class TemperatureTransform(LogitsTransform):
         logits /= self.temperature
 
 
-class MaskTransform(LogitsTransform):
+class VocabMaskTransform(LogitsTransform):
     """
-    Set the probability of specific classes to zero.
+    Set the probability of specific vocabulary pieces to zero.
     """
 
-    def __init__(self, classes_to_mask: List[int]):
+    def __init__(self, pieces_to_mask: Iterable[int]):
         """
         Construct a mask logits transform.
 
-        :param classes_to_mask:
-            Identifers pertaining to the classes that need to be masked.
-            An empty list results in a no-op.
+        :param pieces_to_mask:
+            Identifers pertaining to the vocabulary pieces that
+            need to be masked. An empty iterable results in a no-op.
         """
         super().__init__()
+
         self.classes_to_mask = torch.tensor(
-            classes_to_mask, dtype=torch.long
+            list(pieces_to_mask), dtype=torch.long
         )  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
+
         if self.classes_to_mask.dim() != 1:
-            raise ValueError("Class selector tensor for mask transform must be 1D")
+            raise ValueError("Vocabulary piece mask must be 1D")
         elif (
             self.classes_to_mask.size(dim=-1) != 0
             and int(self.classes_to_mask.min(dim=-1).values) < 0
         ):
-            raise ValueError("Class indentifiers for mask transform must be >= 0")
+            raise ValueError("Vocabulary piece identifiers must be >= 0")
 
     def _process_logits(self, logits: Tensor):
         if self.classes_to_mask.size(dim=-1) == 0:
             return
 
-        max_expected = logits.size(dim=-1)
-        max_received = int(self.classes_to_mask.max(dim=-1).values)
-        if max_received >= max_expected:
-            raise ValueError(
-                f"Class identifiers for mask transform must be < {max_expected}, but got {max_received}"
-            )
-
-        mask = torch.finfo(logits.dtype).min
-        logits[..., self.classes_to_mask] = mask
+        try:
+            mask = torch.finfo(logits.dtype).min
+            logits[..., self.classes_to_mask] = mask
+        except IndexError:
+            max_expected = logits.size(dim=-1)
+            max_received = int(self.classes_to_mask.max(dim=-1).values)
+            if max_received >= max_expected:
+                raise ValueError(
+                    f"Vocabulary piece identifiers must be < {max_expected}, but got {max_received}"
+                )

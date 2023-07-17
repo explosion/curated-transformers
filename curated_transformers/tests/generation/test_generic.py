@@ -1,12 +1,11 @@
 import pytest
 import torch
-
 from curated_transformers.generation.config import (
     GreedyGeneratorConfig,
     SampleGeneratorConfig,
 )
 from curated_transformers.generation.default_generator import DefaultGenerator
-from curated_transformers.generation.logits import MaskTransform
+from curated_transformers.generation.logits import VocabMaskTransform
 
 from ..conftest import GPU_TESTS_ENABLED
 
@@ -103,7 +102,7 @@ def test_generate_masked_output(falcon_generator):
         prompt,
         config=GreedyGeneratorConfig(
             max_generated_pieces=50,
-            default_logits_transform=MaskTransform(classes_to_mask),
+            default_logits_transform=VocabMaskTransform(classes_to_mask),
         ),
     )
     assert "Madagascar" not in generated

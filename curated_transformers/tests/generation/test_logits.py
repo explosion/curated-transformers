@@ -1,10 +1,9 @@
 import pytest
 import torch
-
 from curated_transformers.generation.logits import (
-    MaskTransform,
     TemperatureTransform,
     TopKTransform,
+    VocabMaskTransform,
 )
 
 from ..util import torch_assertclose
@@ -99,7 +98,7 @@ def test_mask_transform():
         [[[4.0, 4.0, 3.5, 0.0, 3.5, 0.0, 3.5, 4.0]]], dtype=torch.float32
     )
 
-    transform = MaskTransform(classes_to_mask=[2, 4, 5])
+    transform = VocabMaskTransform(pieces_to_mask=[2, 4, 5])
     torch_assertclose(
         transform(logits),
         torch.tensor(
@@ -121,19 +120,19 @@ def test_mask_transform():
         ),
     )
 
-    transform = MaskTransform(classes_to_mask=[])
+    transform = VocabMaskTransform(pieces_to_mask=[])
     torch_assertclose(transform(logits, inplace=False), logits)
 
 
 def test_invalid_mask_transform_raises():
     with pytest.raises(ValueError, match="must be 1D"):
-        transform = MaskTransform(classes_to_mask=[[1, 2]])
+        transform = VocabMaskTransform(pieces_to_mask=[[1, 2]])
 
     with pytest.raises(ValueError, match="must be >= 0"):
-        transform = MaskTransform(classes_to_mask=[-1, 0])
+        transform = VocabMaskTransform(pieces_to_mask=[-1, 0])
 
     with pytest.raises(ValueError, match="must be < .*, but got"):
-        transform = MaskTransform(classes_to_mask=[8])
+        transform = VocabMaskTransform(pieces_to_mask=[8])
         transform(
             torch.tensor(
                 [[4.0, 4.0, 3.5, 0.0, 3.5, 0.0, 3.5, 4.0]], dtype=torch.float32

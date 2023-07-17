@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import UserList
+from typing import Iterable
 
 import torch
 from torch import Tensor
@@ -68,7 +69,7 @@ class TopKTransform(LogitsTransform):
         Construct a top-k logits transform.
 
         :param k:
-            The value of k in top-k. The transform is a noop for values
+            The value of k in top-k. The transform is a no-op for values
             less than 1.
         """
         super().__init__()
@@ -121,3 +122,46 @@ class TemperatureTransform(LogitsTransform):
             return
 
         logits /= self.temperature
+
+
+class VocabMaskTransform(LogitsTransform):
+    """
+    Set the probability of specific vocabulary pieces to zero.
+    """
+
+    def __init__(self, pieces_to_mask: Iterable[int]):
+        """
+        Construct a mask logits transform.
+
+        :param pieces_to_mask:
+            Identifers pertaining to the vocabulary pieces that
+            need to be masked. An empty iterable results in a no-op.
+        """
+        super().__init__()
+
+        self.pieces_to_mask = torch.tensor(
+            list(pieces_to_mask), dtype=torch.long
+        )  # `torch.int32` isn't supported in indexing operations prior in torch<2.0.0.
+
+        if self.pieces_to_mask.dim() != 1:
+            raise ValueError("Vocabulary piece mask must be 1D")
+        elif (
+            self.pieces_to_mask.size(dim=-1) != 0
+            and int(self.pieces_to_mask.min(dim=-1).values) < 0
+        ):
+            raise ValueError("Vocabulary piece identifiers must be >= 0")
+
+    def _process_logits(self, logits: Tensor):
+        if self.pieces_to_mask.size(dim=-1) == 0:
+            return
+
+        try:
+            mask = torch.finfo(logits.dtype).min
+            logits[..., self.pieces_to_mask] = mask
+        except IndexError:
+            max_expected = logits.size(dim=-1)
+            max_received = int(self.pieces_to_mask.max(dim=-1).values)
+            if max_received >= max_expected:
+                raise ValueError(
+                    f"Vocabulary piece identifiers must be < {max_expected}, but got {max_received}"
+                )

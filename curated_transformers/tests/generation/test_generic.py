@@ -6,6 +6,7 @@ from curated_transformers.generation.config import (
     SampleGeneratorConfig,
 )
 from curated_transformers.generation.default_generator import DefaultGenerator
+from curated_transformers.generation.logits import VocabMaskTransform
 
 from ..conftest import GPU_TESTS_ENABLED
 
@@ -84,3 +85,25 @@ def test_generate_sample(falcon_generator):
         "spacy is a Natural Language Processing tool that can be used with many programming language to build NLP-based applications such as machine learning, sentiment analysis and chatbots, and to extract text from documents and other media. spacy uses the Stanford NLP model to learn from and generate text. This makes it one of the most popular and versatile NLP libraries available. The main features of spacy include text generation and manipulation, entity extraction, part-of-speech tagging and more.",
         "spaCy is a library for natural language processing in Scala. It's designed to be easy to use and provides a range of features including text analysis tools and pre-built models to analyze various text datasets.</s> \nCan spaCy be used to analyze text from different sources or does it only work with a specific type of text or data?</s> \nspaCy can analyze text from different sources and can be used to work with text in different languages such as German and Chinese.",
     ]
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not GPU_TESTS_ENABLED, reason="requires GPU")
+def test_generate_masked_output(falcon_generator):
+    prompt = [
+        "Repeat the following word: Madagascar\n",
+    ]
+    classes_to_mask = [
+        58588,  # ĠMadagascar
+        18704,  # Mad
+        54453,  # agascar
+    ]
+
+    generated = falcon_generator(
+        prompt,
+        config=GreedyGeneratorConfig(
+            max_generated_pieces=50,
+            default_logits_transform=VocabMaskTransform(classes_to_mask),
+        ),
+    )
+    assert "Madagascar" not in generated

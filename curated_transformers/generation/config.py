@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List, Optional, Set
 
 from .logits import (
     CompoundLogitTransforms,
     LogitsTransform,
     TemperatureTransform,
     TopKTransform,
+    VocabMaskTransform,
 )
 from .stop_conditions import (
     CompoundStopCondition,
@@ -21,17 +22,19 @@ class GeneratorConfig(ABC):
     """
     Configuration of the generator.
 
+    :param masked_pieces:
+        Vocabulary pieces that should be masked out.
     :param eos_id:
         End-of-sequence identifier that should end the generation of a sequence
         when predicted. When this value is set to `None`, it is the
         responsibility of the generator to set it.
-
     :param max_generated_pieces:
         The maximum number of generation steps. This condition is a noop
         for values less than 1. When this value is set to `None`, it is the
         responsibility of the generator to set it.
     """
 
+    masked_pieces: Optional[Set[int]] = None
     eos_id: Optional[int] = None
     max_generated_pieces: Optional[int] = None
 
@@ -43,7 +46,7 @@ class GeneratorConfig(ABC):
         :returns:
             Logits transform. Usually multiple composed transforms.
         """
-        ...
+        raise NotImplementedError
 
     def stop_condition(self) -> StopCondition:
         """
@@ -70,6 +73,7 @@ class GeneratorConfig(ABC):
         return conditions
 
 
+@dataclass
 class GreedyGeneratorConfig(GeneratorConfig):
     """
     Configuration for greedy generation.
@@ -79,7 +83,10 @@ class GreedyGeneratorConfig(GeneratorConfig):
     """
 
     def logits_transform(self) -> LogitsTransform:
-        return CompoundLogitTransforms([])
+        if self.masked_pieces is not None:
+            return VocabMaskTransform(self.masked_pieces)
+        else:
+            return CompoundLogitTransforms([])
 
 
 @dataclass
@@ -106,9 +113,12 @@ class SampleGeneratorConfig(GeneratorConfig):
     top_k: int = 0
 
     def logits_transform(self) -> LogitsTransform:
-        return CompoundLogitTransforms(
-            [
-                TemperatureTransform(self.temperature),
-                TopKTransform(self.top_k),
-            ]
-        )
+        transforms: List[LogitsTransform] = []
+        if self.masked_pieces is not None:
+            transforms.append(VocabMaskTransform(self.masked_pieces))
+        transforms += [
+            TemperatureTransform(self.temperature),
+            TopKTransform(self.top_k),
+        ]
+
+        return CompoundLogitTransforms(transforms)

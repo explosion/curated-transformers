@@ -73,10 +73,12 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         name = re.sub(r"\.attention\.self\.(query|key|value)", r".mha.\1", name)
         name = re.sub(r"\.attention\.(output)\.dense", r".mha.\1", name)
         name = re.sub(
-            r"\.attention\.output\.LayerNorm", r".attn_output_layernorm", name
+            r"\.attention\.output\.LayerNorm", r".attn_residual_layer_norm", name
         )
         name = re.sub(r"\.(intermediate)\.dense", r".ffn.\1", name)
-        name = re.sub(r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_output_layernorm", name)
+        name = re.sub(
+            r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_residual_layer_norm", name
+        )
         name = re.sub(r"(\.\d+)\.(output)\.dense", r"\1.ffn.\2", name)
 
         out[name] = parameter

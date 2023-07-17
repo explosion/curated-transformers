@@ -68,9 +68,9 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
         name = re.sub(r"\.gate_proj", r".gate", name)
 
         # RMS norms
-        name = re.sub(r"\.input_layernorm", r".attn_rms_norm", name)
-        name = re.sub(r"\.post_attention_layernorm", r".ffn_rms_norm", name)
-        name = re.sub(r"^(decoder\.)?norm\.", r"\1output_rms_norm.", name)
+        name = re.sub(r"\.input_layernorm", r".attn_input_layer_norm", name)
+        name = re.sub(r"\.post_attention_layernorm", r".ffn_input_layer_norm", name)
+        name = re.sub(r"^(decoder\.)?norm\.", r"\1output_layer_norm.", name)
 
         # Embeddings
         name = re.sub(r"embed_tokens\.", r"embeddings.", name)

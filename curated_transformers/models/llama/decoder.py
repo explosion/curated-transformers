@@ -1,18 +1,24 @@
+from functools import partial
 from typing import Any, List, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, ModuleList
 
-from ...layers.attention import AttentionMask
+from ...layers.attention import (
+    AttentionMask,
+    QkvHeadSharing,
+    QkvMode,
+    RotaryEmbeddingConfig,
+)
 from ...layers.cache import KeyValueCache
 from ...layers.normalization import RMSNorm
+from ...layers.transformer import DecoderLayer, TransformerLayerNorms
 from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import LLaMAConfig
-from .layer import LLaMADecoderLayer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="LLaMADecoder")
@@ -45,14 +51,41 @@ class LLaMADecoder(DecoderModule, FromHFHub):
         )
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
+        layer_norm = partial(
+            RMSNorm,
+            config.layer.hidden_width,
+            eps=config.layer.rms_norm_eps,
+            device=device,
+        )
         self.layers = ModuleList(
             [
-                LLaMADecoderLayer(config.layer, config.attention, device=device)
+                DecoderLayer(
+                    attention_dropout=config.attention.dropout_prob,
+                    hidden_act=config.layer.hidden_act,
+                    hidden_dropout=config.layer.dropout_prob,
+                    hidden_width=config.layer.hidden_width,
+                    intermediate_width=config.layer.intermediate_width,
+                    layer_norms=TransformerLayerNorms(
+                        attn_input_layer_norm=layer_norm(),
+                        ffn_input_layer_norm=layer_norm(),
+                    ),
+                    num_attention_heads=config.attention.num_attention_heads,
+                    parallel_attention=False,
+                    qkv_head_sharing=QkvHeadSharing.NONE,
+                    qkv_mode=QkvMode.SEPARATE,
+                    rotary_embeds=RotaryEmbeddingConfig(
+                        fraction=config.attention.rotary_fraction,
+                        base=config.attention.rotary_base,
+                    ),
+                    use_bias=False,
+                    use_gate=True,
+                    device=device,
+                )
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
 
-        self.output_rms_norm = RMSNorm(
+        self.output_layer_norm = RMSNorm(
             config.layer.hidden_width, eps=config.layer.rms_norm_eps, device=device
         )
 
@@ -88,7 +121,7 @@ class LLaMADecoder(DecoderModule, FromHFHub):
             if store_cache:
                 new_cache.append(new_layer_cache)
 
-        layer_outputs[-1] = self.output_rms_norm(layer_outputs[-1])
+        layer_outputs[-1] = self.output_layer_norm(layer_outputs[-1])
 
         return ModelOutputWithCache(
             embedding_output=embeddings,

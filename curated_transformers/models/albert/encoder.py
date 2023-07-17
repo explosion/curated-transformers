@@ -78,7 +78,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         layer_outputs = []
         for group in self.groups:
             for _ in range(layers_per_group):
-                layer_output = group(layer_output, attention_mask=attention_mask)
+                layer_output, _ = group(layer_output, attention_mask=attention_mask)
                 layer_outputs.append(layer_output)
 
         return ModelOutput(

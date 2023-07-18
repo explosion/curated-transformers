@@ -1,4 +1,5 @@
 import math
+import warnings
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import IntEnum
@@ -173,7 +174,113 @@ class QkvMode(IntEnum):
     MERGED_SPLIT_AFTER = (2,)
 
 
-# https://www.tensorflow.org/text/tutorials/transformer#scaled_dot_product_attention
+class AttentionLinearBiases(Module):
+    """
+    ALiBi: Linear biases for attention (`Press et al., 2022`_).
+
+    .. _Press et al., 2022: https://arxiv.org/abs/2108.12409
+    """
+
+    slopes: Tensor
+
+    def __init__(self, *, num_attention_heads: int, is_causal: bool) -> None:
+        """
+        Construct an ALiBi module.
+
+        :param num_attention_heads:
+            Number of attention heads.
+        :param is_causal:
+            Use causal attention.
+        """
+        super().__init__()
+
+        self.is_causal = is_causal
+        slopes = self._calculate_slopes(num_attention_heads)
+        self.register_buffer("slopes", slopes, persistent=False)
+
+    def _calculate_slopes(self, num_attention_heads: int) -> Tensor:
+        """
+        Calculate the linear bias slopes for a given number
+        of attention heads.
+
+        :param num_attention_heads:
+            Number of attention heads.
+        :returns:
+            Slope tensor.
+
+            *Shape:* ``(1, heads, 1, 1)``
+
+        :meta private:
+        """
+        # Calculate values to the closest power of two and concat the remaining.
+        closest_pow_2 = 2 ** math.floor(math.log2(num_attention_heads))
+        ratio_base = 2.0 ** (-8.0 / closest_pow_2)
+        ratios = torch.pow(ratio_base, torch.arange(1, 1 + closest_pow_2))
+
+        # Start with for 2*closest_pow_2 and pick every other position
+        # to avoid previously picked values.
+        if closest_pow_2 < num_attention_heads:
+            new_ratio_base = 2.0 ** (-4.0 / closest_pow_2)
+            num_remaining_heads = min(
+                closest_pow_2, num_attention_heads - closest_pow_2
+            )
+            new_ratios = torch.pow(
+                new_ratio_base, torch.arange(1, 1 + 2 * num_remaining_heads, 2)
+            )
+            ratios = torch.cat([ratios, new_ratios])
+
+        return ratios.view(1, -1, 1, 1)
+
+    def _calculate_biases(self, slopes: Tensor, seq_len: int) -> Tensor:
+        """
+        Calculate the linear bias tensor upto a given (key) sequence length.
+
+        :param slopes:
+            Slope tensor.
+
+            *Shape:* ``(1, heads, 1, 1)``
+        :param seq_len:
+            Maximum number of timesteps to calculate.
+        :returns:
+            Multi-headed linear bias tensor.
+
+            *Shape:* ``(1, heads, seq_len, seq_len)`` (non-causal) or
+            ``(1, heads, 1, seq_len)`` (causal)
+
+        :meta private:
+        """
+        if not self.is_causal:
+            distances = torch.arange(seq_len) - torch.arange(seq_len).view(-1, 1)
+            distances = distances.abs().mul(-1).view(1, 1, seq_len, seq_len)
+        else:
+            distances = torch.arange(1 - seq_len, 1)
+
+        return distances * slopes
+
+    def forward(self, *, attention_scores: Tensor, inplace: bool = True) -> Tensor:
+        """
+        Apply linear biases to (unmasked) attention scores.
+
+        :param attention_scores:
+            Attention scores.
+
+            *Shape:* ``(batch_size, heads, query_len, key_len)``
+        :param inplace:
+            Update attention scores inplace.
+        :returns:
+            Attention scores with linear biases.
+
+            *Shape:* ``(batch_size, heads, query_len, key_len)``
+        """
+        if not inplace:
+            attention_scores = attention_scores.clone()
+
+        biases = self._calculate_biases(self.slopes, attention_scores.size(-1)).to(
+            dtype=attention_scores.dtype, device=attention_scores.device
+        )
+        return attention_scores + biases
+
+
 class ScaledDotProductAttention(Module):
     """
     Scaled dot-product attention (`Vaswani et al., 2017`_).
@@ -181,15 +288,26 @@ class ScaledDotProductAttention(Module):
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
-    def __init__(self, *, dropout_prob: float = 0.1):
+    linear_biases: Optional[AttentionLinearBiases]
+
+    def __init__(
+        self, *, dropout_prob: float, linear_biases: Optional[AttentionLinearBiases]
+    ):
         """
         Construct a scaled dot-product attention module.
 
         :param dropout_prob:
             Dropout to apply to the final hidden representation.
+        :param linear_biases:
+            ALiBi (`Press et al., 2022`_) for attention scores.
+            Not applied if ``None``.
+
+        .. _Press et al., 2022: https://arxiv.org/abs/2108.12409
         """
         super().__init__()
+
         self.dropout = torch.nn.Dropout(p=dropout_prob)
+        self.linear_biases = linear_biases
 
     def forward(
         self,
@@ -206,15 +324,15 @@ class ScaledDotProductAttention(Module):
         are ignored by the attention mechanism (if a mask is provided).
 
         :param k:
-            Key.
+            Key tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
         :param q:
-            Query.
+            Query tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
         :param v:
-            Value.
+            Value tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
         :param attention_mask:
@@ -231,6 +349,9 @@ class ScaledDotProductAttention(Module):
         model_dim = key.shape[-1]
         attn_scores = query @ key.transpose(-2, -1)
         attn_scores /= math.sqrt(model_dim)
+
+        if self.linear_biases is not None:
+            attn_scores = self.linear_biases(attn_scores)
 
         if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large
@@ -261,11 +382,13 @@ class SelfAttention(Module):
         num_attention_heads: int,
         qkv_mode: QkvMode,
         rotary_embeds: Optional[QueryKeyRotaryEmbeddings] = None,
+        attention_biases: Optional[AttentionLinearBiases] = None,
         use_bias: bool,
         device: Optional[torch.device] = None,
     ):
         """
-        Construct a self-attention layer with rotary position embeddings.
+        Construct a self-attention layer with rotary position embeddings
+        and attention linear biases.
 
         :param dropout_prob:
             Dropout to apply between the self-attention and output layers.
@@ -273,6 +396,8 @@ class SelfAttention(Module):
             Head sharing in query, key and value.
         :param hidden_width:
             Hidden width of the layer.
+        :param attention_biases:
+            ALiBi biases. ALiBi will not be used when set to ``None``.
         :param num_attention_heads:
             Number of attention heads.
         :param qkv_mode:
@@ -299,11 +424,12 @@ class SelfAttention(Module):
 
         self.dims_per_head = self.model_dim // self.num_heads
         self.qkv_mode = qkv_mode
+        self.use_alibi = attention_biases is not None
 
         self.rotary_embeds = rotary_embeds
 
         self.attention = ScaledDotProductAttention(
-            dropout_prob=dropout_prob,
+            dropout_prob=dropout_prob, linear_biases=attention_biases
         )
 
         if (
@@ -407,6 +533,11 @@ class SelfAttention(Module):
             )
 
         if _TORCH_SDP.get():
+            if self.use_alibi:
+                msg = "ALiBi disabled when using PyTorch SDP"
+                warnings.filterwarnings(action="once", message=msg)
+                warnings.warn(msg)
+
             # We can't pass a bool mask, because it is currently broken:
             # https://github.com/pytorch/pytorch/issues/103749
             attn = F.scaled_dot_product_attention(

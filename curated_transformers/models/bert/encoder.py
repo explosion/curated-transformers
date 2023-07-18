@@ -5,15 +5,13 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm
 
-from curated_transformers.layers.feedforward import PointwiseFeedForward
-
 from ...layers.attention import (
     AttentionMask,
     QkvHeadSharing,
     QkvMode,
-    ScaledDotProductAttention,
     SelfAttention,
 )
+from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import EncoderLayer, TransformerLayerNorms
 from ..hf_hub import FromHFHub
 from ..module import EncoderModule

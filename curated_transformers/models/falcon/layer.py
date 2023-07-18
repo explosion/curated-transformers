@@ -4,8 +4,6 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from curated_transformers.layers.embeddings import QueryKeyRotaryEmbeddings
-
 from ...layers.attention import (
     AttentionMask,
     KeyValueCache,
@@ -13,6 +11,7 @@ from ...layers.attention import (
     QkvMode,
     SelfAttention,
 )
+from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from .config import FalconAttentionConfig, FalconLayerConfig
 

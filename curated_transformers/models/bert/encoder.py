@@ -5,12 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm
 
-from ...layers.attention import (
-    AttentionMask,
-    QkvHeadSharing,
-    QkvMode,
-    SelfAttention,
-)
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import EncoderLayer, TransformerLayerNorms
 from ..hf_hub import FromHFHub

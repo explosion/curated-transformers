@@ -5,10 +5,9 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, ModuleList
 
-from ...layers.embeddings import QueryKeyRotaryEmbeddings
-
 from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
 from ...layers.cache import KeyValueCache
+from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.normalization import RMSNorm
 from ...layers.transformer import DecoderLayer, TransformerLayerNorms

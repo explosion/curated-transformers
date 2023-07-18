@@ -25,7 +25,7 @@ class SinusoidalPositionalEmbedding(Module):
         device: Optional[torch.device] = None,
     ):
         """
-        Construct a sinosoidal positional embedding module.
+        Construct a sinusoidal positional embedding module.
 
         :param dim:
             Width of the embedding.
@@ -98,7 +98,7 @@ class RotaryEmbeddings(Module):
             Rotary embedding dimensionality.
             Must be even.
         :param seq_len:
-            Number of positons to initially precompute.
+            Number of positions to initially precompute.
         :param base:
             The base used for :math:`\\theta_i`.
             Determines the cycle length of the embeddings.

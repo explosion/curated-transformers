@@ -5,14 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import Identity, Module
 
-from .attention import (
-    AttentionMask,
-    KeyValueCache,
-    QkvHeadSharing,
-    QkvMode,
-    RotaryEmbeddingConfig,
-    SelfAttention,
-)
+from .attention import AttentionMask, KeyValueCache, SelfAttention
 from .feedforward import PointwiseFeedForward
 
 
@@ -59,85 +52,34 @@ class _TransformerLayer(Module):
     def __init__(
         self,
         *,
-        attention_dropout: float,
-        hidden_act: str,
+        attention_layer: SelfAttention,
+        feed_forward_layer: PointwiseFeedForward,
         hidden_dropout: float,
-        hidden_width: int,
-        intermediate_width: int,
         layer_norms: TransformerLayerNorms,
-        num_attention_heads: int,
         parallel_attention: bool,
-        qkv_head_sharing: QkvHeadSharing,
-        qkv_mode: QkvMode,
-        rotary_embeds: Optional[RotaryEmbeddingConfig],
-        use_bias: bool,
-        use_causal_mask: bool,
-        use_gate: bool,
-        device: Optional[torch.device] = None
     ):
         """
         Construct a transformer layer.
 
-        :param attention_dropout:
-            Dropout probabilty for self-attention.
-        :param hidden_act:
-            Activation used by the feed-forward layers.
-            Applied on the intermediate representation.
-            See :py:class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
-            for supported activations.
+        :param attention_layer:
+            The attention layer to use in the transformer layer.
+        :param feed_forward_layer:
+            The pointwise feed-forward layer to use in the transformer layer.
         :param hidden_dropout:
             Dropout probabilty to apply after hidden layers.
-        :param hidden_width:
-            Hidden width of the transformer.
-        :param intermediate_width:
-            Intermediate width in the feed-forward layer.
         :param layer_norms:
             Layer norms to use in the layer.
-        :param num_attention_heads:
-            Number of self-attention heads.
         :param parallel_attention:
              Use parallel attention.
-        :param qkv_head_sharing:
-            Head sharing in query, key and value.
-        :param qkv_mode:
-            Handling mode for query, key and value.
-        :param rotary_embeds:
-            Configuration for rotary embeddings. Rotary embeddings will not
-            be used when set to ``None``.
-        :param use_bias:
-            Use biases for linear layers.
-        :param use_causal_mask:
-            Mask out succeeding sequence elements when ``True``.
-        :param use_gate:
-            Use Gated Linear Units.
-        :param device:
-            Device on which the module is to be initialized.
         """
         super().__init__()
 
         self.parallel_attention = parallel_attention
-        self.use_causal_mask = use_causal_mask
 
-        self.mha = SelfAttention(
-            dropout_prob=attention_dropout,
-            qkv_head_sharing=qkv_head_sharing,
-            hidden_width=hidden_width,
-            num_attention_heads=num_attention_heads,
-            qkv_mode=qkv_mode,
-            rotary_embeds=rotary_embeds,
-            use_bias=use_bias,
-            device=device,
-        )
+        self.mha = attention_layer
         self.attn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
 
-        self.ffn = PointwiseFeedForward(
-            hidden_act=hidden_act,
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
-            use_bias=use_bias,
-            use_gate=use_gate,
-            device=device,
-        )
+        self.ffn = feed_forward_layer
         self.ffn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
 
         self.attn_input_layer_norm = layer_norms.attn_input_layer_norm
@@ -148,6 +90,8 @@ class _TransformerLayer(Module):
     def _forward(
         self,
         input: Tensor,
+        *,
+        use_causal_mask: bool,
         attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
@@ -166,6 +110,8 @@ class _TransformerLayer(Module):
             during attention calculation.
 
             *Shape:* ``(batch_size, seq_len)``
+        :param use_causal_mask:
+            Mask out succeeding sequence elements when ``True``.
         :param cache:
             Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
@@ -188,7 +134,7 @@ class _TransformerLayer(Module):
             cache=cache,
             store_cache=store_cache,
             positions=positions,
-            use_causal_mask=self.use_causal_mask,
+            use_causal_mask=use_causal_mask,
         )
         attn_out = self.attn_output_dropout(attn_out)
 
@@ -215,78 +161,6 @@ class DecoderLayer(_TransformerLayer):
 
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
-
-    def __init__(
-        self,
-        *,
-        attention_dropout: float,
-        hidden_act: str,
-        hidden_dropout: float,
-        hidden_width: int,
-        intermediate_width: int,
-        layer_norms: TransformerLayerNorms,
-        num_attention_heads: int,
-        parallel_attention: bool,
-        qkv_head_sharing: QkvHeadSharing,
-        qkv_mode: QkvMode,
-        rotary_embeds: Optional[RotaryEmbeddingConfig],
-        use_bias: bool,
-        use_gate: bool,
-        device: Optional[torch.device] = None
-    ):
-        """
-        Construct a decoder layer.
-
-        :param attention_dropout:
-            Dropout probabilty for self-attention.
-        :param hidden_act:
-            Activation used by the feed-forward layers.
-            Applied on the intermediate representation.
-            See :py:class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
-            for supported activations.
-        :param hidden_dropout:
-            Dropout probabilty to apply after hidden layers.
-        :param hidden_width:
-            Hidden width of the transformer.
-        :param intermediate_width:
-            Intermediate width in the feed-forward layer.
-        :param layer_norms:
-            Layer norms to use in the layer.
-        :param num_attention_heads:
-            Number of self-attention heads.
-        :param parallel_attention:
-             Use parallel attention.
-        :param qkv_head_sharing:
-            Head sharing in query, key and value.
-        :param qkv_mode:
-            Handling mode for query, key and value.
-        :param rotary_embeds:
-            Configuration for rotary embeddings. Rotary embeddings will not
-            be used when set to ``None``.
-        :param use_bias:
-            Use biases for linear layers.
-        :param use_gate:
-            Use Gated Linear Units.
-        :param device:
-            Device on which the module is to be initialized.
-        """
-        super().__init__(
-            attention_dropout=attention_dropout,
-            hidden_act=hidden_act,
-            hidden_dropout=hidden_dropout,
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
-            layer_norms=layer_norms,
-            num_attention_heads=num_attention_heads,
-            parallel_attention=parallel_attention,
-            qkv_head_sharing=qkv_head_sharing,
-            qkv_mode=qkv_mode,
-            rotary_embeds=rotary_embeds,
-            use_bias=use_bias,
-            use_causal_mask=True,
-            use_gate=use_gate,
-            device=device,
-        )
 
     def forward(
         self,
@@ -323,7 +197,14 @@ class DecoderLayer(_TransformerLayer):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
-        return super()._forward(input, attention_mask, cache, positions, store_cache)
+        return super()._forward(
+            input,
+            attention_mask=attention_mask,
+            cache=cache,
+            use_causal_mask=True,
+            positions=positions,
+            store_cache=store_cache,
+        )
 
 
 class EncoderLayer(_TransformerLayer):
@@ -332,78 +213,6 @@ class EncoderLayer(_TransformerLayer):
 
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
-
-    def __init__(
-        self,
-        *,
-        attention_dropout: float,
-        hidden_act: str,
-        hidden_dropout: float,
-        hidden_width: int,
-        intermediate_width: int,
-        layer_norms: TransformerLayerNorms,
-        num_attention_heads: int,
-        parallel_attention: bool,
-        qkv_head_sharing: QkvHeadSharing,
-        qkv_mode: QkvMode,
-        rotary_embeds: Optional[RotaryEmbeddingConfig],
-        use_bias: bool,
-        use_gate: bool,
-        device: Optional[torch.device] = None
-    ):
-        """
-        Construct an encoder layer.
-
-        :param attention_dropout:
-            Dropout probabilty for self-attention.
-        :param hidden_act:
-            Activation used by the feed-forward layers.
-            Applied on the intermediate representation.
-            See :py:class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
-            for supported activations.
-        :param hidden_dropout:
-            Dropout probabilty to apply after hidden layers.
-        :param hidden_width:
-            Hidden width of the transformer.
-        :param intermediate_width:
-            Intermediate width in the feed-forward layer.
-        :param layer_norms:
-            Layer norms to use in the layer.
-        :param num_attention_heads:
-            Number of self-attention heads.
-        :param parallel_attention:
-             Use parallel attention.
-        :param qkv_head_sharing:
-            Head sharing in query, key and value.
-        :param qkv_mode:
-            Handling mode for query, key and value.
-        :param rotary_embeds:
-            Configuration for rotary embeddings. Rotary embeddings will not
-            be used when set to ``None``.
-        :param use_bias:
-            Use biases for linear layers.
-        :param use_gate:
-            Use Gated Linear Units.
-        :param device:
-            Device on which the module is to be initialized.
-        """
-        super().__init__(
-            attention_dropout=attention_dropout,
-            hidden_act=hidden_act,
-            hidden_dropout=hidden_dropout,
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
-            layer_norms=layer_norms,
-            num_attention_heads=num_attention_heads,
-            parallel_attention=parallel_attention,
-            qkv_head_sharing=qkv_head_sharing,
-            qkv_mode=qkv_mode,
-            rotary_embeds=rotary_embeds,
-            use_bias=use_bias,
-            use_causal_mask=False,
-            use_gate=use_gate,
-            device=device,
-        )
 
     def forward(
         self,
@@ -428,4 +237,6 @@ class EncoderLayer(_TransformerLayer):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
-        return super()._forward(input, attention_mask)
+        return super()._forward(
+            input, attention_mask=attention_mask, use_causal_mask=False
+        )

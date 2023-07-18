@@ -4,7 +4,6 @@ from .attention import (
     AttentionMask,
     QkvHeadSharing,
     QkvMode,
-    RotaryEmbeddingConfig,
     ScaledDotProductAttention,
     SelfAttention,
     enable_torch_sdp,

@@ -1,7 +1,6 @@
 import math
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass
 from enum import IntEnum
 from typing import Optional, Tuple
 
@@ -244,22 +243,6 @@ class ScaledDotProductAttention(Module):
         return attn_values
 
 
-@dataclass
-class RotaryEmbeddingConfig:
-    """
-    Configuration for rotary embeddings.
-
-    :param fraction:
-        Fraction of hidden width to apply rotary embeddings to.
-        Must be in ``[0,1]``.
-    :param base:
-        Base in signifying the rotary embedding period.
-    """
-
-    fraction: float
-    base: int = 10000
-
-
 class SelfAttention(Module):
     """
     Transformer self-attention layer (`Vaswani et al., 2017`_).
@@ -277,7 +260,7 @@ class SelfAttention(Module):
         hidden_width: int,
         num_attention_heads: int,
         qkv_mode: QkvMode,
-        rotary_embeds: Optional[RotaryEmbeddingConfig] = None,
+        rotary_embeds: Optional[QueryKeyRotaryEmbeddings] = None,
         use_bias: bool,
         device: Optional[torch.device] = None,
     ):
@@ -295,8 +278,8 @@ class SelfAttention(Module):
         :param qkv_mode:
             Handling mode for query, key and value.
         :param rotary_embeds:
-            Configuration for rotary embeddings. Rotary embeddings will not
-            be used when set to ``None``.
+            Rotary embeddings. Rotary embeddings will not be used when set
+            to ``None``.
         :param use_bias:
             Use biases for linear layers.
         :param device:
@@ -317,14 +300,7 @@ class SelfAttention(Module):
         self.dims_per_head = self.model_dim // self.num_heads
         self.qkv_mode = qkv_mode
 
-        if rotary_embeds:
-            self.rotary_embeds = QueryKeyRotaryEmbeddings(
-                base=rotary_embeds.base,
-                fraction=rotary_embeds.fraction,
-                dims_per_head=self.dims_per_head,
-            )
-        else:
-            self.rotary_embeds = None
+        self.rotary_embeds = rotary_embeds
 
         self.attention = ScaledDotProductAttention(
             dropout_prob=dropout_prob,

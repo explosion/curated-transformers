@@ -5,7 +5,8 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm, Module, ModuleList
 
-from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode
+from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
+from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import EncoderLayer, TransformerLayerNorms
 from ..bert.config import BERTAttentionConfig
 from .config import ALBERTLayerConfig
@@ -36,23 +37,30 @@ class ALBERTLayerGroup(Module):
         self.group_layers = ModuleList(
             [
                 EncoderLayer(
-                    attention_dropout=attention_config.dropout_prob,
-                    hidden_act=layer_config.hidden_act,
+                    attention_layer=SelfAttention(
+                        dropout_prob=attention_config.dropout_prob,
+                        hidden_width=layer_config.hidden_width,
+                        num_attention_heads=attention_config.num_attention_heads,
+                        qkv_head_sharing=QkvHeadSharing.NONE,
+                        qkv_mode=QkvMode.SEPARATE,
+                        rotary_embeds=None,
+                        use_bias=True,
+                        device=device,
+                    ),
+                    feed_forward_layer=PointwiseFeedForward(
+                        hidden_act=layer_config.hidden_act,
+                        hidden_width=layer_config.hidden_width,
+                        intermediate_width=layer_config.intermediate_width,
+                        use_bias=True,
+                        use_gate=False,
+                        device=device,
+                    ),
                     hidden_dropout=layer_config.dropout_prob,
-                    hidden_width=layer_config.hidden_width,
-                    intermediate_width=layer_config.intermediate_width,
                     layer_norms=TransformerLayerNorms(
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),
                     ),
-                    num_attention_heads=attention_config.num_attention_heads,
                     parallel_attention=False,
-                    qkv_head_sharing=QkvHeadSharing.NONE,
-                    qkv_mode=QkvMode.SEPARATE,
-                    rotary_embeds=None,
-                    use_bias=True,
-                    use_gate=False,
-                    device=device,
                 )
                 for _ in range(layer_config.inner_group_num)
             ]

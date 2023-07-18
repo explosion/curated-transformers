@@ -9,9 +9,9 @@ from ...layers.attention import (
     KeyValueCache,
     QkvHeadSharing,
     QkvMode,
-    RotaryEmbeddingConfig,
     SelfAttention,
 )
+from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from .config import FalconAttentionConfig, FalconLayerConfig
 
@@ -34,16 +34,19 @@ class FalconDecoderLayer(Module):
 
         self.parallel_attention = attention_config.parallel_attention
 
+        hidden_width = layer_config.hidden_width
+        num_attention_heads = attention_config.num_attention_heads
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
-            hidden_width=attention_config.hidden_width,
+            hidden_width=hidden_width,
             qkv_head_sharing=QkvHeadSharing.KEY_VALUE
             if attention_config.multi_query
             else QkvHeadSharing.NONE,
-            num_attention_heads=attention_config.num_attention_heads,
-            rotary_embeds=RotaryEmbeddingConfig(
+            num_attention_heads=num_attention_heads,
+            rotary_embeds=QueryKeyRotaryEmbeddings(
                 base=attention_config.rotary_base,
                 fraction=attention_config.rotary_fraction,
+                dims_per_head=hidden_width // num_attention_heads,
             ),
             qkv_mode=QkvMode.MERGED_SPLIT_AFTER
             if attention_config.multi_query
@@ -53,20 +56,20 @@ class FalconDecoderLayer(Module):
         )
         self.attn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)
         self.attn_layer_norm = torch.nn.LayerNorm(
-            layer_config.hidden_width, eps=layer_config.layer_norm_eps, device=device
+            hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
 
         if not self.parallel_attention:
             self.ffn_layer_norm = torch.nn.LayerNorm(
-                layer_config.hidden_width,
+                hidden_width,
                 eps=layer_config.layer_norm_eps,
                 device=device,
             )
 
         self.ffn = PointwiseFeedForward(
             hidden_act="gelu",
-            hidden_width=layer_config.hidden_width,
-            intermediate_width=4 * layer_config.hidden_width,
+            hidden_width=hidden_width,
+            intermediate_width=4 * hidden_width,
             use_bias=layer_config.use_bias,
             use_gate=False,
             device=device,

@@ -519,9 +519,9 @@ class SelfAttention(Module):
             value = split_heads(value, num_key_value_heads)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
             proj = self.input(input)
-			# Same number of heads for query, key and value
-			# since we cannot share heads in this mode.
-            proj = split_heads(proj, num_query_heads) 
+            # Same number of heads for query, key and value
+            # since we cannot share heads in this mode.
+            proj = split_heads(proj, num_query_heads)
             query, key, value = proj.chunk(3, dim=-1)
         else:
             proj = self.input(input)

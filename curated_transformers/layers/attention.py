@@ -1,5 +1,4 @@
 import math
-import warnings
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import IntEnum

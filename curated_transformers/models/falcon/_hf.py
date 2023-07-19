@@ -53,7 +53,7 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
 
     if new_decoder_architecture:
         if "n_head_kv" in hf_config:
-            kwargs["num_kv_heads"] = hf_config["n_head_kv"]
+            kwargs["num_key_value_heads"] = hf_config["n_head_kv"]
         else:
             raise ValueError(
                 f"Hugging Face Falcon config with new decoder architecture must contain `n_head_kv`"
@@ -61,9 +61,9 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
     else:
         kwargs["new_decoder_architecture"] = False
         if hf_config.get("multi_query", False):
-            kwargs["num_kv_heads"] = 1
+            kwargs["num_key_value_heads"] = 1
         else:
-            kwargs["num_kv_heads"] = kwargs["num_query_heads"]
+            kwargs["num_key_value_heads"] = kwargs["num_query_heads"]
 
     if "alibi" in hf_config and hf_config["alibi"]:
         raise ValueError("Falcon models with ALiBi are currently not supported")
@@ -85,16 +85,16 @@ def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
 
     if new_decoder_architecture:
         if "num_kv_heads" in hf_config:
-            kwargs["num_kv_heads"] = hf_config["num_kv_heads"]
+            kwargs["num_key_value_heads"] = hf_config["num_kv_heads"]
         else:
             raise ValueError(
                 f"Hugging Face Falcon config with new decoder architecture must contain `num_kv_heads`"
             )
     else:
         if hf_config.get("multi_query", False):
-            kwargs["num_kv_heads"] = 1
+            kwargs["num_key_value_heads"] = 1
         else:
-            kwargs["num_kv_heads"] = kwargs["num_query_heads"]
+            kwargs["num_key_value_heads"] = kwargs["num_query_heads"]
 
     if "alibi" in hf_config and hf_config["alibi"]:
         raise ValueError("Falcon models with ALiBi are currently not supported")

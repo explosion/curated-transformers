@@ -24,7 +24,7 @@ class FalconAttentionConfig:
         dropout_prob: float = 0.1,
         hidden_width: int = 2560,
         num_query_heads: int = 71,
-        num_kv_heads: int = 1,
+        num_key_value_heads: int = 1,
         parallel_attention: bool = True,
         rotary_base=10000,
         rotary_fraction=0.25,
@@ -37,7 +37,7 @@ class FalconAttentionConfig:
             Hidden width of the transformer.
         :param num_query_heads:
             Number of attention heads.
-        :param num_kv_heads:
+        :param num_key_value_heads:
             Number of key and value heads.
         :param parallel_attention:
             Use parallel attention.
@@ -53,7 +53,7 @@ class FalconAttentionConfig:
         self.dropout_prob = dropout_prob
         self.hidden_width = hidden_width
         self.num_query_heads = num_query_heads
-        self.num_key_value_heads = num_kv_heads
+        self.num_key_value_heads = num_key_value_heads
         self.parallel_attention = parallel_attention
         self.rotary_base = rotary_base
         self.rotary_fraction = rotary_fraction
@@ -163,7 +163,7 @@ class FalconConfig:
         layer_norm_eps: float = 1e-5,
         new_decoder_architecture: bool = False,
         num_query_heads: int = 71,
-        num_kv_heads: int = 1,
+        num_key_value_heads: int = 1,
         num_hidden_layers: int = 32,
         parallel_attention: bool = True,
         rotary_embedding_base: int = 10000,
@@ -182,7 +182,7 @@ class FalconConfig:
             Epsilon for layer normalization.
         :param num_query_heads:
             Number of query heads.
-        :param num_kv_heads:
+        :param num_key_value_heads:
             Number of key and value heads.
         :param num_hidden_layers:
             Number of hidden layers.
@@ -208,7 +208,7 @@ class FalconConfig:
             dropout_prob=attention_probs_dropout_prob,
             hidden_width=hidden_width,
             num_query_heads=num_query_heads,
-            num_kv_heads=num_kv_heads,
+            num_key_value_heads=num_key_value_heads,
             parallel_attention=parallel_attention,
             rotary_fraction=rotary_embedding_fraction,
             rotary_base=rotary_embedding_base,

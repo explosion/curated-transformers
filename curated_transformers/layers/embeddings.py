@@ -48,7 +48,7 @@ class SinusoidalPositionalEmbedding(Module):
         pe[:, 1::2] = torch.cos(position * div_term)
 
         if normalize == True:
-            l2 = torch.norm(pe, dim=-1)
+            l2 = torch.linalg.vector_norm(pe, dim=-1)
             pe /= l2.unsqueeze(-1)
 
         self.pe = pe
@@ -67,7 +67,7 @@ class SinusoidalPositionalEmbedding(Module):
 
             *Shape:* ``(seq_len, width)``
         """
-        return self.pe[input.size(1), :]
+        return self.pe[: input.size(1), :]
 
 
 class RotaryEmbeddings(Module):

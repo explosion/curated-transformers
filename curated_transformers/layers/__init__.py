@@ -1,3 +1,4 @@
+from ..layers.feedforward import PointwiseFeedForward
 from .activations import GeluFast, GeluNew
 from .attention import (
     AttentionHeads,
@@ -13,7 +14,6 @@ from .embeddings import (
     RotaryEmbeddings,
     SinusoidalPositionalEmbedding,
 )
-from ..layers.feedforward import PointwiseFeedForward
 from .normalization import RMSNorm
 from .scalar_weight import ScalarWeight
 from .transformer import (

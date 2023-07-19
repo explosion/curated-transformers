@@ -554,6 +554,7 @@ class SelfAttention(Module):
                 )
                 if combined_mask is not None:
                     bool_mask = combined_mask.bool_mask
+                    assert attn_mask is not None
                     attn_mask = torch.where(bool_mask, biases, attn_mask)
                 else:
                     # Just pass the ALiBi biases.

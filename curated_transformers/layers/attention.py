@@ -179,7 +179,7 @@ class AttentionHeads:
         :param num_query_heads:
             Number of query heads.
         """
-        return cls(query_heads=num_query_heads, num_key_value_heads=1)
+        return cls(num_query_heads=num_query_heads, num_key_value_heads=1)
 
     @classmethod
     def key_value_broadcast(

@@ -225,13 +225,13 @@ class AttentionLinearBiases(Module):
         # of 2 for n in the ratio 2**(-8/n) of the geometric sequence for
         # slopes has better properties.
         #
-        # Most implementations use powers use powers of two in the following
+        # Most implementations use powers of two in the following
         # manner: if the number of heads is not a power of 2, then we find
         # k=the largest power of 2 in 1..n. The slopes are then computed
         # as the concatenation of:
         #
         # - The slopes for 1..k.
-        # - The slopes for 1..2*k with step 2, takin the first n-k elements.
+        # - The slopes for 1..2*k with step 2, taking the first n-k elements.
 
         # k is the largest power of 2 in 1..n.
         k = 1 << ((num_attention_heads).bit_length() - 1)
@@ -244,14 +244,10 @@ class AttentionLinearBiases(Module):
 
         return slopes.view(1, -1, 1, 1)
 
-    def _calculate_biases(self, slopes: Tensor, seq_len: int) -> Tensor:
+    def calculate_biases(self, seq_len: int) -> Tensor:
         """
         Calculate the linear bias tensor upto a given (key) sequence length.
 
-        :param slopes:
-            Slope tensor.
-
-            *Shape:* ``(1, heads, 1, 1)``
         :param seq_len:
             Maximum number of timesteps to calculate.
         :returns:
@@ -262,13 +258,13 @@ class AttentionLinearBiases(Module):
 
         :meta private:
         """
-        if not self.is_causal:
+        if self.is_causal:
+            distances = torch.arange(1 - seq_len, 1)
+        else:
             distances = torch.arange(seq_len) - torch.arange(seq_len).view(-1, 1)
             distances = distances.abs().mul(-1).view(1, 1, seq_len, seq_len)
-        else:
-            distances = torch.arange(1 - seq_len, 1)
 
-        return distances * slopes
+        return distances * self.slopes
 
     def forward(self, *, attention_scores: Tensor, inplace: bool = True) -> Tensor:
         """
@@ -288,7 +284,7 @@ class AttentionLinearBiases(Module):
         if not inplace:
             attention_scores = attention_scores.clone()
 
-        biases = self._calculate_biases(self.slopes, attention_scores.size(-1)).to(
+        biases = self.calculate_biases(attention_scores.size(-1)).to(
             dtype=attention_scores.dtype, device=attention_scores.device
         )
         return attention_scores + biases
@@ -546,10 +542,17 @@ class SelfAttention(Module):
             )
 
         if _TORCH_SDP.get():
-            if self.use_alibi:
-                msg = "ALiBi disabled when using PyTorch SDP"
-                warnings.filterwarnings(action="once", message=msg)
-                warnings.warn(msg)
+            attn_mask = (
+                None if combined_mask is None else combined_mask.logit_mask(query.dtype)
+            )
+
+            # Add AliBi to the logit mask
+            if self.use_alibi and attn_mask is not None:
+                bool_mask = combined_mask.bool_mask
+                biases = self.attention.linear_biases.calculate_biases(key.size(-2)).to(
+                    dtype=query.dtype, device=query.device
+                )
+                attn_mask = torch.where(bool_mask, biases, attn_mask)
 
             # We can't pass a bool mask, because it is currently broken:
             # https://github.com/pytorch/pytorch/issues/103749
@@ -557,9 +560,7 @@ class SelfAttention(Module):
                 query=query,
                 key=key,
                 value=value,
-                attn_mask=None
-                if combined_mask is None
-                else combined_mask.logit_mask(query.dtype),
+                attn_mask=attn_mask,
                 dropout_p=self.dropout_prob if self.training else 0.0,
             )
         else:

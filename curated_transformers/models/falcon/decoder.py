@@ -1,17 +1,25 @@
+from functools import partial
 from typing import Any, List, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...layers.attention import AttentionMask
+from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
 from ...layers.cache import KeyValueCache
+from ...layers.embeddings import QueryKeyRotaryEmbeddings
+from ...layers.feedforward import PointwiseFeedForward
+from ...layers.transformer import (
+    DecoderLayer,
+    TransformerDropouts,
+    TransformerLayerNorms,
+)
 from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import FalconConfig
-from .layer import FalconDecoderLayer
+from .layer import OldFalconDecoderLayer
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FalconDecoder")
@@ -44,11 +52,17 @@ class FalconDecoder(DecoderModule, FromHFHub):
         )
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
+        if config.new_decoder_architecture:
+            decoder_layer = partial(
+                self._create_new_decoder_architecture_layer, config, device
+            )
+        else:
+            decoder_layer = partial(
+                self._create_old_decoder_architecture_layer, config, device
+            )
+
         self.layers = ModuleList(
-            [
-                FalconDecoderLayer(config.layer, config.attention, device=device)
-                for _ in range(config.layer.num_hidden_layers)
-            ]
+            [decoder_layer() for _ in range(config.layer.num_hidden_layers)]
         )
 
         self.output_layer_norm = LayerNorm(
@@ -108,3 +122,54 @@ class FalconDecoder(DecoderModule, FromHFHub):
     ) -> Self:
         config = convert_hf_config(hf_config)
         return cls(config, device=device)
+
+    def _create_old_decoder_architecture_layer(
+        self, config: FalconConfig, device: Optional[torch.device]
+    ):
+        return OldFalconDecoderLayer(config.layer, config.attention, device=device)
+
+    def _create_new_decoder_architecture_layer(
+        self, config: FalconConfig, device: Optional[torch.device]
+    ):
+        layer_norm = partial(
+            LayerNorm,
+            config.layer.hidden_width,
+            config.layer.layer_norm_eps,
+            device=device,
+        )
+        hidden_width = config.layer.hidden_width
+        num_attention_heads = config.attention.num_query_heads
+        return DecoderLayer(
+            attention_layer=SelfAttention(
+                attention_heads=AttentionHeads.key_value_broadcast(
+                    num_query_heads=num_attention_heads,
+                    num_key_value_heads=config.attention.num_key_value_heads,
+                ),
+                dropout_prob=config.attention.dropout_prob,
+                hidden_width=hidden_width,
+                qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
+                rotary_embeds=QueryKeyRotaryEmbeddings(
+                    fraction=config.attention.rotary_fraction,
+                    base=config.attention.rotary_base,
+                    dims_per_head=hidden_width // num_attention_heads,
+                ),
+                use_bias=config.attention.use_bias,
+                device=device,
+            ),
+            feed_forward_layer=PointwiseFeedForward(
+                hidden_act="gelu",
+                hidden_width=hidden_width,
+                intermediate_width=4 * config.layer.hidden_width,
+                use_bias=config.layer.use_bias,
+                use_gate=False,
+                device=device,
+            ),
+            dropouts=TransformerDropouts.parallel_attention_dropout(
+                config.layer.dropout_prob
+            ),
+            layer_norms=TransformerLayerNorms(
+                attn_input_layer_norm=layer_norm(),
+                ffn_input_layer_norm=layer_norm(),
+            ),
+            parallel_attention=True,
+        )

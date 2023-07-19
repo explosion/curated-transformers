@@ -138,19 +138,76 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
     return AttentionMask(causal_mask[:, :, key_len - query_len : key_len, :key_len])
 
 
-class QkvHeadSharing(IntEnum):
-    """
-    Sharing of head parameters.
-    """
+class AttentionHeads:
+    def __init__(self, *, num_query_heads: int, num_key_value_heads: int):
+        """
+        Construct an attention head configuration. This constructor must
+        not be used directly, its signature may change even within a semver
+        version. Use the factory methods instead.
 
-    #: No parameters are shared between heads.
-    NONE = 0
+        :param num_query_heads:
+            Number of query heads.
+        :param num_key_value_heads:
+            Number of key/value heads.
 
-    #: Multi-query attention: Key shares heads, value shares heads,
-    #: query has separate heads (`Shazeer et al., 2019`_).
-    #:
-    #: .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
-    KEY_VALUE = 1
+        :meta private:
+        """
+        self._num_query_heads = num_query_heads
+        self._num_key_value_heads = num_key_value_heads
+
+    @classmethod
+    def uniform(cls, num_attention_heads: int) -> "AttentionHeads":
+        """
+        Construct a head configuration where query, key, and value have the
+        same number of attention heads.
+
+        :param num_attention_heads:
+            Number of attention heads.
+        """
+        return cls(
+            num_query_heads=num_attention_heads, num_key_value_heads=num_attention_heads
+        )
+
+    @classmethod
+    def multi_query(cls, num_query_heads: int) -> "AttentionHeads":
+        """
+        Construct a multi-query attention configuration: key shares heads,
+        value shares heads, query has separate heads (`Shazeer et al., 2019`_).
+
+        #: .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
+
+        :param num_query_heads:
+            Number of query heads.
+        """
+        return cls(query_heads=num_query_heads, num_key_value_heads=1)
+
+    @classmethod
+    def key_value_broadcast(
+        cls, *, num_query_heads: int, num_key_value_heads: int
+    ) -> "AttentionHeads":
+        """
+        Construct a head configuration where query has a larger number
+        of heads than key and value. Key/value heads are broadcast to
+        correspond to the number of query heads.
+
+        :param num_query_heads:
+            Number of attention heads. Must be a multiple of
+            ``num_key_value_heads``.
+        :param num_key_value_heads:
+            Number of key and value heads.
+        """
+
+        if (
+            num_query_heads < num_key_value_heads
+            or num_query_heads % num_key_value_heads != 0
+        ):
+            raise ValueError(
+                f"Number of query heads ({num_query_heads}) must be a multiple of key/value heads ({num_key_value_heads})"
+            )
+
+        return cls(
+            num_query_heads=num_query_heads, num_key_value_heads=num_key_value_heads
+        )
 
 
 class QkvMode(IntEnum):
@@ -163,13 +220,15 @@ class QkvMode(IntEnum):
     SEPARATE = (0,)
 
     #: ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query,
-    # key and value, and split heads before splitting the query, key
-    # and value representations.
+    #: key and value, and split heads before splitting the query, key
+    #: and value representations. This ordering is incompatible with
+    #: head sharing in keys or values.
+
     MERGED_SPLIT_BEFORE = (1,)
 
     #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query,
-    # key and value, and split heads after splitting the query, key
-    # and value representations.
+    #: key and value, and split heads after splitting the query, key
+    #: and value representations.
     MERGED_SPLIT_AFTER = (2,)
 
 
@@ -255,10 +314,9 @@ class SelfAttention(Module):
     def __init__(
         self,
         *,
+        attention_heads: AttentionHeads,
         dropout_prob: float,
-        qkv_head_sharing: QkvHeadSharing,
         hidden_width: int,
-        num_attention_heads: int,
         qkv_mode: QkvMode,
         rotary_embeds: Optional[QueryKeyRotaryEmbeddings] = None,
         use_bias: bool,
@@ -267,14 +325,12 @@ class SelfAttention(Module):
         """
         Construct a self-attention layer with rotary position embeddings.
 
+        :param attention_heads:
+            Attention head configuration.
         :param dropout_prob:
             Dropout to apply between the self-attention and output layers.
-        :param qkv_head_sharing:
-            Head sharing in query, key and value.
         :param hidden_width:
             Hidden width of the layer.
-        :param num_attention_heads:
-            Number of attention heads.
         :param qkv_mode:
             Handling mode for query, key and value.
         :param rotary_embeds:
@@ -289,15 +345,14 @@ class SelfAttention(Module):
         super().__init__()
 
         self.dropout_prob = dropout_prob
-        self.model_dim = hidden_width
-        self.num_heads = num_attention_heads
-        if self.model_dim % self.num_heads != 0:
+        self.attention_heads = attention_heads
+        if hidden_width % attention_heads._num_query_heads != 0:
             raise ValueError(
-                f"The hidden width of the transformer ({self.model_dim}) must be "
-                f"divisible by the number of self-attention heads ({self.num_heads})"
+                f"The hidden width of the transformer ({hidden_width}) must be "
+                f"divisible by the number of query heads ({attention_heads._num_query_heads})"
             )
 
-        self.dims_per_head = self.model_dim // self.num_heads
+        self.dims_per_head = hidden_width // attention_heads._num_query_heads
         self.qkv_mode = qkv_mode
 
         self.rotary_embeds = rotary_embeds
@@ -308,38 +363,41 @@ class SelfAttention(Module):
 
         if (
             qkv_mode == QkvMode.MERGED_SPLIT_BEFORE
-            and qkv_head_sharing == QkvHeadSharing.KEY_VALUE
+            and attention_heads._num_query_heads != attention_heads._num_key_value_heads
         ):
             raise ValueError(
                 "QkvMode.MERGED_SPLIT_BEFORE is incompatible with key/value head sharing"
             )
-        self.head_sharing = qkv_head_sharing
 
-        # Head sharing is implemented as just having one head. We will still
-        # have multiple heads after attention, because the value has multiple
-        # heads, so attention will broadcast.
-        kv_dim = (
-            self.dims_per_head
-            if qkv_head_sharing == QkvHeadSharing.KEY_VALUE
-            else self.model_dim
-        )
+        key_value_dim = attention_heads._num_key_value_heads * self.dims_per_head
         if qkv_mode == QkvMode.SEPARATE:
             self.query = Linear(
-                self.model_dim, self.model_dim, bias=use_bias, device=device
+                hidden_width,
+                hidden_width,
+                bias=use_bias,
+                device=device,
             )
-            self.key = Linear(self.model_dim, kv_dim, bias=use_bias, device=device)
-            self.value = Linear(self.model_dim, kv_dim, bias=use_bias, device=device)
+            self.key = Linear(
+                hidden_width,
+                key_value_dim,
+                bias=use_bias,
+                device=device,
+            )
+            self.value = Linear(
+                hidden_width,
+                key_value_dim,
+                bias=use_bias,
+                device=device,
+            )
         else:
             self.input = Linear(
-                self.model_dim,
-                self.model_dim + 2 * kv_dim,
+                hidden_width,
+                hidden_width + 2 * key_value_dim,
                 bias=use_bias,
                 device=device,
             )
 
-        self.output = Linear(
-            self.model_dim, self.model_dim, bias=use_bias, device=device
-        )
+        self.output = Linear(hidden_width, hidden_width, bias=use_bias, device=device)
 
     def forward(
         self,
@@ -448,35 +506,42 @@ class SelfAttention(Module):
 
             *Shape:* ``(batch_size, head, seq_len, width_per_head)``
         """
-        kv_heads = (
-            1 if self.head_sharing == QkvHeadSharing.KEY_VALUE else self.num_heads
-        )
+
+        num_key_value_heads = self.attention_heads._num_key_value_heads
+        num_query_heads = self.attention_heads._num_query_heads
         if self.qkv_mode == QkvMode.SEPARATE:
             query = self.query(input)
             key = self.key(input)
             value = self.value(input)
 
-            query = split_heads(query, self.num_heads)
-            key = split_heads(key, kv_heads)
-            value = split_heads(value, kv_heads)
+            query = split_heads(query, num_query_heads)
+            key = split_heads(key, num_key_value_heads)
+            value = split_heads(value, num_key_value_heads)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
             proj = self.input(input)
-            proj = split_heads(proj, self.num_heads)
+            proj = split_heads(proj, num_query_heads)
             query, key, value = proj.chunk(3, dim=-1)
         else:
             proj = self.input(input)
-            query, key, value = proj.split(
-                [
-                    self.num_heads * self.dims_per_head,
-                    kv_heads * self.dims_per_head,
-                    kv_heads * self.dims_per_head,
-                ],
-                dim=-1,
+
+            # This splitting method is used by Falcon. There are other
+            # (simpler) splitting methods. For instance, we could group all
+            # the heads together and then split them. In the future we
+            # could split conditional on a field in AttentionHeads.
+            query, key, value = split_heads_grouped_qkv(
+                proj, self.attention_heads, self.dims_per_head
             )
 
-            query = split_heads(query, self.num_heads)
-            key = split_heads(key, kv_heads)
-            value = split_heads(value, kv_heads)
+        if num_key_value_heads != 1 and num_key_value_heads != num_query_heads:
+            # If all the key/value representations are shared, their head
+            # dimension is 1 and the heads will broadcast in later ops.
+            # However, we have multiple heads, we have to broadcast the
+            # heads explicitly. Like splitting, there are multiple ways
+            # to do this. The current interleaving repeat is used for
+            # compatibility with falcon.
+            n_tiling = num_query_heads // num_key_value_heads
+            key = key.repeat_interleave(n_tiling, dim=1)
+            value = value.repeat_interleave(n_tiling, dim=1)
 
         return query, key, value
 
@@ -503,6 +568,53 @@ def split_heads(input: Tensor, num_heads: int) -> Tensor:
     dims_per_head = model_dim // num_heads
 
     return input.view(batch_size, seq_len, num_heads, dims_per_head).transpose(1, 2)
+
+
+def split_heads_grouped_qkv(
+    projection: Tensor, attention_heads: AttentionHeads, dims_per_head: int
+) -> Tuple[Tensor, Tensor, Tensor]:
+    """
+    Split attention heads by grouping the heads in blocks of
+    the number of key/value-heads. Then distribute the heads
+    across query, key, and value.
+
+    :param projection:
+        The fused query, key, value projection.
+    :param attention_heads:
+        Attention head configuration.
+    :param dims_per_head:
+        Head dimensionality.
+    :returns:
+        Query, key, value tensors.
+    """
+    num_query_heads = attention_heads._num_query_heads
+    num_key_value_heads = attention_heads._num_key_value_heads
+
+    batch_size, seq_len, _ = projection.shape
+
+    # Group the heads in num_key_value_head-sized blocks and
+    # then split the blocks.
+    grouped_projection = projection.view(
+        batch_size,
+        seq_len,
+        -1,
+        num_query_heads // num_key_value_heads + 2,
+        dims_per_head,
+    )
+    query, key, value = grouped_projection.split(
+        [num_query_heads // num_key_value_heads, 1, 1], dim=-2
+    )
+
+    def permute_merge_roups(x, num_heads):
+        return x.permute(0, 2, 3, 1, 4).reshape(
+            batch_size, num_heads, seq_len, dims_per_head
+        )
+
+    query = permute_merge_roups(query, num_query_heads)
+    key = permute_merge_roups(key, num_key_value_heads)
+    value = permute_merge_roups(value, num_key_value_heads)
+
+    return query, key, value
 
 
 def combine_heads(input: Tensor) -> Tensor:

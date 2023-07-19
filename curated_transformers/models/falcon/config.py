@@ -11,8 +11,8 @@ class FalconAttentionConfig:
 
     dropout_prob: float
     hidden_width: int
-    multi_query: bool
-    num_attention_heads: int
+    num_query_heads: int
+    num_key_value_heads: int
     parallel_attention: bool
     rotary_fraction: float
     rotary_base: int
@@ -23,8 +23,8 @@ class FalconAttentionConfig:
         *,
         dropout_prob: float = 0.1,
         hidden_width: int = 2560,
-        multi_query: bool = True,
-        num_attention_heads: int = 71,
+        num_query_heads: int = 71,
+        num_kv_heads: int = 1,
         parallel_attention: bool = True,
         rotary_base=10000,
         rotary_fraction=0.25,
@@ -35,10 +35,10 @@ class FalconAttentionConfig:
             Dropout to apply after attention.
         :param hidden_width:
             Hidden width of the transformer.
-        :param multi_query:
-            Use multiple query heads and single key and value heads.
-        :param num_attention_heads:
+        :param num_query_heads:
             Number of attention heads.
+        :param num_kv_heads:
+            Number of key and value heads.
         :param parallel_attention:
             Use parallel attention.
         :param rotary_base:
@@ -52,8 +52,8 @@ class FalconAttentionConfig:
 
         self.dropout_prob = dropout_prob
         self.hidden_width = hidden_width
-        self.multi_query = multi_query
-        self.num_attention_heads = num_attention_heads
+        self.num_query_heads = num_query_heads
+        self.num_key_value_heads = num_kv_heads
         self.parallel_attention = parallel_attention
         self.rotary_base = rotary_base
         self.rotary_fraction = rotary_fraction
@@ -141,6 +141,7 @@ class FalconLayerConfig:
         self.use_bias = use_bias
 
 
+@dataclass
 class FalconConfig:
     """
     `Falcon`_ model configuration.
@@ -151,6 +152,7 @@ class FalconConfig:
     attention: FalconAttentionConfig
     embedding: FalconEmbeddingConfig
     layer: FalconLayerConfig
+    new_decoder_architecture: bool
 
     def __init__(
         self,
@@ -159,8 +161,9 @@ class FalconConfig:
         hidden_dropout_prob: float = 0.0,
         hidden_width: int = 2560,
         layer_norm_eps: float = 1e-5,
-        multi_query: bool = True,
-        num_attention_heads: int = 71,
+        new_decoder_architecture: bool = False,
+        num_query_heads: int = 71,
+        num_kv_heads: int = 1,
         num_hidden_layers: int = 32,
         parallel_attention: bool = True,
         rotary_embedding_base: int = 10000,
@@ -177,8 +180,10 @@ class FalconConfig:
             Hidden width of the transformer.
         :param layer_norm_eps:
             Epsilon for layer normalization.
-        :param multi_query:
-            Use multiple query heads and single key and value heads.
+        :param num_query_heads:
+            Number of query heads.
+        :param num_kv_heads:
+            Number of key and value heads.
         :param num_hidden_layers:
             Number of hidden layers.
         :param parallel_attention:
@@ -202,8 +207,8 @@ class FalconConfig:
         self.attention = FalconAttentionConfig(
             dropout_prob=attention_probs_dropout_prob,
             hidden_width=hidden_width,
-            multi_query=multi_query,
-            num_attention_heads=num_attention_heads,
+            num_query_heads=num_query_heads,
+            num_kv_heads=num_kv_heads,
             parallel_attention=parallel_attention,
             rotary_fraction=rotary_embedding_fraction,
             rotary_base=rotary_embedding_base,
@@ -221,3 +226,4 @@ class FalconConfig:
             layer_norm_eps=layer_norm_eps,
             num_hidden_layers=num_hidden_layers,
         )
+        self.new_decoder_architecture = new_decoder_architecture

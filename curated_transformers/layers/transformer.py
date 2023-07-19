@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn import Identity, Module
+from torch.nn import Dropout, Identity, Module
 
 from .attention import AttentionMask, KeyValueCache, SelfAttention
 from .feedforward import PointwiseFeedForward
@@ -34,6 +34,54 @@ class TransformerLayerNorms:
     ffn_residual_layer_norm: Module = Identity()
 
 
+@dataclass
+class TransformerDropouts:
+    """
+    Dropouts used in a transformer layer.
+
+    By default, all the dropouts are disabled by setting the dropout
+    to the Torch ``Identity`` module. Therefore, only dropouts that are
+    needed have to be set.
+    """
+
+    #: Dropout of the output of the attention layer.
+    attn_output_dropout: Module = Identity()
+
+    #: Dropout of the output of the feed-forward layer.
+    ffn_output_dropout: Module = Identity()
+
+    #: Dropout after summing the attention and feedforward layers. Only
+    #: used when parallel attention is enabled.
+    parallel_attn_dropout: Module = Identity()
+
+    @classmethod
+    def layer_output_dropouts(cls, p: float) -> "TransformerDropouts":
+        """
+        Utility method to construct attention and feed-forward layer
+        dropouts.
+
+        :param p:
+            Dropout probability.
+        :returns:
+            Dropouts of attention and feed-forward layers set to ``p``.
+        """
+        return TransformerDropouts(
+            attn_output_dropout=Dropout(p), ffn_output_dropout=Dropout(p)
+        )
+
+    @classmethod
+    def parallel_attention_dropout(cls, p: float) -> "TransformerDropouts":
+        """
+        Utility method to construct parallel attention dropout.
+
+        :param p:
+            Dropout probability.
+        :returns:
+            Dropouts of parallel attention set to ``p``.
+        """
+        return TransformerDropouts(parallel_attn_dropout=Dropout(p))
+
+
 class _TransformerLayer(Module):
     """
     Transformer decoder layer (`Vaswani et al., 2017`_) base class.
@@ -53,8 +101,8 @@ class _TransformerLayer(Module):
         self,
         *,
         attention_layer: SelfAttention,
+        dropouts: TransformerDropouts,
         feed_forward_layer: PointwiseFeedForward,
-        hidden_dropout: float,
         layer_norms: TransformerLayerNorms,
         parallel_attention: bool,
     ):
@@ -63,10 +111,10 @@ class _TransformerLayer(Module):
 
         :param attention_layer:
             The attention layer to use in the transformer layer.
+        :param dropouts:
+            Dropouts to use in the transformer layer.
         :param feed_forward_layer:
             The pointwise feed-forward layer to use in the transformer layer.
-        :param hidden_dropout:
-            Dropout probabilty to apply after hidden layers.
         :param layer_norms:
             Layer norms to use in the layer.
         :param parallel_attention:
@@ -77,10 +125,12 @@ class _TransformerLayer(Module):
         self.parallel_attention = parallel_attention
 
         self.mha = attention_layer
-        self.attn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
 
         self.ffn = feed_forward_layer
-        self.ffn_output_dropout = torch.nn.Dropout(p=hidden_dropout)
+
+        self.attn_output_dropout = dropouts.attn_output_dropout
+        self.ffn_output_dropout = dropouts.ffn_output_dropout
+        self.parallel_attn_dropout = dropouts.parallel_attn_dropout
 
         self.attn_input_layer_norm = layer_norms.attn_input_layer_norm
         self.attn_residual_layer_norm = layer_norms.attn_residual_layer_norm
@@ -148,7 +198,7 @@ class _TransformerLayer(Module):
         ffn_out = self.ffn_output_dropout(ffn_out)
 
         if self.parallel_attention:
-            output = attn_out + ffn_out
+            output = self.parallel_attn_dropout(attn_out + ffn_out)
         else:
             output = ffn_out
 

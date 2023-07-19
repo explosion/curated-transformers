@@ -35,6 +35,14 @@ FALCON_TEST_MODELS = [
         "explosion-testing/refined-web-model-test",
         "57a7a9829a4b6fce833152c4c20a46c7056f9cc1",
     ),
+    (
+        "explosion-testing/refined-web-model-new-decoder-test",
+        "512fb26ab864280eace45144924b2c213ad87a87",
+    ),
+    (
+        "explosion-testing/falcon-new-decoder-test",
+        "d53e01af2cc0edc22719c4d2f22bd66a87fa8c64",
+    ),
 ]
 
 

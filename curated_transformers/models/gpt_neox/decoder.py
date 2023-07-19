@@ -5,11 +5,15 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
+from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
 from ...layers.cache import KeyValueCache
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
-from ...layers.transformer import DecoderLayer, TransformerLayerNorms
+from ...layers.transformer import (
+    DecoderLayer,
+    TransformerDropouts,
+    TransformerLayerNorms,
+)
 from ..hf_hub import FromHFHub
 from ..module import DecoderModule
 from ..output import ModelOutputWithCache
@@ -59,10 +63,11 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
+                        attention_heads=AttentionHeads.uniform(
+                            config.attention.num_attention_heads
+                        ),
                         dropout_prob=config.attention.dropout_prob,
                         hidden_width=hidden_width,
-                        num_attention_heads=num_attention_heads,
-                        qkv_head_sharing=QkvHeadSharing.NONE,
                         qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.attention.rotary_fraction,
@@ -80,7 +85,9 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
                         use_gate=False,
                         device=device,
                     ),
-                    hidden_dropout=config.layer.dropout_prob,
+                    dropouts=TransformerDropouts.layer_output_dropouts(
+                        config.layer.dropout_prob
+                    ),
                     layer_norms=TransformerLayerNorms(
                         attn_input_layer_norm=layer_norm(),
                         ffn_input_layer_norm=layer_norm(),

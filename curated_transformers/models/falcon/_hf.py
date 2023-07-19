@@ -56,7 +56,7 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
             kwargs["num_kv_heads"] = hf_config["n_head_kv"]
         else:
             raise ValueError(
-                f"Hugging Face Falcon config with new decoder architecture must contain `h_head_kv`"
+                f"Hugging Face Falcon config with new decoder architecture must contain `n_head_kv`"
             )
     else:
         kwargs["new_decoder_architecture"] = False

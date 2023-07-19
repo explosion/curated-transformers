@@ -174,7 +174,7 @@ class AttentionHeads:
         Construct a multi-query attention configuration: key shares heads,
         value shares heads, query has separate heads (`Shazeer et al., 2019`_).
 
-        #: .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
+        .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
 
         :param num_query_heads:
             Number of query heads.
@@ -519,7 +519,9 @@ class SelfAttention(Module):
             value = split_heads(value, num_key_value_heads)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
             proj = self.input(input)
-            proj = split_heads(proj, num_query_heads)
+			# Same number of heads for query, key and value
+			# since we cannot share heads in this mode.
+            proj = split_heads(proj, num_query_heads) 
             query, key, value = proj.chunk(3, dim=-1)
         else:
             proj = self.input(input)
@@ -605,14 +607,14 @@ def split_heads_grouped_qkv(
         [num_query_heads // num_key_value_heads, 1, 1], dim=-2
     )
 
-    def permute_merge_roups(x, num_heads):
+    def permute_merge_groups(x, num_heads):
         return x.permute(0, 2, 3, 1, 4).reshape(
             batch_size, num_heads, seq_len, dims_per_head
         )
 
-    query = permute_merge_roups(query, num_query_heads)
-    key = permute_merge_roups(key, num_key_value_heads)
-    value = permute_merge_roups(value, num_key_value_heads)
+    query = permute_merge_groups(query, num_query_heads)
+    key = permute_merge_groups(key, num_key_value_heads)
+    value = permute_merge_groups(value, num_key_value_heads)
 
     return query, key, value
 

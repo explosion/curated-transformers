@@ -50,7 +50,7 @@ class TransformerDropouts:
     #: Dropout of the output of the feed-forward layer.
     ffn_output_dropout: Module = Identity()
 
-    #: Dropout after summing the attention and feedforward layers. Only
+    #: Dropout after summing the attention and feed-forward layers. Only
     #: used when parallel attention is enabled.
     parallel_attn_dropout: Module = Identity()
 

@@ -39,10 +39,11 @@ FALCON_TEST_MODELS = [
         "explosion-testing/refined-web-model-new-decoder-test",
         "512fb26ab864280eace45144924b2c213ad87a87",
     ),
-    (
-        "explosion-testing/falcon-new-decoder-test",
-        "d53e01af2cc0edc22719c4d2f22bd66a87fa8c64",
-    ),
+    # Enable when HF transformers with Falcon is released.
+    # (
+    #    "explosion-testing/falcon-new-decoder-test",
+    #    "d53e01af2cc0edc22719c4d2f22bd66a87fa8c64",
+    # ),
 ]
 
 

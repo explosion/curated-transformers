@@ -206,30 +206,43 @@ class AttentionLinearBiases(Module):
         :param num_attention_heads:
             Number of attention heads.
         :returns:
-            Slope tensor.
+            Head slope tensor.
 
             *Shape:* ``(1, heads, 1, 1)``
 
         :meta private:
         """
-        # Calculate values to the closest power of two and concat the remaining.
-        closest_pow_2 = 2 ** math.floor(math.log2(num_attention_heads))
-        ratio_base = 2.0 ** (-8.0 / closest_pow_2)
-        ratios = torch.pow(ratio_base, torch.arange(1, 1 + closest_pow_2))
 
-        # Start with for 2*closest_pow_2 and pick every other position
-        # to avoid previously picked values.
-        if closest_pow_2 < num_attention_heads:
-            new_ratio_base = 2.0 ** (-4.0 / closest_pow_2)
-            num_remaining_heads = min(
-                closest_pow_2, num_attention_heads - closest_pow_2
-            )
-            new_ratios = torch.pow(
-                new_ratio_base, torch.arange(1, 1 + 2 * num_remaining_heads, 2)
-            )
-            ratios = torch.cat([ratios, new_ratios])
+        def _slopes_with_step(num_attention_heads, *, step=1):
+            ratio = 2.0 ** (-8.0 / num_attention_heads)
+            return ratio ** torch.arange(1, 1 + num_attention_heads, step)
 
-        return ratios.view(1, -1, 1, 1)
+        # The slope as proposed in the ALiBi paper would be:
+        #
+        # return _slopes_with_step(num_attention_heads)
+        #
+        # However the authors note in their implementation that using powers
+        # of 2 for n in the ratio 2**(-8/n) of the geometric sequence for
+        # slopes has better properties.
+        #
+        # Most implementations use powers use powers of two in the following
+        # manner: if the number of heads is not a power of 2, then we find
+        # k=the largest power of 2 in 1..n. The slopes are then computed
+        # as the concatenation of:
+        #
+        # - The slopes for 1..k.
+        # - The slopes for 1..2*k with step 2, takin the first n-k elements.
+
+        # k is the largest power of 2 in 1..n.
+        k = 1 << ((num_attention_heads).bit_length() - 1)
+        slopes = _slopes_with_step(k)
+
+        if num_attention_heads != k:
+            remaining_heads = num_attention_heads - k
+            slopes_rest = _slopes_with_step(2 * k, step=2)[:remaining_heads]
+            slopes = torch.cat([slopes, slopes_rest])
+
+        return slopes.view(1, -1, 1, 1)
 
     def _calculate_biases(self, slopes: Tensor, seq_len: int) -> Tensor:
         """

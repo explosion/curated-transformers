@@ -548,6 +548,8 @@ class SelfAttention(Module):
 
             # Add AliBi to the logit mask
             if self.use_alibi and attn_mask is not None:
+                assert combined_mask is not None
+                assert self.attention.linear_biases is not None
                 bool_mask = combined_mask.bool_mask
                 biases = self.attention.linear_biases.calculate_biases(key.size(-2)).to(
                     dtype=query.dtype, device=query.device

@@ -9,6 +9,9 @@ Encoder/Decoder Layers
 
 These modules implement full encoder/decoder layers.
 
+.. autoclass:: curated_transformers.layers.transformer.TransformerDropouts
+   :members:
+
 .. autoclass:: curated_transformers.layers.transformer.TransformerLayerNorms
    :members:
 

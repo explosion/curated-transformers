@@ -171,8 +171,10 @@ class AttentionHeads:
     @classmethod
     def multi_query(cls, num_query_heads: int) -> "AttentionHeads":
         """
-        Construct a multi-query attention configuration: key shares heads,
-        value shares heads, query has separate heads (`Shazeer et al., 2019`_).
+        Construct a multi-query attention configuration: key has one head,
+        value has one head, query has ``num_query_heads`` heads
+        (`Shazeer et al., 2019`_). The key head and the value head are
+        broadcast to the shape of the query.
 
         .. _Shazeer et al., 2019: https://arxiv.org/abs/1911.02150
 
@@ -582,12 +584,20 @@ def split_heads_grouped_qkv(
 
     :param projection:
         The fused query, key, value projection.
+
+        *Shape:* ``(batch_size, seq_len,
+        (num_query_heads + 2*num_key_value_heads)*dims_per_head)``
     :param attention_heads:
         Attention head configuration.
     :param dims_per_head:
         Head dimensionality.
     :returns:
         Query, key, value tensors.
+
+        Shapes:
+        - query: ``(batch_size, num_query_heads, seq_len, dims_per_head)
+        - key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
+        - value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
     """
     num_query_heads = attention_heads._num_query_heads
     num_key_value_heads = attention_heads._num_key_value_heads

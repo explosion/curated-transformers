@@ -17,20 +17,22 @@ class TransformerLayerNorms:
     By default, all the normalizations are disabled by setting the layer
     normalization to the Torch ``Identity`` module. Therefore, only
     normalizations that are needed have to be set.
+
+    :param attn_input_layer_norm:
+        Normalization of the input to the attention layer.
+    :param attn_residual_layer_norm:
+        Normalization of the output of the attention layer after the
+        residual connection.
+    :param ffn_input_layer_norm:
+        Normalization of the input to the feed-forward layer.
+    :param ffn_residual_layer_norm:
+        Normalization of the output of the feed-forward layer after the
+        residual connection.
     """
 
-    #: Normalization of the input to the attention layer.
     attn_input_layer_norm: Module = Identity()
-
-    #: Normalization of the output of the attention layer after the
-    #: residual connection.
     attn_residual_layer_norm: Module = Identity()
-
-    #: Normalization of the input to the feed-forward layer.
     ffn_input_layer_norm: Module = Identity()
-
-    #: Normalization of the output of the feed-forward layer after the
-    #: residual connection.
     ffn_residual_layer_norm: Module = Identity()
 
 
@@ -42,16 +44,18 @@ class TransformerDropouts:
     By default, all the dropouts are disabled by setting the dropout
     to the Torch ``Identity`` module. Therefore, only dropouts that are
     needed have to be set.
+
+    :param attn_output_dropout:
+        Dropout of the output of the attention layer.
+    :param ffn_output_dropout:
+        Dropout of the output of the attention layer.
+    :param parallel_attn_dropout:
+        Dropout after summing the attention and feed-forward layers. Only
+        used when parallel attention is enabled.
     """
 
-    #: Dropout of the output of the attention layer.
     attn_output_dropout: Module = Identity()
-
-    #: Dropout of the output of the feed-forward layer.
     ffn_output_dropout: Module = Identity()
-
-    #: Dropout after summing the attention and feed-forward layers. Only
-    #: used when parallel attention is enabled.
     parallel_attn_dropout: Module = Identity()
 
     @classmethod

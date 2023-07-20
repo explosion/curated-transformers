@@ -744,7 +744,7 @@ def split_heads_grouped_qkv(
     :returns:
         Query, key, value tensors.
 
-        Shapes:
+        *Shapes:*
         - query: ``(batch_size, num_query_heads, seq_len, dims_per_head)
         - key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
         - value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)

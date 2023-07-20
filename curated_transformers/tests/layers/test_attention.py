@@ -3,6 +3,7 @@ import torch
 
 from curated_transformers.layers.attention import (
     _TORCH_SDP,
+    AttentionLinearBiases,
     AttentionMask,
     enable_torch_sdp,
 )
@@ -110,3 +111,101 @@ def test_torch_sdp_causal_with_mask(torch_device):
                 X, attention_mask=AttentionMask(mask)
             ).last_hidden_layer_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_sdp)
+
+
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_attention_linear_biases(torch_device):
+    pow2_slopes = AttentionLinearBiases(num_attention_heads=8, is_causal=False).slopes
+    torch_assertclose(
+        pow2_slopes.to(device=torch_device),
+        torch.tensor(
+            [
+                [
+                    [[0.5]],
+                    [[0.25]],
+                    [[0.125]],
+                    [[0.0625]],
+                    [[0.03125]],
+                    [[0.015625]],
+                    [[0.0078125]],
+                    [[0.00390625]],
+                ]
+            ],
+            device=torch_device,
+        ),
+    )
+    non_pow2_slopes = AttentionLinearBiases(
+        num_attention_heads=12, is_causal=False
+    ).slopes
+    torch_assertclose(
+        non_pow2_slopes.to(device=torch_device),
+        torch.tensor(
+            [
+                [
+                    [[0.5]],
+                    [[0.25]],
+                    [[0.125]],
+                    [[0.0625]],
+                    [[0.03125]],
+                    [[0.015625]],
+                    [[0.0078125]],
+                    [[0.00390625]],
+                    [[0.7071067811865476]],
+                    [[0.35355339059327384]],
+                    [[0.17677669529663692]],
+                    [[0.08838834764831849]],
+                ]
+            ],
+            device=torch_device,
+        ),
+    )
+
+    alibi_causal = AttentionLinearBiases(num_attention_heads=4, is_causal=True)
+    torch_assertclose(
+        alibi_causal(attention_scores=torch.zeros((1, 4, 1, 3), device=torch_device)),
+        torch.tensor(
+            [
+                [
+                    [[-0.5000, -0.2500, 0.0000]],
+                    [[-0.1250, -0.0625, 0.0000]],
+                    [[-0.03125, -0.015625, 0.0000]],
+                    [[-0.0078125, -0.00390625, 0.0000]],
+                ]
+            ],
+            device=torch_device,
+        ),
+    )
+
+    alibi_non_causal = AttentionLinearBiases(num_attention_heads=4, is_causal=False)
+    torch_assertclose(
+        alibi_non_causal(
+            attention_scores=torch.zeros((1, 4, 3, 3), device=torch_device)
+        ),
+        torch.tensor(
+            [
+                [
+                    [
+                        [0.0000, -0.2500, -0.5000],
+                        [-0.2500, 0.0000, -0.2500],
+                        [-0.5000, -0.2500, 0.0000],
+                    ],
+                    [
+                        [0.0000, -0.0625, -0.1250],
+                        [-0.0625, 0.0000, -0.0625],
+                        [-0.1250, -0.0625, 0.0000],
+                    ],
+                    [
+                        [0.0000, -0.015625, -0.03125],
+                        [-0.015625, 0.0000, -0.015625],
+                        [-0.03125, -0.015625, 0.0000],
+                    ],
+                    [
+                        [0.0000, -0.00390625, -0.0078125],
+                        [-0.00390625, 0.0000, -0.00390625],
+                        [-0.0078125, -0.00390625, 0.0000],
+                    ],
+                ]
+            ],
+            device=torch_device,
+        ),
+    )

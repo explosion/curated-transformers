@@ -5,9 +5,13 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm, Module, ModuleList
 
-from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
+from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
-from ...layers.transformer import EncoderLayer, TransformerLayerNorms
+from ...layers.transformer import (
+    EncoderLayer,
+    TransformerDropouts,
+    TransformerLayerNorms,
+)
 from ..bert.config import BERTAttentionConfig
 from .config import ALBERTLayerConfig
 
@@ -38,10 +42,11 @@ class ALBERTLayerGroup(Module):
             [
                 EncoderLayer(
                     attention_layer=SelfAttention(
+                        attention_heads=AttentionHeads.uniform(
+                            attention_config.num_attention_heads
+                        ),
                         dropout_prob=attention_config.dropout_prob,
                         hidden_width=layer_config.hidden_width,
-                        num_attention_heads=attention_config.num_attention_heads,
-                        qkv_head_sharing=QkvHeadSharing.NONE,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
                         use_bias=True,
@@ -55,7 +60,9 @@ class ALBERTLayerGroup(Module):
                         use_gate=False,
                         device=device,
                     ),
-                    hidden_dropout=layer_config.dropout_prob,
+                    dropouts=TransformerDropouts.layer_output_dropouts(
+                        layer_config.dropout_prob
+                    ),
                     layer_norms=TransformerLayerNorms(
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),

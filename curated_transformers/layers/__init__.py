@@ -1,8 +1,8 @@
 from ..layers.feedforward import PointwiseFeedForward
 from .activations import GeluFast, GeluNew
 from .attention import (
+    AttentionHeads,
     AttentionMask,
-    QkvHeadSharing,
     QkvMode,
     ScaledDotProductAttention,
     SelfAttention,
@@ -16,4 +16,9 @@ from .embeddings import (
 )
 from .normalization import RMSNorm
 from .scalar_weight import ScalarWeight
-from .transformer import DecoderLayer, EncoderLayer, TransformerLayerNorms
+from .transformer import (
+    DecoderLayer,
+    EncoderLayer,
+    TransformerDropouts,
+    TransformerLayerNorms,
+)

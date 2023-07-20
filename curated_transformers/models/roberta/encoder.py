@@ -5,9 +5,13 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm
 
-from ...layers.attention import AttentionMask, QkvHeadSharing, QkvMode, SelfAttention
+from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
-from ...layers.transformer import EncoderLayer, TransformerLayerNorms
+from ...layers.transformer import (
+    EncoderLayer,
+    TransformerDropouts,
+    TransformerLayerNorms,
+)
 from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
@@ -55,10 +59,11 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
             [
                 EncoderLayer(
                     attention_layer=SelfAttention(
+                        attention_heads=AttentionHeads.uniform(
+                            config.attention.num_attention_heads
+                        ),
                         dropout_prob=config.attention.dropout_prob,
                         hidden_width=config.layer.hidden_width,
-                        num_attention_heads=config.attention.num_attention_heads,
-                        qkv_head_sharing=QkvHeadSharing.NONE,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
                         use_bias=True,
@@ -72,7 +77,9 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
                         use_gate=False,
                         device=device,
                     ),
-                    hidden_dropout=config.layer.dropout_prob,
+                    dropouts=TransformerDropouts.layer_output_dropouts(
+                        config.layer.dropout_prob
+                    ),
                     layer_norms=TransformerLayerNorms(
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),

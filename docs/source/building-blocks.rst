@@ -9,6 +9,9 @@ Encoder/Decoder Layers
 
 These modules implement full encoder/decoder layers.
 
+.. autoclass:: curated_transformers.layers.transformer.TransformerDropouts
+   :members:
+
 .. autoclass:: curated_transformers.layers.transformer.TransformerLayerNorms
    :members:
 
@@ -26,7 +29,7 @@ These modules and their helper classes implement the Transformer attention mecha
 .. autoclass:: curated_transformers.layers.attention.QkvMode
    :members:
 
-.. autoclass:: curated_transformers.layers.attention.QkvHeadSharing
+.. autoclass:: curated_transformers.layers.attention.AttentionHeads
    :members:
 
 .. autoclass:: curated_transformers.layers.attention.AttentionMask

@@ -5,9 +5,9 @@ from torch import Tensor
 from torch.nn import Module
 
 from ...layers.attention import (
+    AttentionHeads,
     AttentionMask,
     KeyValueCache,
-    QkvHeadSharing,
     QkvMode,
     SelfAttention,
 )
@@ -16,9 +16,9 @@ from ...layers.feedforward import PointwiseFeedForward
 from .config import FalconAttentionConfig, FalconLayerConfig
 
 
-class FalconDecoderLayer(Module):
+class OldFalconDecoderLayer(Module):
     """
-    `Falcon`_ layer.
+    `Falcon`_ layer using the old decoder architecture.
 
     .. _Falcon: https://arxiv.org/abs/2306.01116
     """
@@ -35,21 +35,21 @@ class FalconDecoderLayer(Module):
         self.parallel_attention = attention_config.parallel_attention
 
         hidden_width = layer_config.hidden_width
-        num_attention_heads = attention_config.num_attention_heads
+        num_attention_heads = attention_config.num_query_heads
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=hidden_width,
-            qkv_head_sharing=QkvHeadSharing.KEY_VALUE
-            if attention_config.multi_query
-            else QkvHeadSharing.NONE,
-            num_attention_heads=num_attention_heads,
+            attention_heads=AttentionHeads.key_value_broadcast(
+                num_query_heads=attention_config.num_query_heads,
+                num_key_value_heads=attention_config.num_key_value_heads,
+            ),
             rotary_embeds=QueryKeyRotaryEmbeddings(
                 base=attention_config.rotary_base,
                 fraction=attention_config.rotary_fraction,
                 dims_per_head=hidden_width // num_attention_heads,
             ),
             qkv_mode=QkvMode.MERGED_SPLIT_AFTER
-            if attention_config.multi_query
+            if attention_config.num_key_value_heads == 1
             else QkvMode.MERGED_SPLIT_BEFORE,
             use_bias=attention_config.use_bias,
             device=device,

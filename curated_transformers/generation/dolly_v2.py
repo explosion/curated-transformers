@@ -36,7 +36,9 @@ class DollyV2Generator(DefaultGenerator):
             tokenizer,
             causal_lm,
             default_config=SampleGeneratorConfig(
-                eos_id=eos_id, max_generated_pieces=256
+                eos_id=eos_id,
+                max_generated_pieces=256,
+                top_p=0.92,
             ),
         )
 

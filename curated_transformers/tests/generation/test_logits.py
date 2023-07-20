@@ -4,6 +4,7 @@ import torch
 from curated_transformers.generation.logits import (
     TemperatureTransform,
     TopKTransform,
+    TopPTransform,
     VocabMaskTransform,
 )
 
@@ -92,6 +93,50 @@ def test_top_k_transform():
                 dtype=torch.float32,
             ),
         )
+
+
+def test_top_p_transform():
+    logits = torch.tensor(
+        [[4.0, 4.0, 3.3, 0.0, 3.5, 0.0, 5.0, 3.4]], dtype=torch.float32
+    )
+
+    transform = TopPTransform(0.9)
+    print(transform(logits))
+    torch_assertclose(
+        transform(logits),
+        torch.tensor([[4.0, 4.0, -3.4028e38, -3.4028e38, 3.5, -3.4028e38, 5.0, 3.4]]),
+    )
+
+    # Check p less than the most probable class.
+    transform = TopPTransform(0.01)
+    torch_assertclose(
+        transform(logits),
+        torch.tensor(
+            [
+                [
+                    -3.4028e38,
+                    -3.4028e38,
+                    -3.4028e38,
+                    -3.4028e38,
+                    -3.4028e38,
+                    -3.4028e38,
+                    5.0000e00,
+                    -3.4028e38,
+                ]
+            ]
+        ),
+    )
+
+    # All classes.
+    transform = TopPTransform(1.0)
+    torch_assertclose(transform(logits), logits)
+
+
+def test_invalid_top_p_raises():
+    with pytest.raises(ValueError, match=r"Top-p.*between"):
+        TopPTransform(-0.1)
+    with pytest.raises(ValueError, match=r"Top-p.*between"):
+        TopPTransform(1.1)
 
 
 def test_mask_transform():

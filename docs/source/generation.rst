@@ -93,6 +93,10 @@ These classes represent the different parameters used by generators.
    :members:   
    :show-inheritance:
 
+.. autoclass:: curated_transformers.generation.logits.TopPTransform
+   :members:
+   :show-inheritance:
+
 .. autoclass:: curated_transformers.generation.logits.TemperatureTransform
    :members:   
    :show-inheritance:

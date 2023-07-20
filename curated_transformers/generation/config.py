@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional, Set
 
 from .logits import (
@@ -7,6 +7,7 @@ from .logits import (
     LogitsTransform,
     TemperatureTransform,
     TopKTransform,
+    TopPTransform,
     VocabMaskTransform,
 )
 from .stop_conditions import (
@@ -107,10 +108,14 @@ class SampleGeneratorConfig(GeneratorConfig):
     :param top_k:
         Sample from top-k highest-probability pieces. ``top_k < 1`` disables top-k
         filtering.
+    :param top_p:
+        Sample from highest probability pieces the smallest set, such that their
+        cumulative probability is >= p. ``top_p = 1.0`` disables top-p filtering.
     """
 
     temperature: float = 1.0
     top_k: int = 0
+    top_p: float = 1.0
 
     def logits_transform(self) -> LogitsTransform:
         transforms: List[LogitsTransform] = []
@@ -119,6 +124,7 @@ class SampleGeneratorConfig(GeneratorConfig):
         transforms += [
             TemperatureTransform(self.temperature),
             TopKTransform(self.top_k),
+            TopPTransform(self.top_p),
         ]
 
         return CompoundLogitTransforms(transforms)

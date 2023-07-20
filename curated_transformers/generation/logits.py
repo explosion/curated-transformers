@@ -88,6 +88,56 @@ class TopKTransform(LogitsTransform):
         logits[logits < cutoff] = mask
 
 
+class TopPTransform(LogitsTransform):
+    """
+    Keep the smallest possible set of most probable vocab items, such that
+    their cumulative probability is >= p. Sampling using the top-p transform
+    is also known as nucleus sampling (`Holzman et al., 2019`_). The
+    probability of the items that are masked out is redistributed across the
+    top-p items.
+
+    .. _Holzman et al., 2019: https://arxiv.org/abs/1904.09751
+    """
+
+    def __init__(self, p: float):
+        """
+        Construct a top-p logits transform.
+
+        :param p:
+            The value of p in top-p. The transform is a no-op for
+            ``p = 1.0``.
+        """
+        super().__init__()
+        if not 0.0 <= p <= 1.0:
+            raise ValueError(
+                f"Top-p probability must be between 0 and 1 (inclusive), was: {p}"
+            )
+        self.p = p
+
+    def _process_logits(self, logits: Tensor):
+        if self.p == 1.0:
+            return
+
+        sorted_values, sorted_indices = torch.sort(logits, descending=True)
+        cumulative_probs = sorted_values.softmax(-1).cumsum(-1)
+
+        retain_indices = cumulative_probs < self.p
+
+        # We need to get the smallest set for which the cumulative
+        # probability exceeds p, so we need an additional logit. We
+        # never include one logit too many because of the use of
+        # ``<`` rather than `<=` above.
+        retain_indices = retain_indices.roll(1, dims=-1)
+        retain_indices[:, 0] = True
+
+        # Sorted values with masked-out logits.
+        mask = torch.finfo(logits.dtype).min
+        sorted_values = torch.where(retain_indices, sorted_values, mask)
+
+        # Put back in the unsorted logits.
+        logits.scatter_(-1, sorted_indices, sorted_values)
+
+
 class TemperatureTransform(LogitsTransform):
     """
     Apply temperature to the softmax distribution. Given the temperature ``T``

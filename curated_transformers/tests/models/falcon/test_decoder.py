@@ -5,8 +5,9 @@ from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.falcon.decoder import FalconDecoder
 from curated_transformers.tests.util import torch_assertclose
 
-from ...compat import has_hf_transformers, transformers
+from ...compat import has_hf_transformers, has_torch_compile, transformers
 from ...conftest import TORCH_DEVICES
+from ..util import assert_decoder_output_equals_hf
 
 VOCAB_SIZE = 1024
 
@@ -52,30 +53,36 @@ FALCON_TEST_MODELS = [
 @pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
 def test_decoder(torch_device, model_revision):
     model, revision = model_revision
-
-    hf_model = transformers.AutoModel.from_pretrained(
+    assert_decoder_output_equals_hf(
+        FalconDecoder,
         model,
-        # Safe because it is under our control.
+        torch_device,
+        model_revision=revision,
         trust_remote_code=True,
-        # Avoid warnings about trusting remote code without a revision.
-        revision=revision,
+        with_cache=False,
+        with_mask=False,
+        with_positions=False,
     )
-    hf_model.to(torch_device)
-    hf_model.eval()
 
-    model = FalconDecoder.from_hf_hub(
-        name=model, revision=revision, device=torch_device
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.skipif(not has_torch_compile, reason="requires torch.compile")
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+@pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
+def test_decoder_torch_compile(torch_device, model_revision):
+    model, revision = model_revision
+    assert_decoder_output_equals_hf(
+        FalconDecoder,
+        model,
+        torch_device,
+        model_revision=revision,
+        trust_remote_code=True,
+        with_cache=False,
+        with_mask=False,
+        with_positions=False,
+        with_torch_compile=True,
     )
-    model.eval()
-
-    torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
-
-    with torch.no_grad():
-        Y = model(X).last_hidden_layer_state
-        Y_hf = hf_model(X).last_hidden_state
-
-    torch_assertclose(Y, Y_hf)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

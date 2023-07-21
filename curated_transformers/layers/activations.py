@@ -51,11 +51,7 @@ class GeluFast(Module):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
-        return (
-            0.5
-            * input
-            * (
-                1.0
-                + torch.tanh(input * 0.7978845608 * (1.0 + 0.044715 * input * input))
-            )
-        )
+        alpha = math.sqrt(2.0 / math.pi)
+        beta = 0.044715
+
+        return 0.5 * input * (1.0 + torch.tanh(alpha * (input + beta * input.pow(3))))

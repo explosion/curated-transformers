@@ -49,10 +49,6 @@ Configuration
 ALBERT
 ^^^^^^
 
-.. autoclass:: curated_transformers.models.albert.config.ALBERTLayerConfig
-   :members:
-   :show-inheritance:
-
 .. autoclass:: curated_transformers.models.albert.config.ALBERTConfig
    :members:
    :show-inheritance:
@@ -63,14 +59,6 @@ BERT
 .. autoclass:: curated_transformers.models.bert.config.BERTConfig
    :members:
 
-.. autoclass:: curated_transformers.models.bert.config.BERTLayerConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.bert.config.BERTAttentionConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.bert.config.BERTEmbeddingConfig
-   :members:
 
 CamemBERT
 ^^^^^^^^^

@@ -110,3 +110,20 @@ These dataclasses encapsulate the outputs produced by the different modules.
 .. autoclass:: curated_transformers.models.output.CausalLMOutputWithCache
    :members:
    :show-inheritance:
+
+Model Configs
+-------------
+
+These dataclasses encapsulate the configurable parameters of the Transformer model.
+
+.. autoclass:: curated_transformers.models.config.RotaryEmbeddingConfig
+   :members:
+
+.. autoclass:: curated_transformers.models.config.TransformerAttentionConfig
+   :members:
+
+.. autoclass:: curated_transformers.models.config.TransformerEmbeddingConfig
+   :members:
+
+.. autoclass:: curated_transformers.models.config.TransformerLayerConfig
+   :members:

@@ -43,20 +43,20 @@ class ALBERTLayerGroup(Module):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            attention_config.num_attention_heads
+                            attention_config.num_query_heads
                         ),
                         dropout_prob=attention_config.dropout_prob,
                         hidden_width=layer_config.hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
-                        use_bias=True,
+                        use_bias=attention_config.use_bias,
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
                         hidden_act=layer_config.hidden_act,
                         hidden_width=layer_config.hidden_width,
                         intermediate_width=layer_config.intermediate_width,
-                        use_bias=True,
+                        use_bias=layer_config.use_bias,
                         use_gate=False,
                         device=device,
                     ),
@@ -67,7 +67,7 @@ class ALBERTLayerGroup(Module):
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=False,
+                    parallel_attention=attention_config.parallel_attention,
                 )
                 for _ in range(layer_config.inner_group_num)
             ]

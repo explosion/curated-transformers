@@ -28,11 +28,13 @@ class BERTEmbeddings(Module):
             embedding_dim=embedding_config.embedding_width,
             device=device,
         )
+        assert embedding_config.type_vocab_size is not None
         self.token_type_embeddings = Embedding(
             num_embeddings=embedding_config.type_vocab_size,
             embedding_dim=embedding_config.embedding_width,
             device=device,
         )
+        assert embedding_config.max_position_embeddings is not None
         self.position_embeddings = Embedding(
             num_embeddings=embedding_config.max_position_embeddings,
             embedding_dim=embedding_config.embedding_width,

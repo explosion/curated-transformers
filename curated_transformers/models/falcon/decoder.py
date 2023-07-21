@@ -139,6 +139,7 @@ class FalconDecoder(DecoderModule, FromHFHub):
         )
         hidden_width = config.layer.hidden_width
         num_attention_heads = config.attention.num_query_heads
+        assert config.attention.rotary_embeddings is not None
         return DecoderLayer(
             attention_layer=SelfAttention(
                 attention_heads=AttentionHeads.key_value_broadcast(
@@ -149,17 +150,17 @@ class FalconDecoder(DecoderModule, FromHFHub):
                 hidden_width=hidden_width,
                 qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                 rotary_embeds=QueryKeyRotaryEmbeddings(
-                    fraction=config.attention.rotary_fraction,
-                    base=config.attention.rotary_base,
+                    fraction=config.attention.rotary_embeddings.rotary_fraction,
+                    base=config.attention.rotary_embeddings.rotary_base,
                     dims_per_head=hidden_width // num_attention_heads,
                 ),
                 use_bias=config.attention.use_bias,
                 device=device,
             ),
             feed_forward_layer=PointwiseFeedForward(
-                hidden_act="gelu",
+                hidden_act=config.layer.hidden_act,
                 hidden_width=hidden_width,
-                intermediate_width=4 * config.layer.hidden_width,
+                intermediate_width=config.layer.intermediate_width,
                 use_bias=config.layer.use_bias,
                 use_gate=False,
                 device=device,
@@ -171,5 +172,6 @@ class FalconDecoder(DecoderModule, FromHFHub):
                 attn_input_layer_norm=layer_norm(),
                 ffn_input_layer_norm=layer_norm(),
             ),
+            # The new decoder uses parallel attention unconditionally.
             parallel_attention=True,
         )

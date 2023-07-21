@@ -1,134 +1,40 @@
 from dataclasses import dataclass
 
-# Defaults taken from syntaxdot
-# https://github.com/tensordot/syntaxdot/blob/22bd3d43ed2d7fcbef8a6217b01684194fae713f/syntaxdot-transformers/src/models/bert/config.rs#L25
+from ..config import (
+    TransformerAttentionConfig,
+    TransformerEmbeddingConfig,
+    TransformerLayerConfig,
+)
 
 
-@dataclass
-class BERTEmbeddingConfig:
+class BERTEmbeddingConfig(TransformerEmbeddingConfig):
     """
     BERT (`Devlin et al., 2018`_) embedding configuration.
 
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    embedding_width: int
-    vocab_size: int
-    type_vocab_size: int
-    max_position_embeddings: int
-    layer_norm_eps: float
-    dropout_prob: float
-
-    def __init__(
-        self,
-        *,
-        embedding_width: int = 768,
-        vocab_size: int = 30000,
-        type_vocab_size: int = 2,
-        max_position_embeddings: int = 512,
-        layer_norm_eps: float = 1e-12,
-        dropout_prob: float = 0.1,
-    ) -> None:
-        """
-        :param embedding_width:
-            Width of the embedding representations.
-        :param vocab_size:
-            Size of main vocabulary.
-        :param type_vocab_size:
-            Size of token type vocabulary.
-        :param max_position_embeddings:
-            Maximum length of position embeddings.
-        :param layer_norm_eps:
-            Epsilon for layer normalization.
-        :param dropout_prob:
-            Dropout probabilty for the embedding layer.
-        """
-        self.embedding_width = embedding_width
-        self.vocab_size = vocab_size
-        self.type_vocab_size = type_vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.layer_norm_eps = layer_norm_eps
-        self.dropout_prob = dropout_prob
+    ...
 
 
-@dataclass
-class BERTAttentionConfig:
+class BERTAttentionConfig(TransformerAttentionConfig):
     """
     BERT (`Devlin et al., 2018`_) attention configuration.
 
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    hidden_width: int
-    num_attention_heads: int
-    dropout_prob: float
-
-    def __init__(
-        self,
-        *,
-        hidden_width: int = 768,
-        num_attention_heads: int = 12,
-        dropout_prob: float = 0.1,
-    ) -> None:
-        """
-        :param hidden_width:
-            Width of the projections for query, key and value.
-        :param num_attention_heads:
-            Number of self-attention heads.
-        :param dropout_prob:
-            Dropout probabilty for self-attention.
-        """
-        self.hidden_width = hidden_width
-        self.num_attention_heads = num_attention_heads
-        self.dropout_prob = dropout_prob
+    ...
 
 
-@dataclass
-class BERTLayerConfig:
+class BERTLayerConfig(TransformerLayerConfig):
     """
     BERT (`Devlin et al., 2018`_) layer configuration.
 
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    hidden_width: int
-    intermediate_width: int
-    num_hidden_layers: int
-    hidden_act: str
-    layer_norm_eps: float
-    dropout_prob: float
-
-    def __init__(
-        self,
-        *,
-        hidden_width: int = 768,
-        intermediate_width: int = 3072,
-        num_hidden_layers: int = 12,
-        hidden_act: str = "gelu",
-        layer_norm_eps: float = 1e-12,
-        dropout_prob: float = 1.0,
-    ) -> None:
-        """
-        :param hidden_width:
-            Hidden width of the transformer.
-        :param intermediate_width:
-            Intermediate width in the feed-forward layer.
-        :param num_hidden_layers:
-            Number of hidden layers.
-        :param hidden_act:
-            Activation used by the feed-forward layers.
-            Applied on the intermediate representation.
-        :param layer_norm_eps:
-            Epsilon for layer normalization.
-        :param dropout_prob:
-            Dropout probabilty to apply after hidden layers.
-        """
-        self.hidden_width = hidden_width
-        self.intermediate_width = intermediate_width
-        self.num_hidden_layers = num_hidden_layers
-        self.hidden_act = hidden_act
-        self.layer_norm_eps = layer_norm_eps
-        self.dropout_prob = dropout_prob
+    ...
 
 
 @dataclass
@@ -205,8 +111,13 @@ class BERTConfig:
         )
         self.attention = BERTAttentionConfig(
             hidden_width=hidden_width,
-            num_attention_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
+            num_key_value_heads=num_attention_heads,
+            num_query_heads=num_attention_heads,
+            parallel_attention=False,
+            rotary_embeddings=None,
+            use_alibi=False,
+            use_bias=True,
         )
         self.layer = BERTLayerConfig(
             hidden_width=hidden_width,
@@ -215,6 +126,7 @@ class BERTConfig:
             hidden_act=hidden_act,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
+            use_bias=True,
         )
         self.model_max_length = model_max_length
         self.padding_id = padding_id

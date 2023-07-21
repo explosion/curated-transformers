@@ -104,8 +104,13 @@ class ALBERTConfig(BERTConfig):
         )
         self.attention = BERTAttentionConfig(
             hidden_width=hidden_width,
-            num_attention_heads=num_attention_heads,
+            num_query_heads=num_attention_heads,
+            num_key_value_heads=num_attention_heads,
             dropout_prob=attention_probs_dropout_prob,
+            rotary_embeddings=None,
+            use_alibi=False,
+            use_bias=True,
+            parallel_attention=False,
         )
         self.layer = ALBERTLayerConfig(
             hidden_width=hidden_width,
@@ -116,6 +121,7 @@ class ALBERTConfig(BERTConfig):
             hidden_act=hidden_act,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
+            use_bias=True,
         )
         self.model_max_length = model_max_length
         self.padding_id = padding_id

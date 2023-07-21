@@ -53,36 +53,35 @@ class LLaMADecoder(DecoderModule, FromHFHub):
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         hidden_width = config.layer.hidden_width
-        num_attention_heads = config.attention.num_attention_heads
+        num_attention_heads = config.attention.num_query_heads
         layer_norm = partial(
             RMSNorm,
             hidden_width,
-            eps=config.layer.rms_norm_eps,
+            eps=config.layer.layer_norm_eps,
             device=device,
         )
+        assert config.attention.rotary_embeddings is not None
         self.layers = ModuleList(
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_heads=AttentionHeads.uniform(
-                            config.attention.num_attention_heads
-                        ),
+                        attention_heads=AttentionHeads.uniform(num_attention_heads),
                         dropout_prob=config.attention.dropout_prob,
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=QueryKeyRotaryEmbeddings(
-                            fraction=config.attention.rotary_fraction,
-                            base=config.attention.rotary_base,
+                            fraction=config.attention.rotary_embeddings.rotary_fraction,
+                            base=config.attention.rotary_embeddings.rotary_base,
                             dims_per_head=hidden_width // num_attention_heads,
                         ),
-                        use_bias=False,
+                        use_bias=config.attention.use_bias,
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
                         hidden_act=config.layer.hidden_act,
                         hidden_width=hidden_width,
                         intermediate_width=config.layer.intermediate_width,
-                        use_bias=False,
+                        use_bias=config.layer.use_bias,
                         use_gate=True,
                         device=device,
                     ),
@@ -93,14 +92,14 @@ class LLaMADecoder(DecoderModule, FromHFHub):
                         attn_input_layer_norm=layer_norm(),
                         ffn_input_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=False,
+                    parallel_attention=config.attention.parallel_attention,
                 )
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
 
         self.output_layer_norm = RMSNorm(
-            hidden_width, eps=config.layer.rms_norm_eps, device=device
+            hidden_width, eps=config.layer.layer_norm_eps, device=device
         )
 
     def forward(

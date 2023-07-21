@@ -36,6 +36,7 @@ class OldFalconDecoderLayer(Module):
 
         hidden_width = layer_config.hidden_width
         num_attention_heads = attention_config.num_query_heads
+        assert attention_config.rotary_embeddings is not None
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=hidden_width,
@@ -44,8 +45,8 @@ class OldFalconDecoderLayer(Module):
                 num_key_value_heads=attention_config.num_key_value_heads,
             ),
             rotary_embeds=QueryKeyRotaryEmbeddings(
-                base=attention_config.rotary_base,
-                fraction=attention_config.rotary_fraction,
+                base=attention_config.rotary_embeddings.rotary_base,
+                fraction=attention_config.rotary_embeddings.rotary_fraction,
                 dims_per_head=hidden_width // num_attention_heads,
             ),
             qkv_mode=QkvMode.MERGED_SPLIT_AFTER

@@ -101,7 +101,6 @@ def test_top_p_transform():
     )
 
     transform = TopPTransform(0.9)
-    print(transform(logits))
     torch_assertclose(
         transform(logits),
         torch.tensor([[4.0, 4.0, -3.4028e38, -3.4028e38, 3.5, -3.4028e38, 5.0, 3.4]]),

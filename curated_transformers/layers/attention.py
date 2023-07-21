@@ -1,7 +1,7 @@
 import math
 from contextlib import contextmanager
 from contextvars import ContextVar
-from enum import IntEnum
+from enum import Enum
 from typing import Optional, Tuple
 
 import torch
@@ -129,11 +129,7 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
     key_len = key.size(2)
 
     causal_mask = torch.tril(
-        torch.full(
-            (key_len, key_len),
-            True,
-            device=query.device,
-        ),
+        torch.ones((key_len, key_len), device=query.device, dtype=torch.bool),
     ).view(1, 1, key_len, key_len)
     return AttentionMask(causal_mask[:, :, key_len - query_len : key_len, :key_len])
 
@@ -212,26 +208,26 @@ class AttentionHeads:
         )
 
 
-class QkvMode(IntEnum):
+class QkvMode(Enum):
     """
     How the query, key and value projections are handled in
     the self-attention layer.
     """
 
     #: ``SEPARATE`` - Use separate projections for query, key and value.
-    SEPARATE = (0,)
+    SEPARATE = 0
 
     #: ``MERGED_SPLIT_BEFORE`` - Use a merged projection for query,
     #: key and value, and split heads before splitting the query, key
     #: and value representations. This ordering is incompatible with
     #: head sharing in keys or values.
 
-    MERGED_SPLIT_BEFORE = (1,)
+    MERGED_SPLIT_BEFORE = 1
 
     #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query,
     #: key and value, and split heads after splitting the query, key
     #: and value representations.
-    MERGED_SPLIT_AFTER = (2,)
+    MERGED_SPLIT_AFTER = 2
 
 
 class AttentionLinearBiases(Module):

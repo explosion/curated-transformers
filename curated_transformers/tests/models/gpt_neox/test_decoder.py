@@ -1,103 +1,36 @@
 import pytest
-import torch
 
-from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.gpt_neox.decoder import GPTNeoXDecoder
-from curated_transformers.tests.util import torch_assertclose
 
-from ...compat import has_hf_transformers, transformers
+from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
+from ..util import assert_decoder_output_equals_hf
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_decoder(torch_device):
-    hf_model = transformers.AutoModel.from_pretrained(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
+    assert_decoder_output_equals_hf(
+        GPTNeoXDecoder,
+        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM",
+        torch_device,
     )
-    hf_model.to(torch_device)
-    hf_model.eval()
-
-    model = GPTNeoXDecoder.from_hf_hub(
-        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
-    )
-    model.eval()
-
-    torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
-
-    with torch.no_grad():
-        Y = model(X).last_hidden_layer_state
-        Y_hf = hf_model(X).last_hidden_state
-
-    torch_assertclose(Y, Y_hf)
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.skipif(not has_torch_compile, reason="requires torch.compile")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-def test_decoder_with_cache(torch_device):
-    hf_model = transformers.AutoModel.from_pretrained(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
-    )
-    hf_model.to(torch_device)
-    hf_model.eval()
-
-    model = GPTNeoXDecoder.from_hf_hub(
-        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
-    )
-    model.eval()
-
-    torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
-    X_rest = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
-
-    with torch.no_grad():
-        Y = model(X, store_cache=True)
-        Y_hf = hf_model(X, use_cache=True)
-        Y = model(X_rest, cache=Y.cache).last_hidden_layer_state
-        Y_hf = hf_model(X_rest, past_key_values=Y_hf.past_key_values).last_hidden_state
-
-    torch_assertclose(Y, Y_hf)
-
-
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-def test_decoder_with_positions(torch_device):
-    hf_model = transformers.AutoModel.from_pretrained(
-        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM"
-    )
-    hf_model.to(torch_device)
-    hf_model.eval()
-
-    model = GPTNeoXDecoder.from_hf_hub(
-        name="trl-internal-testing/tiny-random-GPTNeoXForCausalLM", device=torch_device
-    )
-    model.eval()
-
-    torch.manual_seed(0)
-    X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
-    # NOTE: this test may break in the future because we are relying on a
-    #       slicing bug, which results in more general support for positions
-    #       (like our implementation):
+def test_decoder_with_torch_compile(torch_device):
+    # NOTE: testing with cache/positions fails. All outputs seems ok until
+    # the concatenation of the vectors with/without rotary embeddings:
     #
-    #       https://github.com/huggingface/transformers/blob/f924df3c7e5150317ef47754a31cebf2893570ce/src/transformers/models/gpt_neox/modeling_gpt_neox.py#L278
-    #
-    #       However, it is still nice to test this with arbitrary positions. If
-    #       this breaks, just replace max_position_embbeddings by the sequence
-    #       length.
-    positions = torch.randint(
-        0, hf_model.config.max_position_embeddings, (2, 10), device=torch_device
+    # https://github.com/explosion/curated-transformers/blob/6de9b9828b1d6f8f52dba8b87b4e00a9732a2d5f/curated_transformers/layers/embeddings.py#L308
+    assert_decoder_output_equals_hf(
+        GPTNeoXDecoder,
+        "trl-internal-testing/tiny-random-GPTNeoXForCausalLM",
+        torch_device,
+        with_cache=False,
+        with_positions=False,
+        with_torch_compile=True,
     )
-
-    with torch.no_grad():
-        Y = model(X, positions=positions).last_hidden_layer_state
-        Y_hf = hf_model(X, position_ids=positions).last_hidden_state
-    torch_assertclose(Y, Y_hf)
-
-    mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
-    with torch.no_grad():
-        Y = model(
-            X, attention_mask=AttentionMask(mask)
-        ).last_hidden_layer_state * mask.unsqueeze(-1)
-        Y_hf = hf_model(X, attention_mask=mask).last_hidden_state * mask.unsqueeze(-1)
-    torch_assertclose(Y, Y_hf)

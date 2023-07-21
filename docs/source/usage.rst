@@ -12,11 +12,11 @@ To use Curated Transformers, first install it using ``pip``:
 
    (.venv) $ pip install curated-transformers
 
-If support for quantization is required, also install the `bitsandbytes`_ library (and ``scipy`` as it's a dependency):
+If support for quantization is required, use the quantization variant to automatically install the necessary dependencies:
 
 .. code-block:: console
 
-   (.venv) $ pip install bitsandbytes scipy
+   (.venv) $ pip install curated-transformers[quantization]
 
 
 Text Generation Using Causal LMs

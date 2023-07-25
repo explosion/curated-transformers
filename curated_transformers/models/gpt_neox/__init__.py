@@ -1,3 +1,3 @@
 from .causal_lm import GPTNeoXCausalLM
-from .config import GPTNeoXAttentionConfig
+from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder

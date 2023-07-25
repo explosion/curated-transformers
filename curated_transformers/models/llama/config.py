@@ -2,42 +2,14 @@ from dataclasses import dataclass
 
 from ..config import (
     RotaryEmbeddingConfig,
-    TransformerAttentionConfig,
-    TransformerEmbeddingConfig,
+    TransformerAttentionLayerConfig,
+    TransformerEmbeddingLayerConfig,
+    TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
 )
 
 
-class LLaMAAttentionConfig(TransformerAttentionConfig):
-    """
-    LLaMA (`Touvron et al., 2023`_) attention configuration.
-
-    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
-    """
-
-    ...
-
-
-class LLaMAEmbeddingConfig(TransformerEmbeddingConfig):
-    """
-    LLaMA (`Touvron et al., 2023`_) embedding configuration.
-
-    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
-    """
-
-    ...
-
-
-class LLaMALayerConfig(TransformerLayerConfig):
-    """
-    LLaMA (`Touvron et al., 2023`_) layer configuration.
-
-    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
-    """
-
-    ...
-
-
+@dataclass
 class LLaMAConfig:
     """
     LLaMA (`Touvron et al., 2023`_) model configuration.
@@ -45,9 +17,8 @@ class LLaMAConfig:
     .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
     """
 
-    attention: LLaMAAttentionConfig
-    embedding: LLaMAEmbeddingConfig
-    layer: LLaMALayerConfig
+    embedding: TransformerEmbeddingLayerConfig
+    layer: TransformerLayerConfig
 
     def __init__(
         self,
@@ -92,20 +63,8 @@ class LLaMAConfig:
         :param vocab_size:
             Vocabulary size (number of embeddings).
         """
-        self.attention = LLaMAAttentionConfig(
-            dropout_prob=attention_probs_dropout_prob,
-            hidden_width=hidden_width,
-            num_query_heads=num_attention_heads,
-            num_key_value_heads=num_attention_heads,
-            parallel_attention=False,
-            rotary_embeddings=RotaryEmbeddingConfig(
-                rotary_fraction=rotary_embedding_fraction,
-                rotary_base=rotary_embedding_base,
-            ),
-            use_bias=False,
-            use_alibi=False,
-        )
-        self.embedding = LLaMAEmbeddingConfig(
+
+        self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
             vocab_size=vocab_size,
@@ -113,12 +72,28 @@ class LLaMAConfig:
             max_position_embeddings=None,
             type_vocab_size=None,
         )
-        self.layer = LLaMALayerConfig(
+        self.layer = TransformerLayerConfig(
+            attention=TransformerAttentionLayerConfig(
+                dropout_prob=attention_probs_dropout_prob,
+                hidden_width=hidden_width,
+                num_query_heads=num_attention_heads,
+                num_key_value_heads=num_attention_heads,
+                parallel_attention=False,
+                rotary_embeddings=RotaryEmbeddingConfig(
+                    rotary_fraction=rotary_embedding_fraction,
+                    rotary_base=rotary_embedding_base,
+                ),
+                use_bias=False,
+                use_alibi=False,
+            ),
+            feedforward=TransformerFeedForwardLayerConfig(
+                hidden_width=hidden_width,
+                intermediate_width=intermediate_width,
+                hidden_act=hidden_act,
+                use_bias=False,
+                use_gate=True,
+            ),
             dropout_prob=hidden_dropout_prob,
-            hidden_act=hidden_act,
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
             layer_norm_eps=rms_norm_eps,
             num_hidden_layers=num_hidden_layers,
-            use_bias=False,
         )

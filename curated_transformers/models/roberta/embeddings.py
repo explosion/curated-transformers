@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from ..bert import BERTEmbeddingConfig, BERTEmbeddings, BERTLayerConfig
+from ..bert import BERTEmbeddings
+from ..config import TransformerEmbeddingLayerConfig, TransformerLayerConfig
 
 
 class RoBERTaEmbeddings(Module):
@@ -16,8 +17,8 @@ class RoBERTaEmbeddings(Module):
 
     def __init__(
         self,
-        embedding_config: BERTEmbeddingConfig,
-        layer_config: BERTLayerConfig,
+        embedding_config: TransformerEmbeddingLayerConfig,
+        layer_config: TransformerLayerConfig,
         *,
         padding_id: int,
         device: Optional[torch.device] = None

@@ -66,7 +66,9 @@ class FalconDecoder(DecoderModule, FromHFHub):
         )
 
         self.output_layer_norm = LayerNorm(
-            config.layer.hidden_width, config.layer.layer_norm_eps, device=device
+            config.layer.feedforward.hidden_width,
+            config.layer.layer_norm_eps,
+            device=device,
         )
 
     def forward(
@@ -126,43 +128,47 @@ class FalconDecoder(DecoderModule, FromHFHub):
     def _create_old_decoder_architecture_layer(
         self, config: FalconConfig, device: Optional[torch.device]
     ):
-        return OldFalconDecoderLayer(config.layer, config.attention, device=device)
+        return OldFalconDecoderLayer(config.layer, device=device)
 
     def _create_new_decoder_architecture_layer(
         self, config: FalconConfig, device: Optional[torch.device]
     ):
+        if config.layer.attention.rotary_embeddings is None:
+            raise ValueError(
+                "Falcon attention config does not contain rotary embedding parameters"
+            )
+
+        hidden_width = config.layer.feedforward.hidden_width
         layer_norm = partial(
             LayerNorm,
-            config.layer.hidden_width,
+            hidden_width,
             config.layer.layer_norm_eps,
             device=device,
         )
-        hidden_width = config.layer.hidden_width
-        num_attention_heads = config.attention.num_query_heads
-        assert config.attention.rotary_embeddings is not None
+        num_attention_heads = config.layer.attention.num_query_heads
         return DecoderLayer(
             attention_layer=SelfAttention(
                 attention_heads=AttentionHeads.key_value_broadcast(
                     num_query_heads=num_attention_heads,
-                    num_key_value_heads=config.attention.num_key_value_heads,
+                    num_key_value_heads=config.layer.attention.num_key_value_heads,
                 ),
-                dropout_prob=config.attention.dropout_prob,
+                dropout_prob=config.layer.attention.dropout_prob,
                 hidden_width=hidden_width,
                 qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                 rotary_embeds=QueryKeyRotaryEmbeddings(
-                    fraction=config.attention.rotary_embeddings.rotary_fraction,
-                    base=config.attention.rotary_embeddings.rotary_base,
+                    fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
+                    base=config.layer.attention.rotary_embeddings.rotary_base,
                     dims_per_head=hidden_width // num_attention_heads,
                 ),
-                use_bias=config.attention.use_bias,
+                use_bias=config.layer.attention.use_bias,
                 device=device,
             ),
             feed_forward_layer=PointwiseFeedForward(
-                hidden_act=config.layer.hidden_act,
+                hidden_act=config.layer.feedforward.hidden_act,
                 hidden_width=hidden_width,
-                intermediate_width=config.layer.intermediate_width,
-                use_bias=config.layer.use_bias,
-                use_gate=False,
+                intermediate_width=config.layer.feedforward.intermediate_width,
+                use_bias=config.layer.feedforward.use_bias,
+                use_gate=config.layer.feedforward.use_gate,
                 device=device,
             ),
             dropouts=TransformerDropouts.parallel_attention_dropout(

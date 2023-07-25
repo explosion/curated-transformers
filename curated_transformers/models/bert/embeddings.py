@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, Linear, Module
 
-from .config import BERTEmbeddingConfig, BERTLayerConfig
+from ..config import TransformerEmbeddingLayerConfig, TransformerLayerConfig
 
 
 class BERTEmbeddings(Module):
@@ -16,12 +16,21 @@ class BERTEmbeddings(Module):
 
     def __init__(
         self,
-        embedding_config: BERTEmbeddingConfig,
-        layer_config: BERTLayerConfig,
+        embedding_config: TransformerEmbeddingLayerConfig,
+        layer_config: TransformerLayerConfig,
         *,
         device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
+
+        if embedding_config.type_vocab_size is None:
+            raise ValueError(
+                "BERT embedding config does not contain type vocabulary size"
+            )
+        elif embedding_config.max_position_embeddings is None:
+            raise ValueError(
+                "BERT embedding config does not contain max position embeddings length"
+            )
 
         self.word_embeddings = Embedding(
             num_embeddings=embedding_config.vocab_size,
@@ -29,33 +38,33 @@ class BERTEmbeddings(Module):
             device=device,
         )
         assert embedding_config.type_vocab_size is not None
-        self.token_type_embeddings = Embedding(
+        self.token_type_embeddings: Embedding = Embedding(
             num_embeddings=embedding_config.type_vocab_size,
             embedding_dim=embedding_config.embedding_width,
             device=device,
         )
         assert embedding_config.max_position_embeddings is not None
-        self.position_embeddings = Embedding(
+        self.position_embeddings: Embedding = Embedding(
             num_embeddings=embedding_config.max_position_embeddings,
             embedding_dim=embedding_config.embedding_width,
             device=device,
         )
 
-        if embedding_config.embedding_width != layer_config.hidden_width:
-            self.projection = Linear(
+        if embedding_config.embedding_width != layer_config.feedforward.hidden_width:
+            self.projection: Linear = Linear(
                 embedding_config.embedding_width,
-                layer_config.hidden_width,
+                layer_config.feedforward.hidden_width,
                 device=device,
             )
         else:
             self.projection = None  # type: ignore
 
-        self.layer_norm = LayerNorm(
+        self.layer_norm: LayerNorm = LayerNorm(
             embedding_config.embedding_width,
             eps=embedding_config.layer_norm_eps,
             device=device,
         )
-        self.dropout = Dropout(p=embedding_config.dropout_prob)
+        self.dropout: Dropout = Dropout(p=embedding_config.dropout_prob)
 
     def _get_position_ids(self, x: Tensor) -> Tensor:
         return torch.arange(x.shape[1], device=x.device).expand(1, -1)

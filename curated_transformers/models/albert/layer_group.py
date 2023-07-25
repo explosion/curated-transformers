@@ -12,7 +12,6 @@ from ...layers.transformer import (
     TransformerDropouts,
     TransformerLayerNorms,
 )
-from ..bert.config import BERTAttentionConfig
 from .config import ALBERTLayerConfig
 
 
@@ -24,20 +23,17 @@ class ALBERTLayerGroup(Module):
     """
 
     def __init__(
-        self,
-        layer_config: ALBERTLayerConfig,
-        attention_config: BERTAttentionConfig,
-        *,
-        device: Optional[torch.device] = None
+        self, layer_config: ALBERTLayerConfig, *, device: Optional[torch.device] = None
     ) -> None:
         super().__init__()
 
         layer_norm = partial(
             LayerNorm,
-            layer_config.hidden_width,
+            layer_config.feedforward.hidden_width,
             layer_config.layer_norm_eps,
             device=device,
         )
+        attention_config = layer_config.attention
         self.group_layers = ModuleList(
             [
                 EncoderLayer(
@@ -46,18 +42,18 @@ class ALBERTLayerGroup(Module):
                             attention_config.num_query_heads
                         ),
                         dropout_prob=attention_config.dropout_prob,
-                        hidden_width=layer_config.hidden_width,
+                        hidden_width=layer_config.feedforward.hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
                         use_bias=attention_config.use_bias,
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
-                        hidden_act=layer_config.hidden_act,
-                        hidden_width=layer_config.hidden_width,
-                        intermediate_width=layer_config.intermediate_width,
-                        use_bias=layer_config.use_bias,
-                        use_gate=False,
+                        hidden_act=layer_config.feedforward.hidden_act,
+                        hidden_width=layer_config.feedforward.hidden_width,
+                        intermediate_width=layer_config.feedforward.intermediate_width,
+                        use_bias=layer_config.feedforward.use_bias,
+                        use_gate=layer_config.feedforward.use_gate,
                         device=device,
                     ),
                     dropouts=TransformerDropouts.layer_output_dropouts(

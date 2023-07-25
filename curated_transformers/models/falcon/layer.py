@@ -13,7 +13,7 @@ from ...layers.attention import (
 )
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
-from .config import FalconAttentionConfig, FalconLayerConfig
+from ..config import TransformerLayerConfig
 
 
 class OldFalconDecoderLayer(Module):
@@ -25,18 +25,22 @@ class OldFalconDecoderLayer(Module):
 
     def __init__(
         self,
-        layer_config: FalconLayerConfig,
-        attention_config: FalconAttentionConfig,
+        layer_config: TransformerLayerConfig,
         *,
         device: Optional[torch.device] = None
     ):
         super().__init__()
 
+        attention_config = layer_config.attention
+        if attention_config.rotary_embeddings is None:
+            raise ValueError(
+                "Falcon attention config does not contain rotary embedding parameters"
+            )
+
         self.parallel_attention = attention_config.parallel_attention
 
-        hidden_width = layer_config.hidden_width
+        hidden_width = layer_config.feedforward.hidden_width
         num_attention_heads = attention_config.num_query_heads
-        assert attention_config.rotary_embeddings is not None
         self.mha = SelfAttention(
             dropout_prob=attention_config.dropout_prob,
             hidden_width=hidden_width,
@@ -68,11 +72,11 @@ class OldFalconDecoderLayer(Module):
             )
 
         self.ffn = PointwiseFeedForward(
-            hidden_act="gelu",
+            hidden_act=layer_config.feedforward.hidden_act,
             hidden_width=hidden_width,
-            intermediate_width=4 * hidden_width,
-            use_bias=layer_config.use_bias,
-            use_gate=False,
+            intermediate_width=layer_config.feedforward.intermediate_width,
+            use_bias=layer_config.feedforward.use_bias,
+            use_gate=layer_config.feedforward.use_gate,
             device=device,
         )
         self.ffn_output_dropout = torch.nn.Dropout(p=layer_config.dropout_prob)

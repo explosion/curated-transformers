@@ -2,40 +2,11 @@ from dataclasses import dataclass
 
 from ..config import (
     RotaryEmbeddingConfig,
-    TransformerAttentionConfig,
-    TransformerEmbeddingConfig,
+    TransformerAttentionLayerConfig,
+    TransformerEmbeddingLayerConfig,
+    TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
 )
-
-
-class FalconAttentionConfig(TransformerAttentionConfig):
-    """
-    `Falcon`_ attention configuration.
-
-    .. _Falcon: https://arxiv.org/abs/2306.01116
-    """
-
-    ...
-
-
-class FalconEmbeddingConfig(TransformerEmbeddingConfig):
-    """
-    `Falcon`_ embedding configuration.
-
-    .. _Falcon: https://arxiv.org/abs/2306.01116
-    """
-
-    ...
-
-
-class FalconLayerConfig(TransformerLayerConfig):
-    """
-    `Falcon`_ layer configuration.
-
-    .. _Falcon: https://arxiv.org/abs/2306.01116
-    """
-
-    ...
 
 
 @dataclass
@@ -46,9 +17,8 @@ class FalconConfig:
     .. _Falcon: https://arxiv.org/abs/2306.01116
     """
 
-    attention: FalconAttentionConfig
-    embedding: FalconEmbeddingConfig
-    layer: FalconLayerConfig
+    embedding: TransformerEmbeddingLayerConfig
+    layer: TransformerLayerConfig
     new_decoder_architecture: bool
 
     def __init__(
@@ -104,20 +74,7 @@ class FalconConfig:
         #       values in the future. We should check empirically if the auto
         #       resizing in rotary embeddings makes sense.
 
-        self.attention = FalconAttentionConfig(
-            dropout_prob=attention_probs_dropout_prob,
-            hidden_width=hidden_width,
-            num_query_heads=num_query_heads,
-            num_key_value_heads=num_key_value_heads,
-            parallel_attention=parallel_attention,
-            rotary_embeddings=RotaryEmbeddingConfig(
-                rotary_fraction=rotary_embedding_fraction,
-                rotary_base=rotary_embedding_base,
-            ),
-            use_bias=use_bias,
-            use_alibi=use_alibi,
-        )
-        self.embedding = FalconEmbeddingConfig(
+        self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
             vocab_size=vocab_size,
@@ -125,13 +82,29 @@ class FalconConfig:
             max_position_embeddings=None,
             type_vocab_size=None,
         )
-        self.layer = FalconLayerConfig(
+        self.layer = TransformerLayerConfig(
+            attention=TransformerAttentionLayerConfig(
+                dropout_prob=attention_probs_dropout_prob,
+                hidden_width=hidden_width,
+                num_query_heads=num_query_heads,
+                num_key_value_heads=num_key_value_heads,
+                parallel_attention=parallel_attention,
+                rotary_embeddings=RotaryEmbeddingConfig(
+                    rotary_fraction=rotary_embedding_fraction,
+                    rotary_base=rotary_embedding_base,
+                ),
+                use_bias=use_bias,
+                use_alibi=use_alibi,
+            ),
+            feedforward=TransformerFeedForwardLayerConfig(
+                hidden_width=hidden_width,
+                intermediate_width=4 * hidden_width,
+                hidden_act="gelu",
+                use_bias=use_bias,
+                use_gate=False,
+            ),
             dropout_prob=hidden_dropout_prob,
-            hidden_width=hidden_width,
-            hidden_act="gelu",
             layer_norm_eps=layer_norm_eps,
             num_hidden_layers=num_hidden_layers,
-            intermediate_width=4 * hidden_width,
-            use_bias=use_bias,
         )
         self.new_decoder_architecture = new_decoder_architecture

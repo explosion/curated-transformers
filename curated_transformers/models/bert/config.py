@@ -1,40 +1,11 @@
 from dataclasses import dataclass
 
 from ..config import (
-    TransformerAttentionConfig,
-    TransformerEmbeddingConfig,
+    TransformerAttentionLayerConfig,
+    TransformerEmbeddingLayerConfig,
+    TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
 )
-
-
-class BERTEmbeddingConfig(TransformerEmbeddingConfig):
-    """
-    BERT (`Devlin et al., 2018`_) embedding configuration.
-
-    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
-    """
-
-    ...
-
-
-class BERTAttentionConfig(TransformerAttentionConfig):
-    """
-    BERT (`Devlin et al., 2018`_) attention configuration.
-
-    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
-    """
-
-    ...
-
-
-class BERTLayerConfig(TransformerLayerConfig):
-    """
-    BERT (`Devlin et al., 2018`_) layer configuration.
-
-    .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
-    """
-
-    ...
 
 
 @dataclass
@@ -45,9 +16,8 @@ class BERTConfig:
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    embedding: BERTEmbeddingConfig
-    attention: BERTAttentionConfig
-    layer: BERTLayerConfig
+    embedding: TransformerEmbeddingLayerConfig
+    layer: TransformerLayerConfig
     model_max_length: int
     padding_id: int
 
@@ -101,7 +71,7 @@ class BERTConfig:
         :param padding_id:
             Index of the padding meta-token.
         """
-        self.embedding = BERTEmbeddingConfig(
+        self.embedding = TransformerEmbeddingLayerConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,
             type_vocab_size=type_vocab_size,
@@ -109,24 +79,27 @@ class BERTConfig:
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
-        self.attention = BERTAttentionConfig(
-            hidden_width=hidden_width,
-            dropout_prob=attention_probs_dropout_prob,
-            num_key_value_heads=num_attention_heads,
-            num_query_heads=num_attention_heads,
-            parallel_attention=False,
-            rotary_embeddings=None,
-            use_alibi=False,
-            use_bias=True,
-        )
-        self.layer = BERTLayerConfig(
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
+        self.layer = TransformerLayerConfig(
+            attention=TransformerAttentionLayerConfig(
+                hidden_width=hidden_width,
+                dropout_prob=attention_probs_dropout_prob,
+                num_key_value_heads=num_attention_heads,
+                num_query_heads=num_attention_heads,
+                parallel_attention=False,
+                rotary_embeddings=None,
+                use_alibi=False,
+                use_bias=True,
+            ),
+            feedforward=TransformerFeedForwardLayerConfig(
+                hidden_width=hidden_width,
+                intermediate_width=intermediate_width,
+                hidden_act=hidden_act,
+                use_bias=True,
+                use_gate=False,
+            ),
             num_hidden_layers=num_hidden_layers,
-            hidden_act=hidden_act,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
-            use_bias=True,
         )
         self.model_max_length = model_max_length
         self.padding_id = padding_id

@@ -2,40 +2,11 @@ from dataclasses import dataclass
 
 from ..config import (
     RotaryEmbeddingConfig,
-    TransformerAttentionConfig,
-    TransformerEmbeddingConfig,
+    TransformerAttentionLayerConfig,
+    TransformerEmbeddingLayerConfig,
+    TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
 )
-
-
-class GPTNeoXAttentionConfig(TransformerAttentionConfig):
-    """
-    GPT-NeoX (`Black et al., 2022`_) attention configuration.
-
-    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
-    """
-
-    ...
-
-
-class GPTNeoXEmbeddingConfig(TransformerEmbeddingConfig):
-    """
-    GPT-NeoX (`Black et al., 2022`_) embedding configuration.
-
-    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
-    """
-
-    ...
-
-
-class GPTNeoXLayerConfig(TransformerLayerConfig):
-    """
-    GPT-NeoX (`Black et al., 2022`_) layer configuration.
-
-    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
-    """
-
-    ...
 
 
 @dataclass
@@ -46,9 +17,8 @@ class GPTNeoXConfig:
     .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
 
-    attention: GPTNeoXAttentionConfig
-    embedding: GPTNeoXEmbeddingConfig
-    layer: GPTNeoXLayerConfig
+    embedding: TransformerEmbeddingLayerConfig
+    layer: TransformerLayerConfig
 
     def __init__(
         self,
@@ -101,20 +71,7 @@ class GPTNeoXConfig:
         #       values in the future. We should check empirically if the auto
         #       resizing in rotary embeddings makes sense.
 
-        self.attention = GPTNeoXAttentionConfig(
-            dropout_prob=attention_probs_dropout_prob,
-            hidden_width=hidden_width,
-            num_query_heads=num_attention_heads,
-            num_key_value_heads=num_attention_heads,
-            parallel_attention=True,
-            rotary_embeddings=RotaryEmbeddingConfig(
-                rotary_fraction=rotary_embedding_fraction,
-                rotary_base=rotary_embedding_base,
-            ),
-            use_bias=True,
-            use_alibi=False,
-        )
-        self.embedding = GPTNeoXEmbeddingConfig(
+        self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
             vocab_size=vocab_size,
@@ -122,12 +79,28 @@ class GPTNeoXConfig:
             max_position_embeddings=None,
             type_vocab_size=None,
         )
-        self.layer = GPTNeoXLayerConfig(
+        self.layer = TransformerLayerConfig(
+            attention=TransformerAttentionLayerConfig(
+                dropout_prob=attention_probs_dropout_prob,
+                hidden_width=hidden_width,
+                num_query_heads=num_attention_heads,
+                num_key_value_heads=num_attention_heads,
+                parallel_attention=True,
+                rotary_embeddings=RotaryEmbeddingConfig(
+                    rotary_fraction=rotary_embedding_fraction,
+                    rotary_base=rotary_embedding_base,
+                ),
+                use_bias=True,
+                use_alibi=False,
+            ),
+            feedforward=TransformerFeedForwardLayerConfig(
+                hidden_width=hidden_width,
+                intermediate_width=intermediate_width,
+                hidden_act=hidden_act,
+                use_bias=True,
+                use_gate=False,
+            ),
             dropout_prob=hidden_dropout_prob,
-            hidden_act=hidden_act,
-            hidden_width=hidden_width,
-            intermediate_width=intermediate_width,
             layer_norm_eps=layer_norm_eps,
             num_hidden_layers=num_hidden_layers,
-            use_bias=True,
         )

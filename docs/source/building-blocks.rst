@@ -119,10 +119,13 @@ These dataclasses encapsulate the configurable parameters of the Transformer mod
 .. autoclass:: curated_transformers.models.config.RotaryEmbeddingConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerAttentionConfig
+.. autoclass:: curated_transformers.models.config.TransformerAttentionLayerConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerEmbeddingConfig
+.. autoclass:: curated_transformers.models.config.TransformerEmbeddingLayerConfig
+   :members:
+
+.. autoclass:: curated_transformers.models.config.TransformerFeedForwardLayerConfig
    :members:
 
 .. autoclass:: curated_transformers.models.config.TransformerLayerConfig

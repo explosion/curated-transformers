@@ -21,7 +21,7 @@ class RotaryEmbeddingConfig:
 
 
 @dataclass
-class TransformerAttentionConfig:
+class TransformerAttentionLayerConfig:
     """
     Configuration options for self-attention.
 
@@ -54,7 +54,7 @@ class TransformerAttentionConfig:
 
 
 @dataclass
-class TransformerEmbeddingConfig:
+class TransformerEmbeddingLayerConfig:
     """
     Configuration options for embeddings.
 
@@ -81,12 +81,10 @@ class TransformerEmbeddingConfig:
 
 
 @dataclass
-class TransformerLayerConfig:
+class TransformerFeedForwardLayerConfig:
     """
-    Configuration options for transformer layers.
+    Configuration options for transformer feed-forward layers.
 
-    :param dropout_prob:
-        Dropout probabilty to apply after hidden layers.
     :param hidden_act:
         Activation in the feed-forward layer. See
         :class:`~curated_transformers.layers.feedforward.PointwiseFeedForward`
@@ -95,18 +93,38 @@ class TransformerLayerConfig:
         Hidden width of the transformer.
     :param intermediate_width:
         Intermediate width in the feed-forward layer.
+    :param use_bias:
+        Use bias in linear layers.
+    :param use_gate:
+        Use Gated Linear Units.
+    """
+
+    hidden_act: str
+    hidden_width: int
+    intermediate_width: int
+    use_bias: bool
+    use_gate: bool
+
+
+@dataclass
+class TransformerLayerConfig:
+    """
+    Configuration options for transformer layers.
+
+    :param attention:
+        Attention layer config.
+    :param dropout_prob:
+        Dropout probabilty to apply after hidden layers.
+    :param feedforward:
+        Feed-forward layer config.
     :param layer_norm_eps:
         Epsilon for layer normalization.
     :param num_hidden_layers:
         Number of hidden layers.
-    :param use_bias:
-        Use bias in linear layers.
     """
 
+    attention: TransformerAttentionLayerConfig
     dropout_prob: float
-    hidden_act: str
-    hidden_width: int
-    intermediate_width: int
+    feedforward: TransformerFeedForwardLayerConfig
     layer_norm_eps: float
     num_hidden_layers: int
-    use_bias: bool

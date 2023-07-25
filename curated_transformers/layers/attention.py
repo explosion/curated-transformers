@@ -239,7 +239,9 @@ class AttentionLinearBiases(Module):
 
     slopes: Tensor
 
-    def __init__(self, *, num_attention_heads: int, is_causal: bool) -> None:
+    def __init__(
+        self, *, num_attention_heads: int, is_causal: bool, is_inverted: bool
+    ) -> None:
         """
         Construct an ALiBi module.
 
@@ -247,10 +249,14 @@ class AttentionLinearBiases(Module):
             Number of attention heads.
         :param is_causal:
             Use causal attention.
+        :param invert:
+            If ``True``, the biases are inverted, i.e.,
+            penalites become rewards.
         """
         super().__init__()
 
         self.is_causal = is_causal
+        self.invert = is_inverted
         slopes = self._calculate_slopes(num_attention_heads)
         self.register_buffer("slopes", slopes, persistent=False)
 
@@ -319,6 +325,9 @@ class AttentionLinearBiases(Module):
         else:
             distances = torch.arange(seq_len) - torch.arange(seq_len).view(-1, 1)
             distances = distances.abs().mul(-1).view(1, 1, seq_len, seq_len)
+
+        if self.invert:
+            distances += seq_len - 1
 
         return distances * self.slopes
 
@@ -416,7 +425,7 @@ class ScaledDotProductAttention(Module):
         attn_scores /= math.sqrt(model_dim)
 
         if self.linear_biases is not None:
-            attn_scores = self.linear_biases(attn_scores)
+            attn_scores = self.linear_biases(attention_scores=attn_scores)
 
         if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large

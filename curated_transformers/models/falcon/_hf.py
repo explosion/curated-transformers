@@ -18,6 +18,7 @@ HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL = {
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
     "vocab_size": "vocab_size",
+    "alibi": "use_alibi",
 }
 
 HF_CONFIG_KEY_MAPPING_FALCON = {
@@ -28,6 +29,7 @@ HF_CONFIG_KEY_MAPPING_FALCON = {
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
     "vocab_size": "vocab_size",
+    "alibi": "use_alibi",
 }
 
 
@@ -95,9 +97,6 @@ def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
             kwargs["num_key_value_heads"] = 1
         else:
             kwargs["num_key_value_heads"] = kwargs["num_query_heads"]
-
-    if "alibi" in hf_config and hf_config["alibi"]:
-        raise ValueError("Falcon models with ALiBi are currently not supported")
 
     return FalconConfig(
         rotary_embedding_base=10000,

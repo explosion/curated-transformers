@@ -53,7 +53,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         # Parameters are shared by groups of layers.
         self.groups = torch.nn.ModuleList(
             [
-                ALBERTLayerGroup(config.layer, config.attention, device=device)
+                ALBERTLayerGroup(config.layer, device=device)
                 for _ in range(num_hidden_groups)
             ]
         )

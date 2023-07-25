@@ -42,7 +42,7 @@ class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
 
         self.decoder = GPTNeoXDecoder(config, device=device)
         self.output_embeddings = Linear(
-            in_features=config.layer.hidden_width,
+            in_features=config.layer.feedforward.hidden_width,
             out_features=config.embedding.vocab_size,
             bias=False,
             device=device,

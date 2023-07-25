@@ -49,7 +49,7 @@ class BERTEncoder(EncoderModule, FromHFHub):
 
         layer_norm = partial(
             LayerNorm,
-            config.layer.hidden_width,
+            config.layer.feedforward.hidden_width,
             config.layer.layer_norm_eps,
             device=device,
         )
@@ -58,21 +58,21 @@ class BERTEncoder(EncoderModule, FromHFHub):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.attention.num_attention_heads
+                            config.layer.attention.num_query_heads
                         ),
-                        dropout_prob=config.attention.dropout_prob,
-                        hidden_width=config.layer.hidden_width,
+                        dropout_prob=config.layer.attention.dropout_prob,
+                        hidden_width=config.layer.feedforward.hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
-                        use_bias=True,
+                        use_bias=config.layer.attention.use_bias,
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
-                        hidden_act=config.layer.hidden_act,
-                        hidden_width=config.layer.hidden_width,
-                        intermediate_width=config.layer.intermediate_width,
-                        use_bias=True,
-                        use_gate=False,
+                        hidden_act=config.layer.feedforward.hidden_act,
+                        hidden_width=config.layer.feedforward.hidden_width,
+                        intermediate_width=config.layer.feedforward.intermediate_width,
+                        use_bias=config.layer.feedforward.use_bias,
+                        use_gate=config.layer.feedforward.use_gate,
                         device=device,
                     ),
                     dropouts=TransformerDropouts.layer_output_dropouts(
@@ -82,7 +82,7 @@ class BERTEncoder(EncoderModule, FromHFHub):
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=False,
+                    parallel_attention=config.layer.attention.parallel_attention,
                 )
                 for _ in range(config.layer.num_hidden_layers)
             ]

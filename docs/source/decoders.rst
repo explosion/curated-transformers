@@ -47,41 +47,14 @@ GPT-NeoX
 .. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXConfig
    :members:
 
-.. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXLayerConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXEmbeddingConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXAttentionConfig
-   :members:
-
 LLaMA
 ^^^^^
 
 .. autoclass:: curated_transformers.models.llama.config.LLaMAConfig
    :members:
 
-.. autoclass:: curated_transformers.models.llama.config.LLaMALayerConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.llama.config.LLaMAEmbeddingConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.llama.config.LLaMAAttentionConfig
-   :members:
-
 Falcon
 ^^^^^^
 
 .. autoclass:: curated_transformers.models.falcon.config.FalconConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.falcon.config.FalconLayerConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.falcon.config.FalconEmbeddingConfig
-   :members:
-
-.. autoclass:: curated_transformers.models.falcon.config.FalconAttentionConfig
    :members:

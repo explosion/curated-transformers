@@ -1,10 +1,15 @@
 from dataclasses import dataclass
 
-from ..bert import BERTAttentionConfig, BERTConfig, BERTEmbeddingConfig, BERTLayerConfig
+from ..config import (
+    TransformerAttentionLayerConfig,
+    TransformerEmbeddingLayerConfig,
+    TransformerFeedForwardLayerConfig,
+    TransformerLayerConfig,
+)
 
 
 @dataclass
-class ALBERTLayerConfig(BERTLayerConfig):
+class ALBERTLayerConfig(TransformerLayerConfig):
     """
     ALBERT (`Lan et al., 2022`_) layer configuration.
 
@@ -29,7 +34,7 @@ class ALBERTLayerConfig(BERTLayerConfig):
 
 
 @dataclass
-class ALBERTConfig(BERTConfig):
+class ALBERTConfig:
     """
     ALBERT (`Lan et al., 2022`_) model configuration.
 
@@ -94,7 +99,7 @@ class ALBERTConfig(BERTConfig):
         :param padding_id:
             Index of the padding meta-token.
         """
-        self.embedding = BERTEmbeddingConfig(
+        self.embedding = TransformerEmbeddingLayerConfig(
             embedding_width=embedding_width,
             vocab_size=vocab_size,
             type_vocab_size=type_vocab_size,
@@ -102,20 +107,29 @@ class ALBERTConfig(BERTConfig):
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
-        self.attention = BERTAttentionConfig(
-            hidden_width=hidden_width,
-            num_attention_heads=num_attention_heads,
-            dropout_prob=attention_probs_dropout_prob,
-        )
         self.layer = ALBERTLayerConfig(
-            hidden_width=hidden_width,
-            inner_group_num=inner_group_num,
-            intermediate_width=intermediate_width,
+            attention=TransformerAttentionLayerConfig(
+                hidden_width=hidden_width,
+                dropout_prob=attention_probs_dropout_prob,
+                num_key_value_heads=num_attention_heads,
+                num_query_heads=num_attention_heads,
+                parallel_attention=False,
+                rotary_embeddings=None,
+                use_alibi=False,
+                use_bias=True,
+            ),
+            feedforward=TransformerFeedForwardLayerConfig(
+                hidden_width=hidden_width,
+                intermediate_width=intermediate_width,
+                hidden_act=hidden_act,
+                use_bias=True,
+                use_gate=False,
+            ),
             num_hidden_layers=num_hidden_layers,
-            num_hidden_groups=num_hidden_groups,
-            hidden_act=hidden_act,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
+            inner_group_num=inner_group_num,
+            num_hidden_groups=num_hidden_groups,
         )
         self.model_max_length = model_max_length
         self.padding_id = padding_id

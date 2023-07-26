@@ -1,14 +1,16 @@
 import math
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple, Type, Union
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module
 
+from ..util.dataclass import DataclassAsDict
 from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings
 
@@ -42,7 +44,8 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
         _TORCH_SDP.reset(token)
 
 
-class AttentionMask:
+@dataclass
+class AttentionMask(DataclassAsDict):
     """
     Mask for attention calculation. Sequence elements for which the
     corresponding mask element is set to ``False`` are ignored during
@@ -50,7 +53,6 @@ class AttentionMask:
     """
 
     bool_mask: Tensor
-    _logit_mask: Optional[Tensor]
 
     def __init__(self, bool_mask: Tensor):
         """
@@ -73,7 +75,33 @@ class AttentionMask:
                 "[batch_len, heads, query_len, key_len]"
             )
 
-        self._logit_mask = None
+        self.__post_init__()
+
+    @classmethod
+    def jit_rewrap(
+        cls: Type["AttentionMask"],
+        attention_mask: Optional[Union["AttentionMask", Dict[str, Tensor]]],
+    ) -> Optional["AttentionMask"]:
+        """
+        Rewrap TorchScript dictionary conversion of an attention mask
+        as an `AttentionMask`.
+
+        :param attention_mask:
+            The attention mask or its dictionary representation. If the
+            value is an ``AttentionMask`` or ``None``, the value will be
+            returned as-is.
+        :returns:
+            The attention mask.
+        """
+        if attention_mask is None or isinstance(attention_mask, AttentionMask):
+            return attention_mask
+
+        bool_mask = attention_mask.get("bool_mask")
+        if bool_mask is None:
+            raise ValueError(
+                "Attention mask is not of the `AttentionMask` type, nor a dict with 'bool_mask'."
+            )
+        return AttentionMask(bool_mask=bool_mask)
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
         """
@@ -98,9 +126,7 @@ class AttentionMask:
         return AttentionMask(self.bool_mask.logical_and(other.bool_mask))
 
     def logit_mask(self, dtype: torch.dtype):
-        if self._logit_mask is None:
-            self._logit_mask = (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
-        return self._logit_mask
+        return (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
 
     @property
     def shape(self):
@@ -239,7 +265,9 @@ class AttentionLinearBiases(Module):
 
     slopes: Tensor
 
-    def __init__(self, *, num_attention_heads: int, is_causal: bool) -> None:
+    def __init__(
+        self, *, num_attention_heads: int, is_causal: bool, is_inverted: bool
+    ) -> None:
         """
         Construct an ALiBi module.
 
@@ -247,10 +275,14 @@ class AttentionLinearBiases(Module):
             Number of attention heads.
         :param is_causal:
             Use causal attention.
+        :param invert:
+            If ``True``, the biases are inverted, i.e.,
+            penalties become rewards.
         """
         super().__init__()
 
         self.is_causal = is_causal
+        self.invert = is_inverted
         slopes = self._calculate_slopes(num_attention_heads)
         self.register_buffer("slopes", slopes, persistent=False)
 
@@ -319,6 +351,9 @@ class AttentionLinearBiases(Module):
         else:
             distances = torch.arange(seq_len) - torch.arange(seq_len).view(-1, 1)
             distances = distances.abs().mul(-1).view(1, 1, seq_len, seq_len)
+
+        if self.invert:
+            distances += seq_len - 1
 
         return distances * self.slopes
 
@@ -416,7 +451,7 @@ class ScaledDotProductAttention(Module):
         attn_scores /= math.sqrt(model_dim)
 
         if self.linear_biases is not None:
-            attn_scores = self.linear_biases(attn_scores)
+            attn_scores = self.linear_biases(attention_scores=attn_scores)
 
         if attention_mask is not None:
             # Replace tokens that we don't want to attend to with a large
@@ -572,6 +607,9 @@ class SelfAttention(Module):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
+        # The attention mask is converted to a dict for traced models. Rewrap as
+        # AttentionMask to get validation and utility methods.
+        attention_mask = AttentionMask.jit_rewrap(attention_mask)
 
         query, key, value = self._query_key_value(input)
 
@@ -580,6 +618,9 @@ class SelfAttention(Module):
                 query=query, key=key, cache=cache, positions=positions
             )
 
+        # The key-value is converted to a dict for traced models. Rewrap as
+        # KeyValueCache to get validation and utility methods.
+        cache = KeyValueCache.jit_rewrap(cache)
         if cache is not None:
             cache_k = cache.key
             cache_v = cache.value
@@ -637,7 +678,7 @@ class SelfAttention(Module):
         output = self.output(attn)
 
         if store_cache:
-            return output, KeyValueCache(key=key, value=value)
+            return output, KeyValueCache(key, value)
         else:
             return output, None
 

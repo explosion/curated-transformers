@@ -5,7 +5,13 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
+from ...layers.attention import (
+    AttentionHeads,
+    AttentionLinearBiases,
+    AttentionMask,
+    QkvMode,
+    SelfAttention,
+)
 from ...layers.cache import KeyValueCache
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
@@ -105,11 +111,15 @@ class FalconDecoder(DecoderModule, FromHFHub):
 
         layer_outputs[-1] = self.output_layer_norm(layer_outputs[-1])
 
-        return ModelOutputWithCache(
-            embedding_output=embeddings,
-            layer_hidden_states=layer_outputs,
+        output = ModelOutputWithCache(
+            all_outputs=[embeddings, *layer_outputs],
             cache=new_cache if store_cache else None,
         )
+
+        if torch.jit.is_tracing():
+            return output.astuple()  # type: ignore[return-value]
+        else:
+            return output
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
@@ -146,8 +156,28 @@ class FalconDecoder(DecoderModule, FromHFHub):
             device=device,
         )
         num_attention_heads = config.layer.attention.num_query_heads
+        attention_biases = (
+            AttentionLinearBiases(
+                num_attention_heads=config.layer.attention.num_query_heads,
+                is_causal=True,
+                is_inverted=True,
+            )
+            if config.layer.attention.use_alibi
+            else None
+        )
+        # Rotary embeddings are disabled when using ALiBi.
+        rotary_embeds = (
+            QueryKeyRotaryEmbeddings(
+                fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
+                base=config.layer.attention.rotary_embeddings.rotary_base,
+                dims_per_head=hidden_width // num_attention_heads,
+            )
+            if not config.layer.attention.use_alibi
+            else None
+        )
         return DecoderLayer(
             attention_layer=SelfAttention(
+                attention_biases=attention_biases,
                 attention_heads=AttentionHeads.key_value_broadcast(
                     num_query_heads=num_attention_heads,
                     num_key_value_heads=config.layer.attention.num_key_value_heads,
@@ -155,11 +185,7 @@ class FalconDecoder(DecoderModule, FromHFHub):
                 dropout_prob=config.layer.attention.dropout_prob,
                 hidden_width=hidden_width,
                 qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
-                rotary_embeds=QueryKeyRotaryEmbeddings(
-                    fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
-                    base=config.layer.attention.rotary_embeddings.rotary_base,
-                    dims_per_head=hidden_width // num_attention_heads,
-                ),
+                rotary_embeds=rotary_embeds,
                 use_bias=config.layer.attention.use_bias,
                 device=device,
             ),

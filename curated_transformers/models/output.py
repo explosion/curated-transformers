@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar
 
-import torch
 from torch import Tensor
 
 from ..layers.cache import CacheProtocol
+from ..util.dataclass import DataclassAsTuple
 
 CacheT = TypeVar("CacheT", bound=CacheProtocol)
 
 
-@torch.jit.script
-class ModelOutput:
+@dataclass
+class ModelOutput(DataclassAsTuple):
     """
     Base class for model outputs.
 
@@ -21,21 +21,6 @@ class ModelOutput:
     """
 
     all_outputs: List[Tensor]
-
-    def __init__(
-        self, *, embedding_output: Tensor, layer_hidden_states: List[Tensor]
-    ) -> None:
-        """
-        Construct model output.
-
-        :param embedding_output:
-            Output of the embedding layer.
-        :param layer_hidden_states:
-            Outputs of the hidden layers.
-        """
-
-        self.all_outputs = [embedding_output]
-        self.all_outputs.extend(layer_hidden_states)
 
     @property
     def embedding_layer(self) -> Tensor:
@@ -93,6 +78,7 @@ class ModelOutput:
         return self.all_outputs[1:]
 
 
+@dataclass
 class ModelOutputWithCache(Generic[CacheT], ModelOutput):
     """
     Output of decoder modules.
@@ -104,37 +90,8 @@ class ModelOutputWithCache(Generic[CacheT], ModelOutput):
 
     cache: Optional[List[CacheT]]
 
-    def __init__(
-        self,
-        *,
-        embedding_output: Tensor,
-        layer_hidden_states: List[Tensor],
-        cache: Optional[List[CacheT]],
-    ) -> None:
-        """
-        Construct model output.
 
-        :param embedding_output:
-            Output of the embedding layer.
-
-            *Shape:* ``(batch_size, seq_len, width)``
-        :param layer_hidden_states:
-            Outputs of the hidden layers.
-
-            *Shape:* ``(batch_size, seq_len, width)``
-        :param cache:
-            Model cache.
-
-            The cache can be used with future calls to
-            a model to reuse computations for efficiency
-        """
-
-        super().__init__(
-            embedding_output=embedding_output, layer_hidden_states=layer_hidden_states
-        )
-        self.cache = cache
-
-
+@dataclass
 class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
     """
     Output of causal language model modules.
@@ -144,37 +101,3 @@ class CausalLMOutputWithCache(Generic[CacheT], ModelOutputWithCache[CacheT]):
     """
 
     logits: Tensor
-
-    def __init__(
-        self,
-        *,
-        embedding_output: Tensor,
-        layer_hidden_states: List[Tensor],
-        logits: Tensor,
-        cache: Optional[List[CacheT]],
-    ) -> None:
-        """
-        Construct model output.
-
-        :param embedding_output:
-            Output of the embedding layer.
-
-            *Shape:* ``(batch_size, seq_len, width)``
-        :param layer_hidden_states:
-            Outputs of the hidden layers.
-
-            *Shape:* ``(batch_size, seq_len, width)``
-        :param logits:
-            Logits of the distributions of predicted tokens.
-
-            *Shape:* ``(batch_size, seq_len, vocab_size)``
-        :param cache:
-            Model cache.
-        """
-
-        super().__init__(
-            cache=cache,
-            embedding_output=embedding_output,
-            layer_hidden_states=layer_hidden_states,
-        )
-        self.logits = logits

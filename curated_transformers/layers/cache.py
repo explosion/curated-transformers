@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-from typing import Protocol, TypeVar
+from typing import Dict, Optional, Protocol, Type, TypeVar, Union
 
 import torch
 from torch import Tensor
+
+from curated_transformers.util.dataclass import DataclassAsDict, DataclassAsTuple
 
 CacheProtocolSelf = TypeVar("CacheProtocolSelf", bound="CacheProtocol")
 
@@ -25,7 +27,7 @@ class CacheProtocol(Protocol):
 
 
 @dataclass
-class KeyValueCache:
+class KeyValueCache(DataclassAsDict):
     """
     Cache type for layers that cache keys and values.
 
@@ -50,4 +52,36 @@ class KeyValueCache:
         if mask.dtype != torch.bool:
             raise ValueError(f"Cache mask dtype must be bool, was: {mask.dtype}.")
 
-        return KeyValueCache(key=self.key[mask], value=self.value[mask])
+        return KeyValueCache(self.key[mask], self.value[mask])
+
+    @classmethod
+    def jit_rewrap(
+        cls: Type["KeyValueCache"],
+        key_value_cache: Optional[Union["KeyValueCache", Dict[str, Tensor]]],
+    ) -> Optional["KeyValueCache"]:
+        """
+        Rewrap TorchScript dictionary conversion of a key-value cache.
+
+        :param key_value_cache:
+            The key-value cache or its dictionary representation. If the
+            value is a ``KeyValueCache`` or ``None``, it will be
+            returned as-is.
+        :returns:
+            The key-value cache.
+        """
+        if key_value_cache is None or isinstance(key_value_cache, KeyValueCache):
+            return key_value_cache
+
+        key = key_value_cache.get("key")
+        if key is None:
+            raise ValueError(
+                "Key-value cache is not of the `KeyValueCache` type, nor a dict with 'key'."
+            )
+
+        value = key_value_cache.get("value")
+        if value is None:
+            raise ValueError(
+                "Key-value cache is not of the `KeyValueCache`` type, nor a dict with 'value'."
+            )
+
+        return cls(key=key, value=value)

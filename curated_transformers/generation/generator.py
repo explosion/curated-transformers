@@ -31,7 +31,7 @@ class Generator(Generic[CacheT]):
     def __call__(
         self,
         *,
-        attention_mask: Tensor,
+        attention_mask: AttentionMask,
         ids: Tensor,
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
@@ -47,7 +47,7 @@ class Generator(Generic[CacheT]):
     def generate(
         self,
         *,
-        attention_mask: Tensor,
+        attention_mask: AttentionMask,
         ids: Tensor,
         config: GeneratorConfig,
     ) -> Iterator[Tuple[Tensor, Tensor]]:
@@ -101,7 +101,7 @@ class Generator(Generic[CacheT]):
             with torch.no_grad():
                 output = self.model(
                     state.last_step_ids,
-                    attention_mask=AttentionMask(state.attention_mask),
+                    attention_mask=state.attention_mask,
                     cache=state.cache,
                     store_cache=True,
                     positions=state.positions,

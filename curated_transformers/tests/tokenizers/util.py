@@ -28,7 +28,10 @@ def compare_tokenizer_outputs_with_hf_tokenizer(
         pieces.padded_tensor(padding_id=hf_tokenizer.pad_token_id),
         hf_pieces["input_ids"].int(),
     )
-    torch_assertclose(pieces.attention_mask(), hf_pieces["attention_mask"].bool())
+    torch_assertclose(
+        pieces.attention_mask().bool_mask.squeeze(dim=(1, 2)),
+        hf_pieces["attention_mask"].bool(),
+    )
 
     # Test decoding
     decoded = tokenizer.decode(pieces.ids)
@@ -47,5 +50,6 @@ def compare_tokenizer_outputs_with_hf_tokenizer(
         hf_pieces["input_ids"].int(),
     )
     torch_assertclose(
-        pieces.attention_mask(pad_left=True), hf_pieces["attention_mask"].bool()
+        pieces.attention_mask(pad_left=True).bool_mask.squeeze(dim=(1, 2)),
+        hf_pieces["attention_mask"].bool(),
     )

@@ -251,7 +251,7 @@ class AttentionLinearBiases(Module):
             Use causal attention.
         :param invert:
             If ``True``, the biases are inverted, i.e.,
-            penalites become rewards.
+            penalties become rewards.
         """
         super().__init__()
 

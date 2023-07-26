@@ -6,6 +6,7 @@ from torch.nn import Module
 
 from ...layers.attention import (
     AttentionHeads,
+    AttentionLinearBiases,
     AttentionMask,
     KeyValueCache,
     QkvMode,
@@ -41,18 +42,34 @@ class OldFalconDecoderLayer(Module):
 
         hidden_width = layer_config.feedforward.hidden_width
         num_attention_heads = attention_config.num_query_heads
+        attention_biases = (
+            AttentionLinearBiases(
+                num_attention_heads=attention_config.num_query_heads,
+                is_causal=True,
+                is_inverted=True,
+            )
+            if attention_config.use_alibi
+            else None
+        )
+        # Rotary embeddings are disabled when using ALiBi.
+        rotary_embeds = (
+            QueryKeyRotaryEmbeddings(
+                fraction=attention_config.rotary_embeddings.rotary_fraction,
+                base=attention_config.rotary_embeddings.rotary_base,
+                dims_per_head=hidden_width // num_attention_heads,
+            )
+            if not attention_config.use_alibi
+            else None
+        )
         self.mha = SelfAttention(
+            attention_biases=attention_biases,
             dropout_prob=attention_config.dropout_prob,
             hidden_width=hidden_width,
             attention_heads=AttentionHeads.key_value_broadcast(
                 num_query_heads=attention_config.num_query_heads,
                 num_key_value_heads=attention_config.num_key_value_heads,
             ),
-            rotary_embeds=QueryKeyRotaryEmbeddings(
-                base=attention_config.rotary_embeddings.rotary_base,
-                fraction=attention_config.rotary_embeddings.rotary_fraction,
-                dims_per_head=hidden_width // num_attention_heads,
-            ),
+            rotary_embeds=rotary_embeds,
             qkv_mode=QkvMode.MERGED_SPLIT_AFTER
             if attention_config.num_key_value_heads == 1
             else QkvMode.MERGED_SPLIT_BEFORE,

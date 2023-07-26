@@ -53,7 +53,11 @@ class LLaMADecoder(DecoderModule, FromHFHub):
         self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         hidden_width = config.layer.feedforward.hidden_width
-        num_attention_heads = config.layer.attention.num_query_heads
+        num_query_heads = config.layer.attention.num_query_heads
+        attention_heads = AttentionHeads.key_value_broadcast(
+            num_query_heads=num_query_heads,
+            num_key_value_heads=config.layer.attention.num_key_value_heads,
+        )
         layer_norm = partial(
             RMSNorm,
             hidden_width,
@@ -68,14 +72,14 @@ class LLaMADecoder(DecoderModule, FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_heads=AttentionHeads.uniform(num_attention_heads),
+                        attention_heads=attention_heads,
                         dropout_prob=config.layer.attention.dropout_prob,
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                             base=config.layer.attention.rotary_embeddings.rotary_base,
-                            dims_per_head=hidden_width // num_attention_heads,
+                            dims_per_head=hidden_width // num_query_heads,
                         ),
                         use_bias=config.layer.attention.use_bias,
                         device=device,

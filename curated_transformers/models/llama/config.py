@@ -29,8 +29,9 @@ class LLaMAConfig:
         hidden_width: int = 2560,
         intermediate_width: int = 10240,
         rms_norm_eps: float = 1e-5,
-        num_attention_heads: int = 32,
+        num_query_heads: int = 32,
         num_hidden_layers: int = 32,
+        num_key_value_heads: int = 32,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
         vocab_size: int = 50280,
@@ -51,10 +52,12 @@ class LLaMAConfig:
             The non-linearity is applied in this intermediate width.
         :param rms_norm_eps:
             Epsilon for layer normalization.
-        :param num_attention_heads:
-            Number of attention heads.
+        :param num_query_heads:
+            Number of query heads.
         :param num_hidden_layers:
             Number of hidden layers.
+        :param num_key_value_heads:
+            Number of key-value heads.
         :param rotary_embedding_base:
             Base in signifying the rotary embedding period.
         :param rotary_embedding_fraction:
@@ -76,8 +79,8 @@ class LLaMAConfig:
             attention=TransformerAttentionLayerConfig(
                 dropout_prob=attention_probs_dropout_prob,
                 hidden_width=hidden_width,
-                num_query_heads=num_attention_heads,
-                num_key_value_heads=num_attention_heads,
+                num_query_heads=num_query_heads,
+                num_key_value_heads=num_key_value_heads,
                 parallel_attention=False,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,

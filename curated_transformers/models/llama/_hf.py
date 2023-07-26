@@ -8,7 +8,8 @@ from .config import LLaMAConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
-EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
+NUM_KEY_VALUE_HEADS = "num_key_value_heads"
+EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT, NUM_KEY_VALUE_HEADS]
 
 
 HF_CONFIG_KEY_MAPPING = {
@@ -16,7 +17,7 @@ HF_CONFIG_KEY_MAPPING = {
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
     "rms_norm_eps": "rms_norm_eps",
-    "num_attention_heads": "num_attention_heads",
+    "num_attention_heads": "num_query_heads",
     "num_hidden_layers": "num_hidden_layers",
     "vocab_size": "vocab_size",
 }
@@ -34,6 +35,10 @@ def convert_hf_config(hf_config: Any) -> LLaMAConfig:
     kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     # Handle config options that are not set in all models.
     kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
+
+    if not NUM_KEY_VALUE_HEADS in kwargs:
+        kwargs[NUM_KEY_VALUE_HEADS] = kwargs["num_query_heads"]
+
     return LLaMAConfig(
         rotary_embedding_base=10000,
         rotary_embedding_fraction=1.0,

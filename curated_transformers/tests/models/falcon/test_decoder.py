@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.falcon.decoder import FalconDecoder
 from curated_transformers.tests.util import torch_assertclose
@@ -46,10 +45,10 @@ FALCON_TEST_MODELS = [
     #    "d53e01af2cc0edc22719c4d2f22bd66a87fa8c64",
     # ),
     # Enable when HF transformers with Falcon is released.
-    (
-        "explosion-testing/falcon-new-decoder-alibi-test",
-        "a6a0d422ba272a4395eb4da0b831cfdc0c571f82",
-    ),
+    # (
+    #     "explosion-testing/falcon-new-decoder-alibi-test",
+    #     "a6a0d422ba272a4395eb4da0b831cfdc0c571f82",
+    # ),
 ]
 
 

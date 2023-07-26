@@ -8,7 +8,7 @@ from curated_transformers.layers.embeddings import (
 
 from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES
-from ..util import torch_assertclose
+from ..utils import torch_assertclose
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from ..compat import transformers
-from ..util import torch_assertclose
+from ..utils import torch_assertclose
 
 
 def compare_tokenizer_outputs_with_hf_tokenizer(

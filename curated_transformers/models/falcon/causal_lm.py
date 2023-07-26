@@ -63,14 +63,16 @@ class FalconCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
             store_cache=store_cache,
             positions=positions,
         )
-        logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
-
-        return CausalLMOutputWithCache(
-            cache=decoder_output.cache,
-            embedding_output=decoder_output.embedding_layer,
-            layer_hidden_states=decoder_output.all_hidden_layer_states,
-            logits=logits,
-        )
+        if torch.jit.is_tracing():
+            logits = self.output_embeddings(decoder_output[0][-1])
+            return decoder_output + (logits,)  # type: ignore[return-value]
+        else:
+            logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
+            return CausalLMOutputWithCache(
+                all_outputs=decoder_output.all_outputs,
+                cache=decoder_output.cache,
+                logits=logits,
+            )
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

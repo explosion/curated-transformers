@@ -5,7 +5,7 @@ from curated_transformers.tokenizers import PiecesWithIds
 from curated_transformers.tokenizers.legacy import RoBERTaTokenizer
 
 from ...compat import has_hf_transformers
-from ...util import torch_assertclose
+from ...utils import torch_assertclose
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 
 

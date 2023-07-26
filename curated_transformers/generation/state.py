@@ -3,6 +3,7 @@ from typing import Generic, List, Optional, Tuple
 import torch
 from torch import Tensor
 
+from ..layers.attention import AttentionMask
 from ..models.output import CacheT
 from .stop_conditions import StopCondition
 
@@ -13,7 +14,7 @@ class GeneratorState(Generic[CacheT]):
     the sequences being generated.
     """
 
-    attention_mask: Tensor
+    attention_mask: AttentionMask
     cache: Optional[List[CacheT]]
     positions: Tensor
     seq_ids: Tensor
@@ -23,7 +24,7 @@ class GeneratorState(Generic[CacheT]):
     def __init__(
         self,
         *,
-        attention_mask: Tensor,
+        attention_mask: AttentionMask,
         cache: Optional[List[CacheT]],
         prompt_ids: Tensor,
     ) -> None:
@@ -31,7 +32,7 @@ class GeneratorState(Generic[CacheT]):
         Construct a generator state.
 
         :param attention_mask:
-            Atention mask for the prompts.
+            Attention mask for the prompts.
 
             *Shape:* ``(batch_size, seq_len)``
         :param cache:
@@ -46,9 +47,9 @@ class GeneratorState(Generic[CacheT]):
             attention_mask.device == device
         ), f"Attention mask device '{attention_mask.device}' is not same as prompt ids device '{prompt_ids.device}'"
         self.attention_mask = attention_mask
-        self.positions = attention_mask.int().cumsum(-1) - 1
+        self.positions = attention_mask.bool_mask.int().cumsum(-1) - 1
         self.cache = cache
-        self.seq_ids = torch.arange(0, self.attention_mask.size(0), device=device)
+        self.seq_ids = torch.arange(0, self.attention_mask.shape[0], device=device)
         self.prompt_ids = prompt_ids
         self.generated_ids = torch.zeros(
             (prompt_ids.size(0), 0), dtype=prompt_ids.dtype, device=device
@@ -105,16 +106,8 @@ class GeneratorState(Generic[CacheT]):
         # stopping conditions get a consistent view.
         self.cache = cache
         self.generated_ids = torch.concat([self.generated_ids, predicted_ids], 1)
-        self.attention_mask = torch.cat(
-            [
-                self.attention_mask,
-                torch.full(
-                    (self.attention_mask.size(0), 1),
-                    True,
-                    device=self.attention_mask.device,
-                ),
-            ],
-            dim=-1,
+        self.attention_mask = self.attention_mask.extend_length(
+            count=1, fill_value=True
         )
         self.positions = self.positions.max(-1, keepdim=True).values + 1
 
@@ -147,7 +140,7 @@ class GeneratorState(Generic[CacheT]):
         """
         not_completed = completed.logical_not()
         self.generated_ids = self.generated_ids[not_completed]
-        self.attention_mask = self.attention_mask[not_completed]
+        self.attention_mask = self.attention_mask.filter_batch_items(not_completed)
         if self.cache is not None:
             self.cache = [
                 layer_cache.filter_batch_items(not_completed)

@@ -5,7 +5,7 @@ from typing import Any, Tuple
 from torch import Tensor
 
 
-class DataclassAsDict(OrderedDict[str, Tensor]):
+class DataclassAsDict(OrderedDict):
     """
     Dataclasses that derive from this struct are also a dictionary.
 

@@ -42,7 +42,9 @@ class DataclassAsDict(OrderedDict[str, Tensor]):
 
     def __setitem__(self, key: str, value: Tensor) -> None:
         if not isinstance(key, str):
-            raise TypeError(f"Key cannot be set to non-`str` type `{type(key).__name__}`")
+            raise TypeError(
+                f"Key cannot be set to non-`str` type `{type(key).__name__}`"
+            )
 
         if not isinstance(value, Tensor):
             raise TypeError(

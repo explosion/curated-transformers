@@ -4,7 +4,6 @@ from typing import Callable, Dict, List, Tuple, Type, Union
 import torch
 from torch import Tensor
 from torch.nn import Module
-from transformers import AutoModel
 
 from curated_transformers.layers.attention import AttentionMask, enable_torch_sdp
 from curated_transformers.layers.cache import KeyValueCache
@@ -213,7 +212,7 @@ def assert_encoder_output_equals_hf(
 
 def assert_decoder_with_cache_output_equals_hf(
     orig_model: DecoderModule,
-    hf_model: AutoModel,
+    hf_model: "transformers.AutoModel",
     torch_device: torch.device,
     atol: float,
     rtol: float,
@@ -253,7 +252,7 @@ def assert_decoder_with_cache_output_equals_hf(
 
 def assert_with_mask_output_equals_hf(
     orig_model: Union[DecoderModule, EncoderModule],
-    hf_model: AutoModel,
+    hf_model: "transformers.AutoModel",
     torch_device: torch.device,
     atol: float,
     rtol: float,
@@ -278,7 +277,7 @@ def assert_with_mask_output_equals_hf(
 
 def assert_decoder_with_positions_equals_hf(
     orig_model: DecoderModule,
-    hf_model: AutoModel,
+    hf_model: "transformers.AutoModel",
     torch_device: torch.device,
     atol: float,
     rtol: float,

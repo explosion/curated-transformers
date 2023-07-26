@@ -18,6 +18,9 @@ because they take different argument types (e.g., ``AttentionMask`` and
 complicates this is that we want to keep strong typing outside TorchScript. We
 have addressed these issues as described below.
 
+Module Arguments
+""""""""""""""""
+
 Our argument types are dataclasses with only ``Tensor`` fields. These types can
 be represented as ``Dict[str, Tensor]`` without any loss of information. To this
 end, we have made a ``DataclassAsDict`` base class. Dataclasses that inherit
@@ -32,6 +35,9 @@ Tensor]]`` as an ``AttentionMask``:
 .. code-block:: python
 
    attention_mask = AttentionMask.jit_rewrap(attention_mask)
+
+Module Return Values
+""""""""""""""""""""
 
 The ``ModelOutput``-based return types can contain nested dataclasses. For 
 instance, ``ModelOutputWithCache`` contains an ``Optional[List[CacheT]]`` field where

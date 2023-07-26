@@ -8,7 +8,7 @@ from curated_transformers.generation.logits import (
     VocabMaskTransform,
 )
 
-from ..util import torch_assertclose
+from ..utils import torch_assertclose
 
 
 def test_temperature_transform():

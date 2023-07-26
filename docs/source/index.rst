@@ -73,3 +73,5 @@ All types of models can be loaded from Huggingface Hub.
 
    usage
    api
+   deployment
+   develop

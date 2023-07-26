@@ -1,13 +1,12 @@
 import pytest
 import torch
 
-from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.falcon.decoder import FalconDecoder
-from curated_transformers.tests.util import torch_assertclose
 
-from ...compat import has_hf_transformers, has_torch_compile, transformers
+from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
-from ..util import assert_decoder_output_equals_hf
+from ...utils import torch_assertclose
+from ..util import JITMethod, assert_decoder_output_equals_hf
 
 VOCAB_SIZE = 1024
 
@@ -51,7 +50,8 @@ FALCON_TEST_MODELS = [
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 @pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
-def test_decoder(torch_device, model_revision):
+@pytest.mark.parametrize("with_torch_sdp", [False, True])
+def test_decoder(torch_device, model_revision, with_torch_sdp):
     model, revision = model_revision
     assert_decoder_output_equals_hf(
         FalconDecoder,
@@ -62,6 +62,7 @@ def test_decoder(torch_device, model_revision):
         with_cache=False,
         with_mask=False,
         with_positions=False,
+        with_torch_sdp=with_torch_sdp,
     )
 
 
@@ -70,7 +71,8 @@ def test_decoder(torch_device, model_revision):
 @pytest.mark.skipif(not has_torch_compile, reason="requires torch.compile")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 @pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
-def test_decoder_torch_compile(torch_device, model_revision):
+@pytest.mark.parametrize("with_torch_sdp", [False, True])
+def test_decoder_with_torch_compile(torch_device, model_revision, with_torch_sdp):
     model, revision = model_revision
     assert_decoder_output_equals_hf(
         FalconDecoder,
@@ -81,7 +83,29 @@ def test_decoder_torch_compile(torch_device, model_revision):
         with_cache=False,
         with_mask=False,
         with_positions=False,
-        with_torch_compile=True,
+        jit_method=JITMethod.TorchCompile,
+        with_torch_sdp=with_torch_sdp,
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+@pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
+@pytest.mark.parametrize("with_torch_sdp", [False, True])
+def test_decoder_with_torchscript_trace(torch_device, model_revision, with_torch_sdp):
+    model, revision = model_revision
+    assert_decoder_output_equals_hf(
+        FalconDecoder,
+        model,
+        torch_device,
+        model_revision=revision,
+        trust_remote_code=True,
+        with_cache=False,
+        with_mask=False,
+        with_positions=False,
+        jit_method=JITMethod.TorchScriptTrace,
+        with_torch_sdp=with_torch_sdp,
     )
 
 

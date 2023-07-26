@@ -119,6 +119,34 @@ class AttentionMask(DataclassAsDict):
         blocked_value = torch.finfo(input.dtype).min
         return torch.where(self.bool_mask, input, blocked_value)
 
+    def filter_batch_items(self, mask: Tensor) -> "AttentionMask":
+        """
+        Filter batch sequences from the attention mask.
+
+        Sequences for which the mask is ``True`` are retained.
+
+        :param mask:
+            Mask of batch items to retain.
+
+            *Shape:* ``(batch_size,)``
+        :returns:
+            Filtered mask.
+        """
+        if mask.ndim != 1:
+            raise ValueError(
+                f"Attention mask filter must be a 1D tensor, has {mask.ndim} dimensions."
+            )
+        if mask.size(0) != self.bool_mask.size(0):
+            raise ValueError(
+                f"Attention mask filter size ({mask.size(0)}) must match attention mask batch size ({self.bool_mask.size(0)})."
+            )
+        if mask.dtype != torch.bool:
+            raise ValueError(
+                f"Attention mask filter dtype must be bool, was: {mask.dtype}."
+            )
+
+        return AttentionMask(self.bool_mask[mask])
+
     def dim(self) -> int:
         return self.bool_mask.dim()
 
@@ -128,9 +156,37 @@ class AttentionMask(DataclassAsDict):
     def logit_mask(self, dtype: torch.dtype):
         return (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
 
+    def extend_length(self, count: int, fill_value: bool) -> "AttentionMask":
+        """
+        Extend the attention mask in the sequence length dimension
+        by the given value.
+
+        :param count:
+            Number of new elements to insert.
+        :param fill_value:
+            Value to store in the new elements.
+        :returns:
+            Extended mask.
+        """
+        if count <= 0:
+            raise ValueError(
+                f"Attention mask sequence length extension requires a non-zero, positive value for 'count'"
+            )
+
+        ext = torch.full(
+            self.shape[:3] + (count,),
+            fill_value,
+            device=self.device,
+        )
+        return AttentionMask(torch.cat([self.bool_mask, ext], dim=-1))
+
     @property
-    def shape(self):
+    def shape(self) -> torch.Size:
         return self.bool_mask.shape
+
+    @property
+    def device(self) -> torch.device:
+        return self.bool_mask.device
 
 
 def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:

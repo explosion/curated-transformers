@@ -18,13 +18,9 @@ class DataclassAsDict(OrderedDict[str, Tensor]):
     def __post_init__(self):
         for field in fields(self):
             value = getattr(self, field.name)
-            # if value is None:
-            #    continue
-            # if isinstance(value, list):
-            #    value = tuple(value)
             if not isinstance(value, Tensor):
                 raise TypeError(
-                    f"DataclassAsDict only supports Tensor members, field '{field.name}' has type '{field.type.__name__}'"
+                    f"`DataclassAsDict` only supports `Tensor` members, but field '{field.name}' has type `{field.type.__name__}`"
                 )
 
             super().__setitem__(field.name, value)
@@ -38,7 +34,7 @@ class DataclassAsDict(OrderedDict[str, Tensor]):
     def __setattr__(self, name: str, value: Any) -> None:
         if not isinstance(value, Tensor):
             raise TypeError(
-                f"Field '{name}' cannot be set to non-Tensor type '{type(value).__name__}'"
+                f"Field '{name}' cannot be set to non-Tensor type `{type(value).__name__}`"
             )
 
         super().__setitem__(name, value)
@@ -46,11 +42,11 @@ class DataclassAsDict(OrderedDict[str, Tensor]):
 
     def __setitem__(self, key: str, value: Tensor) -> None:
         if not isinstance(key, str):
-            raise TypeError(f"Key cannot be set to non-str type '{type(key).__name__}'")
+            raise TypeError(f"Key cannot be set to non-`str` type `{type(key).__name__}`")
 
         if not isinstance(value, Tensor):
             raise TypeError(
-                f"Field '{key}' cannot be set to non-Tensor type '{type(value).__name__}'"
+                f"Field '{key}' cannot be set to non-Tensor type `{type(value).__name__}`"
             )
 
         super().__setattr__(key, value)
@@ -95,7 +91,7 @@ class DataclassAsTuple:
                     )
             else:
                 raise TypeError(
-                    f"Field '{field.name}' has unsupported type '{type(value).__name__}'"
+                    f"Field '{field.name}' has unsupported type `{type(value).__name__}`"
                 )
 
             to_tuples.append(value)

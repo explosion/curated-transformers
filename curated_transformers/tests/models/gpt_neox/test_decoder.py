@@ -49,8 +49,8 @@ def test_decoder_with_torchscript_trace(torch_device, with_torch_sdp):
         GPTNeoXDecoder,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM",
         torch_device,
-        # with_cache=False,
-        # with_positions=False,
+        with_cache=True,
+        with_positions=True,
         jit_method=JITMethod.TorchScriptTrace,
         with_torch_sdp=with_torch_sdp,
     )

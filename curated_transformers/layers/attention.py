@@ -87,7 +87,7 @@ class AttentionMask(DataclassAsDict):
         as an `AttentionMask`.
 
         :param attention_mask:
-            The attention mask or its dictionaly representation. If the
+            The attention mask or its dictionary representation. If the
             value is an ``AttentionMask`` or ``None``, the value will be
             returned as-is.
         :returns:
@@ -99,9 +99,9 @@ class AttentionMask(DataclassAsDict):
         bool_mask = attention_mask.get("bool_mask")
         if bool_mask is None:
             raise ValueError(
-                "Attention mask is not of the AttentionMask type, nor a dict with 'bool_mask'."
+                "Attention mask is not of the `AttentionMask` type, nor a dict with 'bool_mask'."
             )
-        return AttentionMask(bool_mask=attention_mask["bool_mask"])
+        return AttentionMask(bool_mask=bool_mask)
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
         """

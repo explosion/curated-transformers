@@ -60,11 +60,11 @@ class KeyValueCache(DataclassAsDict):
         key_value_cache: Optional[Union["KeyValueCache", Dict[str, Tensor]]],
     ) -> Optional["KeyValueCache"]:
         """
-        Rewrap TorchScript dictionary conversion of an key-value cache.
+        Rewrap TorchScript dictionary conversion of a key-value cache.
 
         :param key_value_cache:
-            The key-value cache or its dictionaly representation. If the
-            value it an ``KeyValueCache`` or ``None``, the value will be
+            The key-value cache or its dictionary representation. If the
+            value is a ``KeyValueCache`` or ``None``, it will be
             returned as-is.
         :returns:
             The key-value cache.
@@ -75,13 +75,13 @@ class KeyValueCache(DataclassAsDict):
         key = key_value_cache.get("key")
         if key is None:
             raise ValueError(
-                "Key-value cache is not of the KeyValueCache type, nor a dict with 'key'."
+                "Key-value cache is not of the `KeyValueCache` type, nor a dict with 'key'."
             )
 
         value = key_value_cache.get("value")
         if value is None:
             raise ValueError(
-                "Key-value cache is not of the KeyValueCache type, nor a dict with 'value'."
+                "Key-value cache is not of the `KeyValueCache`` type, nor a dict with 'value'."
             )
 
         return cls(key=key, value=value)

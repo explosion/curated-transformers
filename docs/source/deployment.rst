@@ -2,13 +2,13 @@ Deployment
 ==========
 
 In many cases, a PyTorch model can be deployed directly in a Python application,
-eg. in a `Flask-based REST service
+e.g., in a `Flask-based REST service
 <https://pytorch.org/tutorials/intermediate/flask_rest_api_tutorial.html>`_. In
 other cases, such as deployment to non-CUDA accelerators, additional model
 transformations might be needed. On this page, we cover several deployment
 scenarios.
 
-TorchScript tracing
+TorchScript Tracing
 -------------------
 
 Many deployment methods start from `TorchScript`_. For instance, ONNX conversion
@@ -24,7 +24,7 @@ discarding all other Python code.
 .. _TorchScript: https://pytorch.org/docs/stable/jit.html
 .. _tracing: https://pytorch.org/docs/stable/generated/torch.jit.trace.html#torch.jit.trace
 
-Tracing a model
+Tracing a Model
 ^^^^^^^^^^^^^^^
 
 Models are traced using the |torch.jit.trace|_ function. The first argument to
@@ -57,23 +57,23 @@ their hidden representations:
 
    tokenizer = AutoTokenizer.from_hf_hub(name="tiiuae/falcon-7b")
    pieces = tokenizer(["Hello world!", "This is a test"])
-   Y = traced(pieces.padded_tensor(padding_id=0).to(device))
+   Y = traced(pieces.padded_tensor(padding_id=0, device=device))
    assert isinstance(Y, tuple)
    last_layer = Y[0][-1]
 
-The model works as before, with one catch. Normally a decoder returns a
+The model works as before, albeit with one catch. Normally a decoder returns a
 :py:class:`~curated_transformers.models.output.ModelOutputWithCache` instance,
-whereas the traced model returns a tuple. The reason is that TorchScript only
+but the traced model returns a tuple instead. The reason is that TorchScript only
 supports a limited set of types. Since arbitrary types are not supported, we
 convert the :py:class:`~curated_transformers.models.output.ModelOutputWithCache`
-type to a tuple in a traced model. The tuple will have the same ordering as the
+instance to a tuple in a traced model. The tuple will have the same ordering as the
 fields in the untraced model's output, excluding fields that are set to
 ``None``. In this case we don't ask the decoder to return a key-value cache, so
 the ``cache`` field is ``None`` and will not be represented in the tuple.
 
-The example above does not give correct outputs yet. Since the input sequences
-have different lengths, we have to give the model an attention mask as well to
-avoid that the model attends to padding pieces. This is a fairly straightforward
+The example above does not compute the correct outputs yet. Since the input sequences
+have different lengths, we also have to provide the model an attention mask to
+prevent it from attending to padding pieces. This is a fairly straightforward
 fix — since the attention mask is the second argument to the model, we'll
 retrace the model with a dummy attention mask:
 
@@ -83,25 +83,25 @@ retrace the model with a dummy attention mask:
 
    mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
    traced = torch.jit.trace(decoder, (X_example, mask_example,))
-   Y = traced(pieces.padded_tensor(padding_id=0).to(device),
-              AttentionMask(pieces.attention_mask().to(device)))
+   Y = traced(pieces.padded_tensor(padding_id=0, device=device),
+              pieces.attention_mask(device=device))
 
-Handling complex model signatures
+Handling Complex Model Signatures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The previous section describes how we can trace a model. In some cases it can be
+The previous section describes how we can trace a model. In some cases, it can be
 difficult to provide a working argument tuple to |torch.jit.trace|_. Suppose
 that we would like to trace a decoder with an attention mask and positions, but
 without using a cache. In the
 :py:class:`~curated_transformers.models.module.DecoderModule` API, the ``cache``
 argument is interspersed between the ``attention_mask`` and ``positions``
-arguments. This turns out to be problematic, because we cannot pass ``None``
-arguments to the |torch.jit.trace|_ function. |torch.jit.trace|_ provides an
-``example_kwarg_inputs`` argument to pass argument by keyword. Unfortulately, we
-have found that this mechanism often skips over arguments.
+arguments. This turns out to be problematic since we cannot pass ``None``
+arguments to the |torch.jit.trace|_ function. While |torch.jit.trace|_ provides an
+``example_kwarg_inputs`` parameter to pass arguments by keyword, we have
+found that this mechanism often skips over arguments.
 
-In these cases, we recommend to make a simple wrapper around a model that only
-has the desired arguments. For instance, in the case at hand you could define a
+In such cases, we recommend you to make a simple wrapper around a model that only
+has the desired arguments. For instance, in the above case you could define a
 class ``DecoderWithPositions``:
 
 .. code-block:: python

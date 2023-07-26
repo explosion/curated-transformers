@@ -58,7 +58,7 @@ def test_as_dict_invalid_operations():
         d.foo = "Glove80"
     with pytest.raises(TypeError, match=r"foo.*str"):
         d["foo"] = "Glove80"
-    with pytest.raises(TypeError, match=r"non-str.*int"):
+    with pytest.raises(TypeError, match=r"non-`str`.*int"):
         d[83] = "Glove80"
     with pytest.raises(NotImplementedError):
         del d["foo"]

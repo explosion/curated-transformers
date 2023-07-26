@@ -111,11 +111,15 @@ class FalconDecoder(DecoderModule, FromHFHub):
 
         layer_outputs[-1] = self.output_layer_norm(layer_outputs[-1])
 
-        return ModelOutputWithCache(
-            embedding_output=embeddings,
-            layer_hidden_states=layer_outputs,
+        output = ModelOutputWithCache(
+            all_outputs=[embeddings, *layer_outputs],
             cache=new_cache if store_cache else None,
         )
+
+        if torch.jit.is_tracing():
+            return output.astuple()  # type: ignore[return-value]
+        else:
+            return output
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

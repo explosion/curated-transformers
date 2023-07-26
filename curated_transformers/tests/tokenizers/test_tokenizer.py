@@ -9,7 +9,7 @@ from curated_transformers.tokenizers.chunks import InputChunks, TextChunk
 from curated_transformers.util.hf import TOKENIZER_JSON
 
 from ..compat import has_hf_transformers, transformers
-from ..util import torch_assertclose
+from ..utils import torch_assertclose
 from .util import compare_tokenizer_outputs_with_hf_tokenizer
 
 

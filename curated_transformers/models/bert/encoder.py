@@ -108,9 +108,12 @@ class BERTEncoder(EncoderModule, FromHFHub):
             layer_output, _ = layer(layer_output, attention_mask)
             layer_outputs.append(layer_output)
 
-        return ModelOutput(
-            embedding_output=embeddings, layer_hidden_states=layer_outputs
-        )
+        output = ModelOutput(all_outputs=[embeddings, *layer_outputs])
+
+        if torch.jit.is_tracing():
+            return output.astuple()  # type: ignore[return-value]
+        else:
+            return output
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

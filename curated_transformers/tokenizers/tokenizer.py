@@ -9,6 +9,7 @@ from huggingface_hub.utils import EntryNotFoundError
 from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
+from ..layers.attention import AttentionMask
 from ..util.hf import (
     HF_TOKENIZER_CONFIG,
     SPECIAL_TOKENS_MAP,
@@ -18,13 +19,7 @@ from ..util.hf import (
     get_tokenizer_config,
 )
 from ._hf_compat import clean_up_decoded_string_like_hf
-from .chunks import (
-    InputChunks,
-    MergedInputChunks,
-    MergedSpecialPieceChunk,
-    SpecialPieceChunk,
-    TextChunk,
-)
+from .chunks import InputChunks, MergedSpecialPieceChunk
 from .hf_hub import FromHFHub
 
 # Only provided as typing.Self in Python 3.11+.
@@ -45,7 +40,9 @@ class PiecesWithIds:
     ids: List[List[int]]
     pieces: List[List[str]]
 
-    def attention_mask(self, *, pad_left: bool = False) -> Tensor:
+    def attention_mask(
+        self, *, pad_left: bool = False, device: Optional[torch.device] = None
+    ) -> AttentionMask:
         """
         CPU tensor with attention masks. The mask is equivalent to:
         ``ids.padded_tensor(padding_id) != padding_id``
@@ -60,15 +57,21 @@ class PiecesWithIds:
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
-        mask = torch.full((n_seqs, max_len), False)
+        mask = torch.full((n_seqs, max_len), False, device=device)
         for idx, seq_ids in enumerate(self.ids):
             if pad_left:
                 mask[idx, -len(seq_ids) :] = True
             else:
                 mask[idx, : len(seq_ids)] = True
-        return mask
+        return AttentionMask(mask)
 
-    def padded_tensor(self, *, padding_id: int, pad_left: bool = False):
+    def padded_tensor(
+        self,
+        *,
+        padding_id: int,
+        pad_left: bool = False,
+        device: Optional[torch.device] = None,
+    ) -> Tensor:
         """
         Padded CPU tensor of the piece identifiers.
 
@@ -82,7 +85,9 @@ class PiecesWithIds:
         """
         n_seqs = len(self.ids)
         max_len = max(len(seq_ids) for seq_ids in self.ids)
-        padded = torch.full((n_seqs, max_len), padding_id, dtype=torch.int32)
+        padded = torch.full(
+            (n_seqs, max_len), padding_id, dtype=torch.int32, device=device
+        )
         for idx, seq_ids in enumerate(self.ids):
             if pad_left:
                 padded[idx, -len(seq_ids) :] = torch.tensor(seq_ids)

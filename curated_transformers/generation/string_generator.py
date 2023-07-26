@@ -53,8 +53,10 @@ class StringGenerator(Generic[CacheT]):
 
         device = next(self.inner.model.parameters()).device
         pieces = self.tokenizer(prompts)
-        ids = pieces.padded_tensor(padding_id=0, pad_left=True).to(device)
-        attention_mask = pieces.attention_mask(pad_left=True).to(device)
+        ids = pieces.padded_tensor(padding_id=0, pad_left=True, device=device)
+        attention_mask = pieces.attention_mask(
+            pad_left=True, device=device
+        ).bool_mask.squeeze(dim=(1, 2))
 
         piece_ids: List[List[int]] = [[] for _ in range(ids.size(0))]
         for seq_ids, outputs in self.inner(

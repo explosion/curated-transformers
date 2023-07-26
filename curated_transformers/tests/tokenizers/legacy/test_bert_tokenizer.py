@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from curated_transformers.tokenizers import PiecesWithIds
 from curated_transformers.tokenizers.chunks import (
     InputChunks,
@@ -283,7 +282,7 @@ def _check_toy_tokenizer(pieces):
         ),
     )
     torch_assertclose(
-        pieces.attention_mask(),
+        pieces.attention_mask().bool_mask.squeeze(dim=(1, 2)),
         torch.tensor(
             [
                 [

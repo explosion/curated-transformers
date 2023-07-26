@@ -1,4 +1,5 @@
 import torch
+
 from curated_transformers.generation.state import GeneratorState
 from curated_transformers.generation.stop_conditions import (
     EndOfSequenceCondition,

@@ -1,11 +1,10 @@
-from collections import OrderedDict
 from dataclasses import fields
-from typing import Any, Tuple
+from typing import Any, OrderedDict, Tuple
 
 from torch import Tensor
 
 
-class DataclassAsDict(OrderedDict):
+class DataclassAsDict(OrderedDict[str, Tensor]):
     """
     Dataclasses that derive from this struct are also a dictionary.
 

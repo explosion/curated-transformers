@@ -12,9 +12,9 @@ from ..config import (
 @dataclass
 class FalconConfig:
     """
-    `Falcon`_ model configuration.
+    Falcon (`Penedo et al., 2019`_) model configuration.
 
-    .. _Falcon: https://arxiv.org/abs/2306.01116
+    .. _Penedo et al., 2019: https://arxiv.org/abs/2306.01116
     """
 
     embedding: TransformerEmbeddingLayerConfig

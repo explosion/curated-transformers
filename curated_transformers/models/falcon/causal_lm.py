@@ -20,9 +20,9 @@ Self = TypeVar("Self", bound="FalconCausalLM")
 
 class FalconCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
     """
-    `Falcon`_ causal language model.
+    Falcon (`Penedo et al., 2019`_) causal language model.
 
-    .. _Falcon: https://arxiv.org/abs/2306.01116
+    .. _Penedo et al., 2019: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(

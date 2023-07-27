@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, Protocol, Type, TypeVar, Union
+from typing import Dict, Optional, Protocol, Tuple, Type, TypeVar, Union
 
 import torch
 from torch import Tensor
@@ -27,7 +27,7 @@ class CacheProtocol(Protocol):
 
 
 @dataclass
-class KeyValueCache(DataclassAsDict):
+class KeyValueCache(DataclassAsTuple):
     """
     Cache type for layers that cache keys and values.
 
@@ -57,7 +57,7 @@ class KeyValueCache(DataclassAsDict):
     @classmethod
     def jit_rewrap(
         cls: Type["KeyValueCache"],
-        key_value_cache: Optional[Union["KeyValueCache", Dict[str, Tensor]]],
+        key_value_cache: Optional[Union["KeyValueCache", Tuple[Tensor, Tensor]]],
     ) -> Optional["KeyValueCache"]:
         """
         Rewrap TorchScript dictionary conversion of a key-value cache.
@@ -72,16 +72,21 @@ class KeyValueCache(DataclassAsDict):
         if key_value_cache is None or isinstance(key_value_cache, KeyValueCache):
             return key_value_cache
 
-        key = key_value_cache.get("key")
-        if key is None:
+        if (
+            not isinstance(key_value_cache, tuple)
+            or len(key_value_cache) != 2
+            or not all(isinstance(item, Tensor) for item in key_value_cache)
+        ):
             raise ValueError(
-                "Key-value cache is not of the `KeyValueCache` type, nor a dict with 'key'."
+                f"Key-value cache is not of the `KeyValueCache` type, nor `Tuple[Tensor, Tensor]`: `{type(key_value_cache).__name__}`"
             )
 
-        value = key_value_cache.get("value")
-        if value is None:
+        key_cache = key_value_cache[0]
+        value_cache = key_value_cache[1]
+
+        if key_cache.shape != value_cache.shape:
             raise ValueError(
-                "Key-value cache is not of the `KeyValueCache`` type, nor a dict with 'value'."
+                f"Key cache ({key_cache.shape}) and value cache ({value_cache.shape}) must have same shapes."
             )
 
-        return cls(key=key, value=value)
+        return cls(key_cache, value_cache)

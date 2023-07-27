@@ -37,7 +37,7 @@ class AutoModel(ABC, Generic[ModelT]):
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> ModelT:
         """
-        Construct and load a module or a generator from Hugging Face Hub.
+        Construct and load a model or a generator from Hugging Face Hub.
 
         :param name:
             Model name.
@@ -48,12 +48,12 @@ class AutoModel(ABC, Generic[ModelT]):
         :param quantization_config:
             Configuration for loading quantized weights.
         :returns:
-            Loaded module or generator.
+            Loaded model or generator.
         """
         raise NotImplementedError
 
     @classmethod
-    def _instantiate_module_from_hf_hub(
+    def _instantiate_model_from_hf_hub(
         cls,
         name: str,
         revision: str,
@@ -80,7 +80,7 @@ class AutoModel(ABC, Generic[ModelT]):
 
 class AutoEncoder(AutoModel[EncoderModule]):
     """
-    Encoder module loaded from the Hugging Face Model Hub.
+    Encoder model loaded from the Hugging Face Model Hub.
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
@@ -100,7 +100,7 @@ class AutoEncoder(AutoModel[EncoderModule]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> EncoderModule:
-        encoder = cls._instantiate_module_from_hf_hub(
+        encoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(encoder, EncoderModule)
@@ -129,7 +129,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> DecoderModule:
-        decoder = cls._instantiate_module_from_hf_hub(
+        decoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(decoder, DecoderModule)
@@ -138,7 +138,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
 
 class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
     """
-    Causal LM module loaded from the Hugging Face Model Hub.
+    Causal LM model loaded from the Hugging Face Model Hub.
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
@@ -158,7 +158,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> CausalLMModule[KeyValueCache]:
-        causal_lm = cls._instantiate_module_from_hf_hub(
+        causal_lm = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
         )
         assert isinstance(causal_lm, CausalLMModule)

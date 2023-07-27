@@ -11,7 +11,8 @@ from .quantizable import Quantizable
 def prepare_module_for_quantization(
     module: Module, config: BitsAndBytesConfig
 ) -> Optional[TensorToParameterConverterT]:
-    """Prepares a module for quantiazation and returns an optional callback
+    """
+    Prepares a module for quantiazation and returns an optional callback
     to generate quantized parameter tensors.
 
     :param module:

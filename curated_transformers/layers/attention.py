@@ -504,15 +504,15 @@ class ScaledDotProductAttention(Module):
         Sequence elements that are marked with `False` in the attention mask
         are ignored by the attention mechanism (if a mask is provided).
 
-        :param k:
-            Key tensor.
-
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param q:
+        :param query:
             Query tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param v:
+        :param key:
+            Key tensor.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        :param value:
             Value tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``

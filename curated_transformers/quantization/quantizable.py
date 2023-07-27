@@ -15,7 +15,7 @@ class Quantizable(ABC):
     @abstractmethod
     def modules_to_not_quantize(cls) -> Set[str]:
         """
-        Returns a set of prefixes that specify which
+        Return a set of prefixes that specify which
         modules are to be ignored during quantization.
 
         :returns:

@@ -31,7 +31,7 @@ class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         add_eos_piece: bool = False,
     ):
         """
-        Construct a LLaMA tokenizer.
+        Construct a LLaMA tokenizer from a ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.

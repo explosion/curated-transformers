@@ -88,7 +88,7 @@ class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         processor: SentencePieceProcessor,
     ):
         """
-        Construct a XLM-R tokenizer.
+        Construct a XLM-RoBERTa tokenizer from a ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.

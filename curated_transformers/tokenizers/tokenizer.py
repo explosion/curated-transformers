@@ -45,7 +45,7 @@ class PiecesWithIds:
         self, *, pad_left: bool = False, device: Optional[torch.device] = None
     ) -> AttentionMask:
         """
-        CPU tensor with attention masks. The mask is equivalent to:
+        Generate the attention masks. The mask is equivalent to:
         ``ids.padded_tensor(padding_id) != padding_id``
 
         :param pad_left:
@@ -74,7 +74,7 @@ class PiecesWithIds:
         device: Optional[torch.device] = None,
     ) -> Tensor:
         """
-        Padded CPU tensor of the piece identifiers.
+        Generate a padded tensor of the piece identifiers.
 
         :param pad_left:
             By default sequences shorter than the longest sequence are
@@ -362,10 +362,14 @@ class Tokenizer(TokenizerBase, FromHFHub):
         special_tokens_map_json: Optional[str] = None,
     ) -> Self:
         """
-        Load the tokenizer from a serialized JSON string..
+        Load the tokenizer from serialized JSON strings.
 
-        :param json:
-            The JSON string.
+        :param tokenizer_json:
+            The JSON string of the serialized tokenizer.
+        :param config_json:
+            The JSON string of the tokenizer config.
+        :param special_tokens_map_json:
+            The JSON string of the special tokens map.
         """
         hf_tokenizer = HFTokenizer.from_str(tokenizer_json)
         config = json.loads(config_json) if config_json is not None else None

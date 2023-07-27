@@ -50,17 +50,14 @@ class AttentionMask(DataclassAsDict):
     Mask for attention calculation. Sequence elements for which the
     corresponding mask element is set to ``False`` are ignored during
     attention calculation.
+
+    :param bool_mask:
+        The boolean mask.
     """
 
     bool_mask: Tensor
 
     def __init__(self, bool_mask: Tensor):
-        """
-        Construct an attention mask.
-
-        :param bool_mask:
-            The boolean mask.
-        """
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
 
@@ -84,7 +81,7 @@ class AttentionMask(DataclassAsDict):
     ) -> Optional["AttentionMask"]:
         """
         Rewrap TorchScript dictionary conversion of an attention mask
-        as an `AttentionMask`.
+        as an ``AttentionMask``.
 
         :param attention_mask:
             The attention mask or its dictionary representation. If the
@@ -148,12 +145,34 @@ class AttentionMask(DataclassAsDict):
         return AttentionMask(self.bool_mask[mask])
 
     def dim(self) -> int:
+        """
+        Return the number of dimensions in the mask.
+        """
         return self.bool_mask.dim()
 
     def merge_mask(self, other: "AttentionMask") -> "AttentionMask":
+        """
+        Merge another attention mask with this one.
+
+        :param other:
+            Attention mask to merge.
+        :returns:
+            Merged mask.
+        """
         return AttentionMask(self.bool_mask.logical_and(other.bool_mask))
 
-    def logit_mask(self, dtype: torch.dtype):
+    def logit_mask(self, dtype: torch.dtype) -> Tensor:
+        """
+        Generate the logit mask for the given ``dtype``.
+
+        Elements of the mask that are ``False`` are set to the
+        minimum value of the ``dtype`` and the rest to zero.
+
+        :param dtype:
+            Data type of the logit mask.
+        :returns:
+            Logit mask.
+        """
         return (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
 
     def extend_length(self, count: int, fill_value: bool) -> "AttentionMask":
@@ -182,10 +201,16 @@ class AttentionMask(DataclassAsDict):
 
     @property
     def shape(self) -> torch.Size:
+        """
+        Return the shape of the mask.
+        """
         return self.bool_mask.shape
 
     @property
     def device(self) -> torch.device:
+        """
+        Return the device of the mask.
+        """
         return self.bool_mask.device
 
 

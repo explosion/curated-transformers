@@ -11,7 +11,7 @@ Self = TypeVar("Self", bound="LLaMAGenerator")
 
 class LLaMAGenerator(DefaultGenerator, FromHFHub):
     """
-    Generator for LLaMa 1 model variants.
+    Generator for LLaMa and Llama 2 model variants.
     """
 
     def __init__(self, tokenizer: Tokenizer, causal_lm: LLaMACausalLM):

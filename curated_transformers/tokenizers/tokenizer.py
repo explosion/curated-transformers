@@ -231,7 +231,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
         if special_tokens_map is not None:
             piece = get_special_piece(special_tokens_map, piece_name)
         if piece is None and tokenizer_config is not None:
-            get_special_piece(tokenizer_config, piece_name)
+            piece = get_special_piece(tokenizer_config, piece_name)
         return piece
 
     def decode(

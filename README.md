@@ -52,6 +52,7 @@ Generator wrappers:
 
 - Dolly v2
 - Falcon
+- LLaMA
 
 All types of models can be loaded from Huggingface Hub.
 

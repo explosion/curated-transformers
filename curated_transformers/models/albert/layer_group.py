@@ -82,7 +82,7 @@ class ALBERTLayerGroup(Module):
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :returns:
             Layer output.
 

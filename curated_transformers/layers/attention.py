@@ -496,7 +496,7 @@ class ScaledDotProductAttention(Module):
             Attention mask. Sequence elements for which the corresponding mask
             element is set to ``False`` are ignored in attention.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :returns:
             Attention values.
 
@@ -643,7 +643,7 @@ class SelfAttention(Module):
             corresponding mask element is set to ``False`` are ignored
             in attention.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param use_causal_mask:
             Mask out succeeding sequence elements when ``True``.
         :param cache:

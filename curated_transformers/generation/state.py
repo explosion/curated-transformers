@@ -34,7 +34,7 @@ class GeneratorState(Generic[CacheT]):
         :param attention_mask:
             Attention mask for the prompts.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param cache:
             Transformer model cache.
         :param prompt_ids:

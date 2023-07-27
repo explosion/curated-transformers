@@ -70,7 +70,7 @@ class Generator(Generic[CacheT]):
         :param attention_mask:
             Attention mask that masks out pieces that should not be attended to.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param config:
             Generator configuraton.
         :returns:

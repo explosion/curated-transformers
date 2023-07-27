@@ -35,7 +35,7 @@ class CausalLMModule(Generic[CacheT], Module):
             during attention calculation.
 
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.
@@ -79,7 +79,7 @@ class DecoderModule(Generic[CacheT], Module):
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.
@@ -121,7 +121,7 @@ class EncoderModule(Module):
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
 
-            *Shape:* ``(batch_size, seq_len)``
+            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :param token_type_ids:
             Token type identifiers to indicate the spans of different
             sequences in the input. Useful when performing tasks like

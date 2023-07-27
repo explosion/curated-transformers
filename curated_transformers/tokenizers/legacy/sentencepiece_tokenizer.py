@@ -26,7 +26,7 @@ class SentencePieceTokenizer(LegacyTokenizer):
             The processor to wrap.
         """
         self.processor = processor
-        self._eos_piece = processor.id_to_piece(processor.bos_id())
+        self._eos_piece = processor.id_to_piece(processor.eos_id())
 
     @property
     def eos_piece(self) -> Optional[str]:

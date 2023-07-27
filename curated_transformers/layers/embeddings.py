@@ -205,7 +205,8 @@ class RotaryEmbeddings(Module):
 
 class QueryKeyRotaryEmbeddings(Module):
     """
-    Rotary embeddings (`Su et al., 2021`_) applied to key and value representations.
+    Rotary embeddings (`Su et al., 2021`_) applied to query
+    and key representations.
 
     .. _Su et al., 2021: https://arxiv.org/abs/2104.09864
     """

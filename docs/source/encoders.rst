@@ -51,7 +51,6 @@ ALBERT
 
 .. autoclass:: curated_transformers.models.albert.config.ALBERTConfig
    :members:
-   :show-inheritance:
 
 BERT
 ^^^^

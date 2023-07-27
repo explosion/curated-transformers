@@ -58,6 +58,8 @@ class BERTConfig:
             embedding layers.
         :param hidden_act:
             Activation used by the point-wise feed-forward layers.
+            See :class:`~curated_transformers.layers.feedforward.PointwiseFeedForward`
+            for possible values.
         :param vocab_size:
             Size of main vocabulary.
         :param type_vocab_size:

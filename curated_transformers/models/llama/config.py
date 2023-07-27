@@ -42,7 +42,7 @@ class LLaMAConfig:
             Dropout to apply after attention.
         :param hidden_act:
             Activation in the feed-forward layer. See
-            :class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
+            :class:`~curated_transformers.layers.feedforward.PointwiseFeedForward`
             for possible values.
         :param hidden_dropout_prob:
             Dropout to apply to the hidden and embedding layers.

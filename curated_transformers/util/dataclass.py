@@ -128,7 +128,7 @@ class DataclassAsTuple(metaclass=_InterceptGeneratorMeta):
             else:
                 type_names = ", ".join(sorted({type(item).__name__ for item in value}))
                 raise TypeError(
-                    f"List must be List[Tensor] or List[Tuple[...]], found types: {type_names}"
+                    f"List must be `List[Tensor]` or `List[Tuple[...]]`, found types: {type_names}"
                 )
         else:
             raise TypeError(f"Field has unsupported type `{type(value).__name__}`")

@@ -828,8 +828,7 @@ def split_heads_grouped_qkv(
     :param projection:
         The fused query, key, value projection.
 
-        *Shape:* ``(batch_size, seq_len,
-        (num_query_heads + 2*num_key_value_heads)*dims_per_head)``
+        *Shape:* ``(batch_size, seq_len, (num_query_heads + 2 * num_key_value_heads) * dims_per_head)``
     :param attention_heads:
         Attention head configuration.
     :param dims_per_head:
@@ -838,9 +837,9 @@ def split_heads_grouped_qkv(
         Query, key, value tensors.
 
         *Shapes:*
-        - query: ``(batch_size, num_query_heads, seq_len, dims_per_head)
-        - key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
-        - value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
+        - Query: ``(batch_size, num_query_heads, seq_len, dims_per_head)``
+        - Key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)``
+        - Value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)``
     """
     num_query_heads = attention_heads._num_query_heads
     num_key_value_heads = attention_heads._num_key_value_heads

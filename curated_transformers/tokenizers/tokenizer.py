@@ -17,6 +17,7 @@ from ..util.hf import (
     get_special_piece,
     get_special_tokens_map,
     get_tokenizer_config,
+    hf_hub_download,
 )
 from ._hf_compat import clean_up_decoded_string_like_hf
 from .chunks import InputChunks, MergedSpecialPieceChunk
@@ -230,7 +231,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
         if special_tokens_map is not None:
             piece = get_special_piece(special_tokens_map, piece_name)
         if piece is None and tokenizer_config is not None:
-            get_special_piece(tokenizer_config, piece_name)
+            piece = get_special_piece(tokenizer_config, piece_name)
         return piece
 
     def decode(
@@ -330,7 +331,14 @@ class Tokenizer(TokenizerBase, FromHFHub):
 
     @classmethod
     def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:
-        hf_tokenizer = HFTokenizer.from_pretrained(name, revision)
+        # We cannot directly use `HFTokenizer.from_pretrained`` to instantiate the HF
+        # tokenizer as it doesn't fetch the serialized files using the `huggingface_hub`
+        # library, which prevents us from being able to download models that require
+        # authentication.
+        tokenizer_path = hf_hub_download(
+            repo_id=name, filename=TOKENIZER_JSON, revision=revision
+        )
+        hf_tokenizer = HFTokenizer.from_file(tokenizer_path)
 
         try:
             config = get_tokenizer_config(name=name, revision=revision)

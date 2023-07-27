@@ -1,15 +1,12 @@
-from typing import Any, List, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Mapping, Optional, Set, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Linear
 
-from ...layers.attention import AttentionMask
-from ...layers.cache import KeyValueCache
 from ...quantization import Quantizable
 from ..hf_hub import FromHFHub
-from ..module import CausalLMModule
-from ..output import CausalLMOutputWithCache
+from ..transformer import TransformerCausalLM
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder
@@ -18,7 +15,7 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
+class GPTNeoXCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
     """
     GPT-NeoX (`Black et al., 2022`_) causal language model.
 
@@ -47,32 +44,6 @@ class GPTNeoXCausalLM(CausalLMModule[KeyValueCache], FromHFHub, Quantizable):
             bias=False,
             device=device,
         )
-
-    def forward(
-        self,
-        input_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
-        cache: Optional[List[KeyValueCache]] = None,
-        positions: Optional[Tensor] = None,
-        store_cache: bool = False,
-    ) -> CausalLMOutputWithCache[KeyValueCache]:
-        decoder_output = self.decoder(
-            input_ids,
-            attention_mask,
-            cache=cache,
-            store_cache=store_cache,
-            positions=positions,
-        )
-        if torch.jit.is_tracing():
-            logits = self.output_embeddings(decoder_output[0][-1])
-            return decoder_output + (logits,)  # type: ignore[return-value]
-        else:
-            logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
-            return CausalLMOutputWithCache(
-                all_outputs=decoder_output.all_outputs,
-                cache=decoder_output.cache,
-                logits=logits,
-            )
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

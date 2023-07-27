@@ -19,7 +19,6 @@ class BERTConfig:
     embedding: TransformerEmbeddingLayerConfig
     layer: TransformerLayerConfig
     model_max_length: int
-    padding_id: int
 
     def __init__(
         self,
@@ -37,7 +36,6 @@ class BERTConfig:
         max_position_embeddings: int = 512,
         model_max_length: int = 512,
         layer_norm_eps: float = 1e-12,
-        padding_id: int = 0,
     ):
         """
         :param embedding_width:
@@ -68,8 +66,6 @@ class BERTConfig:
             Maximum length of model inputs.
         :param layer_norm_eps:
             Epsilon for layer normalization.
-        :param padding_id:
-            Index of the padding meta-token.
         """
         self.embedding = TransformerEmbeddingLayerConfig(
             embedding_width=embedding_width,
@@ -102,4 +98,3 @@ class BERTConfig:
             dropout_prob=hidden_dropout_prob,
         )
         self.model_max_length = model_max_length
-        self.padding_id = padding_id

@@ -30,10 +30,6 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
             - Models based on LLaMA (contain ``llama`` in the name).
     """
 
-    _DOLLY_V2_SUBSTRING = "dolly-v2"
-    _FALCON_SUBSTRING = "falcon"
-    _LLAMA_SUBSTRING = "llama"
-
     @classmethod
     def from_hf_hub(
         cls,

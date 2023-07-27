@@ -78,7 +78,7 @@ class KeyValueCache(DataclassAsTuple):
             or not all(isinstance(item, Tensor) for item in key_value_cache)
         ):
             raise ValueError(
-                f"Key-value cache is not of the `KeyValueCache` type, nor Tuple[Tensor, Tensor]: {type(key_value_cache).__name__}"
+                f"Key-value cache is not of the `KeyValueCache` type, nor `Tuple[Tensor, Tensor]`: `{type(key_value_cache).__name__}`"
             )
 
         key_cache = key_value_cache[0]

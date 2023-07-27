@@ -81,12 +81,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
                 layer_output, _ = group(layer_output, attention_mask=attention_mask)
                 layer_outputs.append(layer_output)
 
-        output = ModelOutput(all_outputs=[embeddings, *layer_outputs])
-
-        if torch.jit.is_tracing():
-            return output.astuple()  # type: ignore[return-value]
-        else:
-            return output
+        return ModelOutput(all_outputs=[embeddings, *layer_outputs])
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

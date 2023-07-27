@@ -50,9 +50,9 @@ class JITMethod(Enum):
     ]:
         with enable_torch_sdp(with_torch_sdp):
             if self == JITMethod.Disable:
-                return model, lambda s: s.astuple()
+                return model, lambda s: s
             elif self == JITMethod.TorchCompile:
-                return torch.compile(model), lambda s: s.astuple()
+                return torch.compile(model), lambda s: s
             else:
                 if isinstance(model, EncoderModule):
                     cls = ModelOutput
@@ -61,7 +61,7 @@ class JITMethod(Enum):
                 elif isinstance(model, CausalLMModule):
                     cls = ModelOutputWithCache
                 return (
-                    torch.jit.trace(model, tuple(args), strict=False),
+                    torch.jit.trace(model, tuple(args)),
                     lambda s: s,
                 )
 
@@ -152,6 +152,7 @@ def assert_decoder_output_equals_hf(
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
     with torch.no_grad():
+        mo = output(model(X))
         Y = output(model(X))[0][-1]
         Y_hf = hf_model(X).last_hidden_state
 

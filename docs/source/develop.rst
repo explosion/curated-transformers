@@ -39,23 +39,12 @@ Tensor]]`` as an ``AttentionMask``:
 Module Return Values
 """"""""""""""""""""
 
-The ``ModelOutput``-based return types can contain nested dataclasses. For 
-instance, ``ModelOutputWithCache`` contains an ``Optional[List[CacheT]]`` field where
-``CacheT`` can be ``KeyValueCache``. Consequently, not every ``ModelOutput`` can
-be represented as a ``Dict[str, Tentor]``. For that reason, we represent them as
-tuples instead. We provide a ``DataclassAsTuple`` base class that provides a method
-to convert itself into tuples. Since we don't want to return tuples for untraced
-models, each model should only return a tuple when the model is being traced:
-
-.. code-block:: python
-
-   if torch.jit.is_tracing():
-       return output.astuple()  # type: ignore[return-value]
-   else:
-       return output
-
-The type ignore is intentional since we don't want the tuple to appear in the
-return type.
+The ``ModelOutput``-based return types can contain nested dataclasses. For
+instance, ``ModelOutputWithCache`` contains an ``Optional[List[CacheT]]`` field
+where ``CacheT`` can be ``KeyValueCache``. Consequently, not every
+``ModelOutput`` can be represented as a ``Dict[str, Tentor]``. For that reason,
+we represent model outputs as tuples instead. Dataclasses that inherit from
+``DataclassAsTuple`` are also a tuple.
 
 Scripting
 ^^^^^^^^^

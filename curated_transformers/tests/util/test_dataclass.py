@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import pytest
 import torch
@@ -19,7 +19,7 @@ class AsTuple(DataclassAsTuple):
     foo: Tensor
     bar: List[Tensor]
     baz: Optional[Tensor]
-    quux: List[AsDict]
+    quux: List[Tuple[Any]]
 
 
 @dataclass
@@ -67,23 +67,21 @@ def test_as_dict_invalid_operations():
 
 
 def test_as_tuple():
-    d = AsTuple(
+    t = AsTuple(
         torch.full((2, 2), 42),
         [torch.ones(3, 3), torch.zeros(4, 4)],
         None,
-        [AsDict(torch.full((5, 5), 80), torch.full((6, 6), -1))],
+        [(42, 80)],
     )
-    t = d.astuple()
 
-    assert t[0] is d.foo
+    assert t[0] is t.foo
 
     assert len(t[1]) == 2
-    assert t[1][0] is d.bar[0]
-    assert t[1][1] is d.bar[1]
+    assert t[1][0] is t.bar[0]
+    assert t[1][1] is t.bar[1]
 
     assert len(t[2]) == 1
-    assert t[2][0].foo is d.quux[0].foo
-    assert t[2][0].bar is d.quux[0].bar
+    assert t[2][0] is t.quux[0]
 
 
 def test_as_tuple_incorrect():
@@ -93,7 +91,22 @@ def test_as_tuple_incorrect():
             [torch.ones(3, 3), "Glove80"],
             None,
             [AsDict(torch.full((5, 5), 80), torch.full((6, 6), -1))],
-        ).astuple()
+        )
 
-    with pytest.raises(TypeError, match=r"bar.*int"):
-        InvalidAsTuple(42).astuple()
+    with pytest.raises(TypeError, match=r"unsupported.*int"):
+        InvalidAsTuple(42)
+
+
+def test_as_tuple_is_immutable():
+    t = AsTuple(
+        torch.full((2, 2), 42),
+        [torch.ones(3, 3), torch.zeros(4, 4)],
+        None,
+        [(42, 80)],
+    )
+
+    with pytest.raises(TypeError, match=r"does not support attribute assignment"):
+        t.foo = torch.zeros(5, 5)
+
+    with pytest.raises(TypeError, match=r"does not support attribute deletion"):
+        del t.foo

@@ -4,18 +4,6 @@ Building Blocks
 Curated Transformers provides building blocks to create your own transformer
 models.
 
-Models
-------
-
-.. autoclass:: curated_transformers.models.transformer.TransformerCausalLM
-   :members:
-
-.. autoclass:: curated_transformers.models.transformer.TransformerDecoder
-   :members:
-
-.. autoclass:: curated_transformers.models.transformer.TransformerEncoder
-   :members:
-
 Encoder/Decoder Layers
 ----------------------
 

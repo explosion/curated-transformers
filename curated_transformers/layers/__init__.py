@@ -1,5 +1,5 @@
 from ..layers.feedforward import PointwiseFeedForward
-from .activations import GeluFast, GeluNew
+from .activations import Activation, GELUFast, GELUNew
 from .attention import (
     AttentionHeads,
     AttentionMask,

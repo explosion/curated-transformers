@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from torch.nn.modules import activation
+
+from curated_transformers.layers.activations import Activation
+
 
 @dataclass
 class RotaryEmbeddingConfig:
@@ -85,10 +89,8 @@ class TransformerFeedForwardLayerConfig:
     """
     Configuration options for transformer feed-forward layers.
 
-    :param hidden_act:
-        Activation in the feed-forward layer. See
-        :class:`~curated_transformers.layers.feedforward.PointwiseFeedForward`
-        for possible values.
+    :param activation:
+        Activation in the feed-forward layer
     :param hidden_width:
         Hidden width of the transformer.
     :param intermediate_width:
@@ -99,7 +101,7 @@ class TransformerFeedForwardLayerConfig:
         Use Gated Linear Units.
     """
 
-    hidden_act: str
+    activation: Activation
     hidden_width: int
     intermediate_width: int
     use_bias: bool

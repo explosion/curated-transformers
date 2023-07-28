@@ -49,7 +49,7 @@ class ALBERTLayerGroup(Module):
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
-                        hidden_act=layer_config.feedforward.hidden_act,
+                        activation=layer_config.feedforward.activation,
                         hidden_width=layer_config.feedforward.hidden_width,
                         intermediate_width=layer_config.feedforward.intermediate_width,
                         use_bias=layer_config.feedforward.use_bias,

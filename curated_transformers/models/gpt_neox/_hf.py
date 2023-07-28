@@ -1,8 +1,10 @@
 import re
-from typing import Any, Mapping
+from typing import Any, Callable, Dict, Mapping, Tuple, Union
 
 from torch import Tensor
 
+from ...layers.activations import Activation
+from ..hf_hub import _process_hf_keys
 from ..module import DecoderModule
 from .config import GPTNeoXConfig
 
@@ -10,8 +12,8 @@ ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
-HF_CONFIG_KEY_MAPPING = {
-    "hidden_act": "hidden_act",
+HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
+    "hidden_act": ("activation", Activation),
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
     "layer_norm_eps": "layer_norm_eps",
@@ -25,17 +27,9 @@ HF_CONFIG_KEY_MAPPING = {
 
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
-    missing_keys = tuple(
-        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
+    kwargs = _process_hf_keys(
+        "GPT-NeoX", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
-    if len(missing_keys) != 0:
-        raise ValueError(
-            f"Missing keys in Hugging Face GPT-NeoX model config: {missing_keys}"
-        )
-
-    kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
-    # Handle config options that are not set in all models.
-    kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
     return GPTNeoXConfig(
         model_max_length=hf_config["max_position_embeddings"],
         **kwargs,

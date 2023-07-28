@@ -38,8 +38,8 @@ class RoBERTaConfig(BERTConfig):
         :param hidden_dropout_prob:
             Dropout probabilty of the point-wise feed-forward and
             embedding layers.
-        :param hidden_act:
-            Activation used by the point-wise feed-forward layers.
+        :param activation:
+            Activation used by the pointwise feed-forward layers.
         :param vocab_size:
             Size of main vocabulary.
         :param type_vocab_size:

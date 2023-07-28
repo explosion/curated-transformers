@@ -1,8 +1,9 @@
 import re
-from typing import Any, Dict, List, Mapping
+from typing import Any, Callable, Dict, Mapping, Tuple, Union
 
 from torch import Tensor
 
+from ..hf_hub import _process_hf_keys
 from ..module import DecoderModule
 from .config import FalconConfig
 
@@ -10,7 +11,7 @@ ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
-HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL = {
+HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
     "n_head": "num_query_heads",
@@ -21,7 +22,7 @@ HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL = {
     "alibi": "use_alibi",
 }
 
-HF_CONFIG_KEY_MAPPING_FALCON = {
+HF_CONFIG_KEY_MAPPING_FALCON: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
     "num_attention_heads": "num_query_heads",
@@ -44,8 +45,8 @@ def convert_hf_config(hf_config: Any) -> FalconConfig:
 
 
 def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
-    kwargs = _convert_with_mapping(
-        HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL, EXTRA_KWARG_KEYS, hf_config
+    kwargs = _process_hf_keys(
+        "Falcon", hf_config, HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL, EXTRA_KWARG_KEYS
     )
 
     # For the old configuration format, we can only figure out whether to use
@@ -78,8 +79,8 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
 
 
 def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
-    kwargs = _convert_with_mapping(
-        HF_CONFIG_KEY_MAPPING_FALCON, EXTRA_KWARG_KEYS, hf_config
+    kwargs = _process_hf_keys(
+        "Falcon", hf_config, HF_CONFIG_KEY_MAPPING_FALCON, EXTRA_KWARG_KEYS
     )
 
     new_decoder_architecture = hf_config.get("new_decoder_architecture", False)
@@ -103,25 +104,6 @@ def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
         rotary_embedding_fraction=1.0,
         **kwargs,
     )
-
-
-def _convert_with_mapping(
-    hf_config_key_mapping: Dict[str, str],
-    opt_keys: List[str],
-    hf_config: Dict[str, Any],
-) -> Dict[str, Any]:
-    hf_config_keys = set(hf_config.keys())
-    missing_keys = tuple(
-        sorted(set(hf_config_key_mapping.keys()).difference(hf_config_keys))
-    )
-    if len(missing_keys) != 0:
-        raise ValueError(f"Missing keys in Hugging Face Falcon config: {missing_keys}")
-
-    kwargs = {curated: hf_config[hf] for hf, curated in hf_config_key_mapping.items()}
-    # Handle config options that are not set in all models.
-    kwargs.update({k: hf_config[k] for k in opt_keys if k in hf_config})
-
-    return kwargs
 
 
 def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:

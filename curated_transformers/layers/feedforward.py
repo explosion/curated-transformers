@@ -4,17 +4,17 @@ import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .activations import GeluFast, GeluNew
+from .activations import Activation, GELUFast, GELUNew
 
 _ACTIVATIONS: Dict[str, Type[Module]] = {
     "relu": torch.nn.ReLU,
     "gelu": torch.nn.GELU,
-    "gelu_fast": GeluFast,
+    "gelu_fast": GELUFast,
     # Ideally, we would use torch.nn.GELU(approximate="tanh"). However,
     # the differences between that and the manual Torch implementation
     # are large enough to fail tests comparing output to HF
     # transformers.
-    "gelu_new": GeluNew,
+    "gelu_new": GELUNew,
     "silu": torch.nn.SiLU,
 }
 
@@ -45,7 +45,7 @@ class PointwiseFeedForward(Module):
     def __init__(
         self,
         *,
-        hidden_act: str,
+        activation: Activation,
         hidden_width: int,
         intermediate_width: int,
         use_bias: bool,
@@ -55,10 +55,8 @@ class PointwiseFeedForward(Module):
         """
         Construct a point-wise feed-forward layer module.
 
-        :param hidden_act:
-            The activation function to apply.
-            Must be one of the following: ``relu``, ``gelu``, ``gelu_fast``,
-            ``gelu_new``, ``silu``.
+        :param activation:
+            Activation used by the pointwise feed-forward layers.
         :param hidden_width:
             The input and output width of the layer.
         :param intermediate_width:
@@ -84,13 +82,7 @@ class PointwiseFeedForward(Module):
         self.output = Linear(
             intermediate_width, hidden_width, bias=use_bias, device=device
         )
-        if hidden_act not in _ACTIVATIONS:
-            supported_activations = tuple(sorted(_ACTIVATIONS.keys()))
-            raise ValueError(
-                f"Invalid activation function `{hidden_act}` for point-wise feed-forward "
-                f"network. Supported functions: {supported_activations}"
-            )
-        self.activation = _ACTIVATIONS[hidden_act]()
+        self.activation = activation.module()
 
     def forward(self, input: Tensor) -> Tensor:
         """

@@ -78,11 +78,15 @@ Feed-forward Layers
 Activations
 -----------
 
-.. autoclass:: curated_transformers.layers.activations.GeluNew
+.. autoclass:: curated_transformers.layers.Activation
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.activations.GeluFast
+.. autoclass:: curated_transformers.layers.activations.GELUFast
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.layers.activations.GELUNew
    :members:
    :show-inheritance:
 

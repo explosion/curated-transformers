@@ -69,7 +69,7 @@ class TransformerCausalLM(CausalLMModule[KeyValueCache]):
     """
     Transformer causal LM (`Vaswani et al., 2017`_) base class.
 
-    This class provides an implementation of the `forward` method.
+    This class provides an implementation of the ``forward`` method.
     Subclasses must set the given member attributes..
 
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
@@ -109,7 +109,7 @@ class TransformerEncoder(EncoderModule):
     """
     Transformer encoder (`Vaswani et al., 2017`_) base class.
 
-    This class provides an implementation of the `forward` method.
+    This class provides an implementation of the ``forward`` method.
     Subclasses must set the given member attributes.
 
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762

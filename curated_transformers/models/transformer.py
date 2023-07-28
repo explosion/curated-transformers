@@ -115,10 +115,8 @@ class TransformerEncoder(EncoderModule):
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
-    dropout: Module
     embeddings: Module
     layers: ModuleList
-    output_layer_norm: Module
 
     def forward(
         self,

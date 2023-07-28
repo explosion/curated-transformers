@@ -38,8 +38,8 @@ the correct type automatically.
 
 .. _decoder config:
 
-Model Configuration
--------------------
+Configuration
+-------------
 
 GPT-NeoX
 ^^^^^^^^

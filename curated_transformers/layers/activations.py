@@ -73,7 +73,9 @@ class Activation(Enum, metaclass=_ActivationMeta):
 
     @property
     def module(self) -> Type[torch.nn.Module]:
-        """Get the PyTorch module for the activation function."""
+        """
+        Get the PyTorch module for the activation function.
+        """
 
         # TODO: convert to match when Python 3.10 is the minimum version.
         if self == Activation.ReLU:

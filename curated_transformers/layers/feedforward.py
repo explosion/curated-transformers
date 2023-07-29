@@ -53,7 +53,7 @@ class PointwiseFeedForward(Module):
         device: Optional[torch.device] = None,
     ):
         """
-        Construct a point-wise feed-forward layer module.
+        Construct a pointwise feed-forward layer module.
 
         :param activation:
             Activation used by the pointwise feed-forward layers.

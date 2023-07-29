@@ -152,7 +152,7 @@ class AttentionMask(DataclassAsDict):
 
     def merge_mask(self, other: "AttentionMask") -> "AttentionMask":
         """
-        Merge another attention mask with this one.
+        Merge this attention mask with another attention mask.
 
         :param other:
             Attention mask to merge.

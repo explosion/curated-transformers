@@ -41,7 +41,7 @@ class PointwiseFeedForward(Module):
     .. math::
         (g(xW_g + b_g) * (xW_1 + b_1))W_2 + b_2
 
-    :math:`W_g` and :math:`b_g` are the affine transformations for the gate.
+    :math:`W_g` and :math:`b_g` are the affine transformation for the gate.
 
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     .. _Dauphin et al., 2016: https://arxiv.org/abs/1612.08083

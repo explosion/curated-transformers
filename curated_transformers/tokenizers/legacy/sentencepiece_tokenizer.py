@@ -20,7 +20,7 @@ class SentencePieceTokenizer(LegacyTokenizer):
         processor: SentencePieceProcessor,
     ):
         """
-        Construct a tokenzier from ``curated-tokenizers`` SentencePiece processor.
+        Construct a tokenizer from ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.

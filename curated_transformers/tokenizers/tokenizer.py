@@ -51,6 +51,8 @@ class PiecesWithIds:
         :param pad_left:
             By default sequences shorter than the longest sequence are
             right-padded. Use left-padding when set to ``True``.
+        :param device:
+            Device on which the attention mask is created.
         :returns:
             The attention mask.
 
@@ -69,16 +71,22 @@ class PiecesWithIds:
     def padded_tensor(
         self,
         *,
-        padding_id: int,
+        padding_id: int = 0,
         pad_left: bool = False,
         device: Optional[torch.device] = None,
     ) -> Tensor:
         """
         Generate a padded tensor of the piece identifiers.
 
+        :param padding_id:
+            Piece identifier of the padding piece. The actual identifier
+            generally doesn't matter when an attention mask is used (and
+            as long as it is a valid vocabulary index).
         :param pad_left:
             By default sequences shorter than the longest sequence are
             right-padded. Use left-padding when set to ``True``.
+        :param device:
+            Device on which the padded tensor is created.
         :returns:
             The padded piece ids.
 

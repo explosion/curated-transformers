@@ -62,7 +62,6 @@ class ALBERTConfig:
         max_position_embeddings: int = 512,
         model_max_length: int = 512,
         layer_norm_eps: float = 1e-12,
-        padding_id: int = 0,
     ):
         """
         :param embedding_width:
@@ -97,8 +96,6 @@ class ALBERTConfig:
             Maximum length of model inputs.
         :param layer_norm_eps:
             Epsilon for layer normalization.
-        :param padding_id:
-            Index of the padding meta-token.
         """
         self.embedding = TransformerEmbeddingLayerConfig(
             embedding_width=embedding_width,
@@ -133,4 +130,3 @@ class ALBERTConfig:
             num_hidden_groups=num_hidden_groups,
         )
         self.model_max_length = model_max_length
-        self.padding_id = padding_id

@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm
 
-from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
+from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
     EncoderLayer,
@@ -13,8 +13,7 @@ from ...layers.transformer import (
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
-from ..module import EncoderModule
-from ..output import ModelOutput
+from ..transformer import TransformerEncoder
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import RoBERTaConfig
 from .embeddings import RoBERTaEmbeddings
@@ -23,7 +22,7 @@ from .embeddings import RoBERTaEmbeddings
 Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 
-class RoBERTaEncoder(EncoderModule, FromHFHub):
+class RoBERTaEncoder(TransformerEncoder, FromHFHub):
     """
     RoBERTa (`Liu et al., 2019`_) encoder.
 
@@ -46,7 +45,6 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
         self.embeddings = RoBERTaEmbeddings(
             config.embedding, config.layer, padding_id=config.padding_id, device=device
         )
-        self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
 
         hidden_width = config.layer.feedforward.hidden_width
@@ -90,28 +88,6 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
                 for _ in range(config.layer.num_hidden_layers)
             ]
         )
-
-    def _create_attention_mask(self, x: Tensor) -> AttentionMask:
-        return AttentionMask(x.ne(self.padding_id))
-
-    def forward(
-        self,
-        input_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
-        token_type_ids: Optional[Tensor] = None,
-    ) -> ModelOutput:
-        if attention_mask is None:
-            attention_mask = self._create_attention_mask(input_ids)
-
-        embeddings = self.embeddings(input_ids, token_type_ids, None)
-        layer_output = embeddings
-
-        layer_outputs = []
-        for layer in self.layers:
-            layer_output, _ = layer(layer_output, attention_mask)
-            layer_outputs.append(layer_output)
-
-        return ModelOutput(all_outputs=[embeddings, *layer_outputs])
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

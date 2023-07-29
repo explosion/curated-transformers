@@ -1,12 +1,11 @@
 from functools import partial
-from typing import Any, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
 
-from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
-from ...layers.cache import KeyValueCache
+from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
@@ -15,8 +14,7 @@ from ...layers.transformer import (
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
-from ..module import DecoderModule
-from ..output import ModelOutputWithCache
+from ..transformer import TransformerDecoder
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import GPTNeoXConfig
 
@@ -24,7 +22,7 @@ from .config import GPTNeoXConfig
 Self = TypeVar("Self", bound="GPTNeoXDecoder")
 
 
-class GPTNeoXDecoder(DecoderModule, FromHFHub):
+class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
     """
     GPT-NeoX (`Black et al., 2022`_) decoder.
 
@@ -102,45 +100,6 @@ class GPTNeoXDecoder(DecoderModule, FromHFHub):
 
         self.output_layer_norm = LayerNorm(
             hidden_width, config.layer.layer_norm_eps, device=device
-        )
-
-    def forward(
-        self,
-        input_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
-        cache: Optional[List[KeyValueCache]] = None,
-        positions: Optional[Tensor] = None,
-        store_cache: bool = False,
-    ) -> ModelOutputWithCache[KeyValueCache]:
-        embeddings = self.embeddings(input_ids)
-        embeddings = self.dropout(embeddings)
-        layer_output = embeddings
-
-        layer_outputs = []
-        new_cache = []
-        layer_cache = None
-        for layer in self.layers:
-            if cache is not None:
-                # The key-value cache is stored per layer, so peel off one
-                # layer at a time.
-                layer_cache = cache[0]
-                cache = cache[1:]
-            layer_output, new_layer_cache = layer(
-                layer_output,
-                attention_mask,
-                cache=layer_cache,
-                store_cache=store_cache,
-                positions=positions,
-            )
-            layer_outputs.append(layer_output)
-            if store_cache:
-                new_cache.append(new_layer_cache)
-
-        layer_outputs[-1] = self.output_layer_norm(layer_outputs[-1])
-
-        return ModelOutputWithCache(
-            all_outputs=[embeddings, *layer_outputs],
-            cache=new_cache if store_cache else None,
         )
 
     @classmethod

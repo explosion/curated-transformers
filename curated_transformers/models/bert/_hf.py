@@ -20,7 +20,6 @@ HF_KEY_TO_CURATED_KEY = MappingProxyType(
 
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
-    "pad_token_id": "padding_id",
     "attention_probs_dropout_prob": "attention_probs_dropout_prob",
     "hidden_act": ("activation", Activation),
     "hidden_dropout_prob": "hidden_dropout_prob",

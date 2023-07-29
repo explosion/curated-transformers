@@ -1,14 +1,21 @@
 Decoders
 ========
 
-Architectures
--------------
-
-These modules represent the supported decoder-only architectures.
+Base Classes
+------------
 
 .. autoclass:: curated_transformers.models.module.DecoderModule
    :members:
    :show-inheritance:
+
+.. autoclass:: curated_transformers.models.transformer.TransformerDecoder
+   :members:
+   :show-inheritance:
+
+Architectures
+-------------
+
+These modules represent the supported decoder-only architectures.
 
 .. autoclass:: curated_transformers.models.GPTNeoXDecoder
    :members:
@@ -38,8 +45,8 @@ the correct type automatically.
 
 .. _decoder config:
 
-Model Configuration
--------------------
+Configuration
+-------------
 
 GPT-NeoX
 ^^^^^^^^

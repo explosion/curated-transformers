@@ -1,22 +1,10 @@
-from typing import Dict, Optional, Type
+from typing import Optional
 
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .activations import Activation, GELUFast, GELUNew
-
-_ACTIVATIONS: Dict[str, Type[Module]] = {
-    "relu": torch.nn.ReLU,
-    "gelu": torch.nn.GELU,
-    "gelu_fast": GELUFast,
-    # Ideally, we would use torch.nn.GELU(approximate="tanh"). However,
-    # the differences between that and the manual Torch implementation
-    # are large enough to fail tests comparing output to HF
-    # transformers.
-    "gelu_new": GELUNew,
-    "silu": torch.nn.SiLU,
-}
+from .activations import Activation
 
 
 class PointwiseFeedForward(Module):

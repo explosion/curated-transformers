@@ -66,7 +66,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
-                        hidden_act=config.layer.feedforward.hidden_act,
+                        activation=config.layer.feedforward.activation.module(),
                         hidden_width=config.layer.feedforward.hidden_width,
                         intermediate_width=config.layer.feedforward.intermediate_width,
                         use_bias=config.layer.feedforward.use_bias,

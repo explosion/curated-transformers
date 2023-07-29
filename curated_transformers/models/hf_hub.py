@@ -1,6 +1,17 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Mapping, Optional, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import torch
 from torch import Tensor
@@ -135,3 +146,53 @@ class FromHFHub(ABC):
         order to be an abstract base class.
         """
         ...
+
+
+def _process_hf_keys(
+    model_name: str,
+    hf_config: Dict[str, Any],
+    hf_to_curated: Dict[str, Union[str, Tuple[str, Callable]]],
+    extra_keys: List[str] = [],
+) -> Dict[str, Any]:
+    """
+    Convert Hugging Face configuration keys to keyword arguments for
+    Curated Transformers configuration classes.
+
+    :param model_name:
+        Model name. Only used in exception messages.
+    :param hf_config:
+        Hugging Face model configuration.
+    :param hf_to_curated:
+        Dictionay that maps Hugging Face configuration keys to keyword
+        arguments for a Curated Transformers configuration class. If a value
+        is a tuple, the first tuple element is the name of the keyword
+        argument class and the second tuple element is a conversion function.
+    :param extra_keys:
+        Optional keys for which the Hugging Face configuration key and the
+        keyword argument of the Curated Transformers configuration class is
+        the same.
+    :returns:
+        Dictionary with keyword arguments.
+    """
+    missing_keys = tuple(
+        sorted(set(hf_to_curated.keys()).difference(set(hf_config.keys())))
+    )
+    if len(missing_keys) != 0:
+        raise ValueError(
+            f"Missing keys in Hugging Face {model_name} model config: {missing_keys}"
+        )
+
+    kwargs = {}
+
+    for hf, curated in hf_to_curated.items():
+        if isinstance(curated, tuple):
+            curated, ctor = curated
+        else:
+            ctor = lambda x: x
+
+        kwargs[curated] = ctor(hf_config[hf])
+
+    # Handle config options that are not set in all models.
+    kwargs.update({k: hf_config[k] for k in extra_keys if k in hf_config})
+
+    return kwargs

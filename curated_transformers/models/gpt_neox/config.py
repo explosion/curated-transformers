@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
@@ -24,7 +25,7 @@ class GPTNeoXConfig:
         self,
         *,
         attention_probs_dropout_prob: float = 0.0,
-        hidden_act: str = "gelu",
+        activation: Activation = Activation.GELU,
         hidden_dropout_prob: float = 0.0,
         hidden_width: int = 2560,
         intermediate_width: int = 10240,
@@ -40,10 +41,8 @@ class GPTNeoXConfig:
         """
         :param attention_probs_dropout_prob:
             Dropout to apply after attention.
-        :param hidden_act:
-            Activation in the feed-forward layer. See
-            :class:`curated_transformers.layers.feedforward.PointwiseFeedForward`
-            for possible values.
+        :param activation:
+            Activation used by the pointwise feed-forward layers.
         :param hidden_dropout_prob:
             Dropout to apply to the hidden and embedding layers.
         :param hidden_width:
@@ -96,7 +95,7 @@ class GPTNeoXConfig:
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,
                 intermediate_width=intermediate_width,
-                hidden_act=hidden_act,
+                activation=activation,
                 use_bias=True,
                 use_gate=False,
             ),

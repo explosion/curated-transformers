@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from ...layers.activations import Activation
 from ..config import (
     TransformerAttentionLayerConfig,
     TransformerEmbeddingLayerConfig,
@@ -30,7 +31,7 @@ class BERTConfig:
         num_hidden_layers: int = 12,
         attention_probs_dropout_prob: float = 0.1,
         hidden_dropout_prob: float = 0.1,
-        hidden_act: str = "gelu",
+        activation: Activation = Activation.GELU,
         vocab_size: int = 30000,
         type_vocab_size: int = 2,
         max_position_embeddings: int = 512,
@@ -54,8 +55,8 @@ class BERTConfig:
         :param hidden_dropout_prob:
             Dropout probabilty of the point-wise feed-forward and
             embedding layers.
-        :param hidden_act:
-            Activation used by the point-wise feed-forward layers.
+        :param activation:
+            Activation used by the pointwise feed-forward layers.
         :param vocab_size:
             Size of main vocabulary.
         :param type_vocab_size:
@@ -89,7 +90,7 @@ class BERTConfig:
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,
                 intermediate_width=intermediate_width,
-                hidden_act=hidden_act,
+                activation=activation,
                 use_bias=True,
                 use_gate=False,
             ),

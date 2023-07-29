@@ -1,11 +1,98 @@
 import math
+from enum import Enum, EnumMeta
+from typing import Type
 
 import torch
 from torch import Tensor
 from torch.nn import Module
 
 
-class GeluNew(Module):
+class _ActivationMeta(EnumMeta):
+    """
+    ``Enum`` metaclass to override the class ``__call__`` method with a more
+    fine-grained exception for unknown activation functions.
+    """
+
+    def __call__(
+        cls,
+        value,
+        names=None,
+        *,
+        module=None,
+        qualname=None,
+        type=None,
+        start=1,
+    ):
+        # Wrap superclass __call__ to give a nicer error message when
+        # an unknown activation is used.
+        if names is None:
+            try:
+                return EnumMeta.__call__(
+                    cls,
+                    value,
+                    names,
+                    module=module,
+                    qualname=qualname,
+                    type=type,
+                    start=start,
+                )
+            except ValueError:
+                supported_activations = ", ".join(sorted(v.value for v in cls))
+                raise ValueError(
+                    f"Invalid activation function `{value}`. "
+                    f"Supported functions: {supported_activations}"
+                )
+        else:
+            return EnumMeta.__call__(cls, value, names, module, qualname, type, start)
+
+
+class Activation(Enum, metaclass=_ActivationMeta):
+    """
+    Activation functions.
+
+    .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
+    .. _Hendrycks et al., 2016: https://arxiv.org/abs/1606.08415
+    .. _Fukushima, 1969: https://ieeexplore.ieee.org/document/4082265
+    """
+
+    #: Rectified Linear Unit (`Fukushima, 1969`_).
+    ReLU = "relu"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_).
+    GELU = "gelu"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_) approximation
+    #: used by GPT-NeoX (`Black et al., 2022`_).
+    GELUFast = "gelu_fast"
+
+    #: Gaussian Error Linear Unit (`Hendrycks et al., 2016`_) approximation.
+    GELUNew = "gelu_new"
+
+    #: Sigmoid Linear Unit (`Hendrycks et al., 2016`_).
+    SiLU = "silu"
+
+    @property
+    def module(self) -> Type[torch.nn.Module]:
+        """
+        Get the PyTorch module for the activation function.
+        """
+
+        # TODO: convert to match when Python 3.10 is the minimum version.
+        if self == Activation.ReLU:
+            return torch.nn.ReLU
+        elif self == Activation.GELU:
+            return torch.nn.GELU
+        elif self == Activation.GELUFast:
+            return GELUFast
+        elif self == Activation.GELUNew:
+            return GELUNew
+        elif self == Activation.SiLU:
+            return torch.nn.SiLU
+        else:
+            raise NotImplementedError
+
+
+class GELUNew(Module):
     """
     GELU (`Hendrycks et al., 2016`_) approximation, called ``gelu_new`` in many transformer models.
 
@@ -34,7 +121,7 @@ class GeluNew(Module):
         )
 
 
-class GeluFast(Module):
+class GELUFast(Module):
     """
     GELU (`Hendrycks et al., 2016`_) approximation used by GPT-NeoX (`Black et al., 2022`_).
 

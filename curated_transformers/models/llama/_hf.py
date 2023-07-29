@@ -1,8 +1,10 @@
 import re
-from typing import Any, Mapping
+from typing import Any, Callable, Dict, Mapping, Tuple, Union
 
 from torch import Tensor
 
+from ...layers.activations import Activation
+from ..hf_hub import _process_hf_keys
 from ..module import DecoderModule
 from .config import LLaMAConfig
 
@@ -12,8 +14,8 @@ NUM_KEY_VALUE_HEADS = "num_key_value_heads"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT, NUM_KEY_VALUE_HEADS]
 
 
-HF_CONFIG_KEY_MAPPING = {
-    "hidden_act": "hidden_act",
+HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
+    "hidden_act": ("activation", Activation),
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
     "rms_norm_eps": "rms_norm_eps",
@@ -24,17 +26,9 @@ HF_CONFIG_KEY_MAPPING = {
 
 
 def convert_hf_config(hf_config: Any) -> LLaMAConfig:
-    missing_keys = tuple(
-        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
+    kwargs = _process_hf_keys(
+        "LLaMA", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
-    if len(missing_keys) != 0:
-        raise ValueError(
-            f"Missing keys in Hugging Face LLaMA model config: {missing_keys}"
-        )
-
-    kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
-    # Handle config options that are not set in all models.
-    kwargs.update({k: hf_config[k] for k in EXTRA_KWARG_KEYS if k in hf_config})
 
     if not NUM_KEY_VALUE_HEADS in kwargs:
         kwargs[NUM_KEY_VALUE_HEADS] = kwargs["num_query_heads"]

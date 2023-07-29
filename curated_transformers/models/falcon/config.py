@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
@@ -99,7 +100,7 @@ class FalconConfig:
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,
                 intermediate_width=4 * hidden_width,
-                hidden_act="gelu",
+                activation=Activation.GELU,
                 use_bias=use_bias,
                 use_gate=False,
             ),

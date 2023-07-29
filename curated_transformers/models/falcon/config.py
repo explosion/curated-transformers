@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-from curated_transformers.layers.activations import Activation
-
+from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,

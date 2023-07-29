@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, Protocol, Tuple, Type, TypeVar, Union
+from typing import Optional, Protocol, Tuple, Type, TypeVar, Union
 
 import torch
 from torch import Tensor
 
-from curated_transformers.util.dataclass import DataclassAsDict, DataclassAsTuple
+from ..util.dataclass import DataclassAsTuple
 
 CacheProtocolSelf = TypeVar("CacheProtocolSelf", bound="CacheProtocol")
 

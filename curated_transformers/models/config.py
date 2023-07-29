@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from torch.nn.modules import activation
-
-from curated_transformers.layers.activations import Activation
+from ..layers.activations import Activation
 
 
 @dataclass

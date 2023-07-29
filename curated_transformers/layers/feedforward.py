@@ -33,7 +33,7 @@ class PointwiseFeedForward(Module):
     def __init__(
         self,
         *,
-        activation: Activation,
+        activation: Module,
         hidden_width: int,
         intermediate_width: int,
         use_bias: bool,
@@ -44,7 +44,9 @@ class PointwiseFeedForward(Module):
         Construct a pointwise feed-forward layer module.
 
         :param activation:
-            Activation used by the pointwise feed-forward layers.
+            Activation used by the pointwise feed-forward layers. The hidden
+            input shape must be the same as the output shape (as is typical
+            for elementwise activations).
         :param hidden_width:
             The input and output width of the layer.
         :param intermediate_width:
@@ -70,7 +72,7 @@ class PointwiseFeedForward(Module):
         self.output = Linear(
             intermediate_width, hidden_width, bias=use_bias, device=device
         )
-        self.activation = activation.module()
+        self.activation = activation
 
     def forward(self, input: Tensor) -> Tensor:
         """

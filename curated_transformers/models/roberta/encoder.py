@@ -71,7 +71,7 @@ class RoBERTaEncoder(EncoderModule, FromHFHub):
                         device=device,
                     ),
                     feed_forward_layer=PointwiseFeedForward(
-                        activation=config.layer.feedforward.activation,
+                        activation=config.layer.feedforward.activation.module(),
                         hidden_width=hidden_width,
                         intermediate_width=config.layer.feedforward.intermediate_width,
                         use_bias=config.layer.feedforward.use_bias,

@@ -81,8 +81,6 @@ class ALBERTLayerGroup(Module):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-
-            *Shape:* ``(batch_size, 1, 1, seq_len)``
         :returns:
             Layer output.
 

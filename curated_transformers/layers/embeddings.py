@@ -56,10 +56,10 @@ class SinusoidalPositionalEmbedding(Module):
 
     def forward(self, input: Tensor) -> Tensor:
         """
-        Apply sinusoidal embeddings to the input.
+        Returns the positional embedding for the input.
 
         :param input:
-            Input to apply the sinusoidal embeddings to.
+            Input tensor.
 
             *Shape:* ``(batch_size, seq_len)``
         :returns:

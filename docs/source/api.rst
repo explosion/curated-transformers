@@ -6,7 +6,7 @@ API
    and their APIs will change in incompatible ways before ``1.0.0``.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    building-blocks
    encoders

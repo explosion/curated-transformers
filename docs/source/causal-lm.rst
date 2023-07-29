@@ -1,15 +1,22 @@
 Causal Language Models
 ======================
 
-Architectures
--------------
-
-These modules represent the supported causal LM architectures. Generally, every 
-decoder-only architecture has a corresponding causal LM architecture.
+Base Classes
+------------
 
 .. autoclass:: curated_transformers.models.module.CausalLMModule
    :members:
    :show-inheritance:
+
+.. autoclass:: curated_transformers.models.transformer.TransformerCausalLM
+   :members:
+   :show-inheritance:
+
+Architectures
+-------------
+
+These modules represent the supported causal LM architectures. Generally, every
+decoder-only architecture has a corresponding causal LM architecture.
 
 .. autoclass:: curated_transformers.models.GPTNeoXCausalLM
    :members:

@@ -2,9 +2,10 @@ from abc import abstractmethod
 from typing import Generic, List, Optional
 
 from torch import Tensor
-from torch.nn import Module
+from torch.nn import Module, ModuleList
 
 from ..layers.attention import AttentionMask
+from ..layers.cache import KeyValueCache
 from .output import CacheT, CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
 

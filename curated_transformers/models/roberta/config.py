@@ -57,8 +57,9 @@ class RoBERTaConfig(BERTConfig):
             *args,
             layer_norm_eps=layer_norm_eps,
             max_position_embeddings=max_position_embeddings,
-            padding_id=padding_id,
             type_vocab_size=type_vocab_size,
             vocab_size=vocab_size,
             **kwargs
         )
+
+        self.padding_id = padding_id

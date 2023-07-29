@@ -20,7 +20,6 @@ HF_KEY_TO_CURATED_KEY = MappingProxyType(
 )
 
 HF_CONFIG_KEY_MAPPING = {
-    "pad_token_id": "padding_id",
     "attention_probs_dropout_prob": "attention_probs_dropout_prob",
     "embedding_size": "embedding_width",
     "hidden_act": "hidden_act",

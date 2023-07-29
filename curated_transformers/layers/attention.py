@@ -166,7 +166,10 @@ class AttentionMask(DataclassAsDict):
         Generate the logit mask for the given ``dtype``.
 
         Elements of the mask that are ``False`` are set to the
-        minimum value of the ``dtype`` and the rest to zero.
+        minimum value of the ``dtype`` and the rest to zero. During
+        softmax calculation, adding this mask to the logits will
+        result in (near-)zero probabilities for the elements that
+        are ``False``.
 
         :param dtype:
             Data type of the logit mask.

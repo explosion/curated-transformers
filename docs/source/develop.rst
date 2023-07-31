@@ -50,4 +50,4 @@ Scripting
 ^^^^^^^^^
 
 We **do not** support TorchScript scripting, since it would require too many
-compromises to code quality (e.g., we cannot use `torch.finfo`).`
+compromises to code quality (e.g., we cannot use ``torch.finfo``).

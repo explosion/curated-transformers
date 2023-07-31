@@ -98,6 +98,8 @@ def _get_tokenizer_class_from_config(
         Model name.
     :param revision:
         Model revision.
+    :returns:
+        Inferred class.
     """
 
     try:

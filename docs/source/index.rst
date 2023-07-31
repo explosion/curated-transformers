@@ -64,7 +64,7 @@ Generator wrappers:
 - Falcon
 - LLaMA 1/2
 
-All types of models can be loaded from Huggingface Hub.
+All types of models can be loaded from Hugging Face Hub.
 
 📚 Contents
 -----------

@@ -214,7 +214,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
         tokenize_chinese_chars: bool = True,
     ):
         """
-        Construct a BERT tokenizer from a curated tokenizers WordPiece processor.
+        Construct a BERT tokenizer from a ``curated-tokenizers`` WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.

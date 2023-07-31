@@ -82,7 +82,7 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         eos_piece: str = "</s>",
     ):
         """
-        Construct a CamemBERT tokenizer from a curated tokenizers SentencePiece processor.
+        Construct a CamemBERT tokenizer from a ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.

@@ -30,9 +30,9 @@ Self = TypeVar("Self", bound="FalconDecoder")
 
 class FalconDecoder(TransformerDecoder, FromHFHub):
     """
-    `Falcon`_ decoder.
+    Falcon (`Penedo et al., 2019`_) decoder.
 
-    .. _Falcon: https://arxiv.org/abs/2306.01116
+    .. _Penedo et al., 2019: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(

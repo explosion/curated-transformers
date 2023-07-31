@@ -170,7 +170,7 @@ def _emplace_module_tensor(
     device: Optional[torch.device] = None,
 ):
     """
-    Replaces a module's parameter or (persistent) buffer with the
+    Replace a module's parameter or (persistent) buffer with the
     passed tensor and moves it to the given device.
 
     This is a zero-copy operation (excluding D2H/H2D transfers) where

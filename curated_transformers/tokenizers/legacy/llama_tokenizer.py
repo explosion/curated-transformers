@@ -15,9 +15,10 @@ DEFAULT_BOS_PIECE = "<s>"
 
 class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for LLaMA (`Touvron et al., 2023`_) models.
+    Legacy tokenizer for LLaMA (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) models.
 
-    .. _Touvron et al., 2023: https://arxiv.org/abs/2302.13971
+    .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
+    .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
     """
 
     vocab_files: Dict[str, str] = {"model": "tokenizer.model"}
@@ -30,7 +31,7 @@ class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         add_eos_piece: bool = False,
     ):
         """
-        Construct a LLaMA tokenizer.
+        Construct a LLaMA tokenizer from a ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.

@@ -19,9 +19,9 @@ from ..config import TransformerLayerConfig
 
 class OldFalconDecoderLayer(Module):
     """
-    `Falcon`_ layer using the old decoder architecture.
+    Falcon (`Penedo et al., 2019`_) layer using the old decoder architecture.
 
-    .. _Falcon: https://arxiv.org/abs/2306.01116
+    .. _Penedo et al., 2019: https://arxiv.org/abs/2306.01116
     """
 
     def __init__(
@@ -117,8 +117,6 @@ class OldFalconDecoderLayer(Module):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-
-            *Shape:* ``(batch_size, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.

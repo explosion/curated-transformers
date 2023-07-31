@@ -21,7 +21,7 @@ class WordPieceTokenizer(LegacyTokenizer):
         special_pieces: Optional[Dict[str, int]],
     ):
         """
-        Construct a tokenizer from a curated tokenizers WordPiece processor.
+        Construct a tokenizer from a ``curated-tokenizers`` WordPiece processor.
 
         :param vocab:
             The word piece vocabulary.

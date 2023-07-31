@@ -50,17 +50,14 @@ class AttentionMask(DataclassAsDict):
     Mask for attention calculation. Sequence elements for which the
     corresponding mask element is set to ``False`` are ignored during
     attention calculation.
+
+    :param bool_mask:
+        The boolean mask.
     """
 
     bool_mask: Tensor
 
     def __init__(self, bool_mask: Tensor):
-        """
-        Construct an attention mask.
-
-        :param bool_mask:
-            The boolean mask.
-        """
         if bool_mask.dtype != torch.bool:
             raise ValueError("Expected the attention mask to be of dtype 'torch.bool'")
 
@@ -84,7 +81,7 @@ class AttentionMask(DataclassAsDict):
     ) -> Optional["AttentionMask"]:
         """
         Rewrap TorchScript dictionary conversion of an attention mask
-        as an `AttentionMask`.
+        as an ``AttentionMask``.
 
         :param attention_mask:
             The attention mask or its dictionary representation. If the
@@ -148,12 +145,37 @@ class AttentionMask(DataclassAsDict):
         return AttentionMask(self.bool_mask[mask])
 
     def dim(self) -> int:
+        """
+        Return the number of dimensions in the mask.
+        """
         return self.bool_mask.dim()
 
     def merge_mask(self, other: "AttentionMask") -> "AttentionMask":
+        """
+        Merge this attention mask with another attention mask.
+
+        :param other:
+            Attention mask to merge.
+        :returns:
+            Merged mask.
+        """
         return AttentionMask(self.bool_mask.logical_and(other.bool_mask))
 
-    def logit_mask(self, dtype: torch.dtype):
+    def logit_mask(self, dtype: torch.dtype) -> Tensor:
+        """
+        Generate the logit mask for the given ``dtype``.
+
+        Elements of the mask that are ``False`` are set to the
+        minimum value of the ``dtype`` and the rest to zero. During
+        softmax calculation, adding this mask to the logits will
+        result in (near-)zero probabilities for the elements that
+        are ``False``.
+
+        :param dtype:
+            Data type of the logit mask.
+        :returns:
+            Logit mask.
+        """
         return (1.0 - self.bool_mask.to(dtype)) * torch.finfo(dtype).min
 
     def extend_length(self, count: int, fill_value: bool) -> "AttentionMask":
@@ -182,10 +204,16 @@ class AttentionMask(DataclassAsDict):
 
     @property
     def shape(self) -> torch.Size:
+        """
+        Return the shape of the mask.
+        """
         return self.bool_mask.shape
 
     @property
     def device(self) -> torch.device:
+        """
+        Return the device of the mask.
+        """
         return self.bool_mask.device
 
 
@@ -479,15 +507,15 @@ class ScaledDotProductAttention(Module):
         Sequence elements that are marked with `False` in the attention mask
         are ignored by the attention mechanism (if a mask is provided).
 
-        :param k:
-            Key tensor.
-
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param q:
+        :param query:
             Query tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param v:
+        :param key:
+            Key tensor.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        :param value:
             Value tensor.
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
@@ -495,8 +523,6 @@ class ScaledDotProductAttention(Module):
 
             Attention mask. Sequence elements for which the corresponding mask
             element is set to ``False`` are ignored in attention.
-
-            *Shape:* ``(batch_size, seq_len)``
         :returns:
             Attention values.
 
@@ -642,8 +668,6 @@ class SelfAttention(Module):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             in attention.
-
-            *Shape:* ``(batch_size, seq_len)``
         :param use_causal_mask:
             Mask out succeeding sequence elements when ``True``.
         :param cache:
@@ -828,8 +852,7 @@ def split_heads_grouped_qkv(
     :param projection:
         The fused query, key, value projection.
 
-        *Shape:* ``(batch_size, seq_len,
-        (num_query_heads + 2*num_key_value_heads)*dims_per_head)``
+        *Shape:* ``(batch_size, seq_len, (num_query_heads + 2 * num_key_value_heads) * dims_per_head)``
     :param attention_heads:
         Attention head configuration.
     :param dims_per_head:
@@ -838,9 +861,9 @@ def split_heads_grouped_qkv(
         Query, key, value tensors.
 
         *Shapes:*
-        - query: ``(batch_size, num_query_heads, seq_len, dims_per_head)
-        - key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
-        - value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)
+        - Query: ``(batch_size, num_query_heads, seq_len, dims_per_head)``
+        - Key: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)``
+        - Value: ``(batch_size, num_key_value_heads, seq_len, dims_per_head)``
     """
     num_query_heads = attention_heads._num_query_heads
     num_key_value_heads = attention_heads._num_key_value_heads

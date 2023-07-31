@@ -25,7 +25,7 @@ class ModelOutput(DataclassAsTuple):
     @property
     def embedding_layer(self) -> Tensor:
         """
-        Returns the output of the embedding layer.
+        Return the output of the embedding layer.
 
         :returns:
             Embedding layer output.
@@ -36,7 +36,7 @@ class ModelOutput(DataclassAsTuple):
 
     def hidden_layer_states(self, idx: int) -> Tensor:
         """
-        Returns the hidden representations of a given layer.
+        Return the hidden representations of a given layer.
 
         :param idx:
             Layer index. Must be in ``[0, num_hidden_layers)``.
@@ -56,7 +56,7 @@ class ModelOutput(DataclassAsTuple):
     @property
     def last_hidden_layer_state(self) -> Tensor:
         """
-        Returns the hidden representation of the last layer.
+        Return the hidden representation of the last layer.
 
         :returns:
             Last hidden representation of the last layer.
@@ -68,7 +68,7 @@ class ModelOutput(DataclassAsTuple):
     @property
     def all_hidden_layer_states(self) -> List[Tensor]:
         """
-        Returns the hidden representation of all the layers.
+        Return the hidden representation of all the layers.
 
         :returns:
             Hidden representations of all the layers.

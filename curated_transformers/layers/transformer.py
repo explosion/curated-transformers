@@ -162,8 +162,6 @@ class _TransformerLayer(Module):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-
-            *Shape:* ``(batch_size, seq_len)``
         :param use_causal_mask:
             Mask out succeeding sequence elements when ``True``.
         :param cache:
@@ -235,8 +233,6 @@ class DecoderLayer(_TransformerLayer):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-
-            *Shape:* ``(batch_size, seq_len)``
         :param cache:
             Key/value cache to avoid recomputing
             key/value representations for tokens that were previously seen.
@@ -284,8 +280,6 @@ class EncoderLayer(_TransformerLayer):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-
-            *Shape:* ``(batch_size, seq_len)``
         :returns:
             Layer output and the key/value cache.
 

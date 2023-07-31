@@ -106,3 +106,7 @@ These classes represent the different parameters used by generators.
 .. autoclass:: curated_transformers.generation.logits.TemperatureTransform
    :members:   
    :show-inheritance:
+
+.. autoclass:: curated_transformers.generation.logits.VocabMaskTransform
+   :members:   
+   :show-inheritance:

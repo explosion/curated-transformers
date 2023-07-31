@@ -3,20 +3,22 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import LayerNorm
+from torch.nn import Dropout, LayerNorm
 
 from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
     EncoderLayer,
     TransformerDropouts,
+    TransformerEmbeddings,
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
 from ..transformer import TransformerEncoder
 from ._hf import convert_hf_config, convert_hf_state_dict
 from .config import BERTConfig
-from .embeddings import BERTEmbeddings
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="BERTEncoder")
@@ -42,7 +44,22 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
         """
         super().__init__()
 
-        self.embeddings = BERTEmbeddings(config.embedding, config.layer, device=device)
+        self.embeddings = TransformerEmbeddings(
+            dropouts=EmbeddingsDropouts(
+                embed_output_dropout=Dropout(config.embedding.dropout_prob)
+            ),
+            embedding_width=config.embedding.embedding_width,
+            hidden_width=config.layer.feedforward.hidden_width,
+            layer_norms=EmbeddingsLayerNorms(
+                embed_output_layer_norm=LayerNorm(
+                    config.embedding.embedding_width, config.embedding.layer_norm_eps
+                )
+            ),
+            n_pieces=config.embedding.vocab_size,
+            n_positions=config.embedding.max_position_embeddings,
+            n_types=config.embedding.type_vocab_size,
+        )
+
         self.max_seq_len = config.model_max_length
 
         layer_norm = partial(

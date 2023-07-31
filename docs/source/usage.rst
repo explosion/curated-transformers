@@ -201,7 +201,7 @@ In addition to text generation, one can also run inference on the inputs to prod
 
    # Don't allocate gradients since we're only running inference.
    with torch.no_grad():
-      ids = input_pieces.padded_tensor(padding_id=0, pad_left=True, device=device)
+      ids = input_pieces.padded_tensor(pad_left=True, device=device)
       model_output = encoder(input_ids=ids)
 
    # [batch, seq_len, width]

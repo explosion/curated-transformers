@@ -3,7 +3,7 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, ModuleList
+from torch.nn import Dropout, ModuleList
 
 from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
@@ -11,7 +11,10 @@ from ...layers.feedforward import PointwiseFeedForward
 from ...layers.normalization import RMSNorm
 from ...layers.transformer import (
     DecoderLayer,
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
     TransformerDropouts,
+    TransformerEmbeddings,
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
@@ -46,10 +49,17 @@ class LLaMADecoder(TransformerDecoder, FromHFHub):
         """
         super().__init__()
 
-        self.embeddings = Embedding(
-            config.embedding.vocab_size, config.embedding.embedding_width, device=device
+        self.embeddings = TransformerEmbeddings(
+            dropouts=EmbeddingsDropouts(
+                embed_output_dropout=Dropout(config.embedding.dropout_prob)
+            ),
+            embedding_width=config.embedding.embedding_width,
+            hidden_width=config.layer.feedforward.hidden_width,
+            layer_norms=EmbeddingsLayerNorms(),
+            n_pieces=config.embedding.vocab_size,
+            n_positions=None,
+            n_types=None,
         )
-        self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         hidden_width = config.layer.feedforward.hidden_width
         num_query_heads = config.layer.attention.num_query_heads

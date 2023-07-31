@@ -15,7 +15,10 @@ from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
     DecoderLayer,
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
     TransformerDropouts,
+    TransformerEmbeddings,
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
@@ -50,10 +53,17 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
         """
         super().__init__()
 
-        self.embeddings = Embedding(
-            config.embedding.vocab_size, config.embedding.embedding_width, device=device
+        self.embeddings = TransformerEmbeddings(
+            dropouts=EmbeddingsDropouts(
+                embed_output_dropout=Dropout(config.embedding.dropout_prob)
+            ),
+            embedding_width=config.embedding.embedding_width,
+            hidden_width=config.layer.feedforward.hidden_width,
+            layer_norms=EmbeddingsLayerNorms(),
+            n_pieces=config.embedding.vocab_size,
+            n_positions=None,
+            n_types=None,
         )
-        self.dropout = Dropout(p=config.embedding.dropout_prob)
 
         if config.new_decoder_architecture:
             decoder_layer = partial(

@@ -57,7 +57,7 @@ their hidden representations:
 
    tokenizer = AutoTokenizer.from_hf_hub(name="tiiuae/falcon-7b")
    pieces = tokenizer(["Hello world!", "This is a test"])
-   Y = traced(pieces.padded_tensor(padding_id=0, device=device))
+   Y = traced(pieces.padded_tensor(device=device))
    assert isinstance(Y, tuple)
    last_layer = Y[0][-1]
 
@@ -83,7 +83,7 @@ retrace the model with a dummy attention mask:
 
    mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
    traced = torch.jit.trace(decoder, (X_example, mask_example,))
-   Y = traced(pieces.padded_tensor(padding_id=0, device=device),
+   Y = traced(pieces.padded_tensor(device=device),
               pieces.attention_mask(device=device))
 
 Handling Complex Model Signatures

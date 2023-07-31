@@ -20,21 +20,19 @@ class TransformerDecoder(DecoderModule):
     .. _Vaswani et al., 2017: https://arxiv.org/abs/1706.03762
     """
 
-    dropout: Module
     embeddings: Module
     layers: ModuleList
     output_layer_norm: Module
 
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         cache: Optional[List[KeyValueCache]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
     ) -> ModelOutputWithCache[KeyValueCache]:
-        embeddings = self.embeddings(input_ids)
-        embeddings = self.dropout(embeddings)
+        embeddings = self.embeddings(piece_ids)
         layer_output = embeddings
 
         layer_outputs = []
@@ -80,14 +78,14 @@ class TransformerCausalLM(CausalLMModule[KeyValueCache]):
 
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         cache: Optional[List[KeyValueCache]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
     ) -> CausalLMOutputWithCache[KeyValueCache]:
         decoder_output = self.decoder(
-            input_ids,
+            piece_ids,
             attention_mask,
             cache=cache,
             store_cache=store_cache,
@@ -120,11 +118,13 @@ class TransformerEncoder(EncoderModule):
 
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
-        token_type_ids: Optional[Tensor] = None,
+        *,
+        positions: Optional[Tensor] = None,
+        type_ids: Optional[Tensor] = None,
     ) -> ModelOutput:
-        embeddings = self.embeddings(input_ids, token_type_ids, None)
+        embeddings = self.embeddings(piece_ids, positions=positions, type_ids=type_ids)
         layer_output = embeddings
 
         layer_outputs = []

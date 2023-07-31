@@ -4,6 +4,20 @@ Building Blocks
 Curated Transformers provides building blocks to create your own transformer
 models.
 
+Embedding Layers
+----------------
+
+These modules implement full embedding layers.
+
+.. autoclass:: curated_transformers.layers.transformer.EmbeddingsDropouts
+   :members:
+
+.. autoclass:: curated_transformers.layers.transformer.EmbeddingsLayerNorms
+   :members:
+
+.. autoclass:: curated_transformers.layers.transformer.TransformerEmbeddings
+   :members:
+
 Encoder/Decoder Layers
 ----------------------
 

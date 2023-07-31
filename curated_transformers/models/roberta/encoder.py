@@ -3,11 +3,13 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import LayerNorm
+from torch.nn import Dropout, LayerNorm
 
 from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
     EncoderLayer,
     TransformerDropouts,
     TransformerLayerNorms,
@@ -43,7 +45,20 @@ class RoBERTaEncoder(TransformerEncoder, FromHFHub):
         super().__init__()
 
         self.embeddings = RoBERTaEmbeddings(
-            config.embedding, config.layer, padding_id=config.padding_id, device=device
+            dropouts=EmbeddingsDropouts(
+                embed_output_dropout=Dropout(config.embedding.dropout_prob)
+            ),
+            embedding_width=config.embedding.embedding_width,
+            hidden_width=config.layer.feedforward.hidden_width,
+            layer_norms=EmbeddingsLayerNorms(
+                embed_output_layer_norm=LayerNorm(
+                    config.embedding.embedding_width, config.embedding.layer_norm_eps
+                )
+            ),
+            n_pieces=config.embedding.vocab_size,
+            n_positions=config.embedding.max_position_embeddings,
+            n_types=config.embedding.type_vocab_size,
+            padding_id=config.padding_id,
         )
         self.max_seq_len = config.model_max_length
 

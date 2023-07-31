@@ -24,8 +24,8 @@ class DecoderWithCache(Module):
         super().__init__()
         self.inner = decoder
 
-    def forward(self, input_ids: Tensor, cache: List[KeyValueCache]):
-        return self.inner.forward(input_ids=input_ids, cache=cache, store_cache=True)
+    def forward(self, piece_ids: Tensor, cache: List[KeyValueCache]):
+        return self.inner.forward(piece_ids=piece_ids, cache=cache, store_cache=True)
 
 
 class DecoderWithPositions(Module):
@@ -33,8 +33,8 @@ class DecoderWithPositions(Module):
         super().__init__()
         self.inner = decoder
 
-    def forward(self, input_ids: Tensor, positions: Tensor):
-        return self.inner.forward(input_ids=input_ids, positions=positions)
+    def forward(self, piece_ids: Tensor, positions: Tensor):
+        return self.inner.forward(piece_ids=piece_ids, positions=positions)
 
 
 class JITMethod(Enum):

@@ -17,7 +17,7 @@ class CausalLMModule(Generic[CacheT], Module):
     @abstractmethod
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         cache: Optional[List[CacheT]] = None,
         positions: Optional[Tensor] = None,
@@ -26,7 +26,7 @@ class CausalLMModule(Generic[CacheT], Module):
         """
         Apply the causal language model to the given piece identifiers.
 
-        :param input_ids:
+        :param piece_ids:
             Piece identifiers to apply the decoder to.
 
             *Shape:* ``(batch_size, seq_len)``
@@ -59,7 +59,7 @@ class DecoderModule(Generic[CacheT], Module):
     @abstractmethod
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         cache: Optional[List[CacheT]] = None,
         positions: Optional[Tensor] = None,
@@ -68,7 +68,7 @@ class DecoderModule(Generic[CacheT], Module):
         """
         Apply the decoder to the given piece identifiers.
 
-        :param input_ids:
+        :param piece_ids:
             Piece identifiers to apply the decoder to.
 
             *Shape:* ``(batch_size, seq_len)``
@@ -80,7 +80,7 @@ class DecoderModule(Generic[CacheT], Module):
             Key/value cache to avoid recomputing key/value representations
             for tokens that were previously seen.
         :param positions:
-            Input positions. Positions are needed to look up rotary embeddings.
+            Input positions. Positions are needed to look up position embeddings.
             Normally, these positions are calculated automatically. But if the
             positions deviate for some reason, they can be provided through this argument.
 
@@ -101,14 +101,16 @@ class EncoderModule(Module):
     @abstractmethod
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
-        token_type_ids: Optional[Tensor] = None,
+        *,
+        positions: Optional[Tensor] = None,
+        type_ids: Optional[Tensor] = None,
     ) -> ModelOutput:
         """
         Apply the encoder to the input.
 
-        :param input_ids:
+        :param piece_ids:
             Piece identifiers to apply the encoder to.
 
             *Shape:* ``(batch_size, seq_len)``
@@ -116,8 +118,14 @@ class EncoderModule(Module):
             Attention mask. Sequence elements for which the
             corresponding mask element is set to ``False`` are ignored
             during attention calculation.
-        :param token_type_ids:
-            Token type identifiers to indicate the spans of different
+        :param positions:
+            Input positions. Positions are used to look up position embeddings.
+            Normally, these positions are calculated automatically. But if the
+            positions deviate for some reason, they can be provided through this argument.
+
+            *Shape:* ``(batch_size, seq_len)``
+        :param type_ids:
+            Type identifiers to indicate the spans of different
             sequences in the input. Useful when performing tasks like
             sequence classification and question answering.
 

@@ -38,10 +38,8 @@ class RoBERTaConfig(BERTConfig):
         :param hidden_dropout_prob:
             Dropout probabilty of the point-wise feed-forward and
             embedding layers.
-        :param hidden_act:
-            Activation used by the point-wise feed-forward layers.
-            See :class:`~curated_transformers.layers.feedforward.PointwiseFeedForward`
-            for possible values.
+        :param activation:
+            Activation used by the pointwise feed-forward layers.
         :param vocab_size:
             Size of main vocabulary.
         :param type_vocab_size:
@@ -59,8 +57,9 @@ class RoBERTaConfig(BERTConfig):
             *args,
             layer_norm_eps=layer_norm_eps,
             max_position_embeddings=max_position_embeddings,
-            padding_id=padding_id,
             type_vocab_size=type_vocab_size,
             vocab_size=vocab_size,
             **kwargs
         )
+
+        self.padding_id = padding_id

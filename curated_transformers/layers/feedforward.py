@@ -1,22 +1,10 @@
-from typing import Dict, Optional, Type
+from typing import Optional
 
 import torch
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from .activations import GeluFast, GeluNew
-
-_ACTIVATIONS: Dict[str, Type[Module]] = {
-    "relu": torch.nn.ReLU,
-    "gelu": torch.nn.GELU,
-    "gelu_fast": GeluFast,
-    # Ideally, we would use torch.nn.GELU(approximate="tanh"). However,
-    # the differences between that and the manual Torch implementation
-    # are large enough to fail tests comparing output to HF
-    # transformers.
-    "gelu_new": GeluNew,
-    "silu": torch.nn.SiLU,
-}
+from .activations import Activation
 
 
 class PointwiseFeedForward(Module):
@@ -53,7 +41,7 @@ class PointwiseFeedForward(Module):
     def __init__(
         self,
         *,
-        hidden_act: str,
+        activation: Module,
         hidden_width: int,
         intermediate_width: int,
         use_bias: bool,
@@ -61,12 +49,12 @@ class PointwiseFeedForward(Module):
         device: Optional[torch.device] = None,
     ):
         """
-        Construct a point-wise feed-forward layer module.
+        Construct a pointwise feed-forward layer module.
 
-        :param hidden_act:
-            The activation function to apply.
-            Must be one of the following: ``relu``, ``gelu``, ``gelu_fast``,
-            ``gelu_new``, ``silu``.
+        :param activation:
+            Activation used by the pointwise feed-forward layers. The hidden
+            input shape must be the same as the output shape (as is typical
+            for elementwise activations).
         :param hidden_width:
             The input and output width of the layer.
         :param intermediate_width:
@@ -92,13 +80,7 @@ class PointwiseFeedForward(Module):
         self.output = Linear(
             intermediate_width, hidden_width, bias=use_bias, device=device
         )
-        if hidden_act not in _ACTIVATIONS:
-            supported_activations = tuple(sorted(_ACTIVATIONS.keys()))
-            raise ValueError(
-                f"Invalid activation function `{hidden_act}` for point-wise feed-forward "
-                f"network. Supported functions: {supported_activations}"
-            )
-        self.activation = _ACTIVATIONS[hidden_act]()
+        self.activation = activation
 
     def forward(self, input: Tensor) -> Tensor:
         """

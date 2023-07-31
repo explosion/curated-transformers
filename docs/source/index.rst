@@ -55,13 +55,14 @@ Supported encoder-only models:
 Supported decoder-only models:
 
 - GPT-NeoX
-- LLaMA
+- LLaMA 1/2
 - Falcon
 
 Generator wrappers:
 
 - Dolly v2
 - Falcon
+- LLaMA 1/2
 
 All types of models can be loaded from Hugging Face Hub.
 

@@ -36,7 +36,6 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         """
         super().__init__()
 
-        self.padding_id = config.padding_id
         self.max_seq_len = config.model_max_length
         self.num_hidden_layers = config.layer.num_hidden_layers
         num_hidden_groups = config.layer.num_hidden_groups
@@ -58,18 +57,12 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
             ]
         )
 
-    def _create_attention_mask(self, x: Tensor) -> AttentionMask:
-        return AttentionMask(bool_mask=x.ne(self.padding_id))
-
     def forward(
         self,
         input_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> ModelOutput:
-        if attention_mask is None:
-            attention_mask = self._create_attention_mask(input_ids)
-
         embeddings = self.embeddings(input_ids, token_type_ids, None)
         layer_output = embeddings
 

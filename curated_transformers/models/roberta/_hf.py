@@ -1,9 +1,11 @@
 import re
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Callable, Dict, Mapping, Tuple, Union
 
 from torch import Tensor
 
+from ...layers.activations import Activation
+from ..hf_hub import _process_hf_keys
 from .config import RoBERTaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
@@ -17,10 +19,10 @@ HF_KEY_TO_CURATED_KEY = MappingProxyType(
 )
 
 
-HF_CONFIG_KEY_MAPPING = {
+HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "pad_token_id": "padding_id",
     "attention_probs_dropout_prob": "attention_probs_dropout_prob",
-    "hidden_act": "hidden_act",
+    "hidden_act": ("activation", Activation),
     "hidden_dropout_prob": "hidden_dropout_prob",
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
@@ -34,15 +36,8 @@ HF_CONFIG_KEY_MAPPING = {
 
 
 def convert_hf_config(hf_config: Any) -> RoBERTaConfig:
-    missing_keys = tuple(
-        sorted(set(HF_CONFIG_KEY_MAPPING.keys()).difference(set(hf_config.keys())))
-    )
-    if len(missing_keys) != 0:
-        raise ValueError(
-            f"Missing keys in Hugging Face RoBERTa model config: {missing_keys}"
-        )
+    kwargs = _process_hf_keys("RoBERTa", hf_config, HF_CONFIG_KEY_MAPPING)
 
-    kwargs = {curated: hf_config[hf] for hf, curated in HF_CONFIG_KEY_MAPPING.items()}
     return RoBERTaConfig(
         embedding_width=hf_config["hidden_size"],
         # Positions embeddings for 0..padding_id are reserved.

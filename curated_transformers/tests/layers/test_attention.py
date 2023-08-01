@@ -14,7 +14,7 @@ from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES
 from ..utils import torch_assertclose
 
-VOCAB_SIZE = 1024
+N_PIECES = 1024
 
 
 def test_context_manager():
@@ -44,7 +44,7 @@ def test_torch_sdp(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     with torch.no_grad():
         Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
@@ -61,7 +61,7 @@ def test_torch_sdp_mask(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
         Y = model(
@@ -83,7 +83,7 @@ def test_torch_sdp_causal(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     with torch.no_grad():
         Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
@@ -100,7 +100,7 @@ def test_torch_sdp_causal_with_mask(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
         Y = model(
@@ -116,7 +116,7 @@ def test_torch_sdp_causal_with_mask(torch_device):
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_attention_linear_biases(torch_device):
     pow2_slopes = AttentionLinearBiases(
-        num_attention_heads=8, is_causal=False, is_inverted=False
+        n_attention_heads=8, is_causal=False, is_inverted=False
     ).slopes
     torch_assertclose(
         pow2_slopes.to(device=torch_device),
@@ -137,7 +137,7 @@ def test_attention_linear_biases(torch_device):
         ),
     )
     non_pow2_slopes = AttentionLinearBiases(
-        num_attention_heads=12, is_causal=False, is_inverted=False
+        n_attention_heads=12, is_causal=False, is_inverted=False
     ).slopes
     torch_assertclose(
         non_pow2_slopes.to(device=torch_device),
@@ -163,7 +163,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_causal = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=True, is_inverted=False
+        n_attention_heads=4, is_causal=True, is_inverted=False
     )
     torch_assertclose(
         alibi_causal(attention_scores=torch.zeros((1, 4, 1, 3), device=torch_device)),
@@ -181,7 +181,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_non_causal = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=False, is_inverted=False
+        n_attention_heads=4, is_causal=False, is_inverted=False
     )
     torch_assertclose(
         alibi_non_causal(
@@ -217,7 +217,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_causal_inverted = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=True, is_inverted=True
+        n_attention_heads=4, is_causal=True, is_inverted=True
     )
     torch_assertclose(
         alibi_causal_inverted(
@@ -237,7 +237,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_non_causal_inverted = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=False, is_inverted=True
+        n_attention_heads=4, is_causal=False, is_inverted=True
     )
     torch_assertclose(
         alibi_non_causal_inverted(

@@ -31,9 +31,9 @@ class TransformerAttentionLayerConfig:
         Dropout probabilty to apply after attention.
     :param hidden_width:
         Hidden width of the transformer.
-    :param num_query_heads:
+    :param n_query_heads:
         Number of attention heads.
-    :param num_key_value_heads:
+    :param n_key_value_heads:
         Number of key and value heads.
     :param parallel_attention:
         Use parallel attention.
@@ -47,8 +47,8 @@ class TransformerAttentionLayerConfig:
 
     dropout_prob: float
     hidden_width: int
-    num_query_heads: int
-    num_key_value_heads: int
+    n_query_heads: int
+    n_key_value_heads: int
     parallel_attention: bool
     rotary_embeddings: Optional[RotaryEmbeddingConfig]
     use_alibi: bool
@@ -66,20 +66,20 @@ class TransformerEmbeddingLayerConfig:
         Width of the embedding representations.
     :param layer_norm_eps:
         Epsilon for layer normalization.
-    :param max_position_embeddings:
+    :param n_positions:
         Maximum length of position embeddings.
-    :param vocab_size:
+    :param n_pieces:
         Vocabulary size (number of embeddings).
-    :param type_vocab_size:
+    :param n_types:
         Token type vocabulary size (number of token type embeddings).
     """
 
     dropout_prob: float
     embedding_width: int
     layer_norm_eps: float
-    max_position_embeddings: Optional[int]
-    vocab_size: int
-    type_vocab_size: Optional[int]
+    n_positions: Optional[int]
+    n_pieces: int
+    n_types: Optional[int]
 
 
 @dataclass
@@ -119,7 +119,7 @@ class TransformerLayerConfig:
         Feed-forward layer config.
     :param layer_norm_eps:
         Epsilon for layer normalization.
-    :param num_hidden_layers:
+    :param n_hidden_layers:
         Number of hidden layers.
     """
 
@@ -127,4 +127,4 @@ class TransformerLayerConfig:
     dropout_prob: float
     feedforward: TransformerFeedForwardLayerConfig
     layer_norm_eps: float
-    num_hidden_layers: int
+    n_hidden_layers: int

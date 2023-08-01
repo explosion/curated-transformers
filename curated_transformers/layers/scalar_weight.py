@@ -17,14 +17,14 @@ class ScalarWeight(Module):
     def __init__(
         self,
         *,
-        num_layers: int,
+        n_layers: int,
         dropout_prob: float = 0.1,
         device: Optional[torch.device] = None,
     ):
         """
         Construct a scalar weighting module.
 
-        :param num_layers:
+        :param n_layers:
             Number of hidden layers.
         :param dropout_prob:
             Dropout applied to the layer weights.
@@ -34,7 +34,7 @@ class ScalarWeight(Module):
         super().__init__()
 
         self.layer_weights = torch.nn.parameter.Parameter(
-            torch.zeros(num_layers, device=device)
+            torch.zeros(n_layers, device=device)
         )
         self.scale = torch.nn.parameter.Parameter(torch.tensor((1.0,), device=device))
         self.dropout_prob = dropout_prob
@@ -49,7 +49,7 @@ class ScalarWeight(Module):
         :param layer_outputs:
             Outputs of the hidden layers.
 
-            *Shape:* ``(batch_size, seq_len, num_layers, width)``
+            *Shape:* ``(batch_size, seq_len, n_layers, width)``
         :returns:
             Weighted tensor of the layer outputs.
 

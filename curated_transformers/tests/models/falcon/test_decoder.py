@@ -8,7 +8,7 @@ from ...conftest import TORCH_DEVICES
 from ...utils import torch_assertclose
 from ..util import JITMethod, assert_decoder_output_equals_hf
 
-VOCAB_SIZE = 1024
+N_PIECES = 1024
 
 # We do not have tests to check caching/positions against upstream, there
 # are two issues with the upstream model:
@@ -126,8 +126,8 @@ def test_decoder_with_cache(torch_device, model_revision):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
-    X_rest = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
+    X_rest = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
 
     with torch.no_grad():
         Y = model(X, store_cache=True)

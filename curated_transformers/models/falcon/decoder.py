@@ -60,7 +60,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             embedding_width=config.embedding.embedding_width,
             hidden_width=config.layer.feedforward.hidden_width,
             layer_norms=EmbeddingsLayerNorms(),
-            n_pieces=config.embedding.vocab_size,
+            n_pieces=config.embedding.n_pieces,
             n_positions=None,
             n_types=None,
         )
@@ -75,7 +75,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             )
 
         self.layers = ModuleList(
-            [decoder_layer() for _ in range(config.layer.num_hidden_layers)]
+            [decoder_layer() for _ in range(config.layer.n_hidden_layers)]
         )
 
         self.output_layer_norm = LayerNorm(
@@ -118,10 +118,10 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             config.layer.layer_norm_eps,
             device=device,
         )
-        num_attention_heads = config.layer.attention.num_query_heads
+        n_attention_heads = config.layer.attention.n_query_heads
         attention_biases = (
             AttentionLinearBiases(
-                num_attention_heads=config.layer.attention.num_query_heads,
+                n_attention_heads=config.layer.attention.n_query_heads,
                 is_causal=True,
                 is_inverted=True,
             )
@@ -133,7 +133,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             QueryKeyRotaryEmbeddings(
                 fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                 base=config.layer.attention.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // num_attention_heads,
+                dims_per_head=hidden_width // n_attention_heads,
             )
             if not config.layer.attention.use_alibi
             else None
@@ -142,8 +142,8 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             attention_layer=SelfAttention(
                 attention_biases=attention_biases,
                 attention_heads=AttentionHeads.key_value_broadcast(
-                    num_query_heads=num_attention_heads,
-                    num_key_value_heads=config.layer.attention.num_key_value_heads,
+                    n_query_heads=n_attention_heads,
+                    n_key_value_heads=config.layer.attention.n_key_value_heads,
                 ),
                 dropout_prob=config.layer.attention.dropout_prob,
                 hidden_width=hidden_width,

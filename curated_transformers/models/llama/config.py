@@ -31,12 +31,12 @@ class LLaMAConfig:
         hidden_width: int = 2560,
         intermediate_width: int = 10240,
         rms_norm_eps: float = 1e-5,
-        num_query_heads: int = 32,
-        num_hidden_layers: int = 32,
-        num_key_value_heads: int = 32,
+        n_query_heads: int = 32,
+        n_hidden_layers: int = 32,
+        n_key_value_heads: int = 32,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
-        vocab_size: int = 50280,
+        n_pieces: int = 50280,
     ):
         """
         :param attention_probs_dropout_prob:
@@ -52,35 +52,35 @@ class LLaMAConfig:
             The non-linearity is applied in this intermediate width.
         :param rms_norm_eps:
             Epsilon for layer normalization.
-        :param num_query_heads:
+        :param n_query_heads:
             Number of query heads.
-        :param num_hidden_layers:
+        :param n_hidden_layers:
             Number of hidden layers.
-        :param num_key_value_heads:
+        :param n_key_value_heads:
             Number of key-value heads.
         :param rotary_embedding_base:
             Base in signifying the rotary embedding period.
         :param rotary_embedding_fraction:
             Fraction of hidden width to apply rotary embeddings to.
             Must be in ``[0,1]``.
-        :param vocab_size:
+        :param n_pieces:
             Vocabulary size (number of embeddings).
         """
 
         self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
-            vocab_size=vocab_size,
+            n_pieces=n_pieces,
             layer_norm_eps=rms_norm_eps,
-            max_position_embeddings=None,
-            type_vocab_size=None,
+            n_positions=None,
+            n_types=None,
         )
         self.layer = TransformerLayerConfig(
             attention=TransformerAttentionLayerConfig(
                 dropout_prob=attention_probs_dropout_prob,
                 hidden_width=hidden_width,
-                num_query_heads=num_query_heads,
-                num_key_value_heads=num_key_value_heads,
+                n_query_heads=n_query_heads,
+                n_key_value_heads=n_key_value_heads,
                 parallel_attention=False,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
@@ -98,5 +98,5 @@ class LLaMAConfig:
             ),
             dropout_prob=hidden_dropout_prob,
             layer_norm_eps=rms_norm_eps,
-            num_hidden_layers=num_hidden_layers,
+            n_hidden_layers=n_hidden_layers,
         )

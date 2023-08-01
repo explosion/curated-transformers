@@ -39,7 +39,7 @@ class ALBERTLayerGroup(Module):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            attention_config.num_query_heads
+                            attention_config.n_query_heads
                         ),
                         dropout_prob=attention_config.dropout_prob,
                         hidden_width=layer_config.feedforward.hidden_width,
@@ -65,7 +65,7 @@ class ALBERTLayerGroup(Module):
                     ),
                     parallel_attention=attention_config.parallel_attention,
                 )
-                for _ in range(layer_config.inner_group_num)
+                for _ in range(layer_config.n_layers_per_group)
             ]
         )
 

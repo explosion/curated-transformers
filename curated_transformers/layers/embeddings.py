@@ -164,7 +164,7 @@ class RotaryEmbeddings(Module):
         :param input:
             Input to apply the rotary embeddings to.
 
-            *Shape:* ``(batch_size, num_heads, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, n_heads, seq_len, width_per_head)``
         :param positions:
             Positions of the inputs. If no positions are
             provided, they are assumed to be ``[0, seq_len)``.
@@ -173,7 +173,7 @@ class RotaryEmbeddings(Module):
         :returns:
             Input with the rotary embeddings applied.
 
-            *Shape:* ``(batch_size, num_heads, seq_len, width_per_head)``
+            *Shape:* ``(batch_size, n_heads, seq_len, width_per_head)``
         """
         batch_size, _, seq_len, width = input.shape
 

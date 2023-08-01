@@ -17,12 +17,12 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
     "layer_norm_eps": "layer_norm_eps",
-    "max_position_embeddings": "max_position_embeddings",
-    "num_attention_heads": "num_attention_heads",
-    "num_hidden_layers": "num_hidden_layers",
+    "max_position_embeddings": "n_positions",
+    "num_attention_heads": "n_attention_heads",
+    "num_hidden_layers": "n_hidden_layers",
     "rotary_emb_base": "rotary_embedding_base",
     "rotary_pct": "rotary_embedding_fraction",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
 }
 
 

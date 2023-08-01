@@ -55,9 +55,9 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                     config.embedding.embedding_width, config.embedding.layer_norm_eps
                 )
             ),
-            n_pieces=config.embedding.vocab_size,
-            n_positions=config.embedding.max_position_embeddings,
-            n_types=config.embedding.type_vocab_size,
+            n_pieces=config.embedding.n_pieces,
+            n_positions=config.embedding.n_positions,
+            n_types=config.embedding.n_types,
         )
 
         self.max_seq_len = config.model_max_length
@@ -73,7 +73,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.layer.attention.num_query_heads
+                            config.layer.attention.n_query_heads
                         ),
                         dropout_prob=config.layer.attention.dropout_prob,
                         hidden_width=config.layer.feedforward.hidden_width,
@@ -99,7 +99,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                     ),
                     parallel_attention=config.layer.attention.parallel_attention,
                 )
-                for _ in range(config.layer.num_hidden_layers)
+                for _ in range(config.layer.n_hidden_layers)
             ]
         )
 

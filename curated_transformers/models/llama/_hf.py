@@ -10,8 +10,7 @@ from .config import LLaMAConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
-NUM_KEY_VALUE_HEADS = "num_key_value_heads"
-EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT, NUM_KEY_VALUE_HEADS]
+EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
@@ -19,9 +18,9 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "intermediate_size": "intermediate_width",
     "rms_norm_eps": "rms_norm_eps",
-    "num_attention_heads": "num_query_heads",
-    "num_hidden_layers": "num_hidden_layers",
-    "vocab_size": "vocab_size",
+    "num_attention_heads": "n_query_heads",
+    "num_hidden_layers": "n_hidden_layers",
+    "vocab_size": "n_pieces",
 }
 
 
@@ -30,8 +29,8 @@ def convert_hf_config(hf_config: Any) -> LLaMAConfig:
         "LLaMA", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
 
-    if not NUM_KEY_VALUE_HEADS in kwargs:
-        kwargs[NUM_KEY_VALUE_HEADS] = kwargs["num_query_heads"]
+    n_key_value_heads = hf_config.get("num_key_value_heads", kwargs["n_query_heads"])
+    kwargs["n_key_value_heads"] = n_key_value_heads
 
     return LLaMAConfig(
         rotary_embedding_base=10000,

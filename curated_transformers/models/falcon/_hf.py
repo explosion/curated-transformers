@@ -14,22 +14,22 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
-    "n_head": "num_query_heads",
-    "n_layer": "num_hidden_layers",
+    "n_head": "n_query_heads",
+    "n_layer": "n_hidden_layers",
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
     "alibi": "use_alibi",
 }
 
 HF_CONFIG_KEY_MAPPING_FALCON: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
     "layer_norm_epsilon": "layer_norm_eps",
-    "num_attention_heads": "num_query_heads",
-    "num_hidden_layers": "num_hidden_layers",
+    "num_attention_heads": "n_query_heads",
+    "num_hidden_layers": "n_hidden_layers",
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
     "alibi": "use_alibi",
 }
 
@@ -56,7 +56,7 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
 
     if new_decoder_architecture:
         if "n_head_kv" in hf_config:
-            kwargs["num_key_value_heads"] = hf_config["n_head_kv"]
+            kwargs["n_key_value_heads"] = hf_config["n_head_kv"]
         else:
             raise ValueError(
                 f"Hugging Face Falcon config with new decoder architecture must contain `n_head_kv`"
@@ -64,9 +64,9 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
     else:
         kwargs["new_decoder_architecture"] = False
         if hf_config.get("multi_query", False):
-            kwargs["num_key_value_heads"] = 1
+            kwargs["n_key_value_heads"] = 1
         else:
-            kwargs["num_key_value_heads"] = kwargs["num_query_heads"]
+            kwargs["n_key_value_heads"] = kwargs["n_query_heads"]
 
     if "alibi" in hf_config and hf_config["alibi"]:
         raise ValueError("Falcon models with ALiBi are currently not supported")
@@ -88,16 +88,16 @@ def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
 
     if new_decoder_architecture:
         if "num_kv_heads" in hf_config:
-            kwargs["num_key_value_heads"] = hf_config["num_kv_heads"]
+            kwargs["n_key_value_heads"] = hf_config["num_kv_heads"]
         else:
             raise ValueError(
                 f"Hugging Face Falcon config with new decoder architecture must contain `num_kv_heads`"
             )
     else:
         if hf_config.get("multi_query", False):
-            kwargs["num_key_value_heads"] = 1
+            kwargs["n_key_value_heads"] = 1
         else:
-            kwargs["num_key_value_heads"] = kwargs["num_query_heads"]
+            kwargs["n_key_value_heads"] = kwargs["n_query_heads"]
 
     return FalconConfig(
         rotary_embedding_base=10000,

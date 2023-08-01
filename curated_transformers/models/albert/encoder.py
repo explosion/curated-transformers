@@ -2,9 +2,14 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
+from torch.nn import Dropout, LayerNorm
 
 from ...layers.attention import AttentionMask
-from ..bert.embeddings import BERTEmbeddings
+from ...layers.transformer import (
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
+    TransformerEmbeddings,
+)
 from ..hf_hub import FromHFHub
 from ..module import EncoderModule
 from ..output import ModelOutput
@@ -47,7 +52,21 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
                 f"({num_hidden_groups})"
             )
 
-        self.embeddings = BERTEmbeddings(config.embedding, config.layer, device=device)
+        self.embeddings = TransformerEmbeddings(
+            dropouts=EmbeddingsDropouts(
+                embed_output_dropout=Dropout(config.embedding.dropout_prob)
+            ),
+            embedding_width=config.embedding.embedding_width,
+            hidden_width=config.layer.feedforward.hidden_width,
+            layer_norms=EmbeddingsLayerNorms(
+                embed_output_layer_norm=LayerNorm(
+                    config.embedding.embedding_width, config.embedding.layer_norm_eps
+                )
+            ),
+            n_pieces=config.embedding.vocab_size,
+            n_positions=config.embedding.max_position_embeddings,
+            n_types=config.embedding.type_vocab_size,
+        )
 
         # Parameters are shared by groups of layers.
         self.groups = torch.nn.ModuleList(
@@ -59,11 +78,13 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
 
     def forward(
         self,
-        input_ids: Tensor,
+        piece_ids: Tensor,
         attention_mask: Optional[AttentionMask] = None,
-        token_type_ids: Optional[Tensor] = None,
+        *,
+        type_ids: Optional[Tensor] = None,
+        positions: Optional[Tensor] = None,
     ) -> ModelOutput:
-        embeddings = self.embeddings(input_ids, token_type_ids, None)
+        embeddings = self.embeddings(piece_ids, positions=positions, type_ids=type_ids)
         layer_output = embeddings
 
         layers_per_group = self.num_hidden_layers // len(self.groups)

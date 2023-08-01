@@ -10,11 +10,11 @@ from .config import BERTConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {
-        "embeddings.word_embeddings.weight": "embeddings.word_embeddings.weight",
-        "embeddings.token_type_embeddings.weight": "embeddings.token_type_embeddings.weight",
+        "embeddings.word_embeddings.weight": "embeddings.piece_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.type_embeddings.weight",
         "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
-        "embeddings.LayerNorm.weight": "embeddings.layer_norm.weight",
-        "embeddings.LayerNorm.bias": "embeddings.layer_norm.bias",
+        "embeddings.LayerNorm.weight": "embeddings.embed_output_layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.embed_output_layer_norm.bias",
     }
 )
 

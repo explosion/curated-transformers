@@ -75,7 +75,7 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
         name = re.sub(r"final_layer_norm\.", r"output_layer_norm.", name)
 
         # Embeddings
-        name = re.sub(r"embed_in\.", r"embeddings.", name)
+        name = re.sub(r"embed_in\.", r"embeddings.piece_embeddings.", name)
         name = re.sub(r"embed_out\.", r"output_embeddings.", name)
 
         out[name] = parameter

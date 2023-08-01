@@ -10,11 +10,11 @@ from .config import RoBERTaConfig
 
 HF_KEY_TO_CURATED_KEY = MappingProxyType(
     {
-        "embeddings.word_embeddings.weight": "embeddings.inner.word_embeddings.weight",
-        "embeddings.token_type_embeddings.weight": "embeddings.inner.token_type_embeddings.weight",
-        "embeddings.position_embeddings.weight": "embeddings.inner.position_embeddings.weight",
-        "embeddings.LayerNorm.weight": "embeddings.inner.layer_norm.weight",
-        "embeddings.LayerNorm.bias": "embeddings.inner.layer_norm.bias",
+        "embeddings.word_embeddings.weight": "embeddings.piece_embeddings.weight",
+        "embeddings.token_type_embeddings.weight": "embeddings.type_embeddings.weight",
+        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight": "embeddings.embed_output_layer_norm.weight",
+        "embeddings.LayerNorm.bias": "embeddings.embed_output_layer_norm.bias",
     }
 )
 

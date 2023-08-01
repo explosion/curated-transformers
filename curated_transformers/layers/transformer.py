@@ -3,10 +3,194 @@ from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Identity, Module
+from torch.nn import Dropout, Embedding, Identity, LayerNorm, Linear, Module
 
 from .attention import AttentionMask, KeyValueCache, SelfAttention
 from .feedforward import PointwiseFeedForward
+
+
+@dataclass
+class EmbeddingsLayerNorms:
+    """
+    Layer normalizations used in a transformer embedding layer.
+
+    By default, all the normalizations are disabled by setting the layer
+    normalization to the Torch ``Identity`` module. Therefore, only
+    normalizations that are needed have to be set.
+
+    :param embed_output_layer_norm:
+        Normalization of the embeddings.
+    :param proj_output_layer_norm:
+        Normalization of the output of the projection layer.
+    """
+
+    embed_output_layer_norm: Module = Identity()
+    proj_output_layer_norm: Module = Identity()
+
+
+@dataclass
+class EmbeddingsDropouts:
+    """
+    Dropouts used in a transformer embedding layer.
+
+    By default, all the dropouts are disabled by setting the dropout
+    to the Torch ``Identity`` module. Therefore, only dropouts that are
+    needed have to be set.
+
+    :param embed_output_dropout:
+        Dropout of the embeddings.
+    :param proj_output_dropout:
+        Dropout of the output of the projection layer.
+    """
+
+    embed_output_dropout: Module = Identity()
+    proj_output_dropout: Module = Identity()
+
+
+class TransformerEmbeddings(Module):
+    """
+    Transformer embeddings layer.
+
+    This is a generic transformer embedding layer. The layer always has piece
+    embeddings and can optionally have position embeddings, type embeddings,
+    and a projection of embeddings to the model's hidden size.
+    """
+
+    def __init__(
+        self,
+        *,
+        dropouts: EmbeddingsDropouts,
+        embedding_width: int,
+        hidden_width: int,
+        layer_norms: EmbeddingsLayerNorms,
+        n_pieces: int,
+        n_positions: Optional[int],
+        n_types: Optional[int],
+        device: Optional[torch.device] = None,
+    ):
+        """
+        Construct an embeddings layer.
+
+        :param dropouts:
+            Dropouts to use in the embeddings layer.
+        :param embedding_width:
+            Width of the embeddings.
+        :param hidden_width:
+            Hidden width of the transformer. If this width differs from
+            ``embedding_width``, a projection layer is added to ensure
+            that the output of the embeddings layer has the same width as the
+            transformer.
+        :param layer_norms:
+            Layer norms to use in the embeddings layer.
+        :param n_pieces:
+            Number of piece embeddings.
+        :param n_positions:
+            Number of position embeddings. Position embeddings are disabled
+            by using ``None``. Position embeddings can be used to inform the
+            model of input order.
+        :param n_types:
+            Number of type embeddings. Type embeddings are disabled by using
+            ``None``. Type embeddings can be used to inform the model of the
+            spans of different sequences in the input.
+        :param device:
+            Device on which the module is to be initialized.
+        """
+        super().__init__()
+
+        self.piece_embeddings = Embedding(
+            num_embeddings=n_pieces,
+            embedding_dim=embedding_width,
+            device=device,
+        )
+
+        if n_types is None:
+            self.type_embeddings = None
+        else:
+            self.type_embeddings = Embedding(
+                num_embeddings=n_types,
+                embedding_dim=embedding_width,
+                device=device,
+            )
+
+        if n_positions is None:
+            self.position_embeddings = None
+        else:
+            self.position_embeddings = Embedding(
+                num_embeddings=n_positions,
+                embedding_dim=embedding_width,
+                device=device,
+            )
+
+        if embedding_width != hidden_width:
+            self.projection: Linear = Linear(
+                embedding_width,
+                hidden_width,
+                device=device,
+            )
+        else:
+            self.projection = None  # type: ignore
+
+        self.embed_output_layer_norm = layer_norms.embed_output_layer_norm
+        self.proj_output_layer_norm = layer_norms.proj_output_layer_norm
+
+        self.embed_output_dropout = dropouts.embed_output_dropout
+        self.proj_output_dropout = dropouts.proj_output_dropout
+
+    def _get_positions(self, x: Tensor) -> Tensor:
+        return torch.arange(x.shape[1], device=x.device).expand(1, -1)
+
+    def _get_type_ids(self, x: Tensor) -> Tensor:
+        return torch.zeros_like(x)
+
+    def forward(
+        self,
+        piece_ids: Tensor,
+        *,
+        positions: Optional[Tensor] = None,
+        type_ids: Optional[Tensor] = None,
+    ) -> Tensor:
+        """
+        Apply the embedding layer to the piece identifiers.
+
+        :param piece_ids:
+            Piece identifiers to embed.
+
+            *Shape:* ``(batch_size, seq_len)``
+        :param positions:
+            Positional with which to fetch the positional embeddings for the
+            sequences.
+
+            *Shape:* ``(batch_size, seq_len)``
+        :param type_ids:
+            Type identifiers to indicate the spans of different
+            sequences in the input. Useful when performing tasks like
+            sequence classification and question answering.
+
+            *Shape:* ``(batch_size, seq_len)``
+        """
+
+        embeddings = self.piece_embeddings(piece_ids)
+
+        if self.type_embeddings is not None:
+            if type_ids is None:
+                type_ids = self._get_type_ids(piece_ids)
+            embeddings += self.type_embeddings(type_ids)
+
+        if self.position_embeddings is not None:
+            if positions is None:
+                positions = self._get_positions(piece_ids)
+            position_embeddings = self.position_embeddings(positions)
+            embeddings += position_embeddings
+
+        embeddings = self.embed_output_layer_norm(embeddings)
+        embeddings = self.embed_output_dropout(embeddings)
+
+        if self.projection is not None:
+            embeddings = self.projection(embeddings)
+            embeddings = self.proj_output_layer_norm(embeddings)
+            return self.proj_output_dropout(embeddings)
+        else:
+            return embeddings
 
 
 @dataclass

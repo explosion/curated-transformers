@@ -116,7 +116,7 @@ def test_torch_sdp_causal_with_mask(torch_device):
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_attention_linear_biases(torch_device):
     pow2_slopes = AttentionLinearBiases(
-        num_attention_heads=8, is_causal=False, is_inverted=False
+        n_attention_heads=8, is_causal=False, is_inverted=False
     ).slopes
     torch_assertclose(
         pow2_slopes.to(device=torch_device),
@@ -137,7 +137,7 @@ def test_attention_linear_biases(torch_device):
         ),
     )
     non_pow2_slopes = AttentionLinearBiases(
-        num_attention_heads=12, is_causal=False, is_inverted=False
+        n_attention_heads=12, is_causal=False, is_inverted=False
     ).slopes
     torch_assertclose(
         non_pow2_slopes.to(device=torch_device),
@@ -163,7 +163,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_causal = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=True, is_inverted=False
+        n_attention_heads=4, is_causal=True, is_inverted=False
     )
     torch_assertclose(
         alibi_causal(attention_scores=torch.zeros((1, 4, 1, 3), device=torch_device)),
@@ -181,7 +181,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_non_causal = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=False, is_inverted=False
+        n_attention_heads=4, is_causal=False, is_inverted=False
     )
     torch_assertclose(
         alibi_non_causal(
@@ -217,7 +217,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_causal_inverted = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=True, is_inverted=True
+        n_attention_heads=4, is_causal=True, is_inverted=True
     )
     torch_assertclose(
         alibi_causal_inverted(
@@ -237,7 +237,7 @@ def test_attention_linear_biases(torch_device):
     )
 
     alibi_non_causal_inverted = AttentionLinearBiases(
-        num_attention_heads=4, is_causal=False, is_inverted=True
+        n_attention_heads=4, is_causal=False, is_inverted=True
     )
     torch_assertclose(
         alibi_non_causal_inverted(

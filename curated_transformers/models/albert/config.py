@@ -17,21 +17,21 @@ class ALBERTLayerConfig(TransformerLayerConfig):
     .. _Lan et al., 2022: https://arxiv.org/abs/1909.11942
     """
 
-    inner_group_num: int
-    num_hidden_groups: int
+    n_layers_per_group: int
+    n_hidden_groups: int
 
     def __init__(
-        self, *args, inner_group_num: int = 1, num_hidden_groups: int = 1, **kwargs
+        self, *args, n_layers_per_group: int = 1, n_hidden_groups: int = 1, **kwargs
     ):
         """
-        :param inner_group_num:
+        :param n_layers_per_group:
             Number of layers per layer group.
-        :param num_hidden_groups:
+        :param n_hidden_groups:
             Number of hidden groups.
         """
         super(ALBERTLayerConfig, self).__init__(*args, **kwargs)
-        self.inner_group_num = inner_group_num
-        self.num_hidden_groups = num_hidden_groups
+        self.n_layers_per_group = n_layers_per_group
+        self.n_hidden_groups = n_hidden_groups
 
 
 @dataclass
@@ -49,11 +49,11 @@ class ALBERTConfig:
         *,
         embedding_width: int = 128,
         hidden_width: int = 768,
-        inner_group_num: int = 1,
+        n_layers_per_group: int = 1,
         intermediate_width: int = 3072,
-        num_attention_heads: int = 12,
-        num_hidden_layers: int = 12,
-        num_hidden_groups: int = 1,
+        n_attention_heads: int = 12,
+        n_hidden_layers: int = 12,
+        n_hidden_groups: int = 1,
         attention_probs_dropout_prob: float = 0.0,
         hidden_dropout_prob: float = 0.0,
         activation: Activation = Activation.GELUNew,
@@ -68,16 +68,16 @@ class ALBERTConfig:
             Width of the embedding representations.
         :param hidden_width:
             Width of the transformer hidden layers.
-        :param inner_group_num:
+        :param n_layers_per_group:
             Number of layers per layer group.
         :param intermediate_width:
             Width of the intermediate projection layer in the
             point-wise feed-forward layer.
-        :param num_attention_heads:
+        :param n_attention_heads:
             Number of self-attention heads.
-        :param num_hidden_layers:
+        :param n_hidden_layers:
             Number of hidden layers.
-        :param num_hidden_groups:
+        :param n_hidden_groups:
             Number of hidden groups.
         :param attention_probs_dropout_prob:
             Dropout probabilty of the self-attention layers.
@@ -109,8 +109,8 @@ class ALBERTConfig:
             attention=TransformerAttentionLayerConfig(
                 hidden_width=hidden_width,
                 dropout_prob=attention_probs_dropout_prob,
-                num_key_value_heads=num_attention_heads,
-                num_query_heads=num_attention_heads,
+                n_key_value_heads=n_attention_heads,
+                n_query_heads=n_attention_heads,
                 parallel_attention=False,
                 rotary_embeddings=None,
                 use_alibi=False,
@@ -123,10 +123,10 @@ class ALBERTConfig:
                 use_bias=True,
                 use_gate=False,
             ),
-            num_hidden_layers=num_hidden_layers,
+            n_hidden_layers=n_hidden_layers,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
-            inner_group_num=inner_group_num,
-            num_hidden_groups=num_hidden_groups,
+            n_layers_per_group=n_layers_per_group,
+            n_hidden_groups=n_hidden_groups,
         )
         self.model_max_length = model_max_length

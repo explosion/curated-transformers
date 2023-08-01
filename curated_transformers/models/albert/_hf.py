@@ -27,13 +27,13 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_act": ("activation", Activation),
     "hidden_dropout_prob": "hidden_dropout_prob",
     "hidden_size": "hidden_width",
-    "inner_group_num": "inner_group_num",
+    "inner_group_num": "n_layers_per_group",
     "intermediate_size": "intermediate_width",
     "layer_norm_eps": "layer_norm_eps",
     "max_position_embeddings": "max_position_embeddings",
-    "num_attention_heads": "num_attention_heads",
-    "num_hidden_groups": "num_hidden_groups",
-    "num_hidden_layers": "num_hidden_layers",
+    "num_attention_heads": "n_attention_heads",
+    "num_hidden_groups": "n_hidden_groups",
+    "num_hidden_layers": "n_hidden_layers",
     "type_vocab_size": "type_vocab_size",
     "vocab_size": "vocab_size",
 }
@@ -52,8 +52,8 @@ def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
     #
     # encoder.albert_layer_groups.{hidden_group}.albert_layers.{inner_layer}.{param_name}
     #
-    # hidden_group is in [0, num_hidden_group)
-    # inner_layer is in [0, inner_group_num)
+    # hidden_group is in [0, n_hidden_group)
+    # inner_layer is in [0, n_layers_per_group)
 
     out = {}
     for name, parameter in stripped_params.items():

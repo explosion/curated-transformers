@@ -28,8 +28,8 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "intermediate_size": "intermediate_width",
     "layer_norm_eps": "layer_norm_eps",
     "max_position_embeddings": "max_position_embeddings",
-    "num_attention_heads": "num_attention_heads",
-    "num_hidden_layers": "num_hidden_layers",
+    "num_attention_heads": "n_attention_heads",
+    "num_hidden_layers": "n_hidden_layers",
     "type_vocab_size": "type_vocab_size",
     "vocab_size": "vocab_size",
 }

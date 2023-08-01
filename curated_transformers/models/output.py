@@ -39,7 +39,7 @@ class ModelOutput(DataclassAsTuple):
         Return the hidden representations of a given layer.
 
         :param idx:
-            Layer index. Must be in ``[0, num_hidden_layers)``.
+            Layer index. Must be in ``[0, n_hidden_layers)``.
         :returns:
             Hidden representation of the layer.
 

@@ -62,10 +62,10 @@ class LLaMADecoder(TransformerDecoder, FromHFHub):
         )
 
         hidden_width = config.layer.feedforward.hidden_width
-        num_query_heads = config.layer.attention.num_query_heads
+        n_query_heads = config.layer.attention.n_query_heads
         attention_heads = AttentionHeads.key_value_broadcast(
-            num_query_heads=num_query_heads,
-            num_key_value_heads=config.layer.attention.num_key_value_heads,
+            n_query_heads=n_query_heads,
+            n_key_value_heads=config.layer.attention.n_key_value_heads,
         )
         layer_norm = partial(
             RMSNorm,
@@ -88,7 +88,7 @@ class LLaMADecoder(TransformerDecoder, FromHFHub):
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                             base=config.layer.attention.rotary_embeddings.rotary_base,
-                            dims_per_head=hidden_width // num_query_heads,
+                            dims_per_head=hidden_width // n_query_heads,
                         ),
                         use_bias=config.layer.attention.use_bias,
                         device=device,
@@ -110,7 +110,7 @@ class LLaMADecoder(TransformerDecoder, FromHFHub):
                     ),
                     parallel_attention=config.layer.attention.parallel_attention,
                 )
-                for _ in range(config.layer.num_hidden_layers)
+                for _ in range(config.layer.n_hidden_layers)
             ]
         )
 

@@ -42,14 +42,14 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         super().__init__()
 
         self.max_seq_len = config.model_max_length
-        self.num_hidden_layers = config.layer.num_hidden_layers
-        num_hidden_groups = config.layer.num_hidden_groups
+        self.n_hidden_layers = config.layer.n_hidden_layers
+        n_hidden_groups = config.layer.n_hidden_groups
 
-        if self.num_hidden_layers % num_hidden_groups != 0:
+        if self.n_hidden_layers % n_hidden_groups != 0:
             raise ValueError(
-                f"The number of hidden layers ({self.num_hidden_layers}) in the "
+                f"The number of hidden layers ({self.n_hidden_layers}) in the "
                 "ALBERT encoder must be divisable by number of hidden groups "
-                f"({num_hidden_groups})"
+                f"({n_hidden_groups})"
             )
 
         self.embeddings = TransformerEmbeddings(
@@ -72,7 +72,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         self.groups = torch.nn.ModuleList(
             [
                 ALBERTLayerGroup(config.layer, device=device)
-                for _ in range(num_hidden_groups)
+                for _ in range(n_hidden_groups)
             ]
         )
 
@@ -87,7 +87,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         embeddings = self.embeddings(piece_ids, positions=positions, type_ids=type_ids)
         layer_output = embeddings
 
-        layers_per_group = self.num_hidden_layers // len(self.groups)
+        layers_per_group = self.n_hidden_layers // len(self.groups)
 
         layer_outputs = []
         for group in self.groups:

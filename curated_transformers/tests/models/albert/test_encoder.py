@@ -8,7 +8,7 @@ from ..util import JITMethod, assert_encoder_output_equals_hf
 
 
 def test_rejects_incorrect_number_of_groups():
-    config = ALBERTConfig(num_hidden_groups=5)
+    config = ALBERTConfig(n_hidden_groups=5)
     with pytest.raises(ValueError, match=r"must be divisable"):
         ALBERTEncoder(config)
 

@@ -41,10 +41,10 @@ class OldFalconDecoderLayer(Module):
         self.parallel_attention = attention_config.parallel_attention
 
         hidden_width = layer_config.feedforward.hidden_width
-        num_attention_heads = attention_config.num_query_heads
+        n_attention_heads = attention_config.n_query_heads
         attention_biases = (
             AttentionLinearBiases(
-                num_attention_heads=attention_config.num_query_heads,
+                n_attention_heads=attention_config.n_query_heads,
                 is_causal=True,
                 is_inverted=True,
             )
@@ -56,7 +56,7 @@ class OldFalconDecoderLayer(Module):
             QueryKeyRotaryEmbeddings(
                 fraction=attention_config.rotary_embeddings.rotary_fraction,
                 base=attention_config.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // num_attention_heads,
+                dims_per_head=hidden_width // n_attention_heads,
             )
             if not attention_config.use_alibi
             else None
@@ -66,12 +66,12 @@ class OldFalconDecoderLayer(Module):
             dropout_prob=attention_config.dropout_prob,
             hidden_width=hidden_width,
             attention_heads=AttentionHeads.key_value_broadcast(
-                num_query_heads=attention_config.num_query_heads,
-                num_key_value_heads=attention_config.num_key_value_heads,
+                n_query_heads=attention_config.n_query_heads,
+                n_key_value_heads=attention_config.n_key_value_heads,
             ),
             rotary_embeds=rotary_embeds,
             qkv_mode=QkvMode.MERGED_SPLIT_AFTER
-            if attention_config.num_key_value_heads == 1
+            if attention_config.n_key_value_heads == 1
             else QkvMode.MERGED_SPLIT_BEFORE,
             use_bias=attention_config.use_bias,
             device=device,

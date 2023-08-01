@@ -60,7 +60,7 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
         )
 
         hidden_width = config.layer.feedforward.hidden_width
-        num_attention_heads = config.layer.attention.num_query_heads
+        n_attention_heads = config.layer.attention.n_query_heads
         layer_norm = partial(
             LayerNorm,
             hidden_width,
@@ -75,14 +75,14 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_heads=AttentionHeads.uniform(num_attention_heads),
+                        attention_heads=AttentionHeads.uniform(n_attention_heads),
                         dropout_prob=config.layer.attention.dropout_prob,
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                             base=config.layer.attention.rotary_embeddings.rotary_base,
-                            dims_per_head=hidden_width // num_attention_heads,
+                            dims_per_head=hidden_width // n_attention_heads,
                         ),
                         use_bias=config.layer.attention.use_bias,
                         device=device,
@@ -104,7 +104,7 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
                     ),
                     parallel_attention=config.layer.attention.parallel_attention,
                 )
-                for _ in range(config.layer.num_hidden_layers)
+                for _ in range(config.layer.n_hidden_layers)
             ]
         )
 

@@ -29,9 +29,9 @@ class RoBERTaConfig(BERTConfig):
         :param intermediate_width:
             Width of the intermediate projection layer in the
             point-wise feed-forward layer.
-        :param num_attention_heads:
+        :param n_attention_heads:
             Number of self-attention heads.
-        :param num_hidden_layers:
+        :param n_hidden_layers:
             Number of hidden layers.
         :param attention_probs_dropout_prob:
             Dropout probabilty of the self-attention layers.

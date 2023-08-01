@@ -27,8 +27,8 @@ class BERTConfig:
         embedding_width: int = 768,
         hidden_width: int = 768,
         intermediate_width: int = 3072,
-        num_attention_heads: int = 12,
-        num_hidden_layers: int = 12,
+        n_attention_heads: int = 12,
+        n_hidden_layers: int = 12,
         attention_probs_dropout_prob: float = 0.1,
         hidden_dropout_prob: float = 0.1,
         activation: Activation = Activation.GELU,
@@ -46,9 +46,9 @@ class BERTConfig:
         :param intermediate_width:
             Width of the intermediate projection layer in the
             point-wise feed-forward layer.
-        :param num_attention_heads:
+        :param n_attention_heads:
             Number of self-attention heads.
-        :param num_hidden_layers:
+        :param n_hidden_layers:
             Number of hidden layers.
         :param attention_probs_dropout_prob:
             Dropout probabilty of the self-attention layers.
@@ -80,8 +80,8 @@ class BERTConfig:
             attention=TransformerAttentionLayerConfig(
                 hidden_width=hidden_width,
                 dropout_prob=attention_probs_dropout_prob,
-                num_key_value_heads=num_attention_heads,
-                num_query_heads=num_attention_heads,
+                n_key_value_heads=n_attention_heads,
+                n_query_heads=n_attention_heads,
                 parallel_attention=False,
                 rotary_embeddings=None,
                 use_alibi=False,
@@ -94,7 +94,7 @@ class BERTConfig:
                 use_bias=True,
                 use_gate=False,
             ),
-            num_hidden_layers=num_hidden_layers,
+            n_hidden_layers=n_hidden_layers,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )

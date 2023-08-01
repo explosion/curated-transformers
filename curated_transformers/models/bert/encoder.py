@@ -73,7 +73,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.layer.attention.num_query_heads
+                            config.layer.attention.n_query_heads
                         ),
                         dropout_prob=config.layer.attention.dropout_prob,
                         hidden_width=config.layer.feedforward.hidden_width,
@@ -99,7 +99,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
                     ),
                     parallel_attention=config.layer.attention.parallel_attention,
                 )
-                for _ in range(config.layer.num_hidden_layers)
+                for _ in range(config.layer.n_hidden_layers)
             ]
         )
 

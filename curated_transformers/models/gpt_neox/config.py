@@ -32,8 +32,8 @@ class GPTNeoXConfig:
         layer_norm_eps: float = 1e-5,
         max_position_embeddings: int = 2048,
         model_max_length: int = 2048,
-        num_attention_heads: int = 32,
-        num_hidden_layers: int = 32,
+        n_attention_heads: int = 32,
+        n_hidden_layers: int = 32,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
         vocab_size: int = 50280,
@@ -52,9 +52,9 @@ class GPTNeoXConfig:
             is applied in this intermediate width.
         :param layer_norm_eps:
             Epsilon for layer normalization.
-        :param num_attention_heads:
+        :param n_attention_heads:
             Number of attention heads.
-        :param num_hidden_layers:
+        :param n_hidden_layers:
             Number of hidden layers.
         :param rotary_embedding_base:
             Base in signifying the rotary embedding period.
@@ -82,8 +82,8 @@ class GPTNeoXConfig:
             attention=TransformerAttentionLayerConfig(
                 dropout_prob=attention_probs_dropout_prob,
                 hidden_width=hidden_width,
-                num_query_heads=num_attention_heads,
-                num_key_value_heads=num_attention_heads,
+                n_query_heads=n_attention_heads,
+                n_key_value_heads=n_attention_heads,
                 parallel_attention=True,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
@@ -101,5 +101,5 @@ class GPTNeoXConfig:
             ),
             dropout_prob=hidden_dropout_prob,
             layer_norm_eps=layer_norm_eps,
-            num_hidden_layers=num_hidden_layers,
+            n_hidden_layers=n_hidden_layers,
         )

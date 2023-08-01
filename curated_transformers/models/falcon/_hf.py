@@ -18,7 +18,7 @@ HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callabl
     "n_layer": "n_hidden_layers",
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
     "alibi": "use_alibi",
 }
 
@@ -29,7 +29,7 @@ HF_CONFIG_KEY_MAPPING_FALCON: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "num_hidden_layers": "n_hidden_layers",
     "parallel_attn": "parallel_attention",
     "bias": "use_bias",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
     "alibi": "use_alibi",
 }
 

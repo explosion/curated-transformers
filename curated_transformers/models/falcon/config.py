@@ -38,7 +38,7 @@ class FalconConfig:
         rotary_embedding_fraction: float = 0.25,
         use_alibi: bool = False,
         use_bias: bool = False,
-        vocab_size: int = 50280,
+        n_pieces: int = 50280,
     ):
         """
         :param attention_probs_dropout_prob:
@@ -66,11 +66,11 @@ class FalconConfig:
             Use ALiBi linear biases in self-attention.
         :param use_bias:
             Use bias in linear layers.
-        :param vocab_size:
+        :param n_pieces:
             Vocabulary size (number of embeddings).
         """
 
-        # TODO: max_position_embeddings and model_max_length are currently
+        # TODO: n_positions and model_max_length are currently
         #       not used. We may want to limit the rotary embeddings to these
         #       values in the future. We should check empirically if the auto
         #       resizing in rotary embeddings makes sense.
@@ -78,10 +78,10 @@ class FalconConfig:
         self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
-            vocab_size=vocab_size,
+            n_pieces=n_pieces,
             layer_norm_eps=layer_norm_eps,
-            max_position_embeddings=None,
-            type_vocab_size=None,
+            n_positions=None,
+            n_types=None,
         )
         self.layer = TransformerLayerConfig(
             attention=TransformerAttentionLayerConfig(

@@ -60,7 +60,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             embedding_width=config.embedding.embedding_width,
             hidden_width=config.layer.feedforward.hidden_width,
             layer_norms=EmbeddingsLayerNorms(),
-            n_pieces=config.embedding.vocab_size,
+            n_pieces=config.embedding.n_pieces,
             n_positions=None,
             n_types=None,
         )

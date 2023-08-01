@@ -36,7 +36,7 @@ class LLaMAConfig:
         n_key_value_heads: int = 32,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
-        vocab_size: int = 50280,
+        n_pieces: int = 50280,
     ):
         """
         :param attention_probs_dropout_prob:
@@ -63,17 +63,17 @@ class LLaMAConfig:
         :param rotary_embedding_fraction:
             Fraction of hidden width to apply rotary embeddings to.
             Must be in ``[0,1]``.
-        :param vocab_size:
+        :param n_pieces:
             Vocabulary size (number of embeddings).
         """
 
         self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
-            vocab_size=vocab_size,
+            n_pieces=n_pieces,
             layer_norm_eps=rms_norm_eps,
-            max_position_embeddings=None,
-            type_vocab_size=None,
+            n_positions=None,
+            n_types=None,
         )
         self.layer = TransformerLayerConfig(
             attention=TransformerAttentionLayerConfig(

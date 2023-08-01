@@ -36,8 +36,8 @@ class WordPieceTokenizer(LegacyTokenizer):
 
         # We'll build up the vocab, verifying that the user provided ids for
         # all tokens as a sanity check.
-        vocab_size = max(vocab.values()) + 1
-        pieces: List[Optional[str]] = [None] * vocab_size
+        n_pieces = max(vocab.values()) + 1
+        pieces: List[Optional[str]] = [None] * n_pieces
         for piece, idx in vocab.items():
             pieces[idx] = piece
 

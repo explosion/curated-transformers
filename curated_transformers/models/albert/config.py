@@ -57,9 +57,9 @@ class ALBERTConfig:
         attention_probs_dropout_prob: float = 0.0,
         hidden_dropout_prob: float = 0.0,
         activation: Activation = Activation.GELUNew,
-        vocab_size: int = 30000,
-        type_vocab_size: int = 2,
-        max_position_embeddings: int = 512,
+        n_pieces: int = 30000,
+        n_types: int = 2,
+        n_positions: int = 512,
         model_max_length: int = 512,
         layer_norm_eps: float = 1e-12,
     ):
@@ -86,11 +86,11 @@ class ALBERTConfig:
             embedding layers.
         :param activation:
             Activation used by the pointwise feed-forward layers.
-        :param vocab_size:
+        :param n_pieces:
             Size of main vocabulary.
-        :param type_vocab_size:
+        :param n_types:
             Size of token type vocabulary.
-        :param max_position_embeddings:
+        :param n_positions:
             Maximum length of position embeddings.
         :param model_max_length:
             Maximum length of model inputs.
@@ -99,9 +99,9 @@ class ALBERTConfig:
         """
         self.embedding = TransformerEmbeddingLayerConfig(
             embedding_width=embedding_width,
-            vocab_size=vocab_size,
-            type_vocab_size=type_vocab_size,
-            max_position_embeddings=max_position_embeddings,
+            n_pieces=n_pieces,
+            n_types=n_types,
+            n_positions=n_positions,
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )

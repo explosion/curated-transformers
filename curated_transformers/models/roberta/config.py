@@ -15,10 +15,10 @@ class RoBERTaConfig(BERTConfig):
         self,
         *args,
         layer_norm_eps=1e-05,
-        max_position_embeddings=514,
+        n_positions=514,
         padding_id=1,
-        type_vocab_size=1,
-        vocab_size=50265,
+        n_types=1,
+        n_pieces=50265,
         **kwargs
     ):
         """
@@ -40,11 +40,11 @@ class RoBERTaConfig(BERTConfig):
             embedding layers.
         :param activation:
             Activation used by the pointwise feed-forward layers.
-        :param vocab_size:
+        :param n_pieces:
             Size of main vocabulary.
-        :param type_vocab_size:
+        :param n_types:
             Size of token type vocabulary.
-        :param max_position_embeddings:
+        :param n_positions:
             Maximum length of position embeddings.
         :param model_max_length:
             Maximum length of model inputs.
@@ -56,9 +56,9 @@ class RoBERTaConfig(BERTConfig):
         super(RoBERTaConfig, self).__init__(
             *args,
             layer_norm_eps=layer_norm_eps,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-            vocab_size=vocab_size,
+            n_positions=n_positions,
+            n_types=n_types,
+            n_pieces=n_pieces,
             **kwargs
         )
 

@@ -63,9 +63,9 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
                     config.embedding.embedding_width, config.embedding.layer_norm_eps
                 )
             ),
-            n_pieces=config.embedding.vocab_size,
-            n_positions=config.embedding.max_position_embeddings,
-            n_types=config.embedding.type_vocab_size,
+            n_pieces=config.embedding.n_pieces,
+            n_positions=config.embedding.n_positions,
+            n_types=config.embedding.n_types,
         )
 
         # Parameters are shared by groups of layers.

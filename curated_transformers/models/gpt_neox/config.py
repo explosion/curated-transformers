@@ -30,13 +30,13 @@ class GPTNeoXConfig:
         hidden_width: int = 2560,
         intermediate_width: int = 10240,
         layer_norm_eps: float = 1e-5,
-        max_position_embeddings: int = 2048,
+        n_positions: int = 2048,
         model_max_length: int = 2048,
         n_attention_heads: int = 32,
         n_hidden_layers: int = 32,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
-        vocab_size: int = 50280,
+        n_pieces: int = 50280,
     ):
         """
         :param attention_probs_dropout_prob:
@@ -61,11 +61,11 @@ class GPTNeoXConfig:
         :param rotary_embedding_fraction:
             Fraction of hidden width to apply rotary embeddings to.
             Must be in ``[0,1]``.
-        :param vocab_size:
+        :param n_pieces:
             Vocabulary size (number of embeddings).
         """
 
-        # TODO: max_position_embeddings and model_max_length are currently
+        # TODO: n_positions and model_max_length are currently
         #       not used. We may want to limit the rotary embeddings to these
         #       values in the future. We should check empirically if the auto
         #       resizing in rotary embeddings makes sense.
@@ -73,10 +73,10 @@ class GPTNeoXConfig:
         self.embedding = TransformerEmbeddingLayerConfig(
             dropout_prob=hidden_dropout_prob,
             embedding_width=hidden_width,
-            vocab_size=vocab_size,
+            n_pieces=n_pieces,
             layer_norm_eps=layer_norm_eps,
-            max_position_embeddings=None,
-            type_vocab_size=None,
+            n_positions=None,
+            n_types=None,
         )
         self.layer = TransformerLayerConfig(
             attention=TransformerAttentionLayerConfig(

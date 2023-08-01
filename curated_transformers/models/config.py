@@ -66,20 +66,20 @@ class TransformerEmbeddingLayerConfig:
         Width of the embedding representations.
     :param layer_norm_eps:
         Epsilon for layer normalization.
-    :param max_position_embeddings:
+    :param n_positions:
         Maximum length of position embeddings.
-    :param vocab_size:
+    :param n_pieces:
         Vocabulary size (number of embeddings).
-    :param type_vocab_size:
+    :param n_types:
         Token type vocabulary size (number of token type embeddings).
     """
 
     dropout_prob: float
     embedding_width: int
     layer_norm_eps: float
-    max_position_embeddings: Optional[int]
-    vocab_size: int
-    type_vocab_size: Optional[int]
+    n_positions: Optional[int]
+    n_pieces: int
+    n_types: Optional[int]
 
 
 @dataclass

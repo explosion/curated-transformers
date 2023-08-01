@@ -14,7 +14,7 @@ from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES
 from ..utils import torch_assertclose
 
-VOCAB_SIZE = 1024
+N_PIECES = 1024
 
 
 def test_context_manager():
@@ -44,7 +44,7 @@ def test_torch_sdp(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     with torch.no_grad():
         Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
@@ -61,7 +61,7 @@ def test_torch_sdp_mask(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
         Y = model(
@@ -83,7 +83,7 @@ def test_torch_sdp_causal(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     with torch.no_grad():
         Y = model(X).last_hidden_layer_state
         with enable_torch_sdp():
@@ -100,7 +100,7 @@ def test_torch_sdp_causal_with_mask(torch_device):
     model.eval()
 
     torch.manual_seed(0)
-    X = torch.randint(0, VOCAB_SIZE, (2, 10), device=torch_device)
+    X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
         Y = model(

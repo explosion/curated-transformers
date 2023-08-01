@@ -41,7 +41,7 @@ class LLaMACausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         self.decoder = LLaMADecoder(config, device=device)
         self.output_embeddings = Linear(
             in_features=config.layer.feedforward.hidden_width,
-            out_features=config.embedding.vocab_size,
+            out_features=config.embedding.n_pieces,
             bias=False,
             device=device,
         )

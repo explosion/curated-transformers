@@ -20,7 +20,7 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "rms_norm_eps": "rms_norm_eps",
     "num_attention_heads": "n_query_heads",
     "num_hidden_layers": "n_hidden_layers",
-    "vocab_size": "vocab_size",
+    "vocab_size": "n_pieces",
 }
 
 

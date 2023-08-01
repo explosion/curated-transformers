@@ -51,7 +51,7 @@ class TransformerEmbeddings(Module):
     """
     Transformer embeddings layer.
 
-    This is a generic transformer embedding layer. The layer alwas has piece
+    This is a generic transformer embedding layer. The layer always has piece
     embeddings and can optionally have position embeddings, type embeddings,
     and a projection of embeddings to the model's hidden size.
     """
@@ -189,7 +189,6 @@ class TransformerEmbeddings(Module):
             embeddings = self.projection(embeddings)
             embeddings = self.proj_output_layer_norm(embeddings)
             return self.proj_output_dropout(embeddings)
-
         else:
             return embeddings
 

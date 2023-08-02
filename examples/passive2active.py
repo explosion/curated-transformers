@@ -115,7 +115,7 @@ Active: "The amateur skater broke the vase."
 
 Example 2:
 
-Passive: "The car is bought buy the man with the grey hat."
+Passive: "The car is bought by the man with the grey hat."
 Active: "The man with the grey hat bought the car."
 
 Rewrite this sentence in active voice:

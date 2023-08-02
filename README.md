@@ -71,6 +71,22 @@ Curated Transformers 0.9.x is a tech preview, we will release Curated Transforme
 pip install curated-transformers
 ```
 
+### CUDA support
+
+The default Linux build of PyTorch is built with CUDA 11.7 support. You should
+explicitly install a CUDA build in the following cases:
+
+- If you want to use Curated Transformers on Windows.
+- If you want to use Curated Transformers on Linux with Ada-generation CPUs.
+  The standard PyTorch build supports Ada GPUs, but you can get considerable
+  performance improvements by installing PyTorch with CUDA 11.8 support.
+
+In both cases, you can install PyTorch with:
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu118
+```
+
 ## 🏃‍♀️ Usage Example
 
 ```python-console

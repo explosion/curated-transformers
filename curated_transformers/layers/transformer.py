@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, Identity, LayerNorm, Linear, Module
+from torch.nn import Dropout, Embedding, Identity, Linear, Module
 
 from .attention import AttentionMask, KeyValueCache, SelfAttention
 from .feedforward import PointwiseFeedForward

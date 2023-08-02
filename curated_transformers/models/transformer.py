@@ -27,7 +27,8 @@ class TransformerDecoder(DecoderModule):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[List[KeyValueCache]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -79,7 +80,7 @@ class TransformerCausalLM(CausalLMModule[KeyValueCache]):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
         cache: Optional[List[KeyValueCache]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -119,7 +120,7 @@ class TransformerEncoder(EncoderModule):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
         *,
         positions: Optional[Tensor] = None,
         type_ids: Optional[Tensor] = None,

@@ -24,8 +24,18 @@ class DecoderWithCache(Module):
         super().__init__()
         self.inner = decoder
 
-    def forward(self, piece_ids: Tensor, cache: List[KeyValueCache]):
-        return self.inner.forward(piece_ids=piece_ids, cache=cache, store_cache=True)
+    def forward(
+        self,
+        piece_ids: Tensor,
+        attention_mask: AttentionMask,
+        cache: List[KeyValueCache],
+    ):
+        return self.inner.forward(
+            piece_ids=piece_ids,
+            attention_mask=attention_mask,
+            cache=cache,
+            store_cache=True,
+        )
 
 
 class DecoderWithPositions(Module):
@@ -33,8 +43,12 @@ class DecoderWithPositions(Module):
         super().__init__()
         self.inner = decoder
 
-    def forward(self, piece_ids: Tensor, positions: Tensor):
-        return self.inner.forward(piece_ids=piece_ids, positions=positions)
+    def forward(
+        self, piece_ids: Tensor, attention_mask: AttentionMask, positions: Tensor
+    ):
+        return self.inner.forward(
+            piece_ids=piece_ids, attention_mask=attention_mask, positions=positions
+        )
 
 
 class JITMethod(Enum):
@@ -94,11 +108,15 @@ def assert_causal_lm_output_equals_hf(
 
     torch.manual_seed(0)
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
-    model, get_output = jit_method.convert(orig_model, with_torch_sdp, X_jit)
+    mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
+    model, get_output = jit_method.convert(
+        orig_model, with_torch_sdp, X_jit, AttentionMask(mask_jit)
+    )
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     with torch.no_grad():
-        Y = get_output(model(X))[1]
+        Y = get_output(model(X, AttentionMask(mask)))[1]
         Y_hf = hf_model(X).logits
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
 
@@ -109,9 +127,7 @@ def assert_causal_lm_output_equals_hf(
 
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
-        Y = get_output(model(X, attention_mask=AttentionMask(mask)))[
-            1
-        ] * mask.unsqueeze(-1)
+        Y = get_output(model(X, AttentionMask(mask)))[1] * mask.unsqueeze(-1)
         Y_hf = hf_model(X, attention_mask=mask).logits * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
 
@@ -147,13 +163,16 @@ def assert_decoder_output_equals_hf(
 
     torch.manual_seed(0)
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
+    mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
 
-    model, output = jit_method.convert(orig_model, with_torch_sdp, X_jit)
+    model, output = jit_method.convert(
+        orig_model, with_torch_sdp, X_jit, AttentionMask(mask_jit)
+    )
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     with torch.no_grad():
-        mo = output(model(X))
-        Y = output(model(X))[0][-1]
+        Y = output(model(X, AttentionMask(mask)))[0][-1]
         Y_hf = hf_model(X).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
@@ -195,13 +214,17 @@ def assert_encoder_output_equals_hf(
     hf_model.eval()
 
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
-    model, output = jit_method.convert(orig_model, with_torch_sdp, X_jit)
+    mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
+    model, output = jit_method.convert(
+        orig_model, with_torch_sdp, X_jit, AttentionMask(mask_jit)
+    )
 
     torch.manual_seed(0)
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
 
     with torch.no_grad():
-        Y = output(model(X))[0][-1]
+        Y = output(model(X, AttentionMask(mask)))[0][-1]
         Y_hf = hf_model(X).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
@@ -221,12 +244,14 @@ def assert_decoder_with_cache_output_equals_hf(
     with_torch_sdp=False,
 ):
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
-    cache_jit = orig_model(X_jit, store_cache=True).cache
+    mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
+    cache_jit = orig_model(X_jit, AttentionMask(mask_jit), store_cache=True).cache
 
     model, output = jit_method.convert(
         DecoderWithCache(orig_model),
         with_torch_sdp,
         X_jit,
+        AttentionMask(torch.concat([mask_jit, mask_jit], dim=1)),
         cache_jit,
     )
 
@@ -241,11 +266,13 @@ def assert_decoder_with_cache_output_equals_hf(
     ] * hf_model.config.num_hidden_layers
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     X_rest = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask_rest = torch.cat([mask, torch.ones_like(X_rest, dtype=torch.bool)], dim=1)
     with torch.no_grad():
-        Y = model(X, empty_cache_jit)
+        Y = model(X, AttentionMask(mask), empty_cache_jit)
         Y_hf = hf_model(X, use_cache=True)
-        Y = output(model(X_rest, cache=output(Y)[1]))[0][-1]
+        Y = output(model(X_rest, AttentionMask(mask_rest), cache=output(Y)[1]))[0][-1]
         Y_hf = hf_model(X_rest, past_key_values=Y_hf.past_key_values).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
@@ -269,9 +296,7 @@ def assert_with_mask_output_equals_hf(
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
     mask = torch.rand((2, 10), dtype=torch.float, device=torch_device) < 0.5
     with torch.no_grad():
-        Y = output(model(X, attention_mask=AttentionMask(mask)))[0][
-            -1
-        ] * mask.unsqueeze(-1)
+        Y = output(model(X, AttentionMask(mask)))[0][-1] * mask.unsqueeze(-1)
         Y_hf = hf_model(X, attention_mask=mask).last_hidden_state * mask.unsqueeze(-1)
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
 
@@ -296,15 +321,21 @@ def assert_decoder_with_positions_equals_hf(
     #       length.
 
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
+    mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
     positions_jit = torch.randint_like(X_jit, 10)
     model, output = jit_method.convert(
-        DecoderWithPositions(orig_model), with_torch_sdp, X_jit, positions_jit
+        DecoderWithPositions(orig_model),
+        with_torch_sdp,
+        X_jit,
+        AttentionMask(mask_jit),
+        positions_jit,
     )
 
     X = torch.randint(0, hf_model.config.vocab_size, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     positions = torch.randint(0, 10, (2, 10), device=torch_device)
     with torch.no_grad():
-        Y = output(model(X, positions=positions))[0][-1]
+        Y = output(model(X, AttentionMask(mask), positions=positions))[0][-1]
         Y_hf = hf_model(X, position_ids=positions).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)

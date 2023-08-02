@@ -2,10 +2,9 @@ from abc import abstractmethod
 from typing import Generic, List, Optional
 
 from torch import Tensor
-from torch.nn import Module, ModuleList
+from torch.nn import Module
 
 from ..layers.attention import AttentionMask
-from ..layers.cache import KeyValueCache
 from .output import CacheT, CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
 
@@ -18,7 +17,8 @@ class CausalLMModule(Generic[CacheT], Module):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[List[CacheT]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -60,7 +60,8 @@ class DecoderModule(Generic[CacheT], Module):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[List[CacheT]] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -102,7 +103,7 @@ class EncoderModule(Module):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
         *,
         positions: Optional[Tensor] = None,
         type_ids: Optional[Tensor] = None,

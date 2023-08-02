@@ -36,16 +36,18 @@ inputs as a tuple. For example, we can trace a decoder as follows:
 
    import torch
    import torch.jit
+   from curated_transformers.layers import AttentionMask
    from curated_transformers.models import AutoDecoder
 
    device = torch.device("cuda", index=0)
    decoder = AutoDecoder.from_hf_hub(name="tiiuae/falcon-7b", device=device)
    X_example = torch.zeros(4, 20, dtype=torch.long, device=device)
-   traced = torch.jit.trace(decoder, (X_example),))
+   mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
+   traced = torch.jit.trace(decoder, (X_example, mask_example))
 
-As you can see, we are feeding the model with an all-zeros tensor during
-tracing. This is not really an issue, as long as the inputs allows the model to
-run normally, tracing can do its work.
+As you can see, we are feeding the model with an all-zeros piece identifier tensor and
+an all-ones mask tensor during tracing. This is not really an issue - as long as
+the inputs allow the model to run normally, tracing can do its work.
 
 In the example above, ``traced`` is a TorchScript module. From the surface, it
 behaves like any other module. We can feed it some piece identifiers to get
@@ -57,7 +59,8 @@ their hidden representations:
 
    tokenizer = AutoTokenizer.from_hf_hub(name="tiiuae/falcon-7b")
    pieces = tokenizer(["Hello world!", "This is a test"])
-   Y = traced(pieces.padded_tensor(device=device))
+   Y = traced(pieces.padded_tensor(device=device),
+              pieces.attention_mask(device=device))
    assert isinstance(Y, tuple)
    last_layer = Y[0][-1]
 
@@ -70,21 +73,6 @@ instance to a tuple in a traced model. The tuple will have the same ordering as 
 fields in the untraced model's output, excluding fields that are set to
 ``None``. In this case we don't ask the decoder to return a key-value cache, so
 the ``cache`` field is ``None`` and will not be represented in the tuple.
-
-The example above does not compute the correct outputs yet. Since the input sequences
-have different lengths, we also have to provide the model an attention mask to
-prevent it from attending to padding pieces. This is a fairly straightforward
-fix — since the attention mask is the second argument to the model, we'll
-retrace the model with a dummy attention mask:
-
-.. code-block:: python
-
-   from curated_transformers.layers.attention import AttentionMask
-
-   mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
-   traced = torch.jit.trace(decoder, (X_example, mask_example,))
-   Y = traced(pieces.padded_tensor(device=device),
-              pieces.attention_mask(device=device))
 
 Handling Complex Model Signatures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,8 +99,11 @@ class ``DecoderWithPositions``:
            super().__init__()
            self.inner = decoder
 
-       def forward(self, input_ids: Tensor, positions: Tensor):
-           return self.inner.forward(input_ids=input_ids, positions=positions)
+       def forward(self,
+                   input_ids: Tensor,
+                   attention_mask: AttentionMask,
+                   positions: Tensor):
+           return self.inner.forward(input_ids, attention_mask, positions=positions)
 
 You can then wrap a decoder with this class and trace it using the two mandatory
 arguments.

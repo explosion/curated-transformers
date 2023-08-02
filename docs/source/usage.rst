@@ -202,7 +202,8 @@ In addition to text generation, one can also run inference on the inputs to prod
    # Don't allocate gradients since we're only running inference.
    with torch.no_grad():
       ids = input_pieces.padded_tensor(pad_left=True, device=device)
-      model_output = encoder(input_ids=ids)
+      attention_mask = input_pieces.attention_mask(device=device)
+      model_output = encoder(ids, attention_mask)
 
    # [batch, seq_len, width]
    last_hidden_repr = model_output.last_hidden_layer_state

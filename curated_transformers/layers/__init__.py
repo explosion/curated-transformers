@@ -15,7 +15,6 @@ from .embeddings import (
     SinusoidalPositionalEmbedding,
 )
 from .normalization import RMSNorm
-from .scalar_weight import ScalarWeight
 from .transformer import (
     DecoderLayer,
     EncoderLayer,

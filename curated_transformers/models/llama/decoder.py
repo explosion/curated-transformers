@@ -108,7 +108,7 @@ class LlamaDecoder(TransformerDecoder, FromHFHub):
                         attn_input_layer_norm=layer_norm(),
                         ffn_input_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=config.layer.attention.parallel_attention,
+                    use_parallel_attention=config.layer.attention.use_parallel_attention,
                 )
                 for _ in range(config.layer.n_hidden_layers)
             ]

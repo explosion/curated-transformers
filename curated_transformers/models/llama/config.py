@@ -81,13 +81,13 @@ class LlamaConfig:
                 hidden_width=hidden_width,
                 n_query_heads=n_query_heads,
                 n_key_value_heads=n_key_value_heads,
-                parallel_attention=False,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
                     rotary_base=rotary_embedding_base,
                 ),
-                use_bias=False,
                 use_alibi=False,
+                use_bias=False,
+                use_parallel_attention=False,
             ),
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,

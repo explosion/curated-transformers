@@ -168,5 +168,5 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
                 ffn_input_layer_norm=layer_norm(),
             ),
             # The new decoder uses parallel attention unconditionally.
-            parallel_attention=True,
+            use_parallel_attention=True,
         )

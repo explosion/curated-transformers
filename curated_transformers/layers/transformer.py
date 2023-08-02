@@ -328,12 +328,12 @@ class _TransformerLayer(Module):
     def _forward(
         self,
         input: Tensor,
+        attention_mask: AttentionMask,
         *,
-        use_causal_mask: bool,
-        attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
+        use_causal_mask: bool,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
         Apply the transformer layer to the given piece hidden representations.
@@ -401,7 +401,8 @@ class DecoderLayer(_TransformerLayer):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -451,7 +452,7 @@ class EncoderLayer(_TransformerLayer):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
         Apply the encoder layer to the given piece hidden representations.

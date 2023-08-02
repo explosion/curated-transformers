@@ -28,7 +28,7 @@ class OldFalconDecoderLayer(Module):
         self,
         layer_config: TransformerLayerConfig,
         *,
-        device: Optional[torch.device] = None
+        device: Optional[torch.device] = None,
     ):
         super().__init__()
 
@@ -101,7 +101,8 @@ class OldFalconDecoderLayer(Module):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,

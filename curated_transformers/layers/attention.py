@@ -77,20 +77,19 @@ class AttentionMask(DataclassAsDict):
     @classmethod
     def jit_rewrap(
         cls: Type["AttentionMask"],
-        attention_mask: Optional[Union["AttentionMask", Dict[str, Tensor]]],
-    ) -> Optional["AttentionMask"]:
+        attention_mask: Union["AttentionMask", Dict[str, Tensor]],
+    ) -> "AttentionMask":
         """
         Rewrap TorchScript dictionary conversion of an attention mask
         as an ``AttentionMask``.
 
         :param attention_mask:
             The attention mask or its dictionary representation. If the
-            value is an ``AttentionMask`` or ``None``, the value will be
-            returned as-is.
+            value is an ``AttentionMask``, the value will be returned as-is.
         :returns:
             The attention mask.
         """
-        if attention_mask is None or isinstance(attention_mask, AttentionMask):
+        if isinstance(attention_mask, AttentionMask):
             return attention_mask
 
         bool_mask = attention_mask.get("bool_mask")
@@ -492,7 +491,7 @@ class ScaledDotProductAttention(Module):
         query: Tensor,
         key: Tensor,
         value: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
     ) -> Tensor:
         """
         Apply attention layer to the given key, query and value.
@@ -528,11 +527,7 @@ class ScaledDotProductAttention(Module):
         if self.linear_biases is not None:
             attn_scores = self.linear_biases(attention_scores=attn_scores)
 
-        if attention_mask is not None:
-            # Replace tokens that we don't want to attend to with a large
-            # negative value to zero them out during softmax normalization.
-            attn_scores = attention_mask.apply_logit_mask(attn_scores)
-
+        attn_scores = attention_mask.apply_logit_mask(attn_scores)
         attn_weights = attn_scores.softmax(dim=-1)
         attn_values = self.dropout(attn_weights @ value)
 
@@ -644,7 +639,7 @@ class SelfAttention(Module):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
         use_causal_mask: bool = False,
         cache: Optional[KeyValueCache] = None,
         store_cache: bool = False,
@@ -704,16 +699,10 @@ class SelfAttention(Module):
         combined_mask = attention_mask
         if use_causal_mask:
             causal_mask = create_causal_mask(query, key)
-            combined_mask = (
-                causal_mask
-                if combined_mask is None
-                else combined_mask.merge_mask(causal_mask)
-            )
+            combined_mask = combined_mask.merge_mask(causal_mask)
 
         if _TORCH_SDP.get():
-            attn_mask = (
-                None if combined_mask is None else combined_mask.logit_mask(query.dtype)
-            )
+            attn_mask = combined_mask.logit_mask(query.dtype)
 
             # Add AliBi to the logit mask
             if self.use_alibi:
@@ -721,13 +710,8 @@ class SelfAttention(Module):
                 biases = self.attention.linear_biases.calculate_biases(key.size(-2)).to(
                     dtype=query.dtype, device=query.device
                 )
-                if combined_mask is not None:
-                    bool_mask = combined_mask.bool_mask
-                    assert attn_mask is not None
-                    attn_mask = torch.where(bool_mask, biases, attn_mask)
-                else:
-                    # Just pass the ALiBi biases.
-                    attn_mask = biases
+                bool_mask = combined_mask.bool_mask
+                attn_mask = torch.where(bool_mask, biases, attn_mask)
 
             # We can't pass a bool mask, because it is currently broken:
             # https://github.com/pytorch/pytorch/issues/103749

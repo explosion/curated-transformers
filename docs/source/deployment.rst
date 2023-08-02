@@ -45,9 +45,9 @@ inputs as a tuple. For example, we can trace a decoder as follows:
    mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
    traced = torch.jit.trace(decoder, (X_example, mask_example))
 
-As you can see, we are feeding the model with an all-zeros piece identifier and
-all-ones mask tensors during tracing. This is not really an issue, as long as
-the inputs allows the model to run normally, tracing can do its work.
+As you can see, we are feeding the model with an all-zeros piece identifier tensor and
+an all-ones mask tensor during tracing. This is not really an issue - as long as
+the inputs allow the model to run normally, tracing can do its work.
 
 In the example above, ``traced`` is a TorchScript module. From the surface, it
 behaves like any other module. We can feed it some piece identifiers to get

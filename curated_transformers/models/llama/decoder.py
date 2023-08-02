@@ -88,7 +88,7 @@ class LlamaDecoder(TransformerDecoder, FromHFHub):
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                             base=config.layer.attention.rotary_embeddings.rotary_base,
-                            dims_per_head=hidden_width // n_query_heads,
+                            head_width=hidden_width // n_query_heads,
                         ),
                         use_bias=config.layer.attention.use_bias,
                         device=device,

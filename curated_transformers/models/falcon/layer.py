@@ -56,7 +56,7 @@ class OldFalconDecoderLayer(Module):
             QueryKeyRotaryEmbeddings(
                 fraction=attention_config.rotary_embeddings.rotary_fraction,
                 base=attention_config.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // n_attention_heads,
+                head_width=hidden_width // n_attention_heads,
             )
             if not attention_config.use_alibi
             else None

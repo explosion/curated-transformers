@@ -225,11 +225,11 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
     :param query:
         Query to compute the causal mask for.
 
-        *Shape:* ``(batch_size, heads, query_len, head_dim)``
+        *Shape:* ``(batch_size, heads, query_len, head_width)``
     :param key:
         Key to compute the causal mask for.
 
-        *Shape:* ``(batch_size, heads, key_len, head_dim)``
+        *Shape:* ``(batch_size, heads, key_len, head_width)``
     :returns:
         The causal mask.
 
@@ -521,9 +521,9 @@ class ScaledDotProductAttention(Module):
 
             *Shape:* ``(batch_size, heads, seq_len, width)``
         """
-        model_dim = key.shape[-1]
+        model_width = key.shape[-1]
         attn_scores = query @ key.transpose(-2, -1)
-        attn_scores /= math.sqrt(model_dim)
+        attn_scores /= math.sqrt(model_width)
 
         if self.linear_biases is not None:
             attn_scores = self.linear_biases(attention_scores=attn_scores)
@@ -593,7 +593,7 @@ class SelfAttention(Module):
                 f"divisible by the number of query heads ({attention_heads._n_query_heads})"
             )
 
-        self.dims_per_head = hidden_width // attention_heads._n_query_heads
+        self.head_width = hidden_width // attention_heads._n_query_heads
         self.qkv_mode = qkv_mode
         self.use_alibi = attention_biases is not None
 
@@ -611,7 +611,7 @@ class SelfAttention(Module):
                 "QkvMode.MERGED_SPLIT_BEFORE is incompatible with key/value head sharing"
             )
 
-        key_value_dim = attention_heads._n_key_value_heads * self.dims_per_head
+        key_value_width = attention_heads._n_key_value_heads * self.head_width
         if qkv_mode == QkvMode.SEPARATE:
             self.query = Linear(
                 hidden_width,
@@ -621,20 +621,20 @@ class SelfAttention(Module):
             )
             self.key = Linear(
                 hidden_width,
-                key_value_dim,
+                key_value_width,
                 bias=use_bias,
                 device=device,
             )
             self.value = Linear(
                 hidden_width,
-                key_value_dim,
+                key_value_width,
                 bias=use_bias,
                 device=device,
             )
         else:
             self.input = Linear(
                 hidden_width,
-                hidden_width + 2 * key_value_dim,
+                hidden_width + 2 * key_value_width,
                 bias=use_bias,
                 device=device,
             )
@@ -793,7 +793,7 @@ class SelfAttention(Module):
             # the heads together and then split them. In the future we
             # could split conditional on a field in AttentionHeads.
             query, key, value = split_heads_grouped_qkv(
-                proj, self.attention_heads, self.dims_per_head
+                proj, self.attention_heads, self.head_width
             )
 
         if n_key_value_heads != 1 and n_key_value_heads != n_query_heads:
@@ -827,15 +827,15 @@ def split_heads(input: Tensor, n_heads: int) -> Tensor:
 
         *Shape:* ``(batch_size, head, seq_len, width_per_head)``
     """
-    batch_size, seq_len, model_dim = input.size()
-    assert model_dim % n_heads == 0
-    dims_per_head = model_dim // n_heads
+    batch_size, seq_len, model_width = input.size()
+    assert model_width % n_heads == 0
+    head_width = model_width // n_heads
 
-    return input.view(batch_size, seq_len, n_heads, dims_per_head).transpose(1, 2)
+    return input.view(batch_size, seq_len, n_heads, head_width).transpose(1, 2)
 
 
 def split_heads_grouped_qkv(
-    projection: Tensor, attention_heads: AttentionHeads, dims_per_head: int
+    projection: Tensor, attention_heads: AttentionHeads, head_width: int
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Split attention heads by grouping the heads in blocks of
@@ -845,18 +845,18 @@ def split_heads_grouped_qkv(
     :param projection:
         The fused query, key, value projection.
 
-        *Shape:* ``(batch_size, seq_len, (n_query_heads + 2 * n_key_value_heads) * dims_per_head)``
+        *Shape:* ``(batch_size, seq_len, (n_query_heads + 2 * n_key_value_heads) * head_width)``
     :param attention_heads:
         Attention head configuration.
-    :param dims_per_head:
-        Head dimensionality.
+    :param head_width:
+        Head width.
     :returns:
         Query, key, value tensors.
 
         *Shapes:*
-        - Query: ``(batch_size, n_query_heads, seq_len, dims_per_head)``
-        - Key: ``(batch_size, n_key_value_heads, seq_len, dims_per_head)``
-        - Value: ``(batch_size, n_key_value_heads, seq_len, dims_per_head)``
+        - Query: ``(batch_size, n_query_heads, seq_len, head_width)``
+        - Key: ``(batch_size, n_key_value_heads, seq_len, head_width)``
+        - Value: ``(batch_size, n_key_value_heads, seq_len, head_width)``
     """
     n_query_heads = attention_heads._n_query_heads
     n_key_value_heads = attention_heads._n_key_value_heads
@@ -870,7 +870,7 @@ def split_heads_grouped_qkv(
         seq_len,
         -1,
         n_query_heads // n_key_value_heads + 2,
-        dims_per_head,
+        head_width,
     )
     query, key, value = grouped_projection.split(
         [n_query_heads // n_key_value_heads, 1, 1], dim=-2
@@ -878,7 +878,7 @@ def split_heads_grouped_qkv(
 
     def permute_merge_groups(x, n_heads):
         return x.permute(0, 2, 3, 1, 4).reshape(
-            batch_size, n_heads, seq_len, dims_per_head
+            batch_size, n_heads, seq_len, head_width
         )
 
     query = permute_merge_groups(query, n_query_heads)
@@ -901,7 +901,7 @@ def combine_heads(input: Tensor) -> Tensor:
 
         *Shape:* ``(batch_size, seq_len, hidden_width)``
     """
-    batch_size, head, seq_len, model_dim = input.size()
+    batch_size, head, seq_len, model_width = input.size()
     return (
-        input.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_dim)
+        input.transpose(1, 2).contiguous().view(batch_size, seq_len, head * model_width)
     )

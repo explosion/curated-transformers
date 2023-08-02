@@ -133,7 +133,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             QueryKeyRotaryEmbeddings(
                 fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                 base=config.layer.attention.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // n_attention_heads,
+                head_width=hidden_width // n_attention_heads,
             )
             if not config.layer.attention.use_alibi
             else None

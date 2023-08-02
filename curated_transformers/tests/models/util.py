@@ -230,9 +230,9 @@ def assert_decoder_with_cache_output_equals_hf(
         cache_jit,
     )
 
-    _, n_heads, _, head_dim = cache_jit[0].key.shape
+    _, n_heads, _, head_width = cache_jit[0].key.shape
     empty_kv_jit = torch.zeros(
-        (2, n_heads, 0, head_dim),
+        (2, n_heads, 0, head_width),
         dtype=cache_jit[0].key.dtype,
         device=torch_device,
     )

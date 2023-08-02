@@ -4,11 +4,11 @@ Decoders
 Base Classes
 ------------
 
-.. autoclass:: curated_transformers.models.module.DecoderModule
+.. autoclass:: curated_transformers.models.DecoderModule
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.transformer.TransformerDecoder
+.. autoclass:: curated_transformers.models.TransformerDecoder
    :members:
    :show-inheritance:
 
@@ -39,7 +39,7 @@ specific decoder type, you can use the :class:`~.auto_model.AutoDecoder`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.
 
-.. autoclass:: curated_transformers.models.auto_model.AutoDecoder
+.. autoclass:: curated_transformers.models.AutoDecoder
    :members:
 
 
@@ -51,17 +51,17 @@ Configuration
 GPT-NeoX
 ^^^^^^^^
 
-.. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXConfig
+.. autoclass:: curated_transformers.models.GPTNeoXConfig
    :members:
 
 LLaMA
 ^^^^^
 
-.. autoclass:: curated_transformers.models.llama.config.LLaMAConfig
+.. autoclass:: curated_transformers.models.LLaMAConfig
    :members:
 
 Falcon
 ^^^^^^
 
-.. autoclass:: curated_transformers.models.falcon.config.FalconConfig
+.. autoclass:: curated_transformers.models.falcon.FalconConfig
    :members:

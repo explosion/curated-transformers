@@ -47,7 +47,7 @@ class LogitsTransform(ABC):
         ...
 
 
-class CompoundLogitTransforms(UserList, LogitsTransform):
+class CompoundLogitsTransform(UserList, LogitsTransform):
     """
     Sequentially apply multiple logit transforms.
     """

@@ -3,7 +3,7 @@ from typing import Dict, Optional, Type, cast
 import torch
 
 from ..models.auto_model import AutoModel
-from ..quantization import BitsAndBytesConfig
+from ..quantization.bnb.config import BitsAndBytesConfig
 from .default_generator import DefaultGenerator
 from .dolly_v2 import DollyV2Generator
 from .falcon import FalconGenerator

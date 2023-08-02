@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Set
 
 from .logits import (
-    CompoundLogitTransforms,
+    CompoundLogitsTransform,
     LogitsTransform,
     TemperatureTransform,
     TopKTransform,
@@ -87,7 +87,7 @@ class GreedyGeneratorConfig(GeneratorConfig):
         if self.masked_pieces is not None:
             return VocabMaskTransform(self.masked_pieces)
         else:
-            return CompoundLogitTransforms([])
+            return CompoundLogitsTransform([])
 
 
 @dataclass
@@ -127,4 +127,4 @@ class SampleGeneratorConfig(GeneratorConfig):
             TopPTransform(self.top_p),
         ]
 
-        return CompoundLogitTransforms(transforms)
+        return CompoundLogitsTransform(transforms)

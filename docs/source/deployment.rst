@@ -62,10 +62,10 @@ their hidden representations:
    last_layer = Y[0][-1]
 
 The model works as before, albeit with one catch. Normally a decoder returns a
-:py:class:`~curated_transformers.models.output.ModelOutputWithCache` instance,
+:py:class:`~curated_transformers.models.ModelOutputWithCache` instance,
 but the traced model returns a tuple instead. The reason is that TorchScript only
 supports a limited set of types. Since arbitrary types are not supported, we
-convert the :py:class:`~curated_transformers.models.output.ModelOutputWithCache`
+convert the :py:class:`~curated_transformers.models.ModelOutputWithCache`
 instance to a tuple in a traced model. The tuple will have the same ordering as the
 fields in the untraced model's output, excluding fields that are set to
 ``None``. In this case we don't ask the decoder to return a key-value cache, so
@@ -79,7 +79,7 @@ retrace the model with a dummy attention mask:
 
 .. code-block:: python
 
-   from curated_transformers.layers.attention import AttentionMask
+   from curated_transformers.layers import AttentionMask
 
    mask_example = AttentionMask(torch.ones((4, 20), dtype=torch.bool, device=device))
    traced = torch.jit.trace(decoder, (X_example, mask_example,))

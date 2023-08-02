@@ -4,11 +4,11 @@ Encoders
 Base Classes
 ------------
 
-.. autoclass:: curated_transformers.models.module.EncoderModule
+.. autoclass:: curated_transformers.models.EncoderModule
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.transformer.TransformerEncoder
+.. autoclass:: curated_transformers.models.TransformerEncoder
    :members:
    :show-inheritance:
 
@@ -47,7 +47,7 @@ specific encoder type, you can use the :class:`~.auto_model.AutoEncoder`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.
 
-.. autoclass:: curated_transformers.models.auto_model.AutoEncoder
+.. autoclass:: curated_transformers.models.AutoEncoder
    :members:
 
 Configuration
@@ -56,13 +56,13 @@ Configuration
 ALBERT
 ^^^^^^
 
-.. autoclass:: curated_transformers.models.albert.config.ALBERTConfig
+.. autoclass:: curated_transformers.models.ALBERTConfig
    :members:
 
 BERT
 ^^^^
 
-.. autoclass:: curated_transformers.models.bert.config.BERTConfig
+.. autoclass:: curated_transformers.models.BERTConfig
    :members:
 
 
@@ -76,7 +76,7 @@ See :ref:`roberta config`.
 RoBERTa
 ^^^^^^^
 
-.. autoclass:: curated_transformers.models.roberta.config.RoBERTaConfig
+.. autoclass:: curated_transformers.models.RoBERTaConfig
    :members:
    :show-inheritance:
 

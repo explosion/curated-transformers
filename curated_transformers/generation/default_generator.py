@@ -5,7 +5,7 @@ import torch
 
 from ..models.auto_model import AutoCausalLM
 from ..models.module import CausalLMModule
-from ..quantization import BitsAndBytesConfig
+from ..quantization.bnb.config import BitsAndBytesConfig
 from ..tokenizers.auto_tokenizer import AutoTokenizer
 from ..tokenizers.chunks import InputChunks, TextChunk
 from ..tokenizers.tokenizer import TokenizerBase

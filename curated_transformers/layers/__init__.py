@@ -2,6 +2,7 @@ from ..layers.feedforward import PointwiseFeedForward
 from .activations import Activation, GELUFast, GELUNew
 from .attention import (
     AttentionHeads,
+    AttentionLinearBiases,
     AttentionMask,
     QkvMode,
     ScaledDotProductAttention,
@@ -17,7 +18,37 @@ from .embeddings import (
 from .normalization import RMSNorm
 from .transformer import (
     DecoderLayer,
+    EmbeddingsDropouts,
+    EmbeddingsLayerNorms,
     EncoderLayer,
     TransformerDropouts,
+    TransformerEmbeddings,
     TransformerLayerNorms,
 )
+
+__all__ = [
+    "Activation",
+    "AttentionHeads",
+    "AttentionLinearBiases",
+    "AttentionMask",
+    "CacheProtocol",
+    "DecoderLayer",
+    "EmbeddingsDropouts",
+    "EmbeddingsLayerNorms",
+    "EncoderLayer",
+    "GELUFast",
+    "GELUNew",
+    "KeyValueCache",
+    "PointwiseFeedForward",
+    "QkvMode",
+    "QueryKeyRotaryEmbeddings",
+    "RMSNorm",
+    "RotaryEmbeddings",
+    "ScaledDotProductAttention",
+    "SelfAttention",
+    "SinusoidalPositionalEmbedding",
+    "TransformerDropouts",
+    "TransformerEmbeddings",
+    "TransformerLayerNorms",
+    "enable_torch_sdp",
+]

@@ -4,7 +4,7 @@ from typing import Generic, Mapping, Optional, Type, TypeVar
 import torch
 
 from ..layers.cache import KeyValueCache
-from ..quantization import BitsAndBytesConfig
+from ..quantization.bnb.config import BitsAndBytesConfig
 from ..util.hf import get_hf_config_model_type
 from .albert import ALBERTEncoder
 from .bert import BERTEncoder

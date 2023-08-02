@@ -24,7 +24,7 @@ from curated_transformers.generation.config import (
 )
 from curated_transformers.generation.falcon import FalconGenerator
 from curated_transformers.layers.attention import enable_torch_sdp
-from curated_transformers.quantization.bnb.config import BitsAndBytesConfig
+from curated_transformers.quantization.bnb import BitsAndBytesConfig
 
 EPILOG = """This program takes passive sentences as a JSON list of strings
 from the standard inputs. For example:

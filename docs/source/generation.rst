@@ -9,43 +9,43 @@ Models
 
 These classes provide the interface for performing text generation using causal LMs.
 
-.. autoclass:: curated_transformers.generation.generator.Generator
+.. autoclass:: curated_transformers.generation.Generator
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.string_generator.StringGenerator
+.. autoclass:: curated_transformers.generation.StringGenerator
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.generator_wrapper.GeneratorWrapper
+.. autoclass:: curated_transformers.generation.GeneratorWrapper
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.default_generator.DefaultGenerator
+.. autoclass:: curated_transformers.generation.DefaultGenerator
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.dolly_v2.DollyV2Generator
+.. autoclass:: curated_transformers.generation.DollyV2Generator
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.falcon.FalconGenerator
+.. autoclass:: curated_transformers.generation.FalconGenerator
    :members:
    :inherited-members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.llama.LLaMAGenerator
+.. autoclass:: curated_transformers.generation.LLaMAGenerator
    :members:
    :inherited-members:
    :special-members: __call__
@@ -61,7 +61,7 @@ specific generator type, you can use the :class:`~.auto_generator.AutoGenerator`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.
 
-.. autoclass:: curated_transformers.generation.auto_generator.AutoGenerator
+.. autoclass:: curated_transformers.generation.AutoGenerator
    :members:
 
 
@@ -70,43 +70,51 @@ Configuration
 
 These classes represent the different parameters used by generators.
 
-.. autoclass:: curated_transformers.generation.config.GeneratorConfig
+.. autoclass:: curated_transformers.generation.GeneratorConfig
    :members:
 
-.. autoclass:: curated_transformers.generation.config.GreedyGeneratorConfig
-   :members:
-   :show-inheritance:
-
-.. autoclass:: curated_transformers.generation.config.SampleGeneratorConfig
+.. autoclass:: curated_transformers.generation.GreedyGeneratorConfig
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.stop_conditions.StopCondition
-   :members:
-
-.. autoclass:: curated_transformers.generation.stop_conditions.EndOfSequenceCondition
+.. autoclass:: curated_transformers.generation.SampleGeneratorConfig
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.stop_conditions.MaxGeneratedPiecesCondition
+.. autoclass:: curated_transformers.generation.StopCondition
+   :members:
+
+.. autoclass:: curated_transformers.generation.CompoundStopCondition
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.logits.LogitsTransform
+.. autoclass:: curated_transformers.generation.EndOfSequenceCondition
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.generation.MaxGeneratedPiecesCondition
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.generation.LogitsTransform
    :members:
 
-.. autoclass:: curated_transformers.generation.logits.TopKTransform
+.. autoclass:: curated_transformers.generation.CompoundLogitsTransform
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.generation.TopKTransform
    :members:   
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.logits.TopPTransform
+.. autoclass:: curated_transformers.generation.TopPTransform
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.logits.TemperatureTransform
+.. autoclass:: curated_transformers.generation.TemperatureTransform
    :members:   
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.logits.VocabMaskTransform
+.. autoclass:: curated_transformers.generation.VocabMaskTransform
    :members:   
    :show-inheritance:

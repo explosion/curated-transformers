@@ -1,27 +1,27 @@
 from typing import TypeVar
 
-from ..models.llama import LLaMACausalLM
+from ..models.llama import LlamaCausalLM
 from ..tokenizers.tokenizer import Tokenizer
 from .default_generator import DefaultGenerator
 from .hf_hub import FromHFHub
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="LLaMAGenerator")
+Self = TypeVar("Self", bound="LlamaGenerator")
 
 
-class LLaMAGenerator(DefaultGenerator, FromHFHub):
+class LlamaGenerator(DefaultGenerator, FromHFHub):
     """
-    Generator for LLaMa and Llama 2 model variants.
+    Generator for Llama and Llama 2 model variants.
     """
 
-    def __init__(self, tokenizer: Tokenizer, causal_lm: LLaMACausalLM):
+    def __init__(self, tokenizer: Tokenizer, causal_lm: LlamaCausalLM):
         """
-        Construct a LLaMA generator.
+        Construct a Llama generator.
 
         :param tokenizer:
-            A LLaMA tokenizer.
+            A Llama tokenizer.
         :param causal_lm:
-            A LLaMA causal language model.
+            A Llama causal language model.
 
         """
         super().__init__(

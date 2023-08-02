@@ -38,7 +38,7 @@ class OldFalconDecoderLayer(Module):
                 "Falcon attention config does not contain rotary embedding parameters"
             )
 
-        self.parallel_attention = attention_config.parallel_attention
+        self.use_parallel_attention = attention_config.use_parallel_attention
 
         hidden_width = layer_config.feedforward.hidden_width
         n_attention_heads = attention_config.n_query_heads
@@ -56,7 +56,7 @@ class OldFalconDecoderLayer(Module):
             QueryKeyRotaryEmbeddings(
                 fraction=attention_config.rotary_embeddings.rotary_fraction,
                 base=attention_config.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // n_attention_heads,
+                head_width=hidden_width // n_attention_heads,
             )
             if not attention_config.use_alibi
             else None
@@ -81,7 +81,7 @@ class OldFalconDecoderLayer(Module):
             hidden_width, eps=layer_config.layer_norm_eps, device=device
         )
 
-        if not self.parallel_attention:
+        if not self.use_parallel_attention:
             self.ffn_layer_norm = torch.nn.LayerNorm(
                 hidden_width,
                 eps=layer_config.layer_norm_eps,
@@ -143,7 +143,7 @@ class OldFalconDecoderLayer(Module):
             use_causal_mask=True,
         )
 
-        if self.parallel_attention:
+        if self.use_parallel_attention:
             ffn_layer_norm = attn_layer_norm
         else:
             residual = residual + self.attn_output_dropout(attn_out)
@@ -151,7 +151,7 @@ class OldFalconDecoderLayer(Module):
 
         ffn_out = self.ffn(ffn_layer_norm)
 
-        if self.parallel_attention:
+        if self.use_parallel_attention:
             ffn_out += attn_out
 
         return residual + self.ffn_output_dropout(ffn_out), cache

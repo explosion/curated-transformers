@@ -22,7 +22,7 @@ decoder-only architecture has a corresponding causal LM architecture.
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.LLaMACausalLM
+.. autoclass:: curated_transformers.models.LlamaCausalLM
    :members:
    :show-inheritance:
 

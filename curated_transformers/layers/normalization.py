@@ -12,12 +12,14 @@ class RMSNorm(Module):
     .. _Zhang et al., 2019: https://arxiv.org/abs/1910.07467
     """
 
-    def __init__(self, dim: int, *, eps: float, device: Optional[torch.device] = None):
+    def __init__(
+        self, width: int, *, eps: float, device: Optional[torch.device] = None
+    ):
         """
         Construct a RMS normalization module.
 
-        :param dim:
-            The (hidden) dimensionality of the representations that RMS
+        :param width:
+            The (hidden) width of the representations that RMS
             normalization will be applied to.
         :param eps:
             Epsilon to avoid division by zero.
@@ -26,7 +28,7 @@ class RMSNorm(Module):
         """
         super().__init__()
         self.eps = eps
-        self.weight = Parameter(torch.ones((dim,), device=device))
+        self.weight = Parameter(torch.ones((width,), device=device))
 
     def forward(self, input: Tensor) -> Tensor:
         """

@@ -1,6 +1,6 @@
 import pytest
 
-from curated_transformers.models.llama.decoder import LLaMADecoder
+from curated_transformers.models.llama.decoder import LlamaDecoder
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
@@ -19,7 +19,7 @@ LLAMA_TEST_MODELS = [
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_decoder(torch_device, model, with_torch_sdp):
     assert_decoder_output_equals_hf(
-        LLaMADecoder, model, torch_device, with_torch_sdp=with_torch_sdp
+        LlamaDecoder, model, torch_device, with_torch_sdp=with_torch_sdp
     )
 
 
@@ -31,7 +31,7 @@ def test_decoder(torch_device, model, with_torch_sdp):
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_decoder_with_torch_compile(torch_device, model, with_torch_sdp):
     assert_decoder_output_equals_hf(
-        LLaMADecoder,
+        LlamaDecoder,
         model,
         torch_device,
         jit_method=JITMethod.TorchCompile,
@@ -46,7 +46,7 @@ def test_decoder_with_torch_compile(torch_device, model, with_torch_sdp):
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_decoder_with_torchscript_trace(torch_device, model, with_torch_sdp):
     assert_decoder_output_equals_hf(
-        LLaMADecoder,
+        LlamaDecoder,
         model,
         torch_device,
         jit_method=JITMethod.TorchScriptTrace,

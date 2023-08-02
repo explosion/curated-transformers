@@ -82,10 +82,10 @@ class BERTConfig:
                 dropout_prob=attention_probs_dropout_prob,
                 n_key_value_heads=n_attention_heads,
                 n_query_heads=n_attention_heads,
-                parallel_attention=False,
                 rotary_embeddings=None,
                 use_alibi=False,
                 use_bias=True,
+                use_parallel_attention=False,
             ),
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,

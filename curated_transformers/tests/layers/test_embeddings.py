@@ -110,7 +110,7 @@ def test_rotary_embeddings_positions_small(device):
 
 
 def test_sinusoidal_embeddings_without_norm():
-    embeddings = SinusoidalPositionalEmbedding(6, 512, normalize=False)
+    embeddings = SinusoidalPositionalEmbedding(width=6, max_len=512, normalize=False)
     positions = embeddings(torch.ones(4, 20))
     torch_assertclose(
         positions,
@@ -142,7 +142,7 @@ def test_sinusoidal_embeddings_without_norm():
 
 
 def test_sinusoidal_embeddings_with_norm():
-    embeddings = SinusoidalPositionalEmbedding(6, 512)
+    embeddings = SinusoidalPositionalEmbedding(width=6, max_len=512)
     positions = embeddings(torch.ones(4, 20))
     torch_assertclose(
         positions,

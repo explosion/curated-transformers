@@ -137,7 +137,7 @@ Model-Specific Tokenizers
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.LLaMATokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.LlamaTokenizer
    :members:
    :inherited-members:
    :special-members: __call__

@@ -27,7 +27,7 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
 
             - Models based on Dolly v2 (contain ``dolly-v2`` in the name).
             - Models based on Falcon (contain ``falcon`` in the name).
-            - Models based on LLaMA (contain ``llama`` in the name).
+            - Models based on Llama (contain ``llama`` in the name).
     """
 
     @classmethod

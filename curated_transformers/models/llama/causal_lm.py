@@ -8,26 +8,26 @@ from ...quantization import Quantizable
 from ..hf_hub import FromHFHub
 from ..transformer import TransformerCausalLM
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import LLaMAConfig
-from .decoder import LLaMADecoder
+from .config import LlamaConfig
+from .decoder import LlamaDecoder
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="LLaMACausalLM")
+Self = TypeVar("Self", bound="LlamaCausalLM")
 
 
-class LLaMACausalLM(TransformerCausalLM, FromHFHub, Quantizable):
+class LlamaCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
     """
-    LLaMa (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) causal language model.
+    Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) causal language model.
 
     .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
     .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
     """
 
     def __init__(
-        self, config: LLaMAConfig, *, device: Optional[torch.device] = None
+        self, config: LlamaConfig, *, device: Optional[torch.device] = None
     ) -> None:
         """
-        Construct a LLaMA causal LM.
+        Construct a Llama causal LM.
 
         :param config:
             Causal LM configuration.
@@ -38,7 +38,7 @@ class LLaMACausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         """
         super().__init__()
 
-        self.decoder = LLaMADecoder(config, device=device)
+        self.decoder = LlamaDecoder(config, device=device)
         self.output_embeddings = Linear(
             in_features=config.layer.feedforward.hidden_width,
             out_features=config.embedding.n_pieces,

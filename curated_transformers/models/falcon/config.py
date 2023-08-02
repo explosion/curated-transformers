@@ -33,11 +33,11 @@ class FalconConfig:
         n_query_heads: int = 71,
         n_key_value_heads: int = 1,
         n_hidden_layers: int = 32,
-        parallel_attention: bool = True,
         rotary_embedding_base: int = 10000,
         rotary_embedding_fraction: float = 0.25,
         use_alibi: bool = False,
         use_bias: bool = False,
+        use_parallel_attention: bool = True,
         n_pieces: int = 50280,
     ):
         """
@@ -55,8 +55,6 @@ class FalconConfig:
             Number of key and value heads.
         :param n_hidden_layers:
             Number of hidden layers.
-        :param parallel_attention:
-            Use parallel attention.
         :param rotary_embedding_base:
             Base in signifying the rotary embedding period.
         :param rotary_embedding_fraction:
@@ -66,6 +64,8 @@ class FalconConfig:
             Use ALiBi linear biases in self-attention.
         :param use_bias:
             Use bias in linear layers.
+        :param use_parallel_attention:
+            Use parallel attention.
         :param n_pieces:
             Vocabulary size (number of embeddings).
         """
@@ -89,7 +89,7 @@ class FalconConfig:
                 hidden_width=hidden_width,
                 n_query_heads=n_query_heads,
                 n_key_value_heads=n_key_value_heads,
-                parallel_attention=parallel_attention,
+                use_parallel_attention=use_parallel_attention,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
                     rotary_base=rotary_embedding_base,

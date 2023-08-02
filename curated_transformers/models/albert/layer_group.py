@@ -63,7 +63,7 @@ class ALBERTLayerGroup(Module):
                         attn_residual_layer_norm=layer_norm(),
                         ffn_residual_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=attention_config.parallel_attention,
+                    use_parallel_attention=attention_config.use_parallel_attention,
                 )
                 for _ in range(layer_config.n_layers_per_group)
             ]

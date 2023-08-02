@@ -21,7 +21,7 @@ These modules represent the supported decoder-only architectures.
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.LLaMADecoder
+.. autoclass:: curated_transformers.models.LlamaDecoder
    :members:
    :show-inheritance:
 
@@ -54,10 +54,10 @@ GPT-NeoX
 .. autoclass:: curated_transformers.models.gpt_neox.config.GPTNeoXConfig
    :members:
 
-LLaMA
+Llama
 ^^^^^
 
-.. autoclass:: curated_transformers.models.llama.config.LLaMAConfig
+.. autoclass:: curated_transformers.models.llama.config.LlamaConfig
    :members:
 
 Falcon

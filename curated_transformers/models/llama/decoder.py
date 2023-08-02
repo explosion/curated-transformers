@@ -20,25 +20,25 @@ from ...layers.transformer import (
 from ..hf_hub import FromHFHub
 from ..transformer import TransformerDecoder
 from ._hf import convert_hf_config, convert_hf_state_dict
-from .config import LLaMAConfig
+from .config import LlamaConfig
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="LLaMADecoder")
+Self = TypeVar("Self", bound="LlamaDecoder")
 
 
-class LLaMADecoder(TransformerDecoder, FromHFHub):
+class LlamaDecoder(TransformerDecoder, FromHFHub):
     """
-    LLaMa (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) decoder.
+    Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) decoder.
 
     .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
     .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
     """
 
     def __init__(
-        self, config: LLaMAConfig, *, device: Optional[torch.device] = None
+        self, config: LlamaConfig, *, device: Optional[torch.device] = None
     ) -> None:
         """
-        Construct a LLaMA decoder.
+        Construct a Llama decoder.
 
         :param config:
             Decoder configuration.
@@ -75,7 +75,7 @@ class LLaMADecoder(TransformerDecoder, FromHFHub):
         )
         if config.layer.attention.rotary_embeddings is None:
             raise ValueError(
-                "LLaMA attention config does not contain rotary embedding parameters"
+                "Llama attention config does not contain rotary embedding parameters"
             )
         self.layers = ModuleList(
             [

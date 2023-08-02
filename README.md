@@ -12,7 +12,7 @@ state-of-the-art models that are composed from a set of reusable
 components. The stand-out features of Curated Transformer are:
 
 - ⚡️ Supports state-of-the art transformer models, including LLMs such
-  as Falcon, LLaMA, and Dolly v2.
+  as Falcon, Llama, and Dolly v2.
 - 👩‍🎨 Each model is composed from a set of reusable building blocks,
   providing many benefits:
   - Implementing a feature or bugfix benefits all models. For example,
@@ -45,14 +45,14 @@ Supported encoder-only models:
 Supported decoder-only models:
 
 - GPT-NeoX
-- LLaMA 1/2
+- Llama 1/2
 - Falcon
 
 Generator wrappers:
 
 - Dolly v2
 - Falcon
-- LLaMA 1/2
+- Llama 1/2
 
 All types of models can be loaded from Huggingface Hub.
 

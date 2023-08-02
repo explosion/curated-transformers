@@ -1,6 +1,6 @@
 import pytest
 
-from curated_transformers.models.llama.causal_lm import LLaMACausalLM
+from curated_transformers.models.llama.causal_lm import LlamaCausalLM
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
@@ -19,7 +19,7 @@ LLAMA_TEST_MODELS = [
 @pytest.mark.parametrize("model", LLAMA_TEST_MODELS)
 def test_causal_lm(torch_device, model, with_torch_sdp):
     assert_causal_lm_output_equals_hf(
-        LLaMACausalLM,
+        LlamaCausalLM,
         model,
         torch_device,
         with_torch_sdp=with_torch_sdp,
@@ -34,7 +34,7 @@ def test_causal_lm(torch_device, model, with_torch_sdp):
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_causal_lm_torch_compile(torch_device, model, with_torch_sdp):
     assert_causal_lm_output_equals_hf(
-        LLaMACausalLM,
+        LlamaCausalLM,
         model,
         torch_device,
         jit_method=JITMethod.TorchCompile,
@@ -49,7 +49,7 @@ def test_causal_lm_torch_compile(torch_device, model, with_torch_sdp):
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_causal_lm_with_torchscript_trace(torch_device, model, with_torch_sdp):
     assert_causal_lm_output_equals_hf(
-        LLaMACausalLM,
+        LlamaCausalLM,
         model,
         torch_device,
         jit_method=JITMethod.TorchScriptTrace,

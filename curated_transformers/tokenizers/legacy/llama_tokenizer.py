@@ -8,14 +8,14 @@ from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="LLaMATokenizer")
+Self = TypeVar("Self", bound="LlamaTokenizer")
 
 DEFAULT_BOS_PIECE = "<s>"
 
 
-class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     """
-    Legacy tokenizer for LLaMA (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) models.
+    Legacy tokenizer for Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) models.
 
     .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
     .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
@@ -31,7 +31,7 @@ class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         add_eos_piece: bool = False,
     ):
         """
-        Construct a LLaMA tokenizer from a ``curated-tokenizers`` SentencePiece processor.
+        Construct a Llama tokenizer from a ``curated-tokenizers`` SentencePiece processor.
 
         :param processor:
             The processor to wrap.
@@ -58,7 +58,7 @@ class LLaMATokenizer(SentencePieceTokenizer, LegacyFromHFHub):
         add_eos_piece: bool = False,
     ) -> Self:
         """
-        Construct a LLaMA tokenizer from a SentencePiece model.
+        Construct a Llama tokenizer from a SentencePiece model.
 
         :param model_path:
             Path to the SentencePiece model file.

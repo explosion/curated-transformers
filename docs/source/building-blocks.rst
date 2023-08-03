@@ -9,10 +9,10 @@ Embedding Layers
 
 These modules implement full embedding layers.
 
-.. autoclass:: curated_transformers.layers.EmbeddingsDropouts
+.. autoclass:: curated_transformers.layers.EmbeddingDropouts
    :members:
 
-.. autoclass:: curated_transformers.layers.EmbeddingsLayerNorms
+.. autoclass:: curated_transformers.layers.EmbeddingLayerNorms
    :members:
 
 .. autoclass:: curated_transformers.layers.TransformerEmbeddings

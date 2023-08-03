@@ -10,7 +10,7 @@ from .feedforward import PointwiseFeedForward
 
 
 @dataclass
-class EmbeddingsLayerNorms:
+class EmbeddingLayerNorms:
     """
     Layer normalizations used in a transformer embedding layer.
 
@@ -29,7 +29,7 @@ class EmbeddingsLayerNorms:
 
 
 @dataclass
-class EmbeddingsDropouts:
+class EmbeddingDropouts:
     """
     Dropouts used in a transformer embedding layer.
 
@@ -59,10 +59,10 @@ class TransformerEmbeddings(Module):
     def __init__(
         self,
         *,
-        dropouts: EmbeddingsDropouts,
+        dropouts: EmbeddingDropouts,
         embedding_width: int,
         hidden_width: int,
-        layer_norms: EmbeddingsLayerNorms,
+        layer_norms: EmbeddingLayerNorms,
         n_pieces: int,
         n_positions: Optional[int],
         n_types: Optional[int],

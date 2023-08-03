@@ -11,8 +11,8 @@ from ...layers.feedforward import PointwiseFeedForward
 from ...layers.normalization import RMSNorm
 from ...layers.transformer import (
     DecoderLayer,
-    EmbeddingsDropouts,
-    EmbeddingsLayerNorms,
+    EmbeddingDropouts,
+    EmbeddingLayerNorms,
     TransformerDropouts,
     TransformerEmbeddings,
     TransformerLayerNorms,
@@ -50,12 +50,12 @@ class LlamaDecoder(TransformerDecoder, FromHFHub):
         super().__init__()
 
         self.embeddings = TransformerEmbeddings(
-            dropouts=EmbeddingsDropouts(
+            dropouts=EmbeddingDropouts(
                 embed_output_dropout=Dropout(config.embedding.dropout_prob)
             ),
             embedding_width=config.embedding.embedding_width,
             hidden_width=config.layer.feedforward.hidden_width,
-            layer_norms=EmbeddingsLayerNorms(),
+            layer_norms=EmbeddingLayerNorms(),
             n_pieces=config.embedding.n_pieces,
             n_positions=None,
             n_types=None,

@@ -9,10 +9,6 @@ Curated Transformers
 
 **State-of-the-art transformers, brick by brick**
 
-.. note::
-
-   This project is under `active development <https://github.com/explosion/curated-transformers>`_ 🏗️.
-
 **Curated Transformers** is a transformer library for PyTorch. It provides
 state-of-the-art models that are composed from a set of reusable
 components. The stand-out features of Curated Transformer are:

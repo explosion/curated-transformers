@@ -4,8 +4,8 @@ import torch
 from torch import Tensor
 
 from ...layers.transformer import (
-    EmbeddingsDropouts,
-    EmbeddingsLayerNorms,
+    EmbeddingDropouts,
+    EmbeddingLayerNorms,
     TransformerEmbeddings,
 )
 
@@ -24,10 +24,10 @@ class RoBERTaEmbeddings(TransformerEmbeddings):
     def __init__(
         self,
         *,
-        dropouts: EmbeddingsDropouts,
+        dropouts: EmbeddingDropouts,
         embedding_width: int,
         hidden_width: int,
-        layer_norms: EmbeddingsLayerNorms,
+        layer_norms: EmbeddingLayerNorms,
         n_pieces: int,
         n_positions: Optional[int],
         n_types: Optional[int],

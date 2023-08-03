@@ -18,8 +18,8 @@ from .embeddings import (
 from .normalization import RMSNorm
 from .transformer import (
     DecoderLayer,
-    EmbeddingsDropouts,
-    EmbeddingsLayerNorms,
+    EmbeddingDropouts,
+    EmbeddingLayerNorms,
     EncoderLayer,
     TransformerDropouts,
     TransformerEmbeddings,
@@ -33,8 +33,8 @@ __all__ = [
     "AttentionMask",
     "CacheProtocol",
     "DecoderLayer",
-    "EmbeddingsDropouts",
-    "EmbeddingsLayerNorms",
+    "EmbeddingDropouts",
+    "EmbeddingLayerNorms",
     "EncoderLayer",
     "GELUFast",
     "GELUNew",

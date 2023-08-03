@@ -8,8 +8,8 @@ from torch.nn import Dropout, LayerNorm
 from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
-    EmbeddingsDropouts,
-    EmbeddingsLayerNorms,
+    EmbeddingDropouts,
+    EmbeddingLayerNorms,
     EncoderLayer,
     TransformerDropouts,
     TransformerEmbeddings,
@@ -45,12 +45,12 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
         super().__init__()
 
         self.embeddings = TransformerEmbeddings(
-            dropouts=EmbeddingsDropouts(
+            dropouts=EmbeddingDropouts(
                 embed_output_dropout=Dropout(config.embedding.dropout_prob)
             ),
             embedding_width=config.embedding.embedding_width,
             hidden_width=config.layer.feedforward.hidden_width,
-            layer_norms=EmbeddingsLayerNorms(
+            layer_norms=EmbeddingLayerNorms(
                 embed_output_layer_norm=LayerNorm(
                     config.embedding.embedding_width, config.embedding.layer_norm_eps
                 )

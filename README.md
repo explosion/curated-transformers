@@ -72,7 +72,7 @@ The default Linux build of PyTorch is built with CUDA 11.7 support. You should
 explicitly install a CUDA build in the following cases:
 
 - If you want to use Curated Transformers on Windows.
-- If you want to use Curated Transformers on Linux with Ada-generation CPUs.
+- If you want to use Curated Transformers on Linux with Ada-generation GPUs.
   The standard PyTorch build supports Ada GPUs, but you can get considerable
   performance improvements by installing PyTorch with CUDA 11.8 support.
 

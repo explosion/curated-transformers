@@ -90,8 +90,9 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 ## 🏃‍♀️ Usage Example
 
 ```python-console
+>>> import torch
 >>> from curated_transformers.generation import AutoGenerator, GreedyGeneratorConfig
->>> generator = AutoGenerator.from_hf_hub(name="tiiuae/falcon-7b-instruct", device="cuda:0")
+>>> generator = AutoGenerator.from_hf_hub(name="tiiuae/falcon-7b-instruct", device=torch.device("cuda"))
 >>> generator(["What is Python in one sentence?", "What is Rust in one sentence?"], GreedyGeneratorConfig())
 ['Python is a high-level programming language that is easy to learn and widely used for web development, data analysis, and automation.',
  'Rust is a programming language that is designed to be a safe, concurrent, and efficient replacement for C++.']

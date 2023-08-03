@@ -18,6 +18,27 @@ If support for quantization is required, use the quantization variant to automat
 
    (.venv) $ pip install curated-transformers[quantization]
 
+CUDA Support
+^^^^^^^^^^^^
+
+The default Linux build of `PyTorch`_ is built with `CUDA`_ 11.7 support. You should
+explicitly install a CUDA build in the following cases:
+
+- If you want to use Curated Transformers on Windows.
+- If you want to use Curated Transformers on Linux with Ada-generation GPUs.
+
+  The standard PyTorch build supports Ada GPUs, but you can get considerable
+  performance improvements by installing PyTorch with CUDA 11.8 support.
+
+In both cases, you can install PyTorch with:
+
+.. code-block:: console
+
+   (.venv) $ pip install torch --index-url https://download.pytorch.org/whl/cu118
+
+.. _PyTorch: https://pytorch.org/
+.. _CUDA: https://developer.nvidia.com/cuda-toolkit
+
 
 Text Generation Using Causal LMs
 --------------------------------

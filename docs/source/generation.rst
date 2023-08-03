@@ -45,7 +45,7 @@ These classes provide the interface for performing text generation using causal 
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.generation.LLaMAGenerator
+.. autoclass:: curated_transformers.generation.LlamaGenerator
    :members:
    :inherited-members:
    :special-members: __call__

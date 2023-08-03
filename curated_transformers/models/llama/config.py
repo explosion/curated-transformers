@@ -11,9 +11,9 @@ from ..config import (
 
 
 @dataclass
-class LLaMAConfig:
+class LlamaConfig:
     """
-    LLaMA (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) model configuration.
+    Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) model configuration.
 
     .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
     .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
@@ -81,13 +81,13 @@ class LLaMAConfig:
                 hidden_width=hidden_width,
                 n_query_heads=n_query_heads,
                 n_key_value_heads=n_key_value_heads,
-                parallel_attention=False,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
                     rotary_base=rotary_embedding_base,
                 ),
-                use_bias=False,
                 use_alibi=False,
+                use_bias=False,
+                use_parallel_attention=False,
             ),
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,

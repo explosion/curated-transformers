@@ -6,7 +6,7 @@ from torch import Tensor
 from ...layers.activations import Activation
 from ..hf_hub import _process_hf_keys
 from ..module import DecoderModule
-from .config import LLaMAConfig
+from .config import LlamaConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
@@ -24,15 +24,15 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 }
 
 
-def convert_hf_config(hf_config: Any) -> LLaMAConfig:
+def convert_hf_config(hf_config: Any) -> LlamaConfig:
     kwargs = _process_hf_keys(
-        "LLaMA", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
+        "Llama", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
 
     n_key_value_heads = hf_config.get("num_key_value_heads", kwargs["n_query_heads"])
     kwargs["n_key_value_heads"] = n_key_value_heads
 
-    return LLaMAConfig(
+    return LlamaConfig(
         rotary_embedding_base=10000,
         rotary_embedding_fraction=1.0,
         **kwargs,

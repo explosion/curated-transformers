@@ -1,3 +1,3 @@
-from .causal_lm import LLaMACausalLM
-from .config import LLaMAConfig
-from .decoder import LLaMADecoder
+from .causal_lm import LlamaCausalLM
+from .config import LlamaConfig
+from .decoder import LlamaDecoder

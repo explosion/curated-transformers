@@ -133,7 +133,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             QueryKeyRotaryEmbeddings(
                 fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                 base=config.layer.attention.rotary_embeddings.rotary_base,
-                dims_per_head=hidden_width // n_attention_heads,
+                head_width=hidden_width // n_attention_heads,
             )
             if not config.layer.attention.use_alibi
             else None
@@ -168,5 +168,5 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
                 ffn_input_layer_norm=layer_norm(),
             ),
             # The new decoder uses parallel attention unconditionally.
-            parallel_attention=True,
+            use_parallel_attention=True,
         )

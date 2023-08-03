@@ -8,7 +8,7 @@ from .legacy_tokenizer import (
     PreDecoder,
     PreEncoder,
 )
-from .llama_tokenizer import LLaMATokenizer
+from .llama_tokenizer import LlamaTokenizer
 from .roberta_tokenizer import RoBERTaTokenizer
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 from .wordpiece_tokenizer import WordPieceTokenizer
@@ -18,7 +18,7 @@ __all__ = [
     "BERTTokenizer",
     "ByteBPETokenizer",
     "CamemBERTTokenizer",
-    "LLaMATokenizer",
+    "LlamaTokenizer",
     "LegacyTokenizer",
     "PostDecoder",
     "PostEncoder",

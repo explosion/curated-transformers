@@ -82,7 +82,7 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
                         rotary_embeds=QueryKeyRotaryEmbeddings(
                             fraction=config.layer.attention.rotary_embeddings.rotary_fraction,
                             base=config.layer.attention.rotary_embeddings.rotary_base,
-                            dims_per_head=hidden_width // n_attention_heads,
+                            head_width=hidden_width // n_attention_heads,
                         ),
                         use_bias=config.layer.attention.use_bias,
                         device=device,
@@ -102,7 +102,7 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
                         attn_input_layer_norm=layer_norm(),
                         ffn_input_layer_norm=layer_norm(),
                     ),
-                    parallel_attention=config.layer.attention.parallel_attention,
+                    use_parallel_attention=config.layer.attention.use_parallel_attention,
                 )
                 for _ in range(config.layer.n_hidden_layers)
             ]

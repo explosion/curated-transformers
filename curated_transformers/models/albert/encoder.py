@@ -79,7 +79,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
     def forward(
         self,
         piece_ids: Tensor,
-        attention_mask: Optional[AttentionMask] = None,
+        attention_mask: AttentionMask,
         *,
         type_ids: Optional[Tensor] = None,
         positions: Optional[Tensor] = None,

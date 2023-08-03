@@ -101,7 +101,7 @@ Types Used for API Compatibility
 .. autoclass:: curated_transformers.semver.FutureMandatory
    :members:
 
-Changes from Version 1 to 2
-===========================
+Changes between major versions
+------------------------------
 
-Curated Transformers 2 has not been branched yet.
+None yet.

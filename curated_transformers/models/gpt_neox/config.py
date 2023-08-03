@@ -84,13 +84,13 @@ class GPTNeoXConfig:
                 hidden_width=hidden_width,
                 n_query_heads=n_attention_heads,
                 n_key_value_heads=n_attention_heads,
-                parallel_attention=True,
                 rotary_embeddings=RotaryEmbeddingConfig(
                     rotary_fraction=rotary_embedding_fraction,
                     rotary_base=rotary_embedding_base,
                 ),
-                use_bias=True,
                 use_alibi=False,
+                use_bias=True,
+                use_parallel_attention=True,
             ),
             feedforward=TransformerFeedForwardLayerConfig(
                 hidden_width=hidden_width,

@@ -6,7 +6,7 @@ from ..util.hf import TOKENIZER_JSON, get_file_metadata, get_hf_config_model_typ
 from .hf_hub import FromHFHub, get_tokenizer_config
 from .legacy.bert_tokenizer import BERTTokenizer
 from .legacy.camembert_tokenizer import CamemBERTTokenizer
-from .legacy.llama_tokenizer import LLaMATokenizer
+from .legacy.llama_tokenizer import LlamaTokenizer
 from .legacy.roberta_tokenizer import RoBERTaTokenizer
 from .legacy.xlmr_tokenizer import XLMRTokenizer
 from .tokenizer import Tokenizer, TokenizerBase
@@ -16,8 +16,8 @@ HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
     "BertTokenizerFast": BERTTokenizer,
     "CamembertTokenizer": CamemBERTTokenizer,
     "CamembertTokenizerFast": CamemBERTTokenizer,
-    "LlamaTokenizer": LLaMATokenizer,
-    "LlamaTokenizerFast": LLaMATokenizer,
+    "LlamaTokenizer": LlamaTokenizer,
+    "LlamaTokenizerFast": LlamaTokenizer,
     "RobertaTokenizer": RoBERTaTokenizer,
     "RobertaTokenizerFast": RoBERTaTokenizer,
     "XLMRobertaTokenizer": XLMRTokenizer,
@@ -27,7 +27,7 @@ HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
 HF_MODEL_MAPPING: Dict[str, Type[FromHFHub]] = {
     "bert": BERTTokenizer,
     "camembert": CamemBERTTokenizer,
-    "llama": LLaMATokenizer,
+    "llama": LlamaTokenizer,
     "roberta": RoBERTaTokenizer,
     "xlm-roberta": XLMRTokenizer,
 }

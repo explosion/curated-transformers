@@ -18,16 +18,16 @@ class SinusoidalPositionalEmbedding(Module):
 
     def __init__(
         self,
-        dim: int,
-        max_len: int,
         *,
+        width: int,
+        max_len: int,
         normalize=True,
         device: Optional[torch.device] = None,
     ):
         """
         Construct a sinusoidal positional embedding module.
 
-        :param dim:
+        :param width:
             Width of the embedding.
         :param max_len:
             Maximum length of the embedding.
@@ -40,10 +40,10 @@ class SinusoidalPositionalEmbedding(Module):
 
         position = torch.arange(max_len, device=device).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, dim, 2, device=device) * (-math.log(10000.0) / dim)
+            torch.arange(0, width, 2, device=device) * (-math.log(10000.0) / width)
         )
 
-        pe = torch.zeros(max_len, dim, device=device)
+        pe = torch.zeros(max_len, width, device=device)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
@@ -95,7 +95,7 @@ class RotaryEmbeddings(Module):
         will be recomputed when a longer sequence is found in the input.
 
         :param width:
-            Rotary embedding dimensionality.
+            Rotary embedding width.
             Must be even.
         :param seq_len:
             Number of positions to initially precompute.
@@ -216,7 +216,7 @@ class QueryKeyRotaryEmbeddings(Module):
         *,
         base: int = 10000,
         fraction: float,
-        dims_per_head: int,
+        head_width: int,
         device: Optional[torch.device] = None,
     ) -> None:
         """
@@ -227,7 +227,7 @@ class QueryKeyRotaryEmbeddings(Module):
         :param fraction:
             Fraction of hidden width to apply rotary embeddings to.
             Must be in ``[0,1]``.
-        :param dims_per_head:
+        :param head_width:
             Width of key and value heads.
         :param device:
             Device on which the module is to be initialized.
@@ -237,10 +237,10 @@ class QueryKeyRotaryEmbeddings(Module):
             raise ValueError(
                 f"Rotary embedding fraction should be between 0.0 and 1.0 inclusive, was: {fraction}"
             )
-        self.rotary_dims = int(fraction * dims_per_head)
-        self.dims_per_head = dims_per_head
+        self.rotary_width = int(fraction * head_width)
+        self.head_width = head_width
         self.rotary_embeds = RotaryEmbeddings(
-            width=self.rotary_dims, base=base, device=device
+            width=self.rotary_width, base=base, device=device
         )
 
     def forward(
@@ -275,8 +275,8 @@ class QueryKeyRotaryEmbeddings(Module):
 
             *Shape:* ``(batch_size, head, seq_len, width_per_head)``
         """
-        dims_per_head = self.dims_per_head
-        rotary_dims = self.rotary_dims
+        head_width = self.head_width
+        rotary_width = self.rotary_width
 
         # The key-value is converted to a dict for traced models. Rewrap as
         # KeyValueCache to get validation and utility methods.
@@ -294,16 +294,16 @@ class QueryKeyRotaryEmbeddings(Module):
                 device=key.device,
             ).repeat(key.size(0), 1)
 
-        if rotary_dims == dims_per_head:
+        if rotary_width == head_width:
             # Fast path: we apply rotary embeddings the full key/query vectors.
             key = self.rotary_embeds(key, positions=positions)
             query = self.rotary_embeds(query, positions=positions)
         else:
             # Otherwise, split up key/query vectors, apply rotary embeddings
             # and concatenate again.
-            k_rotary, k_rest = key.split([rotary_dims, dims_per_head - rotary_dims], -1)
+            k_rotary, k_rest = key.split([rotary_width, head_width - rotary_width], -1)
             q_rotary, q_rest = query.split(
-                [rotary_dims, dims_per_head - rotary_dims], -1
+                [rotary_width, head_width - rotary_width], -1
             )
 
             # Apply rotary embeddings.

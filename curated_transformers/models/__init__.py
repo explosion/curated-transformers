@@ -12,7 +12,7 @@ from .config import (
 from .falcon import FalconCausalLM, FalconConfig, FalconDecoder
 from .gpt_neox import GPTNeoXCausalLM, GPTNeoXConfig, GPTNeoXDecoder
 from .hf_hub import FromHFHub
-from .llama import LLaMACausalLM, LLaMAConfig, LLaMADecoder
+from .llama import LlamaCausalLM, LlamaConfig, LlamaDecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
 from .output import CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 from .roberta import RoBERTaConfig, RoBERTaEncoder
@@ -39,9 +39,9 @@ __all__ = [
     "GPTNeoXCausalLM",
     "GPTNeoXConfig",
     "GPTNeoXDecoder",
-    "LLaMACausalLM",
-    "LLaMAConfig",
-    "LLaMADecoder",
+    "LlamaCausalLM",
+    "LlamaConfig",
+    "LlamaDecoder",
     "ModelOutput",
     "ModelOutputWithCache",
     "RoBERTaConfig",

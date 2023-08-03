@@ -45,10 +45,11 @@ def test_torch_sdp(torch_device):
 
     torch.manual_seed(0)
     X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_state
+        Y = model(X, AttentionMask(mask)).last_hidden_layer_state
         with enable_torch_sdp():
-            Y_sdp = model(X).last_hidden_layer_state
+            Y_sdp = model(X, AttentionMask(mask)).last_hidden_layer_state
     torch_assertclose(Y, Y_sdp)
 
 
@@ -84,10 +85,11 @@ def test_torch_sdp_causal(torch_device):
 
     torch.manual_seed(0)
     X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     with torch.no_grad():
-        Y = model(X).last_hidden_layer_state
+        Y = model(X, AttentionMask(mask)).last_hidden_layer_state
         with enable_torch_sdp():
-            Y_sdp = model(X).last_hidden_layer_state
+            Y_sdp = model(X, AttentionMask(mask)).last_hidden_layer_state
     torch_assertclose(Y, Y_sdp)
 
 

@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, Identity, LayerNorm, Linear, Module
+from torch.nn import Dropout, Embedding, Identity, Linear, Module
 
 from .attention import AttentionMask, KeyValueCache, SelfAttention
 from .feedforward import PointwiseFeedForward
@@ -292,7 +292,7 @@ class _TransformerLayer(Module):
         dropouts: TransformerDropouts,
         feed_forward_layer: PointwiseFeedForward,
         layer_norms: TransformerLayerNorms,
-        parallel_attention: bool,
+        use_parallel_attention: bool,
     ):
         """
         Construct a transformer layer.
@@ -305,12 +305,12 @@ class _TransformerLayer(Module):
             The pointwise feed-forward layer to use in the transformer layer.
         :param layer_norms:
             Layer norms to use in the layer.
-        :param parallel_attention:
+        :param use_parallel_attention:
              Use parallel attention.
         """
         super().__init__()
 
-        self.parallel_attention = parallel_attention
+        self.use_parallel_attention = use_parallel_attention
 
         self.mha = attention_layer
 
@@ -328,12 +328,12 @@ class _TransformerLayer(Module):
     def _forward(
         self,
         input: Tensor,
+        attention_mask: AttentionMask,
         *,
-        use_causal_mask: bool,
-        attention_mask: Optional[AttentionMask],
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
+        use_causal_mask: bool,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
         Apply the transformer layer to the given piece hidden representations.
@@ -374,7 +374,7 @@ class _TransformerLayer(Module):
         )
         attn_out = self.attn_output_dropout(attn_out)
 
-        if self.parallel_attention:
+        if self.use_parallel_attention:
             ffn_in = input
         else:
             residual = self.attn_residual_layer_norm(input + attn_out)
@@ -383,7 +383,7 @@ class _TransformerLayer(Module):
         ffn_out = self.ffn(self.ffn_input_layer_norm(ffn_in))
         ffn_out = self.ffn_output_dropout(ffn_out)
 
-        if self.parallel_attention:
+        if self.use_parallel_attention:
             output = self.parallel_attn_dropout(attn_out + ffn_out)
         else:
             output = ffn_out
@@ -401,7 +401,8 @@ class DecoderLayer(_TransformerLayer):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
+        *,
         cache: Optional[KeyValueCache] = None,
         positions: Optional[Tensor] = None,
         store_cache: bool = False,
@@ -451,7 +452,7 @@ class EncoderLayer(_TransformerLayer):
     def forward(
         self,
         input: Tensor,
-        attention_mask: Optional[AttentionMask],
+        attention_mask: AttentionMask,
     ) -> Tuple[Tensor, Optional[KeyValueCache]]:
         """
         Apply the encoder layer to the given piece hidden representations.

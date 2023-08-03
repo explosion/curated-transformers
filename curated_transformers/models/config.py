@@ -35,24 +35,24 @@ class TransformerAttentionLayerConfig:
         Number of attention heads.
     :param n_key_value_heads:
         Number of key and value heads.
-    :param parallel_attention:
-        Use parallel attention.
     :param rotary_embeddings:
         Rotary embedding configuration.
     :param use_alibi:
         Use ALiBi linear biases.
     :param use_bias:
         Use bias in linear layers.
+    :param use_parallel_attention:
+        Use parallel attention.
     """
 
     dropout_prob: float
     hidden_width: int
     n_query_heads: int
     n_key_value_heads: int
-    parallel_attention: bool
     rotary_embeddings: Optional[RotaryEmbeddingConfig]
     use_alibi: bool
     use_bias: bool
+    use_parallel_attention: bool
 
 
 @dataclass

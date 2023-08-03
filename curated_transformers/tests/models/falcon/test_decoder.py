@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from curated_transformers.layers.attention import AttentionMask
 from curated_transformers.models.falcon.decoder import FalconDecoder
 
 from ...compat import has_hf_transformers, has_torch_compile
@@ -127,11 +128,17 @@ def test_decoder_with_cache(torch_device, model_revision):
 
     torch.manual_seed(0)
     X = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
+    mask = torch.ones_like(X, dtype=torch.bool)
     X_rest = torch.randint(0, N_PIECES, (2, 10), device=torch_device)
+    mask_rest = torch.cat([mask, torch.ones_like(X_rest, dtype=torch.bool)], dim=1)
 
     with torch.no_grad():
-        Y = model(X, store_cache=True)
-        Y = model(X_rest, cache=Y.cache).last_hidden_layer_state
-        Y_no_cache = model(torch.cat([X, X_rest], dim=1)).last_hidden_layer_state
+        Y = model(X, AttentionMask(mask), store_cache=True)
+        Y = model(
+            X_rest, AttentionMask(mask_rest), cache=Y.cache
+        ).last_hidden_layer_state
+        Y_no_cache = model(
+            torch.cat([X, X_rest], dim=1), AttentionMask(mask_rest)
+        ).last_hidden_layer_state
 
     torch_assertclose(Y, Y_no_cache[:, 10:, :])

@@ -6,7 +6,7 @@ from .falcon import FalconGenerator
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
 from .hf_hub import FromHFHub
-from .llama import LLaMAGenerator
+from .llama import LlamaGenerator
 from .logits import (
     CompoundLogitsTransform,
     LogitsTransform,
@@ -36,7 +36,7 @@ __all__ = [
     "GeneratorConfig",
     "GeneratorWrapper",
     "GreedyGeneratorConfig",
-    "LLaMAGenerator",
+    "LlamaGenerator",
     "LogitsTransform",
     "MaxGeneratedPiecesCondition",
     "SampleGeneratorConfig",

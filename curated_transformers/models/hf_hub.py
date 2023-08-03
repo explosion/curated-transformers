@@ -16,7 +16,8 @@ from typing import (
 import torch
 from torch import Tensor
 
-from ..quantization import BitsAndBytesConfig, prepare_module_for_quantization
+from ..quantization import prepare_module_for_quantization
+from ..quantization.bnb.config import BitsAndBytesConfig
 from ..util.hf import get_model_checkpoint_filepaths, get_model_config_filepath
 from ..util.serde import load_model_from_checkpoints
 

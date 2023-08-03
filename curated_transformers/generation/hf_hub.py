@@ -3,7 +3,7 @@ from typing import Optional, Type, TypeVar
 
 import torch
 
-from ..quantization import BitsAndBytesConfig
+from ..quantization.bnb.config import BitsAndBytesConfig
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")

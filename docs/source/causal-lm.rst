@@ -4,11 +4,11 @@ Causal Language Models
 Base Classes
 ------------
 
-.. autoclass:: curated_transformers.models.module.CausalLMModule
+.. autoclass:: curated_transformers.models.CausalLMModule
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.transformer.TransformerCausalLM
+.. autoclass:: curated_transformers.models.TransformerCausalLM
    :members:
    :show-inheritance:
 
@@ -42,7 +42,7 @@ specific causal LM type, you can use the :class:`~.auto_model.AutoCausalLM`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.
 
-.. autoclass:: curated_transformers.models.auto_model.AutoCausalLM
+.. autoclass:: curated_transformers.models.AutoCausalLM
    :members:
 
 

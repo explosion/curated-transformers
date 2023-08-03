@@ -9,13 +9,13 @@ Embedding Layers
 
 These modules implement full embedding layers.
 
-.. autoclass:: curated_transformers.layers.transformer.EmbeddingsDropouts
+.. autoclass:: curated_transformers.layers.EmbeddingsDropouts
    :members:
 
-.. autoclass:: curated_transformers.layers.transformer.EmbeddingsLayerNorms
+.. autoclass:: curated_transformers.layers.EmbeddingsLayerNorms
    :members:
 
-.. autoclass:: curated_transformers.layers.transformer.TransformerEmbeddings
+.. autoclass:: curated_transformers.layers.TransformerEmbeddings
    :members:
 
 Encoder/Decoder Layers
@@ -23,16 +23,16 @@ Encoder/Decoder Layers
 
 These modules implement full encoder/decoder layers.
 
-.. autoclass:: curated_transformers.layers.transformer.TransformerDropouts
+.. autoclass:: curated_transformers.layers.TransformerDropouts
    :members:
 
-.. autoclass:: curated_transformers.layers.transformer.TransformerLayerNorms
+.. autoclass:: curated_transformers.layers.TransformerLayerNorms
    :members:
 
-.. autoclass:: curated_transformers.layers.transformer.DecoderLayer
+.. autoclass:: curated_transformers.layers.DecoderLayer
    :members:
 
-.. autoclass:: curated_transformers.layers.transformer.EncoderLayer
+.. autoclass:: curated_transformers.layers.EncoderLayer
    :members:
 
 Attention
@@ -40,27 +40,27 @@ Attention
 
 These modules and their helper classes implement the Transformer attention mechanism.
 
-.. autoclass:: curated_transformers.layers.attention.QkvMode
+.. autoclass:: curated_transformers.layers.QkvMode
    :members:
 
-.. autoclass:: curated_transformers.layers.attention.AttentionHeads
+.. autoclass:: curated_transformers.layers.AttentionHeads
    :members:
 
-.. autoclass:: curated_transformers.layers.attention.AttentionMask
+.. autoclass:: curated_transformers.layers.AttentionMask
    :members:
 
-.. autoclass:: curated_transformers.layers.cache.KeyValueCache
+.. autoclass:: curated_transformers.layers.KeyValueCache
    :members:
 
-.. autoclass:: curated_transformers.layers.attention.AttentionLinearBiases
-   :members:
-   :show-inheritance:
-
-.. autoclass:: curated_transformers.layers.attention.ScaledDotProductAttention
+.. autoclass:: curated_transformers.layers.AttentionLinearBiases
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.attention.SelfAttention
+.. autoclass:: curated_transformers.layers.ScaledDotProductAttention
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.layers.SelfAttention
    :members:
    :show-inheritance:
 
@@ -69,22 +69,22 @@ Embeddings
 
 These modules implement various positional embeddings used by the Transformer.
 
-.. autoclass:: curated_transformers.layers.embeddings.SinusoidalPositionalEmbedding
+.. autoclass:: curated_transformers.layers.SinusoidalPositionalEmbedding
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.embeddings.RotaryEmbeddings
+.. autoclass:: curated_transformers.layers.RotaryEmbeddings
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.embeddings.QueryKeyRotaryEmbeddings
+.. autoclass:: curated_transformers.layers.QueryKeyRotaryEmbeddings
    :members:
    :show-inheritance:
 
 Feed-forward Layers
 -------------------
 
-.. autoclass:: curated_transformers.layers.feedforward.PointwiseFeedForward
+.. autoclass:: curated_transformers.layers.PointwiseFeedForward
    :members:
    :show-inheritance:
 
@@ -96,11 +96,11 @@ Activations
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.activations.GELUFast
+.. autoclass:: curated_transformers.layers.GELUFast
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.layers.activations.GELUNew
+.. autoclass:: curated_transformers.layers.GELUNew
    :members:
    :show-inheritance:
 
@@ -108,7 +108,7 @@ Activations
 Normalization
 -------------
 
-.. autoclass:: curated_transformers.layers.normalization.RMSNorm
+.. autoclass:: curated_transformers.layers.RMSNorm
    :members:
    :show-inheritance:
 
@@ -118,14 +118,14 @@ Model Outputs
 
 These dataclasses encapsulate the outputs produced by the different modules.
 
-.. autoclass:: curated_transformers.models.output.ModelOutput
+.. autoclass:: curated_transformers.models.ModelOutput
    :members:
 
-.. autoclass:: curated_transformers.models.output.ModelOutputWithCache
+.. autoclass:: curated_transformers.models.ModelOutputWithCache
    :members:
    :show-inheritance:
 
-.. autoclass:: curated_transformers.models.output.CausalLMOutputWithCache
+.. autoclass:: curated_transformers.models.CausalLMOutputWithCache
    :members:
    :show-inheritance:
 
@@ -134,17 +134,17 @@ Model Configs
 
 These dataclasses encapsulate the configurable parameters of the Transformer model.
 
-.. autoclass:: curated_transformers.models.config.RotaryEmbeddingConfig
+.. autoclass:: curated_transformers.models.RotaryEmbeddingConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerAttentionLayerConfig
+.. autoclass:: curated_transformers.models.TransformerAttentionLayerConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerEmbeddingLayerConfig
+.. autoclass:: curated_transformers.models.TransformerEmbeddingLayerConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerFeedForwardLayerConfig
+.. autoclass:: curated_transformers.models.TransformerFeedForwardLayerConfig
    :members:
 
-.. autoclass:: curated_transformers.models.config.TransformerLayerConfig
+.. autoclass:: curated_transformers.models.TransformerLayerConfig
    :members:

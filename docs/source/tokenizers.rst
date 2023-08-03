@@ -77,24 +77,24 @@ Non-Legacy
 Legacy
 ^^^^^^
 
-.. autoclass:: curated_transformers.tokenizers.legacy.legacy_tokenizer.LegacyTokenizer
+.. autoclass:: curated_transformers.tokenizers.legacy.LegacyTokenizer
    :members:
    :special-members: __call__
    :show-inheritance:
 
-.. autoclass:: curated_transformers.tokenizers.legacy.legacy_tokenizer.PreEncoder
+.. autoclass:: curated_transformers.tokenizers.legacy.PreEncoder
    :members:
    :special-members: __call__
 
-.. autoclass:: curated_transformers.tokenizers.legacy.legacy_tokenizer.PostEncoder
+.. autoclass:: curated_transformers.tokenizers.legacy.PostEncoder
    :members:
    :special-members: __call__
 
-.. autoclass:: curated_transformers.tokenizers.legacy.legacy_tokenizer.PreDecoder
+.. autoclass:: curated_transformers.tokenizers.legacy.PreDecoder
    :members:
    :special-members: __call__
 
-.. autoclass:: curated_transformers.tokenizers.legacy.legacy_tokenizer.PostDecoder
+.. autoclass:: curated_transformers.tokenizers.legacy.PostDecoder
    :members:
    :special-members: __call__
 

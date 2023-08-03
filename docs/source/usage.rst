@@ -23,22 +23,22 @@ Text Generation Using Causal LMs
 --------------------------------
 
 Curated Transformers provides infrastructure to perform open-ended text generation using decoder-only causal language models. 
-The :py:class:`~curated_transformers.generation.generator.Generator` class wraps a :py:class:`~curated_transformers.models.module.CausalLMModule` 
+The :py:class:`~curated_transformers.generation.Generator` class wraps a :py:class:`~curated_transformers.models.CausalLMModule`
 and its corresponding tokenizer. It provides a generic interface to generate outputs from the wrapped module in an auto-regressive fashion. 
-:py:class:`~curated_transformers.generation.config.GeneratorConfig` specifies the parameters used by the generator such as stopping conditions 
+:py:class:`~curated_transformers.generation.GeneratorConfig` specifies the parameters used by the generator such as stopping conditions
 and sampling parameters.
 
-The :py:class:`~curated_transformers.generation.auto_generator.AutoGenerator` class can be used to directly load a supported causal 
+The :py:class:`~curated_transformers.generation.AutoGenerator` class can be used to directly load a supported causal
 LM model and generate text with it.
 
 .. code-block:: python
 
       import torch
-      from curated_transformers.generation.config import (
+      from curated_transformers.generation import (
+         AutoGenerator,
          GreedyGeneratorConfig,
          SampleGeneratorConfig,
       )
-      from curated_transformers.generation.auto_generator import AutoGenerator
 
       generator = AutoGenerator.from_hf_hub(
          name="databricks/dolly-v2-3b", device=torch.device("cuda", index=0)
@@ -73,8 +73,8 @@ Model Hub.
 .. code-block:: python
 
    import torch
-   from curated_transformers.models.bert import BERTEncoder
-   from curated_transformers.models.gpt_neox import GPTNeoXDecoder
+   from curated_transformers.models import BERTEncoder
+   from curated_transformers.models import GPTNeoXDecoder
 
    encoder = BERTEncoder.from_hf_hub(
       name="bert-base-uncased",
@@ -85,12 +85,12 @@ Model Hub.
    decoder = GPTNeoXDecoder.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
 
 
-The :py:class:`~curated_transformers.models.auto_model.AutoEncoder`, :py:class:`~curated_transformers.models.auto_model.AutoDecoder` 
-and :py:class:`~curated_transformers.models.auto_model.AutoCausalLM` classes can be used to automatically infer the model architecture.
+The :py:class:`~curated_transformers.models.AutoEncoder`, :py:class:`~curated_transformers.models.AutoDecoder`
+and :py:class:`~curated_transformers.models.AutoCausalLM` classes can be used to automatically infer the model architecture.
 
 .. code-block:: python
 
-   from curated_transformers.models.auto_model import (
+   from curated_transformers.models import (
       AutoCausalLM,
       AutoDecoder,
       AutoEncoder,
@@ -110,7 +110,7 @@ Quantization
 ------------
 
 Curated Transformers implements dynamic 8-bit and 4-bit quantization of models by leveraging the `bitsandbytes`_ library.
-When loading models using the ``from_hf_hub`` method, an optional :py:class:`~curated_transformers.quantization.bnb.config.BitsAndBytesConfig`
+When loading models using the ``from_hf_hub`` method, an optional :py:class:`~curated_transformers.quantization.bnb.BitsAndBytesConfig`
 instance can be passed to the method to opt into dynamic quantization of model parameters. Quantization requires the model to be
 loaded to a CUDA GPU by additionally passing the ``device`` argument to the method.
 
@@ -119,8 +119,8 @@ loaded to a CUDA GPU by additionally passing the ``device`` argument to the meth
 .. code-block:: python
 
    import torch
-   from curated_transformers.generation.auto_generator import AutoGenerator
-   from curated_transformers.quantization.bnb.config import BitsAndBytesConfig, Dtype4Bit
+   from curated_transformers.generation import AutoGenerator
+   from curated_transformers.quantization.bnb import BitsAndBytesConfig, Dtype4Bit
 
    generator_8bit = AutoGenerator.from_hf_hub(
       name="databricks/dolly-v2-3b",
@@ -146,16 +146,16 @@ Loading a Tokenizer
 
 To train or run inference on the models, one has to tokenize the inputs with a compatible tokenizer. Curated Transformers supports 
 tokenizers implemented by the `Hugging Face tokenizers`_ library and certain model-specific tokenizers that are implemented 
-using the `Curated Tokenizers`_ library. The :py:class:`~curated_transformers.tokenizers.tokenizer.Tokenizer` class encapsulates the 
-former and the :py:class:`~curated_transformers.tokenizers.legacy.legacy_tokenizer.LegacyTokenizer` class the latter.
+using the `Curated Tokenizers`_ library. The :py:class:`~curated_transformers.tokenizers.Tokenizer` class encapsulates the
+former and the :py:class:`~curated_transformers.tokenizers.legacy.LegacyTokenizer` class the latter.
 
-In both cases, one can use the :py:class:`~curated_transformers.tokenizers.auto_tokenizer.AutoTokenizer` class to automatically 
-infer the correct tokenizer type and construct a Curated Transformers tokenizer that implements the :py:class:`~curated_transformers.tokenizers.tokenizer.TokenizerBase` 
+In both cases, one can use the :py:class:`~curated_transformers.tokenizers.AutoTokenizer` class to automatically
+infer the correct tokenizer type and construct a Curated Transformers tokenizer that implements the :py:class:`~curated_transformers.tokenizers.TokenizerBase`
 interface.
 
 .. code-block:: python
 
-   from curated_transformers.tokenizers.auto_tokenizer import AutoTokenizer
+   from curated_transformers.tokenizers import AutoTokenizer
 
    tokenizer = AutoTokenizer.from_hf_hub(
       name="bert-base-uncased",
@@ -177,8 +177,8 @@ In addition to text generation, one can also run inference on the inputs to prod
 .. code-block:: python
 
    import torch
-   from curated_transformers.models.auto_model import AutoEncoder
-   from curated_transformers.tokenizers.auto_tokenizer import AutoTokenizer
+   from curated_transformers.models import AutoEncoder
+   from curated_transformers.tokenizers import AutoTokenizer
 
    device = torch.device("cpu")
    encoder = AutoEncoder.from_hf_hub(
@@ -209,11 +209,9 @@ In addition to text generation, one can also run inference on the inputs to prod
    last_hidden_repr = model_output.last_hidden_layer_state
 
 
-The :py:class:`~curated_transformers.models.output.ModelOutput` instance returned by the encoder contains all of 
+The :py:class:`~curated_transformers.models.ModelOutput` instance returned by the encoder contains all of
 transformer's outputs, i.e., the hidden representations of all transformer layers and the output of the embedding
-layer. Decoder models (:py:class:`~curated_transformers.models.module.DecoderModule`) and causal language models 
-(:py:class:`~curated_transformers.models.module.CausalLMModule`) produce additional outputs such as the key-value 
-cache used during attention calculation (:py:class:`~curated_transformers.models.output.ModelOutputWithCache`) and 
-logits (:py:class:`~curated_transformers.models.output.CausalLMOutputWithCache`).
-
-
+layer. Decoder models (:py:class:`~curated_transformers.models.DecoderModule`) and causal language models
+(:py:class:`~curated_transformers.models.CausalLMModule`) produce additional outputs such as the key-value
+cache used during attention calculation (:py:class:`~curated_transformers.models.ModelOutputWithCache`) and
+logits (:py:class:`~curated_transformers.models.CausalLMOutputWithCache`).

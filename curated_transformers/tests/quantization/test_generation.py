@@ -6,7 +6,7 @@ import torch
 from curated_transformers._compat import has_bitsandbytes
 from curated_transformers.generation.config import GreedyGeneratorConfig
 from curated_transformers.generation.dolly_v2 import DollyV2Generator
-from curated_transformers.quantization import BitsAndBytesConfig
+from curated_transformers.quantization.bnb import BitsAndBytesConfig
 
 from ..conftest import GPU_TESTS_ENABLED
 

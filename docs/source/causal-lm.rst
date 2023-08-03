@@ -21,14 +21,17 @@ decoder-only architecture has a corresponding causal LM architecture.
 .. autoclass:: curated_transformers.models.GPTNeoXCausalLM
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.LlamaCausalLM
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.FalconCausalLM
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 Downloading
 -----------

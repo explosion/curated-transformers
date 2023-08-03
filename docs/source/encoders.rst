@@ -24,18 +24,22 @@ These modules represent the supported encoder-only architectures.
 .. autoclass:: curated_transformers.models.BERTEncoder
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.CamemBERTEncoder
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.RoBERTaEncoder
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.XLMREncoder
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 
 Downloading

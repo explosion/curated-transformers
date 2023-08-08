@@ -50,9 +50,10 @@ Supported encoder-only models:
 
 Supported decoder-only models:
 
+- Falcon
 - GPT-NeoX
 - Llama 1/2
-- Falcon
+- MPT
 
 Generator wrappers:
 

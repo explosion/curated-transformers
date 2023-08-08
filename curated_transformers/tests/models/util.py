@@ -245,7 +245,8 @@ def assert_decoder_with_cache_output_equals_hf(
 ):
     X_jit = torch.randint(0, hf_model.config.vocab_size, (3, 5), device=torch_device)
     mask_jit = torch.ones_like(X_jit, dtype=torch.bool)
-    cache_jit = orig_model(X_jit, AttentionMask(mask_jit), store_cache=True).cache
+    with torch.no_grad():
+        cache_jit = orig_model(X_jit, AttentionMask(mask_jit), store_cache=True).cache
 
     model, output = jit_method.convert(
         DecoderWithCache(orig_model),

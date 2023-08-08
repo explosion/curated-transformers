@@ -1,14 +1,17 @@
 import math
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto
 from typing import Dict, Optional, Tuple, Type, Union
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module
+
+from curated_transformers.semver import Default, FutureMandatory
 
 from ..util.dataclass import DataclassAsDict
 from .cache import KeyValueCache
@@ -243,8 +246,134 @@ def create_causal_mask(query: Tensor, key: Tensor) -> AttentionMask:
     return AttentionMask(causal_mask[:, :, key_len - query_len : key_len, :key_len])
 
 
+class QkvSplit(ABC):
+    """
+    Query, key, value splitting strategies.
+
+    After the input projection of the attention layer, we have an array with
+    shape ``(batch_size, seq_len, n_heads * head_width)`` where ``n_heads`` is
+    the sum of the number of query, key, and value heads. We need to split up
+    the array into separate arrays for query, key, and value heads.
+
+    Subclasses of this class implement different splitting strategies.
+    """
+
+    @abstractmethod
+    def split(
+        self,
+        *,
+        projection: Tensor,
+        head_width: int,
+        n_query_heads: int,
+        n_key_value_heads: int,
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Split attention heads in the projection in query, key, and value
+        heads.
+
+        :param projection:
+            The fused query, key, value projection.
+
+            *Shape:* ``(batch_size, seq_len, (n_query_heads + 2 * n_key_value_heads) * head_width)``
+        :param head_width:
+            Head width.
+        :param n_query_heads:
+            Number of query heads.
+        :param n_key_value_heads:
+            Number of key/value heads.
+        :returns:
+            Query, key, value tensors.
+
+            *Shapes:*
+            - Query: ``(batch_size, n_query_heads, seq_len, head_width)``
+            - Key: ``(batch_size, n_key_value_heads, seq_len, head_width)``
+            - Value: ``(batch_size, n_key_value_heads, seq_len, head_width)``
+        """
+        ...
+
+
+class QkvSplitDefault(QkvSplit):
+    """
+    Default splitting strategy.
+
+    First view the array as ``(batch_size, seq_len, n_key_value_heads,
+    n_chunks, head_width)``. Then split up the array along the ``n_chunks``
+    dimension.
+    """
+
+    def split(
+        self,
+        *,
+        projection: Tensor,
+        head_width: int,
+        n_query_heads: int,
+        n_key_value_heads: int,
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        query, key, value = projection.split(
+            [
+                n_query_heads * head_width,
+                n_key_value_heads * head_width,
+                n_key_value_heads * head_width,
+            ],
+            dim=-1,
+        )
+        query = split_heads(query, n_query_heads)
+        key = split_heads(key, n_key_value_heads)
+        value = split_heads(value, n_key_value_heads)
+
+        return query, key, value
+
+
+class QkvSplitKVSizedChunks(QkvSplit):
+    """
+    Split up the projection in key/value-sized chunks.
+
+    First view the array as ``(batch_size, seq_len, n_key_value_heads,
+    n_chunks, head_width)``. Then split up the array along the ``n_chunks``
+    dimension.
+    """
+
+    def split(
+        self,
+        *,
+        projection: Tensor,
+        head_width: int,
+        n_query_heads: int,
+        n_key_value_heads: int,
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        batch_size, seq_len, _ = projection.shape
+
+        grouped_projection = projection.view(
+            batch_size,
+            seq_len,
+            -1,
+            n_query_heads // n_key_value_heads + 2,
+            head_width,
+        )
+        query, key, value = grouped_projection.split(
+            [n_query_heads // n_key_value_heads, 1, 1], dim=-2
+        )
+
+        def permute_merge_groups(x, n_heads):
+            return x.permute(0, 2, 3, 1, 4).reshape(
+                batch_size, n_heads, seq_len, head_width
+            )
+
+        query = permute_merge_groups(query, n_query_heads)
+        key = permute_merge_groups(key, n_key_value_heads)
+        value = permute_merge_groups(value, n_key_value_heads)
+
+        return query, key, value
+
+
 class AttentionHeads:
-    def __init__(self, *, n_query_heads: int, n_key_value_heads: int):
+    def __init__(
+        self,
+        *,
+        n_query_heads: int,
+        n_key_value_heads: int,
+        qkv_split: FutureMandatory[QkvSplit] = Default,
+    ):
         """
         Construct an attention head configuration. This constructor must
         not be used directly, its signature may change even within a semver
@@ -254,25 +383,46 @@ class AttentionHeads:
             Number of query heads.
         :param n_key_value_heads:
             Number of key/value heads.
+        :param qkv_split:
+            How query, key, and value should be split when using
+            :py:class:`~curated_transformers.layers.QkvMode.MERGED_SPLIT_AFTER`.
+            Not used for other query, key, value modes.
 
         :meta private:
         """
         self._n_query_heads = n_query_heads
         self._n_key_value_heads = n_key_value_heads
+        self._qkv_split = QkvSplitKVSizedChunks() if qkv_split is Default else qkv_split
 
     @classmethod
-    def uniform(cls, n_attention_heads: int) -> "AttentionHeads":
+    def uniform(
+        cls,
+        n_attention_heads: int,
+        qkv_split: FutureMandatory[QkvSplit] = Default,
+    ) -> "AttentionHeads":
         """
         Construct a head configuration where query, key, and value have the
         same number of attention heads.
 
         :param n_attention_heads:
             Number of attention heads.
+        :param qkv_split:
+            How query, key, and value should be split when using
+            :py:class:`~curated_transformers.layers.QkvMode.MERGED_SPLIT_AFTER`.
+            Not used for other query, key, value modes.
         """
-        return cls(n_query_heads=n_attention_heads, n_key_value_heads=n_attention_heads)
+        return cls(
+            n_query_heads=n_attention_heads,
+            n_key_value_heads=n_attention_heads,
+            qkv_split=qkv_split,
+        )
 
     @classmethod
-    def multi_query(cls, n_query_heads: int) -> "AttentionHeads":
+    def multi_query(
+        cls,
+        n_query_heads: int,
+        qkv_split: FutureMandatory[QkvSplit] = Default,
+    ) -> "AttentionHeads":
         """
         Construct a multi-query attention configuration: key has one head,
         value has one head, query has ``n_query_heads`` heads
@@ -283,12 +433,22 @@ class AttentionHeads:
 
         :param n_query_heads:
             Number of query heads.
+        :param qkv_split:
+            How query, key, and value should be split when using
+            :py:class:`~curated_transformers.layers.QkvMode.MERGED_SPLIT_AFTER`.
+            Not used for other query, key, value modes.
         """
-        return cls(n_query_heads=n_query_heads, n_key_value_heads=1)
+        return cls(
+            n_query_heads=n_query_heads, n_key_value_heads=1, qkv_split=qkv_split
+        )
 
     @classmethod
     def key_value_broadcast(
-        cls, *, n_query_heads: int, n_key_value_heads: int
+        cls,
+        *,
+        n_query_heads: int,
+        n_key_value_heads: int,
+        qkv_split: FutureMandatory[QkvSplit] = Default,
     ) -> "AttentionHeads":
         """
         Construct a head configuration where query has a larger number
@@ -300,6 +460,10 @@ class AttentionHeads:
             ``n_key_value_heads``.
         :param n_key_value_heads:
             Number of key and value heads.
+        :param qkv_split:
+            How query, key, and value should be split when using
+            :py:class:`~curated_transformers.layers.QkvMode.MERGED_SPLIT_AFTER`.
+            Not used for other query, key, value modes.
         """
 
         if n_query_heads < n_key_value_heads or n_query_heads % n_key_value_heads != 0:
@@ -307,7 +471,11 @@ class AttentionHeads:
                 f"Number of query heads ({n_query_heads}) must be a multiple of key/value heads ({n_key_value_heads})"
             )
 
-        return cls(n_query_heads=n_query_heads, n_key_value_heads=n_key_value_heads)
+        return cls(
+            n_query_heads=n_query_heads,
+            n_key_value_heads=n_key_value_heads,
+            qkv_split=qkv_split,
+        )
 
 
 class QkvMode(Enum):
@@ -342,7 +510,11 @@ class AttentionLinearBiases(Module):
     slopes: Tensor
 
     def __init__(
-        self, *, n_attention_heads: int, is_causal: bool, is_inverted: bool
+        self,
+        *,
+        n_attention_heads: int,
+        is_causal: bool,
+        is_inverted: bool,
     ) -> None:
         """
         Construct an ALiBi module.
@@ -431,7 +603,7 @@ class AttentionLinearBiases(Module):
         if self.invert:
             distances += seq_len - 1
 
-        return distances * self.slopes
+        return distances.to(self.slopes.device) * self.slopes
 
     def forward(self, *, attention_scores: Tensor, inplace: bool = True) -> Tensor:
         """
@@ -776,8 +948,11 @@ class SelfAttention(Module):
             # (simpler) splitting methods. For instance, we could group all
             # the heads together and then split them. In the future we
             # could split conditional on a field in AttentionHeads.
-            query, key, value = split_heads_grouped_qkv(
-                proj, self.attention_heads, self.head_width
+            query, key, value = self.attention_heads._qkv_split.split(
+                projection=proj,
+                head_width=self.head_width,
+                n_query_heads=n_query_heads,
+                n_key_value_heads=n_key_value_heads,
             )
 
         if n_key_value_heads != 1 and n_key_value_heads != n_query_heads:
@@ -816,60 +991,6 @@ def split_heads(input: Tensor, n_heads: int) -> Tensor:
     head_width = model_width // n_heads
 
     return input.view(batch_size, seq_len, n_heads, head_width).transpose(1, 2)
-
-
-def split_heads_grouped_qkv(
-    projection: Tensor, attention_heads: AttentionHeads, head_width: int
-) -> Tuple[Tensor, Tensor, Tensor]:
-    """
-    Split attention heads by grouping the heads in blocks of
-    the number of key/value-heads. Then distribute the heads
-    across query, key, and value.
-
-    :param projection:
-        The fused query, key, value projection.
-
-        *Shape:* ``(batch_size, seq_len, (n_query_heads + 2 * n_key_value_heads) * head_width)``
-    :param attention_heads:
-        Attention head configuration.
-    :param head_width:
-        Head width.
-    :returns:
-        Query, key, value tensors.
-
-        *Shapes:*
-        - Query: ``(batch_size, n_query_heads, seq_len, head_width)``
-        - Key: ``(batch_size, n_key_value_heads, seq_len, head_width)``
-        - Value: ``(batch_size, n_key_value_heads, seq_len, head_width)``
-    """
-    n_query_heads = attention_heads._n_query_heads
-    n_key_value_heads = attention_heads._n_key_value_heads
-
-    batch_size, seq_len, _ = projection.shape
-
-    # Group the heads in n_key_value_head-sized blocks and
-    # then split the blocks.
-    grouped_projection = projection.view(
-        batch_size,
-        seq_len,
-        -1,
-        n_query_heads // n_key_value_heads + 2,
-        head_width,
-    )
-    query, key, value = grouped_projection.split(
-        [n_query_heads // n_key_value_heads, 1, 1], dim=-2
-    )
-
-    def permute_merge_groups(x, n_heads):
-        return x.permute(0, 2, 3, 1, 4).reshape(
-            batch_size, n_heads, seq_len, head_width
-        )
-
-    query = permute_merge_groups(query, n_query_heads)
-    key = permute_merge_groups(key, n_key_value_heads)
-    value = permute_merge_groups(value, n_key_value_heads)
-
-    return query, key, value
 
 
 def combine_heads(input: Tensor) -> Tensor:

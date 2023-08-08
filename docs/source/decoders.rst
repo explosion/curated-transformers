@@ -17,6 +17,11 @@ Architectures
 
 These modules represent the supported decoder-only architectures.
 
+.. autoclass:: curated_transformers.models.FalconDecoder
+   :members:
+   :show-inheritance:
+   :inherited-members: Module
+
 .. autoclass:: curated_transformers.models.GPTNeoXDecoder
    :members:
    :show-inheritance:
@@ -27,7 +32,7 @@ These modules represent the supported decoder-only architectures.
    :show-inheritance:
    :inherited-members: Module
 
-.. autoclass:: curated_transformers.models.FalconDecoder
+.. autoclass:: curated_transformers.models.MPTDecoder
    :members:
    :show-inheritance:
    :inherited-members: Module
@@ -51,6 +56,12 @@ the correct type automatically.
 Configuration
 -------------
 
+Falcon
+^^^^^^
+
+.. autoclass:: curated_transformers.models.FalconConfig
+   :members:
+
 GPT-NeoX
 ^^^^^^^^
 
@@ -63,8 +74,8 @@ Llama
 .. autoclass:: curated_transformers.models.LlamaConfig
    :members:
 
-Falcon
-^^^^^^
+MPT
+^^^
 
-.. autoclass:: curated_transformers.models.falcon.FalconConfig
+.. autoclass:: curated_transformers.models.MPTConfig
    :members:

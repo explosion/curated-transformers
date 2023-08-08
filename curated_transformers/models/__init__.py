@@ -14,6 +14,7 @@ from .gpt_neox import GPTNeoXCausalLM, GPTNeoXConfig, GPTNeoXDecoder
 from .hf_hub import FromHFHub
 from .llama import LlamaCausalLM, LlamaConfig, LlamaDecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
+from .mpt import MPTCausalLM, MPTConfig, MPTDecoder
 from .output import CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 from .roberta import RoBERTaConfig, RoBERTaEncoder
 from .transformer import TransformerCausalLM, TransformerDecoder, TransformerEncoder
@@ -42,6 +43,9 @@ __all__ = [
     "LlamaCausalLM",
     "LlamaConfig",
     "LlamaDecoder",
+    "MPTCausalLM",
+    "MPTConfig",
+    "MPTDecoder",
     "ModelOutput",
     "ModelOutputWithCache",
     "RoBERTaConfig",

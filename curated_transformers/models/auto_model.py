@@ -3,6 +3,9 @@ from typing import Generic, Mapping, Optional, Type, TypeVar
 
 import torch
 
+from curated_transformers.models.mpt.causal_lm import MPTCausalLM
+from curated_transformers.models.mpt.decoder import MPTDecoder
+
 from ..layers.cache import KeyValueCache
 from ..quantization.bnb.config import BitsAndBytesConfig
 from ..util.hf import get_hf_config_model_type
@@ -113,9 +116,10 @@ class AutoDecoder(AutoModel[DecoderModule]):
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
+        "falcon": FalconDecoder,
         "gpt_neox": GPTNeoXDecoder,
         "llama": LlamaDecoder,
-        "falcon": FalconDecoder,
+        "mpt": MPTDecoder,
         "RefinedWeb": FalconDecoder,
         "RefinedWebModel": FalconDecoder,
     }
@@ -142,9 +146,10 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
+        "falcon": FalconCausalLM,
         "gpt_neox": GPTNeoXCausalLM,
         "llama": LlamaCausalLM,
-        "falcon": FalconCausalLM,
+        "mpt": MPTCausalLM,
         "RefinedWeb": FalconCausalLM,
         "RefinedWebModel": FalconCausalLM,
     }

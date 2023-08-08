@@ -16,6 +16,10 @@ from curated_transformers.models.auto_model import (
     AutoDecoder,
     AutoEncoder,
 )
+from curated_transformers.models.llama.causal_lm import LlamaCausalLM
+from curated_transformers.models.llama.decoder import LlamaDecoder
+from curated_transformers.models.mpt.causal_lm import MPTCausalLM
+from curated_transformers.models.mpt.decoder import MPTDecoder
 
 
 def test_auto_encoder():
@@ -38,6 +42,8 @@ def test_auto_encoder():
 def test_auto_decoder():
     model_decoder_map = {
         "explosion-testing/falcon-test": FalconDecoder,
+        "explosion-testing/llama2-kv-sharing": LlamaDecoder,
+        "explosion-testing/mpt-test": MPTDecoder,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM": GPTNeoXDecoder,
     }
 
@@ -52,6 +58,8 @@ def test_auto_decoder():
 def test_auto_causal_lm():
     model_causallm_map = {
         "explosion-testing/falcon-test": FalconCausalLM,
+        "explosion-testing/llama2-kv-sharing": LlamaCausalLM,
+        "explosion-testing/mpt-test": MPTCausalLM,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM": GPTNeoXCausalLM,
     }
 

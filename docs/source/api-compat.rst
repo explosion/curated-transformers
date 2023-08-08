@@ -104,4 +104,8 @@ Types Used for API Compatibility
 Changes between major versions
 ------------------------------
 
-None yet.
+Version 1 to 2
+^^^^^^^^^^^^^^
+
+* The factory methods of :py:class:`~curated_transformers.layers.AttentionHeads`
+  add a new ``qkv_split`` argument which is mandatory in future versions.

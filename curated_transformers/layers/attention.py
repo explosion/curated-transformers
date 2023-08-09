@@ -392,7 +392,10 @@ class AttentionHeads:
         """
         self._n_query_heads = n_query_heads
         self._n_key_value_heads = n_key_value_heads
-        self._qkv_split = QkvSplitKVSizedChunks() if qkv_split is Default else qkv_split
+
+        qkv_split = QkvSplitKVSizedChunks() if qkv_split is Default else qkv_split
+        assert isinstance(qkv_split, QkvSplit)
+        self._qkv_split = qkv_split
 
     @classmethod
     def uniform(

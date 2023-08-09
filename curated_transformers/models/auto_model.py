@@ -14,6 +14,8 @@ from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from .hf_hub import FromHFHub
 from .llama import LlamaCausalLM, LlamaDecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
+from .mpt.causal_lm import MPTCausalLM
+from .mpt.decoder import MPTDecoder
 from .roberta import RoBERTaEncoder
 from .xlm_roberta import XLMREncoder
 
@@ -113,9 +115,10 @@ class AutoDecoder(AutoModel[DecoderModule]):
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
+        "falcon": FalconDecoder,
         "gpt_neox": GPTNeoXDecoder,
         "llama": LlamaDecoder,
-        "falcon": FalconDecoder,
+        "mpt": MPTDecoder,
         "RefinedWeb": FalconDecoder,
         "RefinedWebModel": FalconDecoder,
     }
@@ -142,9 +145,10 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
     """
 
     _HF_MODEL_TYPE_TO_CURATED = {
+        "falcon": FalconCausalLM,
         "gpt_neox": GPTNeoXCausalLM,
         "llama": LlamaCausalLM,
-        "falcon": FalconCausalLM,
+        "mpt": MPTCausalLM,
         "RefinedWeb": FalconCausalLM,
         "RefinedWebModel": FalconCausalLM,
     }

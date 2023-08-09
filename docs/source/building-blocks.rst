@@ -43,6 +43,9 @@ These modules and their helper classes implement the Transformer attention mecha
 .. autoclass:: curated_transformers.layers.QkvMode
    :members:
 
+.. autoclass:: curated_transformers.layers.QkvSplit
+   :members:
+
 .. autoclass:: curated_transformers.layers.AttentionHeads
    :members:
 

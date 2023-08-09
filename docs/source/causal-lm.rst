@@ -18,6 +18,11 @@ Architectures
 These modules represent the supported causal LM architectures. Generally, every
 decoder-only architecture has a corresponding causal LM architecture.
 
+.. autoclass:: curated_transformers.models.FalconCausalLM
+   :members:
+   :show-inheritance:
+   :inherited-members: Module
+
 .. autoclass:: curated_transformers.models.GPTNeoXCausalLM
    :members:
    :show-inheritance:
@@ -28,7 +33,7 @@ decoder-only architecture has a corresponding causal LM architecture.
    :show-inheritance:
    :inherited-members: Module
 
-.. autoclass:: curated_transformers.models.FalconCausalLM
+.. autoclass:: curated_transformers.models.MPTCausalLM
    :members:
    :show-inheritance:
    :inherited-members: Module

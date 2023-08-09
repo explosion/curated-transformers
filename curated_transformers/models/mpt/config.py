@@ -46,7 +46,7 @@ class MPTConfig:
             Hidden width of the transformer.
         :param intermediate_width_multiplier:
             Multiplier for the intermediate width. The hidden width is
-            multiplied by this value to get the intermediate_width.
+            multiplied by this value to get the intermediate width.
         :param layer_norm_eps:
             Epsilon for layer normalization.
         :param model_max_length:

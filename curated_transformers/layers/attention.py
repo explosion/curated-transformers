@@ -291,7 +291,7 @@ class QkvSplit(ABC):
         ...
 
 
-class QkvSplitDefault(QkvSplit):
+class QkvSplitGroupedByHead(QkvSplit):
     """
     Default splitting strategy.
 
@@ -323,7 +323,7 @@ class QkvSplitDefault(QkvSplit):
         return query, key, value
 
 
-class QkvSplitKVSizedChunks(QkvSplit):
+class QkvSplitGroupedByKVHeads(QkvSplit):
     """
     Split up the projection in key/value-sized chunks.
 
@@ -392,7 +392,7 @@ class AttentionHeads:
         self._n_query_heads = n_query_heads
         self._n_key_value_heads = n_key_value_heads
 
-        qkv_split = QkvSplitKVSizedChunks() if qkv_split is Default else qkv_split
+        qkv_split = QkvSplitGroupedByKVHeads() if qkv_split is Default else qkv_split
         assert isinstance(qkv_split, QkvSplit)
         self._qkv_split = qkv_split
 

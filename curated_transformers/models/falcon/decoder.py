@@ -63,6 +63,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
             n_pieces=config.embedding.n_pieces,
             n_positions=None,
             n_types=None,
+            device=device,
         )
 
         if config.new_decoder_architecture:

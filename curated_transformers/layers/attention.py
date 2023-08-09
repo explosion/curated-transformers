@@ -930,32 +930,11 @@ class SelfAttention(Module):
         n_key_value_heads = self.attention_heads._n_key_value_heads
         n_query_heads = self.attention_heads._n_query_heads
         if self.qkv_mode == QkvMode.SEPARATE:
-            query = self.query(input)
-            key = self.key(input)
-            value = self.value(input)
-
-            query = split_heads(query, n_query_heads)
-            key = split_heads(key, n_key_value_heads)
-            value = split_heads(value, n_key_value_heads)
+            query, key, value = self._query_key_value_separate(input)
         elif self.qkv_mode == QkvMode.MERGED_SPLIT_BEFORE:
-            proj = self.input(input)
-            # Same number of heads for query, key and value
-            # since we cannot share heads in this mode.
-            proj = split_heads(proj, n_query_heads)
-            query, key, value = proj.chunk(3, dim=-1)
+            query, key, value = self._query_key_value_merged_split_before(input)
         else:
-            proj = self.input(input)
-
-            # This splitting method is used by Falcon. There are other
-            # (simpler) splitting methods. For instance, we could group all
-            # the heads together and then split them. In the future we
-            # could split conditional on a field in AttentionHeads.
-            query, key, value = self.attention_heads._qkv_split.split(
-                projection=proj,
-                head_width=self.head_width,
-                n_query_heads=n_query_heads,
-                n_key_value_heads=n_key_value_heads,
-            )
+            query, key, value = self._query_key_value_merged_split_after(input)
 
         if n_key_value_heads != 1 and n_key_value_heads != n_query_heads:
             # If all the key/value representations are shared, their head
@@ -967,6 +946,87 @@ class SelfAttention(Module):
             n_tiling = n_query_heads // n_key_value_heads
             key = key.repeat_interleave(n_tiling, dim=1)
             value = value.repeat_interleave(n_tiling, dim=1)
+
+        return query, key, value
+
+    def _query_key_value_separate(self, input: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Compute query, key and value representations for the input, using
+        separate query, key, and value projections.
+
+        :param input:
+            Input
+
+            *Shape:* ``(batch_size, seq_len, hidden_width)``
+        :returns:
+            Query, key, value
+
+            *Shape:* ``(batch_size, n_head, seq_len, width_per_head)``
+        """
+        query = self.query(input)
+        key = self.key(input)
+        value = self.value(input)
+
+        query = split_heads(query, self.attention_heads._n_query_heads)
+        key = split_heads(key, self.attention_heads._n_key_value_heads)
+        value = split_heads(value, self.attention_heads._n_key_value_heads)
+
+        return query, key, value
+
+    def _query_key_value_merged_split_before(
+        self, input: Tensor
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Compute query, key and value representations for the input, using
+        merged query, key, and value projections. Split heads before
+        splitting query, key, and value.
+
+        :param input:
+            Input
+
+            *Shape:* ``(batch_size, seq_len, hidden_width)``
+        :returns:
+            Query, key, value
+
+            *Shape:* ``(batch_size, n_head, seq_len, width_per_head)``
+        """
+        proj = self.input(input)
+        # Same number of heads for query, key and value
+        # since we cannot share heads in this mode.
+        proj = split_heads(proj, self.attention_heads._n_query_heads)
+        query, key, value = proj.chunk(3, dim=-1)
+
+        return query, key, value
+
+    def _query_key_value_merged_split_after(
+        self, input: Tensor
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Compute query, key and value representations for the input, using
+        merged query, key, and value projections. Split heads after
+        splitting query, key, and value.
+
+        :param input:
+            Input
+
+            *Shape:* ``(batch_size, seq_len, hidden_width)``
+        :returns:
+            Query, key, value
+
+            *Shape:* ``(batch_size, n_head, seq_len, width_per_head)``
+        """
+        proj = self.input(input)
+
+        # This splitting method is used by Falcon. There are other
+        # (simpler) splitting methods. For instance, we could group all
+        # the heads together and then split them. In the future we
+        # could split conditional on a field in AttentionHeads.
+        query, key, value = self.attention_heads._qkv_split.split(
+            projection=proj,
+            head_width=self.head_width,
+            n_query_heads=self.attention_heads._n_query_heads,
+            n_key_value_heads=self.attention_heads._n_key_value_heads,
+        )
 
         return query, key, value
 

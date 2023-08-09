@@ -66,6 +66,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
             n_pieces=config.embedding.n_pieces,
             n_positions=config.embedding.n_positions,
             n_types=config.embedding.n_types,
+            device=device,
         )
 
         # Parameters are shared by groups of layers.

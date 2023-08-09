@@ -58,6 +58,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
             n_pieces=config.embedding.n_pieces,
             n_positions=config.embedding.n_positions,
             n_types=config.embedding.n_types,
+            device=device,
         )
 
         self.max_seq_len = config.model_max_length

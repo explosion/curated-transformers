@@ -61,6 +61,7 @@ class MPTDecoder(TransformerDecoder, FromHFHub):
             n_pieces=config.embedding.n_pieces,
             n_positions=None,
             n_types=None,
+            device=device,
         )
 
         hidden_width = config.layer.feedforward.hidden_width

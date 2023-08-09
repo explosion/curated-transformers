@@ -296,7 +296,7 @@ class QkvSplitGroupedByHead(QkvSplit):
     Default splitting strategy.
 
     First view the array as ``(batch_size, seq_len, n_heads, head_width)``,
-    where ``n_heads`` it the sum of the number of query, key, and value
+    where ``n_heads`` is the sum of the number of query, key, and value
     heads. Then split up the array along the ``n_heads`` dimension.
     """
 

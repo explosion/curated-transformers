@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 from typing import Dict, Optional, Tuple, Type, Union
 
 import torch
@@ -11,8 +11,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear, Module
 
-from curated_transformers.semver import Default, FutureMandatory
-
+from ..semver import Default, FutureMandatory
 from ..util.dataclass import DataclassAsDict
 from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings

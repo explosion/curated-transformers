@@ -3,9 +3,6 @@ from typing import Generic, Mapping, Optional, Type, TypeVar
 
 import torch
 
-from curated_transformers.models.mpt.causal_lm import MPTCausalLM
-from curated_transformers.models.mpt.decoder import MPTDecoder
-
 from ..layers.cache import KeyValueCache
 from ..quantization.bnb.config import BitsAndBytesConfig
 from ..util.hf import get_hf_config_model_type
@@ -17,6 +14,8 @@ from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from .hf_hub import FromHFHub
 from .llama import LlamaCausalLM, LlamaDecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
+from .mpt.causal_lm import MPTCausalLM
+from .mpt.decoder import MPTDecoder
 from .roberta import RoBERTaEncoder
 from .xlm_roberta import XLMREncoder
 

@@ -296,9 +296,9 @@ class QkvSplitDefault(QkvSplit):
     """
     Default splitting strategy.
 
-    First view the array as ``(batch_size, seq_len, n_key_value_heads,
-    n_chunks, head_width)``. Then split up the array along the ``n_chunks``
-    dimension.
+    First view the array as ``(batch_size, seq_len, n_heads, head_width)``,
+    where ``n_heads`` it the sum of the number of query, key, and value
+    heads. Then split up the array along the ``n_heads`` dimension.
     """
 
     def split(

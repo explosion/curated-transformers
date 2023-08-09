@@ -15,6 +15,7 @@ from .logits import (
     TopPTransform,
     VocabMaskTransform,
 )
+from .mpt import MPTGenerator
 from .stop_conditions import (
     CompoundStopCondition,
     EndOfSequenceCondition,
@@ -39,6 +40,7 @@ __all__ = [
     "LlamaGenerator",
     "LogitsTransform",
     "MaxGeneratedPiecesCondition",
+    "MPTGenerator",
     "SampleGeneratorConfig",
     "StopCondition",
     "StringGenerator",

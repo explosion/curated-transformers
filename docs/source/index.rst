@@ -60,6 +60,7 @@ Generator wrappers:
 - Dolly v2
 - Falcon
 - Llama 1/2
+- MPT
 
 All types of models can be loaded from Hugging Face Hub.
 

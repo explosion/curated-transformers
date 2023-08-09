@@ -4,18 +4,20 @@ import torch
 
 from ..models.auto_model import AutoModel
 from ..quantization.bnb.config import BitsAndBytesConfig
-from .default_generator import DefaultGenerator
 from .dolly_v2 import DollyV2Generator
 from .falcon import FalconGenerator
 from .generator_wrapper import GeneratorWrapper
 from .hf_hub import FromHFHub
+from .llama import LlamaGenerator
+from .mpt import MPTGenerator
 
 # For the time being, we enable support for a generator on a case-by-case basis.
 # In the future we might defer all unknown generators to DefaultGenerator.
 GENERATOR_MAP: Dict[str, Type[FromHFHub]] = {
     "dolly-v2": DollyV2Generator,
     "falcon": FalconGenerator,
-    "llama": DefaultGenerator,
+    "llama": LlamaGenerator,
+    "mpt": MPTGenerator,
 }
 
 

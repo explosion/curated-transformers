@@ -76,16 +76,12 @@ class MPTCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         assert isinstance(self.decoder.embeddings.piece_embeddings, Embedding)
         output_embeddings = self.decoder.embeddings.piece_embeddings.weight
 
-        if torch.jit.is_tracing():
-            logits = F.linear(decoder_output[0][-1], output_embeddings)
-            return decoder_output + (logits,)  # type: ignore[return-value]
-        else:
-            logits = F.linear(decoder_output.last_hidden_layer_state, output_embeddings)
-            return CausalLMOutputWithCache(
-                all_outputs=decoder_output.all_outputs,
-                cache=decoder_output.cache,
-                logits=logits,
-            )
+        logits = F.linear(decoder_output.last_hidden_layer_state, output_embeddings)
+        return CausalLMOutputWithCache(
+            all_outputs=decoder_output.all_outputs,
+            cache=decoder_output.cache,
+            logits=logits,
+        )
 
     @classmethod
     def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):

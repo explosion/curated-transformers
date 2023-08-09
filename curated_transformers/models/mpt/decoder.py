@@ -33,7 +33,7 @@ class MPTDecoder(TransformerDecoder, FromHFHub):
     """
     `MosaicML MPT`_ decoder.
 
-    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7bX
+    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7b
     """
 
     def __init__(

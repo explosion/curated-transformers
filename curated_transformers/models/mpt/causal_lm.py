@@ -19,7 +19,7 @@ class MPTCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
     """
     `MosaicML MPT`_ causal language model.
 
-    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7bX
+    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7b
     """
 
     def __init__(

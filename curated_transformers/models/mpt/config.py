@@ -14,7 +14,7 @@ class MPTConfig:
     """
     `MosaicML MPT`_ model configuration.
 
-    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7bX
+    .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7b
     """
 
     embedding: TransformerEmbeddingLayerConfig

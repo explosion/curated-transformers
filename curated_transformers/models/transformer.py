@@ -92,16 +92,12 @@ class TransformerCausalLM(CausalLMModule[KeyValueCache]):
             store_cache=store_cache,
             positions=positions,
         )
-        if torch.jit.is_tracing():
-            logits = self.output_embeddings(decoder_output[0][-1])
-            return decoder_output + (logits,)  # type: ignore[return-value]
-        else:
-            logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
-            return CausalLMOutputWithCache(
-                all_outputs=decoder_output.all_outputs,
-                cache=decoder_output.cache,
-                logits=logits,
-            )
+        logits = self.output_embeddings(decoder_output.last_hidden_layer_state)
+        return CausalLMOutputWithCache(
+            all_outputs=decoder_output.all_outputs,
+            cache=decoder_output.cache,
+            logits=logits,
+        )
 
 
 class TransformerEncoder(EncoderModule):

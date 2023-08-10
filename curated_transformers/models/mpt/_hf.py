@@ -61,6 +61,10 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
 
     out = {}
     for name, parameter in stripped_params.items():
+        # Input and output embeddings are tied in MPT.
+        if "lm_head" in name:
+            continue
+
         name = name.replace("transformer", "decoder")
         name = name.replace("blocks", "layers")
 
@@ -80,7 +84,6 @@ def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Ten
 
         # Embeddings
         name = re.sub(r"wte\.", r"embeddings.piece_embeddings.", name)
-        name = re.sub(r"lm_head\.", r"output_embeddings.", name)
 
         out[name] = parameter
 

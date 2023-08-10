@@ -19,7 +19,6 @@ class MPTGenerator(DefaultGenerator, FromHFHub):
             An MPT tokenizer.
         :param causal_lm:
             An MPT causal language model.
-
         """
         super().__init__(
             tokenizer,

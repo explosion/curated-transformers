@@ -110,3 +110,7 @@ You can read more about how to use Curated Transformers here:
 ## 🗜️ Quantization
 
 `curated-transformers` supports dynamic 8-bit and 4-bit quantization of models by leveraging the [`bitsandbytes` library](https://github.com/TimDettmers/bitsandbytes).
+
+You can use the quantization variant to install the necessary dependencies for quantization with:
+
+```pip install curated-transformers[quantization]```

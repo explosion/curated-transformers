@@ -49,6 +49,7 @@ the correct type automatically.
 
 .. autoclass:: curated_transformers.models.AutoDecoder
    :members:
+   :inherited-members:
 
 
 .. _decoder config:

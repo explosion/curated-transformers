@@ -49,6 +49,7 @@ the correct type automatically.
 
 .. autoclass:: curated_transformers.models.AutoCausalLM
    :members:
+   :inherited-members:
 
 
 Caching

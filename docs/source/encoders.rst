@@ -53,6 +53,7 @@ the correct type automatically.
 
 .. autoclass:: curated_transformers.models.AutoEncoder
    :members:
+   :inherited-members:
 
 Configuration
 -------------

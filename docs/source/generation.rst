@@ -68,6 +68,7 @@ the correct type automatically.
 
 .. autoclass:: curated_transformers.generation.AutoGenerator
    :members:
+   :inherited-members:
 
 
 Configuration

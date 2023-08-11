@@ -19,6 +19,26 @@ class FromHFHub(ABC):
 
     @classmethod
     @abstractmethod
+    def download_to_cache(
+        cls: Type[Self],
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        """
+        Download the generator's model and tokenizer from Hugging Face Hub
+        into the local Hugging Face cache directory. Subsequent loading of the
+        generator will load the model and the tokenizer from disk.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
     def from_hf_hub(
         cls: Type[Self],
         *,
@@ -41,4 +61,4 @@ class FromHFHub(ABC):
         :returns:
             Generator with the parameters loaded.
         """
-        ...
+        raise NotImplementedError

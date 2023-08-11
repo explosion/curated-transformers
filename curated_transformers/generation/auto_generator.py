@@ -34,6 +34,16 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
     """
 
     @classmethod
+    def download_to_cache(
+        cls,
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        generator_cls = _resolve_generator_class(name)
+        generator_cls.download_to_cache(name=name, revision=revision)
+
+    @classmethod
     def from_hf_hub(
         cls,
         *,
@@ -45,26 +55,28 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
         # We need to match the name of the model directly as our
         # generators bundle model-specific prompts that are specific
         # to certain fine-tuned models.
-        generator: Optional[GeneratorWrapper] = None
-        for substring, generator_cls in GENERATOR_MAP.items():
-            if substring in name.lower():
-                generator = cast(
-                    GeneratorWrapper,
-                    generator_cls.from_hf_hub(
-                        name=name,
-                        revision=revision,
-                        device=device,
-                        quantization_config=quantization_config,
-                    ),
-                )
-                break
-
-        if generator is None:
-            supported_models = list(sorted(GENERATOR_MAP.keys()))
-            raise ValueError(
-                f"Unsupported generator model `{name}` for {cls.__name__}. "
-                f"Supported model variants: `{supported_models}`"
-            )
+        generator_cls = _resolve_generator_class(name)
+        generator = cast(
+            GeneratorWrapper,
+            generator_cls.from_hf_hub(
+                name=name,
+                revision=revision,
+                device=device,
+                quantization_config=quantization_config,
+            ),
+        )
 
         assert isinstance(generator, GeneratorWrapper)
         return generator
+
+
+def _resolve_generator_class(name: str) -> Type[FromHFHub]:
+    for substring, generator_cls in GENERATOR_MAP.items():
+        if substring in name.lower():
+            return generator_cls
+
+    supported_models = list(sorted(GENERATOR_MAP.keys()))
+    raise ValueError(
+        f"Unsupported generator model `{name}`. "
+        f"Supported model variants: `{supported_models}`"
+    )

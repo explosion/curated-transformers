@@ -42,6 +42,27 @@ class AutoTokenizer:
     #       requires that the return type is Self.
 
     @classmethod
+    def download_to_cache(
+        cls,
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        """
+        Download the tokenizer's serialized model, configuration and vocab files
+        from Hugging Face Hub into the local Hugging Face cache directory.
+        Subsequent loading of the tokenizer will read the files from disk. If the
+        files are already cached, this is a no-op.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        """
+        tokenizer_cls = _resolve_tokenzier_class(name, revision)
+        tokenizer_cls.download_to_cache(name=name, revision=revision)
+
+    @classmethod
     def from_hf_hub(cls, *, name: str, revision: str = "main") -> TokenizerBase:
         """
         Infer a tokenizer type and load it from Hugging Face Hub.
@@ -54,38 +75,11 @@ class AutoTokenizer:
             The tokenizer.
         """
 
-        tokenizer_cls: Optional[Type[FromHFHub]] = None
-        try:
-            # We will try to fetch metadata to avoid potentially downloading
-            # the tokenizer file twice (here and Tokenizer.from_hf_hub).
-            get_file_metadata(filename=TOKENIZER_JSON, name=name, revision=revision)
-        except EntryNotFoundError:
-            pass
-        else:
-            tokenizer_cls = Tokenizer
-
-        if tokenizer_cls is None:
-            tokenizer_cls = _get_tokenizer_class_from_config(
-                name=name, revision=revision
-            )
-
-        if tokenizer_cls is None:
-            try:
-                model_type = get_hf_config_model_type(name=name, revision=revision)
-            except EntryNotFoundError:
-                pass
-            else:
-                tokenizer_cls = HF_MODEL_MAPPING.get(model_type, None)
-
-        if tokenizer_cls is None:
-            raise ValueError(
-                f"Cannot infer tokenizer for repository '{name}' with revision '{revision}'"
-            )
-        else:
-            # This cast is safe, because we only return tokenizers.
-            return cast(
-                TokenizerBase, tokenizer_cls.from_hf_hub(name=name, revision=revision)
-            )
+        tokenizer_cls = _resolve_tokenzier_class(name, revision)
+        # This cast is safe, because we only return tokenizers.
+        return cast(
+            TokenizerBase, tokenizer_cls.from_hf_hub(name=name, revision=revision)
+        )
 
 
 def _get_tokenizer_class_from_config(
@@ -108,3 +102,32 @@ def _get_tokenizer_class_from_config(
         return None
 
     return HF_TOKENIZER_MAPPING.get(tokenizer_config.get("tokenizer_class", None), None)
+
+
+def _resolve_tokenzier_class(name: str, revision: str) -> Type[FromHFHub]:
+    tokenizer_cls: Optional[Type[FromHFHub]] = None
+    try:
+        # We will try to fetch metadata to avoid potentially downloading
+        # the tokenizer file twice (here and Tokenizer.from_hf_hub).
+        get_file_metadata(filename=TOKENIZER_JSON, name=name, revision=revision)
+    except EntryNotFoundError:
+        pass
+    else:
+        tokenizer_cls = Tokenizer
+
+    if tokenizer_cls is None:
+        tokenizer_cls = _get_tokenizer_class_from_config(name=name, revision=revision)
+
+    if tokenizer_cls is None:
+        try:
+            model_type = get_hf_config_model_type(name=name, revision=revision)
+        except EntryNotFoundError:
+            pass
+        else:
+            tokenizer_cls = HF_MODEL_MAPPING.get(model_type, None)
+
+    if tokenizer_cls is None:
+        raise ValueError(
+            f"Cannot infer tokenizer for repository '{name}' with revision '{revision}'"
+        )
+    return tokenizer_cls

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Mapping, Optional, Type, TypeVar
+from typing import Dict, Generic, Optional, Type, TypeVar
 
 import torch
 
@@ -28,6 +28,41 @@ class AutoModel(ABC, Generic[ModelT]):
     Face Model Hub.
     """
 
+    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {}
+
+    @classmethod
+    def _resolve_model_cls(
+        cls,
+        name: str,
+        revision: str,
+    ) -> Type[FromHFHub]:
+        model_type = get_hf_config_model_type(name, revision)
+        module_cls = cls._hf_model_type_to_curated.get(model_type)
+        if module_cls is None:
+            raise ValueError(
+                f"Unsupported model type `{model_type}` for {cls.__name__}. "
+                f"Supported model types: {tuple(cls._hf_model_type_to_curated.keys())}"
+            )
+        assert issubclass(module_cls, FromHFHub)
+        return module_cls
+
+    @classmethod
+    def _instantiate_model_from_hf_hub(
+        cls,
+        name: str,
+        revision: str,
+        device: Optional[torch.device],
+        quantization_config: Optional[BitsAndBytesConfig],
+    ) -> FromHFHub:
+        module_cls = cls._resolve_model_cls(name, revision)
+        module = module_cls.from_hf_hub(
+            name=name,
+            revision=revision,
+            device=device,
+            quantization_config=quantization_config,
+        )
+        return module
+
     @classmethod
     @abstractmethod
     def from_hf_hub(
@@ -55,29 +90,25 @@ class AutoModel(ABC, Generic[ModelT]):
         raise NotImplementedError
 
     @classmethod
-    def _instantiate_model_from_hf_hub(
+    def download_to_cache(
         cls,
+        *,
         name: str,
-        revision: str,
-        device: Optional[torch.device],
-        quantization_config: Optional[BitsAndBytesConfig],
-        model_type_to_class_map: Mapping[str, Type],
-    ) -> FromHFHub:
-        model_type = get_hf_config_model_type(name, revision)
-        module_cls = model_type_to_class_map.get(model_type)
-        if module_cls is None:
-            raise ValueError(
-                f"Unsupported model type `{model_type}` for {cls.__name__}. "
-                f"Supported model types: {tuple(model_type_to_class_map.keys())}"
-            )
-        assert issubclass(module_cls, FromHFHub)
-        module = module_cls.from_hf_hub(
-            name=name,
-            revision=revision,
-            device=device,
-            quantization_config=quantization_config,
-        )
-        return module
+        revision: str = "main",
+    ):
+        """
+        Download the model's weights from Hugging Face Hub into the local
+        Hugging Face cache directory. Subsequent loading of the
+        model will read the weights from disk. If the weights are already
+        cached, this is a no-op.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        """
+        module_cls = cls._resolve_model_cls(name, revision)
+        module_cls.download_to_cache(name=name, revision=revision)
 
 
 class AutoEncoder(AutoModel[EncoderModule]):
@@ -85,7 +116,7 @@ class AutoEncoder(AutoModel[EncoderModule]):
     Encoder model loaded from the Hugging Face Model Hub.
     """
 
-    _HF_MODEL_TYPE_TO_CURATED = {
+    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
         "bert": BERTEncoder,
         "albert": ALBERTEncoder,
         "camembert": CamemBERTEncoder,
@@ -103,7 +134,7 @@ class AutoEncoder(AutoModel[EncoderModule]):
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> EncoderModule:
         encoder = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
+            name, revision, device, quantization_config
         )
         assert isinstance(encoder, EncoderModule)
         return encoder
@@ -114,7 +145,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
     Decoder module loaded from the Hugging Face Model Hub.
     """
 
-    _HF_MODEL_TYPE_TO_CURATED = {
+    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
         "falcon": FalconDecoder,
         "gpt_neox": GPTNeoXDecoder,
         "llama": LlamaDecoder,
@@ -133,7 +164,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> DecoderModule:
         decoder = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
+            name, revision, device, quantization_config
         )
         assert isinstance(decoder, DecoderModule)
         return decoder
@@ -144,7 +175,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
     Causal LM model loaded from the Hugging Face Model Hub.
     """
 
-    _HF_MODEL_TYPE_TO_CURATED = {
+    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
         "falcon": FalconCausalLM,
         "gpt_neox": GPTNeoXCausalLM,
         "llama": LlamaCausalLM,
@@ -163,7 +194,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> CausalLMModule[KeyValueCache]:
         causal_lm = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config, cls._HF_MODEL_TYPE_TO_CURATED
+            name, revision, device, quantization_config
         )
         assert isinstance(causal_lm, CausalLMModule)
         return causal_lm

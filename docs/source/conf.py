@@ -6,9 +6,6 @@ project = "Curated Transformers"
 copyright = "2021-2023, ExplosionAI GmbH"
 author = "ExplosionAI GmbH"
 
-release = "0.9"
-version = "0.9.0"
-
 # -- General configuration
 
 extensions = [

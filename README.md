@@ -115,3 +115,4 @@ Use the quantization variant to automatically install the necessary dependencies
 
 ```bash
 pip install curated-transformers[quantization]
+```

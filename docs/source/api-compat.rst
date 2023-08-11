@@ -101,7 +101,7 @@ Types Used for API Compatibility
 .. autoclass:: curated_transformers.semver.FutureMandatory
    :members:
 
-Changes between major versions
+Changes Between Major Versions
 ------------------------------
 
 Version 1 to 2

@@ -72,6 +72,27 @@ class FromHFHub(ABC):
         raise NotImplementedError
 
     @classmethod
+    def download_to_cache(
+        cls: Type[Self],
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        """
+        Download the model's weights from Hugging Face Hub into the local
+        Hugging Face cache directory. Subsequent loading of the
+        model will read the weights from disk. If the weights are already
+        cached, this is a no-op.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        """
+        _ = get_model_config_filepath(name, revision)
+        _ = get_model_checkpoint_filepaths(name, revision)
+
+    @classmethod
     def from_hf_hub(
         cls: Type[Self],
         *,

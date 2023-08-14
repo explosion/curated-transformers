@@ -338,6 +338,24 @@ class Tokenizer(TokenizerBase, FromHFHub):
         )
 
     @classmethod
+    def download_to_cache(
+        cls: Type[Self],
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        _ = hf_hub_download(repo_id=name, filename=TOKENIZER_JSON, revision=revision)
+
+        try:
+            _ = get_tokenizer_config(name=name, revision=revision)
+        except EntryNotFoundError:
+            pass
+        try:
+            _ = get_special_tokens_map(name=name, revision=revision)
+        except EntryNotFoundError:
+            pass
+
+    @classmethod
     def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:
         # We cannot directly use `HFTokenizer.from_pretrained`` to instantiate the HF
         # tokenizer as it doesn't fetch the serialized files using the `huggingface_hub`

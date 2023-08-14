@@ -48,6 +48,7 @@ but will try to infer the tokenizer type automatically.
 
 .. autoclass:: curated_transformers.tokenizers.AutoTokenizer
    :members:
+   :inherited-members:
 
 Architectures
 -------------

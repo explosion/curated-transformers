@@ -1,10 +1,18 @@
 Utilities
 =========
 
+Serialization
+-------------
+
+.. autoclass:: curated_transformers.util.ModelCheckpointType
+   :members:
+
 Context Managers
 ----------------
 
 .. autofunction:: curated_transformers.layers.attention.enable_torch_sdp
+
+.. autofunction:: curated_transformers.util.use_model_checkpoint_type
 
 Hugging Face
 ------------

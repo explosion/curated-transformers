@@ -43,7 +43,7 @@ Downloading
 
 Each decoder type provides a ``from_hf_hub`` function that will load a model
 from Hugging Face Hub. If you want to load a decoder without committing to a 
-specific decoder type, you can use the :class:`~.auto_model.AutoDecoder`
+specific decoder type, you can use the :class:`~.AutoDecoder`
 class. This class also provides a ``from_hf_hub`` method but will try to infer 
 the correct type automatically.
 

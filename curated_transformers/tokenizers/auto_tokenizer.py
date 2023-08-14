@@ -59,7 +59,7 @@ class AutoTokenizer:
         :param revision:
             Model revision.
         """
-        tokenizer_cls = _resolve_tokenzier_class(name, revision)
+        tokenizer_cls = _resolve_tokenizer_class(name, revision)
         tokenizer_cls.download_to_cache(name=name, revision=revision)
 
     @classmethod
@@ -75,7 +75,7 @@ class AutoTokenizer:
             The tokenizer.
         """
 
-        tokenizer_cls = _resolve_tokenzier_class(name, revision)
+        tokenizer_cls = _resolve_tokenizer_class(name, revision)
         # This cast is safe, because we only return tokenizers.
         return cast(
             TokenizerBase, tokenizer_cls.from_hf_hub(name=name, revision=revision)
@@ -104,7 +104,7 @@ def _get_tokenizer_class_from_config(
     return HF_TOKENIZER_MAPPING.get(tokenizer_config.get("tokenizer_class", None), None)
 
 
-def _resolve_tokenzier_class(name: str, revision: str) -> Type[FromHFHub]:
+def _resolve_tokenizer_class(name: str, revision: str) -> Type[FromHFHub]:
     tokenizer_cls: Optional[Type[FromHFHub]] = None
     try:
         # We will try to fetch metadata to avoid potentially downloading

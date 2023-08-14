@@ -1,7 +1,6 @@
 import pytest
-from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
-
 from curated_transformers.models.bert.encoder import BERTEncoder
+from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 
 from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES
@@ -18,8 +17,8 @@ def test_sharded_model_checkpoints(torch_device):
 
 def test_download_to_cache():
     BERTEncoder.download_to_cache(
-        name="explosion-testing/bert-test-sharded",
-        revision="9aa9cc67d787328ced8c8f81b6b52cc3bd036e8b",
+        name="explosion-testing/bert-test-caching",
+        revision="96a29a07d0fa4c24fd2675521add643e3c2581fc",
     )
 
     expected_checkpoints = [
@@ -34,9 +33,9 @@ def test_download_to_cache():
     for name in expected_checkpoints:
         assert (
             try_to_load_from_cache(
-                repo_id="explosion-testing/bert-test-sharded",
+                repo_id="explosion-testing/bert-test-caching",
                 filename=name,
-                revision="9aa9cc67d787328ced8c8f81b6b52cc3bd036e8b",
+                revision="96a29a07d0fa4c24fd2675521add643e3c2581fc",
             )
             != _CACHED_NO_EXIST
         )

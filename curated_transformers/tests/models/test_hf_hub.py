@@ -1,6 +1,7 @@
 import pytest
-from curated_transformers.models.bert.encoder import BERTEncoder
 from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
+
+from curated_transformers.models.bert.encoder import BERTEncoder
 
 from ..compat import has_hf_transformers
 from ..conftest import TORCH_DEVICES

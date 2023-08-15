@@ -137,7 +137,9 @@ class FromHFHub(ABC):
             tensor2param = None
 
         # Download model and convert HF parameter names to ours.
-        checkpoint_filenames, checkpoint_type = get_model_checkpoint_filepaths(name, revision)
+        checkpoint_filenames, checkpoint_type = get_model_checkpoint_filepaths(
+            name, revision
+        )
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,

@@ -57,7 +57,7 @@ we need to add new mandatory arguments. We will adress this as follows:
   the argument mandatory.
 
 For example, consider the constructor of
-:py:class:`curated_transformers.layers.attention.ScaledDotProductAttention`:
+:py:class:`curated_transformers.layers.ScaledDotProductAttention`:
 
 .. code-block:: python
 

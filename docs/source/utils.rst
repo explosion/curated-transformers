@@ -4,7 +4,7 @@ Utilities
 Context Managers
 ----------------
 
-.. autofunction:: curated_transformers.layers.attention.enable_torch_sdp
+.. autofunction:: curated_transformers.layers.enable_torch_sdp
 
 Hugging Face
 ------------

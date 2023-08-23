@@ -102,16 +102,16 @@ def get_model_checkpoint_filepaths(
         checkpoint_type: ModelCheckpointType,
     ) -> List[str]:
         checkpoint_type_to_string = {
-            ModelCheckpointType.PYTORCH: "PyTorch",
+            ModelCheckpointType.PYTORCH_STATE_DICT: "PyTorch",
             ModelCheckpointType.SAFETENSORS: "Safetensors",
         }
 
         primary_checkpoint_filenames = {
-            ModelCheckpointType.PYTORCH: HF_MODEL_CHECKPOINT,
+            ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_CHECKPOINT,
             ModelCheckpointType.SAFETENSORS: HF_MODEL_CHECKPOINT_SAFETENSORS,
         }
         sharded_checkpoint_index_filenames = {
-            ModelCheckpointType.PYTORCH: HF_MODEL_SHARDED_CHECKPOINT_INDEX,
+            ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_SHARDED_CHECKPOINT_INDEX,
             ModelCheckpointType.SAFETENSORS: HF_MODEL_SHARDED_CHECKPOINT_INDEX_SAFETENSORS,
         }
         # Same for both checkpoint types.
@@ -178,7 +178,7 @@ def get_model_checkpoint_filepaths(
             except ValueError:
                 pass
         if checkpoint_paths is None:
-            checkpoint_type = ModelCheckpointType.PYTORCH
+            checkpoint_type = ModelCheckpointType.PYTORCH_STATE_DICT
             checkpoint_paths = get_checkpoint_paths(checkpoint_type)
     else:
         checkpoint_paths = get_checkpoint_paths(checkpoint_type)

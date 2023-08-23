@@ -56,7 +56,7 @@ def test_checkpoint_type_without_safetensors():
     )
     assert len(ckp_paths) == 1
     assert Path(ckp_paths[0]).suffix == ".bin"
-    assert ckp_type == ModelCheckpointType.PYTORCH
+    assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
 
     with pytest.raises(ValueError, match="`safetensors` library is required"):
         with use_model_checkpoint_type(ModelCheckpointType.SAFETENSORS):
@@ -79,13 +79,13 @@ def test_checkpoint_type_with_safetensors():
 
 @pytest.mark.skipif(not has_safetensors, reason="requires huggingface safetensors")
 def test_forced_checkpoint_type():
-    with use_model_checkpoint_type(ModelCheckpointType.PYTORCH):
+    with use_model_checkpoint_type(ModelCheckpointType.PYTORCH_STATE_DICT):
         ckp_paths, ckp_type = get_model_checkpoint_filepaths(
             "explosion-testing/safetensors-sharded-test", revision="main"
         )
         assert len(ckp_paths) == 3
         assert all(Path(p).suffix == ".bin" for p in ckp_paths)
-        assert ckp_type == ModelCheckpointType.PYTORCH
+        assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
 
         encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 

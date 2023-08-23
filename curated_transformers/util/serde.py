@@ -39,8 +39,8 @@ class ModelCheckpointType(Enum):
     Types of model checkpoints supported by Curated Transformers.
     """
 
-    #: PyTorch checkpoint.
-    PYTORCH = 1
+    #: PyTorch `checkpoint<https://pytorch.org/docs/stable/generated/torch.save.html>`_.
+    PYTORCH_STATE_DICT = 1
 
     #: Hugging Face `Safetensors <https://github.com/huggingface/safetensors>`_ checkpoint.
     SAFETENSORS = 2
@@ -103,7 +103,7 @@ def load_model_from_checkpoints(
         Device in which to place the loaded parameters.
     """
     checkpoint_type_to_loader = {
-        ModelCheckpointType.PYTORCH: _load_pytorch_state_dicts_from_checkpoints,
+        ModelCheckpointType.PYTORCH_STATE_DICT: _load_pytorch_state_dicts_from_checkpoints,
         ModelCheckpointType.SAFETENSORS: _load_safetensor_state_dicts_from_checkpoints,
     }
 

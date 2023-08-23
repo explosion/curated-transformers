@@ -45,6 +45,14 @@ class ModelCheckpointType(Enum):
     #: Hugging Face `Safetensors <https://github.com/huggingface/safetensors>`_ checkpoint.
     SAFETENSORS = 1
 
+    @property
+    def loader(self) -> Callable[[Iterable[str]], Iterable[Mapping[str, torch.Tensor]]]:
+        checkpoint_type_to_loader = {
+            ModelCheckpointType.PYTORCH_STATE_DICT: _load_pytorch_state_dicts_from_checkpoints,
+            ModelCheckpointType.SAFETENSORS: _load_safetensor_state_dicts_from_checkpoints,
+        }
+        return checkpoint_type_to_loader[self]
+
 
 # When `None`, behaviour is implementation-specific.
 MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(
@@ -102,12 +110,8 @@ def load_model_from_checkpoints(
     :param device:
         Device in which to place the loaded parameters.
     """
-    checkpoint_type_to_loader = {
-        ModelCheckpointType.PYTORCH_STATE_DICT: _load_pytorch_state_dicts_from_checkpoints,
-        ModelCheckpointType.SAFETENSORS: _load_safetensor_state_dicts_from_checkpoints,
-    }
 
-    state_dicts = checkpoint_type_to_loader[checkpoint_type](filepaths)
+    state_dicts = checkpoint_type.loader(filepaths)
     # We need to cache the model's parameter keys before loading the state
     # dicts as the process could potentially change the structure of sub-modules,
     # e.g: when quantized layers rename their parameters.

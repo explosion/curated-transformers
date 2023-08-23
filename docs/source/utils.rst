@@ -6,6 +6,8 @@ Context Managers
 
 .. autofunction:: curated_transformers.layers.enable_torch_sdp
 
+.. autofunction:: curated_transformers.util.use_nvtx_ranges_for_forward_pass
+
 Hugging Face
 ------------
 

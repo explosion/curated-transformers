@@ -40,10 +40,10 @@ class ModelCheckpointType(Enum):
     """
 
     #: PyTorch `checkpoint<https://pytorch.org/docs/stable/generated/torch.save.html>`_.
-    PYTORCH_STATE_DICT = 1
+    PYTORCH_STATE_DICT = 0
 
     #: Hugging Face `Safetensors <https://github.com/huggingface/safetensors>`_ checkpoint.
-    SAFETENSORS = 2
+    SAFETENSORS = 1
 
 
 # When `None`, behaviour is implementation-specific.

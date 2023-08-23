@@ -1,11 +1,10 @@
 from pathlib import Path
 
 import pytest
-from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
-
 from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.util import ModelCheckpointType, use_model_checkpoint_type
 from curated_transformers.util.hf import get_model_checkpoint_filepaths
+from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 
 from ..compat import has_hf_transformers, has_safetensors
 from ..conftest import TORCH_DEVICES
@@ -59,7 +58,7 @@ def test_checkpoint_type_without_safetensors():
     assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
 
     with pytest.raises(ValueError, match="`safetensors` library is required"):
-        with use_model_checkpoint_type(ModelCheckpointType.SAFETENSORS):
+        with use_model_checkpoint_type(ModelCheckpointType.SAFE_TENSORS):
             BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 
 
@@ -72,7 +71,7 @@ def test_checkpoint_type_with_safetensors():
     )
     assert len(ckp_paths) == 1
     assert Path(ckp_paths[0]).suffix == ".safetensors"
-    assert ckp_type == ModelCheckpointType.SAFETENSORS
+    assert ckp_type == ModelCheckpointType.SAFE_TENSORS
 
     encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 
@@ -89,12 +88,12 @@ def test_forced_checkpoint_type():
 
         encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 
-    with use_model_checkpoint_type(ModelCheckpointType.SAFETENSORS):
+    with use_model_checkpoint_type(ModelCheckpointType.SAFE_TENSORS):
         ckp_paths, ckp_type = get_model_checkpoint_filepaths(
             "explosion-testing/safetensors-sharded-test", revision="main"
         )
         assert len(ckp_paths) == 3
         assert all(Path(p).suffix == ".safetensors" for p in ckp_paths)
-        assert ckp_type == ModelCheckpointType.SAFETENSORS
+        assert ckp_type == ModelCheckpointType.SAFE_TENSORS
 
         encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")

@@ -43,13 +43,13 @@ class ModelCheckpointType(Enum):
     PYTORCH_STATE_DICT = 0
 
     #: Hugging Face `Safetensors <https://github.com/huggingface/safetensors>`_ checkpoint.
-    SAFETENSORS = 1
+    SAFE_TENSORS = 1
 
     @property
     def loader(self) -> Callable[[Iterable[str]], Iterable[Mapping[str, torch.Tensor]]]:
         checkpoint_type_to_loader = {
             ModelCheckpointType.PYTORCH_STATE_DICT: _load_pytorch_state_dicts_from_checkpoints,
-            ModelCheckpointType.SAFETENSORS: _load_safetensor_state_dicts_from_checkpoints,
+            ModelCheckpointType.SAFE_TENSORS: _load_safetensor_state_dicts_from_checkpoints,
         }
         return checkpoint_type_to_loader[self]
 

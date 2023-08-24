@@ -7,6 +7,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -18,6 +19,7 @@ from torch import Tensor
 
 from ..quantization import prepare_module_for_quantization
 from ..quantization.bnb.config import BitsAndBytesConfig
+from ..sharing import Shareable
 from ..util.hf import get_model_checkpoint_filepaths, get_model_config_filepath
 from ..util.serde import load_model_from_checkpoints
 
@@ -136,11 +138,21 @@ class FromHFHub(ABC):
         else:
             tensor2param = None
 
+        ignored_missing_prefixes: Set[str] = set()
+
+        # Prepare for parameter sharing.
+        if isinstance(model, Shareable):
+            # Ignore targets of shared parameters that don't (won't) have
+            # a corresponding key in the state dict.
+            model.initialize_shared_data()
+            ignored_missing_prefixes = {d.target for d in model.shared_data()}
+
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames = get_model_checkpoint_filepaths(name, revision)
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,
+            ignored_missing_prefixes=ignored_missing_prefixes,
             state_dict_converter=cls.convert_hf_state_dict,
             tensor_to_param_converter=tensor2param,
             device=device,
@@ -150,6 +162,11 @@ class FromHFHub(ABC):
         # the correct device.
         if device is not None:
             model.to(device)
+
+        # Fix-up shared modules and parameters. This needs to be done after
+        # converting the model to its final dtype/device to prevent copies.
+        if isinstance(model, Shareable):
+            model.tie_shared_data()
 
         return model
 

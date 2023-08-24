@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from torch.nn import Module
 
@@ -55,3 +55,23 @@ def apply_to_module(module: Module, func: Callable[[ModuleIterator], None]):
                     parent=itr.module,
                 )
             )
+
+
+def split_full_name(full_name: str) -> Tuple[str, str]:
+    """
+    Split a fully-qualified name into its prefix and final
+    component.
+
+    :param full_name:
+        Fully-qualified name.
+    :returns:
+        The final component and the prefix.
+    """
+    splits = full_name.split(".")
+    if len(splits) < 2:
+        raise ValueError(
+            f"Fully-qualified name '{full_name}' must contain at least one dot"
+        )
+    name = splits[-1]
+    prefix = ".".join(splits[:-1])
+    return name, prefix

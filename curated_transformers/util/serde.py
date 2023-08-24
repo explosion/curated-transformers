@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, Dict, Iterable, Mapping, Optional, Set, Union
 
 import torch
@@ -22,6 +23,7 @@ def load_model_from_checkpoints(
     model: Module,
     *,
     filepaths: Iterable[str],
+    ignored_missing_prefixes: Set[str],
     state_dict_converter: HFStateDictConverterT,
     tensor_to_param_converter: Optional[TensorToParameterConverterT] = None,
     device: Optional[torch.device] = None,
@@ -33,6 +35,10 @@ def load_model_from_checkpoints(
         PyTorch module into which the parameters are to be loaded.
     :param filepaths:
         Paths to PyTorch checkpoints.
+    :param ignored_missing_prefixes:
+        Prefixes to ignore when checking for missing keys in the
+        checkpoints. Useful when loading models that have shared
+        parameters that are not serialized to disk.
     :param state_dict_converter:
         Callback to convert Hugging Face state dicts to the
         `curated-transformers` format.
@@ -66,8 +72,27 @@ def load_model_from_checkpoints(
 
     # Make sure that we didn't miss any keys.
     missing_keys = module_keys.difference(seen_keys)
+    seen_ignored_prefixes: Set[str] = set()
+    ignored_missing_keys: Set[str] = set()
+
+    for key in missing_keys:
+        for prefix in ignored_missing_prefixes:
+            if prefix in key:
+                seen_ignored_prefixes.add(prefix)
+                ignored_missing_keys.add(key)
+                break
+
+    missing_keys = missing_keys.difference(ignored_missing_keys)
     if len(missing_keys) != 0:
         raise ValueError(f"Some parameters were not updated/replaced: {missing_keys}")
+
+    unseen_ignored_prefixes = ignored_missing_prefixes.difference(seen_ignored_prefixes)
+    if len(unseen_ignored_prefixes) != 0:
+        # Can happen if the model has shared parameters that
+        # it didn't expect to see in the state dict.
+        warnings.warn(
+            f"Unexpected parameters were found in the checkpoint(s): {unseen_ignored_prefixes}"
+        )
 
 
 def default_tensor_to_parameter_converter(

@@ -55,6 +55,24 @@ def prepare_for_quantization(
     return _convert_tensor_to_quantized_parameter
 
 
+def is_quantized_module(module: Module) -> bool:
+    if not has_bitsandbytes:
+        return False
+
+    from bitsandbytes.nn import Linear4bit, Linear8bitLt
+
+    return isinstance(module, (Linear8bitLt, Linear4bit))
+
+
+def is_quantized_parameter(param: Parameter) -> bool:
+    if not has_bitsandbytes:
+        return False
+
+    from bitsandbytes.nn import Int8Params, Params4bit
+
+    return isinstance(param, (Int8Params, Params4bit))
+
+
 def _replace_quantizable_modules(
     module: Module,
     config: Union[_8BitConfig, _4BitConfig],

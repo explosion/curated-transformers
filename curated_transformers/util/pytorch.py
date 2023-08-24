@@ -14,6 +14,8 @@ class ModuleIterator:
     :param name:
         Name of the module.
     :param prefix:
+        Current dot path of the module. Does not include the name.
+    :param full_path:
         Current dot path of the module. Includes the name.
     :param parent:
         Parent module. Will be `None` for the root module.
@@ -22,6 +24,7 @@ class ModuleIterator:
     module: Module
     name: str
     prefix: str
+    full_path: str
     parent: Optional[Module]
 
 
@@ -35,12 +38,20 @@ def apply_to_module(module: Module, func: Callable[[ModuleIterator], None]):
     :param func:
         A callable that takes a module iterator as its argument.
     """
-    queue: List[ModuleIterator] = [ModuleIterator(module, "", "", None)]
+    queue: List[ModuleIterator] = [ModuleIterator(module, "", "", "", None)]
 
     while queue:
         itr = queue.pop(0)
         func(itr)
 
         for name, child in itr.module.named_children():
-            child_prefix = f"{itr.prefix}.{name}" if itr.prefix else name
-            queue.append(ModuleIterator(child, name, child_prefix, itr.module))
+            child_path = f"{itr.full_path}.{name}" if itr.full_path else name
+            queue.append(
+                ModuleIterator(
+                    child,
+                    name,
+                    prefix=itr.full_path,
+                    full_path=child_path,
+                    parent=itr.module,
+                )
+            )

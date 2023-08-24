@@ -121,9 +121,9 @@ def _emplace_module_state_dict(
         tensor_to_param_converter = default_tensor_to_parameter_converter
 
     def apply(itr: ModuleIterator):
-        prefix_with_dot = f"{itr.prefix}."
+        path_with_dot = f"{itr.full_path}."
         candidate_tensors = {
-            k: v for k, v in state_dict.items() if k.startswith(prefix_with_dot)
+            k: v for k, v in state_dict.items() if k.startswith(path_with_dot)
         }
         if len(candidate_tensors) == 0:
             return
@@ -134,24 +134,24 @@ def _emplace_module_state_dict(
         for name, buf in itr.module._buffers.items():
             if name in local_params_and_buffers:
                 raise KeyError(
-                    f"Key `{name}` used in both learnable parameters and buffers in module `{itr.prefix}`"
+                    f"Key `{name}` used in both learnable parameters and buffers in module `{itr.full_path}`"
                 )
             elif name not in itr.module._non_persistent_buffers_set:
                 local_params_and_buffers[name] = buf
 
         for name, param in local_params_and_buffers.items():
-            key = f"{prefix_with_dot}{name}"
+            key = f"{path_with_dot}{name}"
             if key not in candidate_tensors:
                 continue
             elif param is None:
                 raise ValueError(
-                    f"Key `{name}` found in state dict but no data in module `{itr.prefix}`"
+                    f"Key `{name}` found in state dict but no data in module `{itr.full_path}`"
                 )
             replacement = candidate_tensors[key]
             assert tensor_to_param_converter is not None
             _emplace_module_tensor(
                 module=itr.module,
-                module_prefix=itr.prefix,
+                module_prefix=itr.full_path,
                 tensor_name=name,
                 replacement_tensor=replacement,
                 tensor_to_param_converter=tensor_to_param_converter,

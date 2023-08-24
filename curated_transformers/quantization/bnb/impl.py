@@ -65,7 +65,7 @@ def _replace_quantizable_modules(
 ):
     def apply(itr: ModuleIterator):
         quantize_everything = len(non_quantizable_module_prefixes) == 0
-        if not quantize_everything and itr.prefix in non_quantizable_module_prefixes:
+        if not quantize_everything and itr.full_path in non_quantizable_module_prefixes:
             # Not a quantizable module.
             return
         elif itr.parent is None:

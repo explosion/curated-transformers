@@ -53,6 +53,15 @@ class ModelCheckpointType(Enum):
         }
         return checkpoint_type_to_loader[self]
 
+    @property
+    def pretty_name(self) -> str:
+        if self == ModelCheckpointType.PYTORCH_STATE_DICT:
+            return "PyTorch StateDict"
+        elif self == ModelCheckpointType.SAFE_TENSORS:
+            return "SafeTensors"
+        else:
+            return ""
+
 
 # When `None`, behaviour is implementation-specific.
 _MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(

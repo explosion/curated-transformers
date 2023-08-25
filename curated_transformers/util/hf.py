@@ -112,7 +112,6 @@ def get_model_checkpoint_filepaths(
     def get_checkpoint_paths(
         checkpoint_type: ModelCheckpointType,
     ) -> List[str]:
-
         # Attempt to download a non-sharded checkpoint first.
         try:
             model_filename = hf_hub_download(

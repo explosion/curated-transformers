@@ -55,7 +55,7 @@ class ModelCheckpointType(Enum):
 
 
 # When `None`, behaviour is implementation-specific.
-MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(
+_MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(
     "model_checkpoint_type", default=None
 )
 
@@ -76,11 +76,11 @@ def use_model_checkpoint_type(
         with use_model_checkpoint_type(ModelCheckpointType.SAFETENSORS):
             encoder = BertEncoder.from_hf_hub(name="bert-base-uncased")
     """
-    token = MODEL_CHECKPOINT_TYPE.set(model_checkpoint_type)
+    token = _MODEL_CHECKPOINT_TYPE.set(model_checkpoint_type)
     try:
         yield
     finally:
-        MODEL_CHECKPOINT_TYPE.reset(token)
+        _MODEL_CHECKPOINT_TYPE.reset(token)
 
 
 def load_model_from_checkpoints(

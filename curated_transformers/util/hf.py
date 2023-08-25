@@ -6,7 +6,7 @@ import huggingface_hub
 from requests import HTTPError, ReadTimeout  # type: ignore
 
 from .._compat import has_safetensors
-from .serde import MODEL_CHECKPOINT_TYPE, ModelCheckpointType
+from .serde import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
 
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
@@ -166,7 +166,7 @@ def get_model_checkpoint_filepaths(
 
         return sorted(filepaths)
 
-    checkpoint_type = MODEL_CHECKPOINT_TYPE.get()
+    checkpoint_type = _MODEL_CHECKPOINT_TYPE.get()
     checkpoint_paths: Optional[List[str]] = None
 
     if checkpoint_type is None:

@@ -18,6 +18,17 @@ HF_TOKENIZER_CONFIG = "tokenizer_config.json"
 SPECIAL_TOKENS_MAP = "special_tokens_map.json"
 TOKENIZER_JSON = "tokenizer.json"
 
+PRIMARY_CHECKPOINT_FILENAMES = {
+    ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_CHECKPOINT,
+    ModelCheckpointType.SAFE_TENSORS: HF_MODEL_CHECKPOINT_SAFETENSORS,
+}
+SHARDED_CHECKPOINT_INDEX_FILENAMES = {
+    ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_SHARDED_CHECKPOINT_INDEX,
+    ModelCheckpointType.SAFE_TENSORS: HF_MODEL_SHARDED_CHECKPOINT_INDEX_SAFETENSORS,
+}
+# Same for both checkpoint types.
+SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY
+
 
 def get_file_metadata(
     *, filename: str, name: str, revision: str
@@ -101,29 +112,12 @@ def get_model_checkpoint_filepaths(
     def get_checkpoint_paths(
         checkpoint_type: ModelCheckpointType,
     ) -> List[str]:
-        checkpoint_type_to_string = {
-            ModelCheckpointType.PYTORCH_STATE_DICT: "PyTorch",
-            ModelCheckpointType.SAFE_TENSORS: "Safetensors",
-        }
-
-        primary_checkpoint_filenames = {
-            ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_CHECKPOINT,
-            ModelCheckpointType.SAFE_TENSORS: HF_MODEL_CHECKPOINT_SAFETENSORS,
-        }
-        sharded_checkpoint_index_filenames = {
-            ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_SHARDED_CHECKPOINT_INDEX,
-            ModelCheckpointType.SAFE_TENSORS: HF_MODEL_SHARDED_CHECKPOINT_INDEX_SAFETENSORS,
-        }
-        # Same for both checkpoint types.
-        sharded_checkpoint_index_weights_key = (
-            HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY
-        )
 
         # Attempt to download a non-sharded checkpoint first.
         try:
             model_filename = hf_hub_download(
                 repo_id=name,
-                filename=primary_checkpoint_filenames[checkpoint_type],
+                filename=PRIMARY_CHECKPOINT_FILENAMES[checkpoint_type],
                 revision=revision,
             )
         except HTTPError:
@@ -136,22 +130,22 @@ def get_model_checkpoint_filepaths(
         try:
             model_index_filename = hf_hub_download(
                 repo_id=name,
-                filename=sharded_checkpoint_index_filenames[checkpoint_type],
+                filename=SHARDED_CHECKPOINT_INDEX_FILENAMES[checkpoint_type],
                 revision=revision,
             )
         except HTTPError:
             raise ValueError(
-                f"Couldn't find a valid {checkpoint_type_to_string[checkpoint_type]} "
-                f"checkpoint for model `{name}` (revision `{revision}`) on HuggingFace Model Hub"
+                f"Couldn't find a valid {checkpoint_type.pretty_name} checkpoint for "
+                f"model `{name}` (revision `{revision}`) on HuggingFace Model Hub"
             )
 
         with open(model_index_filename, "r") as f:
             index = json.load(f)
 
-        weight_map = index.get(sharded_checkpoint_index_weights_key)
+        weight_map = index.get(SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY)
         if weight_map is None or not isinstance(weight_map, dict):
             raise ValueError(
-                f"Invalid index file in sharded {checkpoint_type_to_string[checkpoint_type]} "
+                f"Invalid index file in sharded {checkpoint_type.pretty_name} "
                 f"checkpoint for model `{name}`"
             )
 

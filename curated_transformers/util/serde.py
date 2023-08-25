@@ -70,7 +70,7 @@ _MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(
 
 
 @contextmanager
-def use_model_checkpoint_type(
+def _use_model_checkpoint_type(
     model_checkpoint_type: ModelCheckpointType,
 ):
     """

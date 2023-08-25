@@ -7,27 +7,6 @@ from torch.nn import Module
 from .descriptor import SharedDataDescriptor, SharedDataType
 from .logic import SharedModule, SharedParameter, SharingLogic
 
-"""
-TODO
-
-- Add a `SharedParameterPlaceholder` class.
-    - Overrides `to` to no-op device conversions
-    - This allows for shared parameters on the meta device to not error out during loading.
-- Model definition does not need to directly use the placeholders.
-- Add another method to `HasSharedData`
-    - Gets called after the checkpoints are loaded
-    - Replaces the target modules/parameters with their placeholder classes.
-- The 'load checkpoints' function takes an extra `ignored_prefixes`
-    - This is the list of target/placeholder prefixes whose parameters won't be found in the state dicts
-    - If they are unexpectedly found in the state dict, emit warning
-- The tie method gets called after the model is converted to the target device
-    - This replaces all the placeholders with their sources
-    - Special handling for parameters that preserve the original data
-        - If the org. data is on the meta device, act like we aren't preserving
-
-Prevent sharing of quantized modules/parameters
-"""
-
 
 @dataclass
 class _ActiveShareData:

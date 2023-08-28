@@ -71,6 +71,7 @@ class Shareable(ABC):
             raise ValueError("Data is being actively shared - Unshare the data first")
 
         shared_data = self.shared_data()
+        self._check_for_overlaps(shared_data)
         sharing_logic = self._map_descriptors_to_logic(shared_data)
         for descriptor, logic in zip(shared_data, sharing_logic):
             metadata = logic.tie(model=cast(Module, self))
@@ -139,3 +140,18 @@ class Shareable(ABC):
             else:
                 raise ValueError(f"Unexpected shared data type `{descriptor.type}`")
         return out
+
+    @staticmethod
+    def _check_for_overlaps(
+        descriptors: Iterable[SharedDataDescriptor],
+    ):
+        modules = [d for d in descriptors if d.type == SharedDataType.MODULE]
+        params = [d for d in descriptors if d.type == SharedDataType.PARAMETER]
+
+        for param in params:
+            for module in modules:
+                if module.target in param.target:
+                    raise ValueError(
+                        f"Shared parameter '{param.target}' overlaps with "
+                        f"shared module '{module.target}'"
+                    )

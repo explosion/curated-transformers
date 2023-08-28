@@ -11,4 +11,5 @@ API
    generation
    tokenizers
    quantization
+   sharing
    utils

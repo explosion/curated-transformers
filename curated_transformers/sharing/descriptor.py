@@ -9,7 +9,10 @@ class SharedDataType(Enum):
     Type of shared data.
     """
 
+    #: Shared PyTorch ``Module``.
     MODULE = 0
+
+    #: Shared PyTorch ``Parameter``.
     PARAMETER = 1
 
 

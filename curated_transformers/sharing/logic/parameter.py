@@ -104,7 +104,7 @@ class SharedParameter(SharingLogic):
             )
         elif type(param) != Parameter:
             raise ValueError(
-                f"Shared parameter must be of type '{type(Parameter).__name__}'"
+                f"Shared parameter must be of type '{Parameter.__name__}', got '{type(param).__name__}'"
             )
 
     def _replace_target_parameter(self, model: Module, replacement: Parameter):
@@ -135,7 +135,7 @@ class SharedParameter(SharingLogic):
             )
         elif source_parameter.dtype != target_parameter.wrapped_dtype:
             raise ValueError(
-                f"Mismatching dtype ({source_parameter.dtype} != {target_parameter.wrapped_dtype}) "
+                f"Mismatching dtypes ({source_parameter.dtype} != {target_parameter.wrapped_dtype}) "
                 f"for shared parameters '{self.source}' and '{self.target}'"
             )
 

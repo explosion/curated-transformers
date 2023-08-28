@@ -1,17 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Set, cast
+from typing import Any, Iterable, List, Optional, Set, cast
 
 from torch.nn import Module
 
 from .descriptor import SharedDataDescriptor, SharedDataType
 from .logic import SharedModule, SharedParameter, SharingLogic
-
-
-@dataclass
-class _ActiveShareData:
-    logic: SharingLogic
-    metadata: Optional[Any]
 
 
 class Shareable(ABC):
@@ -23,17 +16,21 @@ class Shareable(ABC):
     unshare and clone the data.
     """
 
-    _active_shares: Dict[SharedDataDescriptor, _ActiveShareData]
+    _share_logic: List[SharingLogic]
+    _active_metadata: List[Optional[Any]]
     _initialized: bool
 
     def __init__(self):
-        self._active_shares = {}
+        self._share_logic = []
+        self._active_metadata = []
         self._initialized = False
 
     @abstractmethod
     def shared_data(self) -> Set[SharedDataDescriptor]:
         """
-        Return a set of shared data descriptors.
+        Return a set of shared data descriptors. This
+        collection should be immutable, i.e., the output
+        should not change after initialization.
 
         :returns:
             Set of shared data descriptors.
@@ -52,7 +49,9 @@ class Shareable(ABC):
             raise ValueError("Shareable data has already been initialized")
 
         shared_data = self.shared_data()
-        for logic in self._map_descriptors_to_logic(shared_data):
+        self._check_for_overlaps(shared_data)
+        self._share_logic = self._map_descriptors_to_logic(shared_data)
+        for logic in self._share_logic:
             logic.initialize(model=cast(Module, self))
         self._initialized = True
 
@@ -70,12 +69,10 @@ class Shareable(ABC):
         if self.tied:
             raise ValueError("Data is being actively shared - Unshare the data first")
 
-        shared_data = self.shared_data()
-        self._check_for_overlaps(shared_data)
-        sharing_logic = self._map_descriptors_to_logic(shared_data)
-        for descriptor, logic in zip(shared_data, sharing_logic):
+        self._active_metadata = [None] * len(self._share_logic)
+        for i, logic in enumerate(self._share_logic):
             metadata = logic.tie(model=cast(Module, self))
-            self._active_shares[descriptor] = _ActiveShareData(logic, metadata)
+            self._active_metadata[i] = metadata
 
     def untie_shared_data(self):
         """
@@ -95,9 +92,9 @@ class Shareable(ABC):
         if not self.tied:
             raise ValueError("Data is not being actively shared - Share the data first")
 
-        for _, data in self._active_shares.items():
-            data.logic.untie(model=cast(Module, self), metadata=data.metadata)
-        self._active_shares.clear()
+        for logic, metadata in zip(self._share_logic, self._active_metadata):
+            logic.untie(model=cast(Module, self), metadata=metadata)
+        self._active_metadata.clear()
 
     def clone_shared_data(self):
         """
@@ -112,8 +109,7 @@ class Shareable(ABC):
         if self.tied:
             raise ValueError("Data is being actively shared - Unshare the data first")
 
-        shared_data = self.shared_data()
-        for logic in self._map_descriptors_to_logic(shared_data):
+        for logic in self._share_logic:
             logic.clone(model=cast(Module, self))
 
     @property
@@ -121,7 +117,7 @@ class Shareable(ABC):
         """
         Returns if the model is actively sharing data.
         """
-        return len(self._active_shares) > 0
+        return len(self._active_metadata) > 0
 
     def _check_initalization(self):
         if not self._initialized:

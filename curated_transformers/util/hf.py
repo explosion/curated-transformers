@@ -1,17 +1,33 @@
 import json
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import huggingface_hub
 from requests import HTTPError, ReadTimeout  # type: ignore
 
+from .._compat import has_safetensors
+from .serde import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
+
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
+HF_MODEL_CHECKPOINT_SAFETENSORS = "model.safetensors"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX = "pytorch_model.bin.index.json"
+HF_MODEL_SHARDED_CHECKPOINT_INDEX_SAFETENSORS = "model.safetensors.index.json"
 HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = "weight_map"
 HF_TOKENIZER_CONFIG = "tokenizer_config.json"
 SPECIAL_TOKENS_MAP = "special_tokens_map.json"
 TOKENIZER_JSON = "tokenizer.json"
+
+PRIMARY_CHECKPOINT_FILENAMES = {
+    ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_CHECKPOINT,
+    ModelCheckpointType.SAFE_TENSORS: HF_MODEL_CHECKPOINT_SAFETENSORS,
+}
+SHARDED_CHECKPOINT_INDEX_FILENAMES = {
+    ModelCheckpointType.PYTORCH_STATE_DICT: HF_MODEL_SHARDED_CHECKPOINT_INDEX,
+    ModelCheckpointType.SAFE_TENSORS: HF_MODEL_SHARDED_CHECKPOINT_INDEX_SAFETENSORS,
+}
+# Same for both checkpoint types.
+SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY = HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY
 
 
 def get_file_metadata(
@@ -73,11 +89,13 @@ def get_model_config_filepath(name: str, revision: str) -> str:
         )
 
 
-def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
+def get_model_checkpoint_filepaths(
+    name: str, revision: str
+) -> Tuple[List[str], ModelCheckpointType]:
     """
-    Return a list of local file paths to PyTorch checkpoints that belong
-    to the Hugging Face model. In case of non-sharded models, a single file path
-    is returned. In case of sharded models, multiple file paths are returned.
+    Return a list of local file paths to  checkpoints that belong to the Hugging
+    Face model. In case of non-sharded models, a single file path is returned. In
+    case of sharded models, multiple file paths are returned.
 
     If the checkpoints are not found in the cache, they are downloaded from
     Hugging Face Hub.
@@ -87,50 +105,80 @@ def get_model_checkpoint_filepaths(name: str, revision: str) -> List[str]:
     :param revision:
         Model revision.
     :returns:
-        List of absolute paths to the checkpoints.
+        List of absolute paths to the checkpoints
+        and the checkpoint type.
     """
 
-    # Attempt to download a non-sharded checkpoint first.
-    try:
-        model_filename = hf_hub_download(
-            repo_id=name, filename=HF_MODEL_CHECKPOINT, revision=revision
-        )
-    except HTTPError:
-        # We'll get a 404 HTTP error for sharded models.
-        model_filename = None
+    def get_checkpoint_paths(
+        checkpoint_type: ModelCheckpointType,
+    ) -> List[str]:
+        # Attempt to download a non-sharded checkpoint first.
+        try:
+            model_filename = hf_hub_download(
+                repo_id=name,
+                filename=PRIMARY_CHECKPOINT_FILENAMES[checkpoint_type],
+                revision=revision,
+            )
+        except HTTPError:
+            # We'll get a 404 HTTP error for sharded models.
+            model_filename = None
 
-    if model_filename is not None:
-        return [model_filename]
+        if model_filename is not None:
+            return [model_filename]
 
-    try:
-        model_index_filename = hf_hub_download(
-            repo_id=name, filename=HF_MODEL_SHARDED_CHECKPOINT_INDEX, revision=revision
-        )
-    except HTTPError:
-        raise ValueError(
-            f"Couldn't find a valid PyTorch checkpoint for model `{name}` "
-            f"(revision `{revision}`) on HuggingFace Model Hub"
-        )
+        try:
+            model_index_filename = hf_hub_download(
+                repo_id=name,
+                filename=SHARDED_CHECKPOINT_INDEX_FILENAMES[checkpoint_type],
+                revision=revision,
+            )
+        except HTTPError:
+            raise ValueError(
+                f"Couldn't find a valid {checkpoint_type.pretty_name} checkpoint for "
+                f"model `{name}` (revision `{revision}`) on HuggingFace Model Hub"
+            )
 
-    with open(model_index_filename, "r") as f:
-        index = json.load(f)
+        with open(model_index_filename, "r") as f:
+            index = json.load(f)
 
-    weight_map = index.get(HF_MODEL_SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY)
-    if weight_map is None or not isinstance(weight_map, dict):
-        raise ValueError(
-            f"Invalid index file in sharded PyTorch checkpoint for model `{name}`"
-        )
+        weight_map = index.get(SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY)
+        if weight_map is None or not isinstance(weight_map, dict):
+            raise ValueError(
+                f"Invalid index file in sharded {checkpoint_type.pretty_name} "
+                f"checkpoint for model `{name}`"
+            )
 
-    filepaths = []
-    # We shouldn't need to hold on to the weights map in the index as each checkpoint
-    # should contain its constituent parameter names.
-    for filename in set(weight_map.values()):
-        resolved_filename = hf_hub_download(
-            repo_id=name, filename=filename, revision=revision
-        )
-        filepaths.append(resolved_filename)
+        filepaths = []
+        # We shouldn't need to hold on to the weights map in the index as each checkpoint
+        # should contain its constituent parameter names.
+        for filename in set(weight_map.values()):
+            resolved_filename = hf_hub_download(
+                repo_id=name, filename=filename, revision=revision
+            )
+            filepaths.append(resolved_filename)
 
-    return sorted(filepaths)
+        return sorted(filepaths)
+
+    checkpoint_type = _MODEL_CHECKPOINT_TYPE.get()
+    checkpoint_paths: Optional[List[str]] = None
+
+    if checkpoint_type is None:
+        # Precedence: Safetensors > PyTorch
+        if has_safetensors:
+            try:
+                checkpoint_type = ModelCheckpointType.SAFE_TENSORS
+                checkpoint_paths = get_checkpoint_paths(checkpoint_type)
+            except ValueError:
+                pass
+        if checkpoint_paths is None:
+            checkpoint_type = ModelCheckpointType.PYTORCH_STATE_DICT
+            checkpoint_paths = get_checkpoint_paths(checkpoint_type)
+    else:
+        checkpoint_paths = get_checkpoint_paths(checkpoint_type)
+
+    assert checkpoint_paths is not None
+    assert checkpoint_type is not None
+    return checkpoint_paths, checkpoint_type
 
 
 def get_special_piece(

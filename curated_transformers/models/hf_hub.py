@@ -148,10 +148,13 @@ class FromHFHub(ABC):
             ignored_missing_prefixes = {d.target for d in model.shared_data()}
 
         # Download model and convert HF parameter names to ours.
-        checkpoint_filenames = get_model_checkpoint_filepaths(name, revision)
+        checkpoint_filenames, checkpoint_type = get_model_checkpoint_filepaths(
+            name, revision
+        )
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,
+            checkpoint_type=checkpoint_type,
             ignored_missing_prefixes=ignored_missing_prefixes,
             state_dict_converter=cls.convert_hf_state_dict,
             tensor_to_param_converter=tensor2param,

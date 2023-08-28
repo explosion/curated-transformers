@@ -84,9 +84,10 @@ jobs:
       - name: Run pytest
         run: python -m pytest --pyargs curated_transformers
 
+        # Pinned due to a regression in 4.32.0
       - name: Install HF transformers
         run: |
-          python -m pip install transformers
+          python -m pip install "transformers<4.32.0"
         shell: bash
 
       # Upstream Falcon imports this, but doesn't use it. 😭

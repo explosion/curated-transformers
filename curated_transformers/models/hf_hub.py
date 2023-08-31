@@ -138,14 +138,14 @@ class FromHFHub(ABC):
         else:
             tensor2param = None
 
-        ignored_missing_prefixes: Set[str] = set()
+        ignored_prefixes: Set[str] = set()
 
         # Prepare for parameter sharing.
         if isinstance(model, Shareable):
-            # Ignore targets of shared parameters that don't (won't) have
-            # a corresponding key in the state dict.
+            # Ignore targets of shared parameters so that they are not
+            # replaced by any unexpected keys in the checkpoints.
             model.initialize_shared_data()
-            ignored_missing_prefixes = {d.target for d in model.shared_data()}
+            ignored_prefixes = {d.target for d in model.shared_data()}
 
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames, checkpoint_type = get_model_checkpoint_filepaths(
@@ -155,7 +155,7 @@ class FromHFHub(ABC):
             model,  # type:ignore
             filepaths=checkpoint_filenames,
             checkpoint_type=checkpoint_type,
-            ignored_missing_prefixes=ignored_missing_prefixes,
+            ignored_prefixes=ignored_prefixes,
             state_dict_converter=cls.convert_hf_state_dict,
             tensor_to_param_converter=tensor2param,
             device=device,

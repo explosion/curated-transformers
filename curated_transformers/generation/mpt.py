@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from ..models.llama import LlamaCausalLM
+from ..models.mpt import MPTCausalLM
 from ..tokenizers.tokenizer import Tokenizer
 from .default_generator import DefaultGenerator
 from .hf_hub import FromHFHub
@@ -11,7 +11,7 @@ class MPTGenerator(DefaultGenerator, FromHFHub):
     Generator for MPT model variants.
     """
 
-    def __init__(self, tokenizer: Tokenizer, causal_lm: LlamaCausalLM):
+    def __init__(self, tokenizer: Tokenizer, causal_lm: MPTCausalLM):
         """
         Construct an MPT generator.
 

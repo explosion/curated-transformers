@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from huggingface_hub.utils import EntryNotFoundError
 
@@ -16,6 +16,27 @@ class FromHFHub(ABC):
     It directly queries the Hugging Face Hub to load the tokenizer from
     its configuration file.
     """
+
+    @classmethod
+    @abstractmethod
+    def download_to_cache(
+        cls: Type[SelfFromHFHub],
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        """
+        Download the tokenizer's serialized model, configuration and vocab files
+        from Hugging Face Hub into the local Hugging Face cache directory.
+        Subsequent loading of the tokenizer will read the files from disk. If the
+        files are already cached, this is a no-op.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        """
+        raise NotImplementedError
 
     @classmethod
     @abstractmethod
@@ -57,7 +78,7 @@ class LegacyFromHFHub(FromHFHub):
         cls: Type[SelfLegacyFromHFHub],
         *,
         vocab_files: Dict[str, Path],
-        tokenizer_config: Optional[Dict[str, Any]]
+        tokenizer_config: Optional[Dict[str, Any]],
     ) -> SelfLegacyFromHFHub:
         """
         Construct a tokenizer from its vocabulary files and optional
@@ -73,19 +94,24 @@ class LegacyFromHFHub(FromHFHub):
         raise NotImplementedError
 
     @classmethod
+    def download_to_cache(
+        cls: Type[SelfLegacyFromHFHub],
+        *,
+        name: str,
+        revision: str = "main",
+    ):
+        for _, filename in cls.vocab_files.items():
+            _ = hf_hub_download(repo_id=name, filename=filename, revision=revision)
+
+        try:
+            _ = get_tokenizer_config(name=name, revision=revision)
+        except EntryNotFoundError:
+            pass
+
+    @classmethod
     def from_hf_hub(
         cls: Type[SelfLegacyFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfLegacyFromHFHub:
-        """
-        Construct a tokenizer and load its parameters from Hugging Face Hub.
-
-        :param name:
-            Model name.
-        :param revision:
-            Model revision.
-        :returns:
-            The tokenizer.
-        """
         vocab_files = {}
         for vocab_file, filename in cls.vocab_files.items():
             vocab_files[vocab_file] = Path(

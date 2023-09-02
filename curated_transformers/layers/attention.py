@@ -284,8 +284,11 @@ class QkvSplit(ABC):
             Query, key, value tensors.
 
             *Shapes:*
+
             - Query: ``(batch_size, n_query_heads, seq_len, head_width)``
+
             - Key: ``(batch_size, n_key_value_heads, seq_len, head_width)``
+
             - Value: ``(batch_size, n_key_value_heads, seq_len, head_width)``
         """
         ...
@@ -493,7 +496,6 @@ class QkvMode(Enum):
     #: key and value, and split heads before splitting the query, key
     #: and value representations. This ordering is incompatible with
     #: head sharing in keys or values.
-
     MERGED_SPLIT_BEFORE = 1
 
     #: ``MERGED_SPLIT_AFTER`` - Use a merged projection for query,

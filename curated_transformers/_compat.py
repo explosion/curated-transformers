@@ -14,3 +14,5 @@ if has_bitsandbytes and not _has_scipy:
         "`scipy` isn't. Please install `scipy` to correctly load `bitsandbytes`."
     )
     has_bitsandbytes = False
+
+has_safetensors = find_spec("safetensors")

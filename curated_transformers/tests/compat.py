@@ -16,3 +16,11 @@ if has_torch_compile:
         torch.compile(Identity(), disable=True)
     except:
         has_torch_compile = False
+
+try:
+    import safetensors
+
+    has_safetensors = True
+except ImportError:
+    safetensors = None  # type: ignore
+    has_safetensors = False

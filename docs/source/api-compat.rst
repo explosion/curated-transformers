@@ -57,7 +57,7 @@ we need to add new mandatory arguments. We will adress this as follows:
   the argument mandatory.
 
 For example, consider the constructor of
-:py:class:`curated_transformers.layers.attention.ScaledDotProductAttention`:
+:py:class:`curated_transformers.layers.ScaledDotProductAttention`:
 
 .. code-block:: python
 
@@ -101,7 +101,7 @@ Types Used for API Compatibility
 .. autoclass:: curated_transformers.semver.FutureMandatory
    :members:
 
-Changes between major versions
+Changes Between Major Versions
 ------------------------------
 
 Version 1 to 2

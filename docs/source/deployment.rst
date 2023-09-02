@@ -81,7 +81,7 @@ The previous section describes how we can trace a model. In some cases, it can b
 difficult to provide a working argument tuple to |torch.jit.trace|_. Suppose
 that we would like to trace a decoder with an attention mask and positions, but
 without using a cache. In the
-:py:class:`~curated_transformers.models.module.DecoderModule` API, the ``cache``
+:py:class:`~curated_transformers.models.DecoderModule` API, the ``cache``
 argument is interspersed between the ``attention_mask`` and ``positions``
 arguments. This turns out to be problematic since we cannot pass ``None``
 arguments to the |torch.jit.trace|_ function. While |torch.jit.trace|_ provides an

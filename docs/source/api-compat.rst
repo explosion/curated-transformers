@@ -21,7 +21,7 @@ API compatibility to the following:
 - Modules, data structures, and functions that are publicly documented in the
   documentation.
 - Model checkpoints. You should be able to load any model checkpoint created
-  with a major version of Curated Transfomers with all subsequent minor/patch
+  with a major version of Curated Transformers with all subsequent minor/patch
   versions of that major version.
 
 .. _Semantic Versioning: https://semver.org/
@@ -45,7 +45,7 @@ Mandatory Arguments
 
 Some functions require all arguments to be specified, for instance this is
 required in the constructors of most building blocks. This poses an issue when
-we need to add new mandatory arguments. We will adress this as follows:
+we need to add new mandatory arguments. We will address this as follows:
 
 - In the *current* major version, we add the new argument with a special default
   value. This default value is used to signal that the function should use the

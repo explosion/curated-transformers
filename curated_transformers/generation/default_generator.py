@@ -59,14 +59,14 @@ class DefaultGenerator(GeneratorWrapper, FromHFHub):
         )
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls: Type[Self],
         *,
         name: str,
         revision: str = "main",
     ):
-        AutoTokenizer.download_to_cache(name=name, revision=revision)
-        AutoCausalLM.download_to_cache(name=name, revision=revision)
+        AutoTokenizer.from_hf_hub_to_cache(name=name, revision=revision)
+        AutoCausalLM.from_hf_hub_to_cache(name=name, revision=revision)
 
     @classmethod
     def from_hf_hub(

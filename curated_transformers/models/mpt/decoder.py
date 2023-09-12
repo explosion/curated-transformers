@@ -71,7 +71,8 @@ class MPTDecoder(TransformerDecoder, FromHFHub):
             layer_norm = LayerNorm(
                 hidden_width, config.layer.layer_norm_eps, device=device
             )
-            layer_norm.bias = None
+            if not config.layer.feedforward.use_bias:
+                layer_norm.bias = None
             return layer_norm
 
         attention_biases = AttentionLinearBiases(

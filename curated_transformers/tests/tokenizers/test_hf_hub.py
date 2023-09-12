@@ -4,8 +4,8 @@ from curated_transformers.tokenizers import Tokenizer
 from curated_transformers.tokenizers.legacy import BERTTokenizer
 
 
-def test_download_to_cache():
-    Tokenizer.download_to_cache(
+def test_from_hf_hub_to_cache():
+    Tokenizer.from_hf_hub_to_cache(
         name="EleutherAI/gpt-neox-20b",
         revision="9369f145ca7b66ef62760f9351af951b2d53b77f",
     )
@@ -26,8 +26,8 @@ def test_download_to_cache():
         )
 
 
-def test_download_to_cache_legacy():
-    BERTTokenizer.download_to_cache(
+def test_from_hf_hub_to_cache_legacy():
+    BERTTokenizer.from_hf_hub_to_cache(
         name="bert-base-uncased",
         revision="1dbc166cf8765166998eff31ade2eb64c8a40076",
     )

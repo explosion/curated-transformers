@@ -42,7 +42,7 @@ class AutoTokenizer:
     #       requires that the return type is Self.
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls,
         *,
         name: str,
@@ -60,7 +60,7 @@ class AutoTokenizer:
             Model revision.
         """
         tokenizer_cls = _resolve_tokenizer_class(name, revision)
-        tokenizer_cls.download_to_cache(name=name, revision=revision)
+        tokenizer_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
     @classmethod
     def from_hf_hub(cls, *, name: str, revision: str = "main") -> TokenizerBase:

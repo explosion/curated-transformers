@@ -72,7 +72,7 @@ class FromHFHub(ABC):
         raise NotImplementedError
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls: Type[Self],
         *,
         name: str,

@@ -19,7 +19,7 @@ class FromHFHub(ABC):
 
     @classmethod
     @abstractmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls: Type[SelfFromHFHub],
         *,
         name: str,
@@ -94,7 +94,7 @@ class LegacyFromHFHub(FromHFHub):
         raise NotImplementedError
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls: Type[SelfLegacyFromHFHub],
         *,
         name: str,

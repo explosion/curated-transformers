@@ -23,8 +23,8 @@ def test_sharded_model_checkpoints(torch_device):
     )
 
 
-def test_download_to_cache():
-    BERTEncoder.download_to_cache(
+def test_from_hf_hub_to_cache():
+    BERTEncoder.from_hf_hub_to_cache(
         name="explosion-testing/bert-test-caching",
         revision="96a29a07d0fa4c24fd2675521add643e3c2581fc",
     )

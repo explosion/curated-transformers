@@ -90,7 +90,7 @@ class AutoModel(ABC, Generic[ModelT]):
         raise NotImplementedError
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls,
         *,
         name: str,
@@ -108,7 +108,7 @@ class AutoModel(ABC, Generic[ModelT]):
             Model revision.
         """
         module_cls = cls._resolve_model_cls(name, revision)
-        module_cls.download_to_cache(name=name, revision=revision)
+        module_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
 
 class AutoEncoder(AutoModel[EncoderModule]):

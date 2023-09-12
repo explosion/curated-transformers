@@ -34,14 +34,14 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
     """
 
     @classmethod
-    def download_to_cache(
+    def from_hf_hub_to_cache(
         cls,
         *,
         name: str,
         revision: str = "main",
     ):
         generator_cls = _resolve_generator_class(name)
-        generator_cls.download_to_cache(name=name, revision=revision)
+        generator_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
     @classmethod
     def from_hf_hub(

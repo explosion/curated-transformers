@@ -8,7 +8,6 @@ from ..util import JITMethod, assert_decoder_output_equals_hf
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.hf_head
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 def test_decoder(torch_device, with_torch_sdp):
@@ -22,7 +21,6 @@ def test_decoder(torch_device, with_torch_sdp):
     )
 
 
-@pytest.mark.hf_head
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.skipif(not has_torch_compile, reason="requires torch.compile")
@@ -44,7 +42,6 @@ def test_decoder_with_torch_compile(torch_device, with_torch_sdp):
     )
 
 
-@pytest.mark.hf_head
 @pytest.mark.slow
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)

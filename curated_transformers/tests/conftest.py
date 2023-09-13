@@ -40,7 +40,7 @@ def pytest_runtest_setup(item):
         return item.config.getoption(f"--{opt}", False)
 
     # Integration of boolean flags
-    for opt in ["hf_head", "slow"]:
+    for opt in ["slow"]:
         if opt in item.keywords and not getopt(opt.replace("_", "-")):
             pytest.skip(f"need --{opt} option to run")
 

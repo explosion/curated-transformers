@@ -13,20 +13,6 @@ def test_auto_generator():
         "databricks/dolly-v2-3b": DollyV2Generator,
         "tiiuae/falcon-7b": FalconGenerator,
         "openlm-research/open_llama_3b": LlamaGenerator,
-    }
-
-    for name, generator_cls in model_causallm_map.items():
-        generator = AutoGenerator.from_hf_hub(name=name)
-        assert isinstance(generator, generator_cls)
-
-    with pytest.raises(ValueError, match="Unsupported generator"):
-        AutoGenerator.from_hf_hub(name="trl-internal-testing/tiny-random-GPT2Model")
-
-
-@pytest.mark.hf_head
-@pytest.mark.slow
-def test_auto_generator_hf_head():
-    model_causallm_map = {
         "mosaicml/mpt-7b": MPTGenerator,
     }
 

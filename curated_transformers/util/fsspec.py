@@ -45,7 +45,7 @@ def get_file_metadata(
         exist.
 
     """
-    index = get_model_index(fs, model_path, fsspec_args=fsspec_args)
+    index = get_path_index(fs, model_path, fsspec_args=fsspec_args)
     return index.get(filename)
 
 
@@ -68,7 +68,9 @@ def get_model_config(
         The model configuration.
     """
     config = _get_and_parse_json_file(
-        fs, model_path=model_path, filename=HF_MODEL_CONFIG, fsspec_args=fsspec_args
+        fs,
+        path=f"{model_path}/{HF_MODEL_CONFIG}",
+        fsspec_args=fsspec_args,
     )
     if config is None:
         raise ValueError(
@@ -77,7 +79,7 @@ def get_model_config(
     return config
 
 
-def get_hf_config_model_type(
+def get_config_model_type(
     fs: AbstractFileSystem,
     model_path: str,
     fsspec_args: Optional[Dict[str, Any]] = None,
@@ -121,7 +123,9 @@ def get_tokenizer_config(
         Deserialized tokenizer configuration.
     """
     return _get_and_parse_json_file(
-        fs, model_path=model_path, filename=HF_TOKENIZER_CONFIG, fsspec_args=fsspec_args
+        fs,
+        path=f"{model_path}/{HF_TOKENIZER_CONFIG}",
+        fsspec_args=fsspec_args,
     )
 
 
@@ -144,15 +148,14 @@ def get_special_tokens_map(
         Deserialized special token_map.
     """
     return _get_and_parse_json_file(
-        fs, model_path=model_path, filename=SPECIAL_TOKENS_MAP, fsspec_args=fsspec_args
+        fs, path=f"{model_path}/{SPECIAL_TOKENS_MAP}", fsspec_args=fsspec_args
     )
 
 
 def _get_and_parse_json_file(
     fs: AbstractFileSystem,
     *,
-    model_path: str,
-    filename: str,
+    path: str,
     fsspec_args: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
@@ -160,10 +163,8 @@ def _get_and_parse_json_file(
 
     :param fs:
         The filesystem on which the model is stored.
-    :param model_path:
-        The path of the model on the filesystem.
-    :param filename:
-        The name of the JSON file.
+    :param path:
+        The path of the JSON file.
     :param fsspec_args:
         Implementation-specific keyword arguments to pass to fsspec
         filesystem operations.
@@ -172,7 +173,6 @@ def _get_and_parse_json_file(
         and the checkpoint type.
     """
     fsspec_args = {} if fsspec_args is None else fsspec_args
-    path = f"{model_path}/{filename}"
 
     if not fs.exists(path, **fsspec_args):
         return None
@@ -208,7 +208,7 @@ def get_model_checkpoint_files(
     def get_checkpoint_paths(
         checkpoint_type: ModelCheckpointType,
     ) -> List[ModelFile]:
-        index = get_model_index(fs, model_path, fsspec_args=fsspec_args)
+        index = get_path_index(fs, model_path, fsspec_args=fsspec_args)
 
         # Attempt to download a non-sharded checkpoint first.
         entry = index.get(PRIMARY_CHECKPOINT_FILENAMES[checkpoint_type])
@@ -264,9 +264,9 @@ def get_model_checkpoint_files(
     return checkpoint_paths, checkpoint_type
 
 
-def get_model_index(
+def get_path_index(
     fs: AbstractFileSystem,
-    model_path: str,
+    path: str,
     fsspec_args: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
@@ -274,8 +274,8 @@ def get_model_index(
 
     :param fs:
         The filesystem on which the model is stored.
-    :param model_path:
-        The path of the model on the filesystem.
+    :param path:
+        The path to return the index for.
     :param fsspec_args:
         Implementation-specific keyword arguments to pass to fsspec
         filesystem operations.
@@ -288,7 +288,7 @@ def get_model_index(
     try:
         return {
             os.path.basename(entry["name"]): entry
-            for entry in fs.ls(model_path, **fsspec_args)
+            for entry in fs.ls(path, **fsspec_args)
         }
     except FileNotFoundError:
-        raise ValueError(f"Path cannot be found: {model_path}")
+        raise ValueError(f"Path cannot be found: {path}")

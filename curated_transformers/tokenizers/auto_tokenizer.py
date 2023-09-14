@@ -3,9 +3,9 @@ from typing import Any, Dict, Optional, Type, cast
 from fsspec import AbstractFileSystem
 from huggingface_hub.utils import EntryNotFoundError
 
-from ..util.fsspec import get_hf_config_model_type as get_hf_model_type_fsspec
+from ..util.fsspec import get_config_model_type as get_model_type_fsspec
 from ..util.fsspec import get_tokenizer_config as get_tokenizer_config_fsspec
-from ..util.hf import TOKENIZER_JSON, get_file_metadata, get_hf_config_model_type
+from ..util.hf import TOKENIZER_JSON, get_config_model_type, get_file_metadata
 from .hf_hub import FromHFHub, get_tokenizer_config
 from .legacy.bert_tokenizer import BERTTokenizer
 from .legacy.camembert_tokenizer import CamemBERTTokenizer
@@ -152,7 +152,7 @@ def _resolve_tokenizer_class_fsspec(
 
     if tokenizer_cls is None:
         try:
-            model_type = get_hf_model_type_fsspec(
+            model_type = get_model_type_fsspec(
                 fs=fs, model_path=model_path, fsspec_args=fsspec_args
             )
         except:
@@ -187,7 +187,7 @@ def _resolve_tokenizer_class_hf_hub(name: str, revision: str) -> Type[FromHFHub]
 
     if tokenizer_cls is None:
         try:
-            model_type = get_hf_config_model_type(name=name, revision=revision)
+            model_type = get_config_model_type(name=name, revision=revision)
         except EntryNotFoundError:
             pass
         else:

@@ -6,8 +6,8 @@ from fsspec import AbstractFileSystem
 
 from ..layers.cache import KeyValueCache
 from ..quantization.bnb.config import BitsAndBytesConfig
-from ..util.fsspec import get_hf_config_model_type as get_hf_config_model_type_fsspec
-from ..util.hf import get_hf_config_model_type
+from ..util.fsspec import get_config_model_type as get_config_model_type_fsspec
+from ..util.hf import get_config_model_type
 from .albert import ALBERTEncoder
 from .bert import BERTEncoder
 from .camembert import CamemBERTEncoder
@@ -39,7 +39,7 @@ class AutoModel(ABC, Generic[ModelT]):
         model_path: str,
         fsspec_args: Optional[Dict[str, Any]] = None,
     ) -> Type[FromHFHub]:
-        model_type = get_hf_config_model_type_fsspec(
+        model_type = get_config_model_type_fsspec(
             fs, model_path, fsspec_args=fsspec_args
         )
         module_cls = cls._hf_model_type_to_curated.get(model_type)
@@ -57,7 +57,7 @@ class AutoModel(ABC, Generic[ModelT]):
         name: str,
         revision: str,
     ) -> Type[FromHFHub]:
-        model_type = get_hf_config_model_type(name, revision)
+        model_type = get_config_model_type(name, revision)
         module_cls = cls._hf_model_type_to_curated.get(model_type)
         if module_cls is None:
             raise ValueError(

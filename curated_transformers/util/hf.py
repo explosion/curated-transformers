@@ -52,7 +52,7 @@ def get_file_metadata(
     return huggingface_hub.get_hf_file_metadata(url)
 
 
-def get_hf_config_model_type(name: str, revision: str) -> str:
+def get_config_model_type(name: str, revision: str) -> str:
     """
     Get the type of a model on Hugging Face Hub.
 

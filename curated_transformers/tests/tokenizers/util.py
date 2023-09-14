@@ -1,5 +1,7 @@
 from typing import Optional
 
+from huggingface_hub import HfFileSystem
+
 from ..compat import transformers
 from ..utils import torch_assertclose
 
@@ -9,14 +11,18 @@ def compare_tokenizer_outputs_with_hf_tokenizer(
     hf_name,
     tokenizer_cls,
     pad_token: Optional[str] = None,
-    hf_use_fast: bool = True,
+    with_hf_fast: bool = True,
+    with_fsspec: bool = False,
     revision: str = "main",
 ):
-    tokenizer = tokenizer_cls.from_hf_hub(name=hf_name, revision=revision)
+    if with_fsspec:
+        tokenizer = tokenizer_cls.from_fsspec(fs=HfFileSystem(), model_path=hf_name)
+    else:
+        tokenizer = tokenizer_cls.from_hf_hub(name=hf_name, revision=revision)
     pieces = tokenizer(sample_texts)
 
     hf_tokenizer = transformers.AutoTokenizer.from_pretrained(
-        hf_name, revision=revision, use_fast=hf_use_fast
+        hf_name, revision=revision, use_fast=with_hf_fast
     )
     hf_tokenizer.padding_side = "right"
     if pad_token is not None:

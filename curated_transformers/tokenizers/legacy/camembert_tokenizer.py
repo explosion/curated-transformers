@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
+from ...util.serde import ModelFile
 from ..hf_hub import LegacyFromHFHub
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .legacy_tokenizer import AddBosEosPreEncoder
@@ -111,21 +111,22 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        model_path: Path,
+        model_file: ModelFile,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
         """
         Construct a tokenizer from vocabulary and merge files.
 
-        :param model_path:
-            Path to the SentencePiece model file.
+        :param model_file:
+            The SentencePiece model file.
         :param bos_piece:
             The piece to use to mark the beginning of a sequence.
         :param eos_piece:
             The piece to use to mark the end of a sequence.
         """
-        processor = SentencePieceProcessor.from_file(str(model_path))
+        with model_file.open() as f:
+            processor = SentencePieceProcessor.from_file(f)
         return cls(
             processor=processor,
             bos_piece=bos_piece,
@@ -136,10 +137,10 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
-        return cls.from_files(model_path=vocab_files["model"])
+        return cls.from_files(model_file=vocab_files["model"])
 
 
 def _get_piece_id_or_fail(processor: SentencePieceProcessor, piece: str) -> int:

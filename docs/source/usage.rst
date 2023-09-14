@@ -85,6 +85,9 @@ For more information about the different configs and generators supported by Cur
 Loading a Model
 ---------------
 
+Hugging Face Hub
+^^^^^^^^^^^^^^^^
+
 Curated Transformers allows users to easily load model weights from the `Hugging Face Model Hub`_. All models 
 provide a ``from_hf_hub`` method that allows directly loading pre-trained model parameters from Hugging Face 
 Model Hub.
@@ -125,6 +128,38 @@ and :py:class:`~curated_transformers.models.AutoCausalLM` classes can be used to
    decoder = AutoDecoder.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
 
    lm = AutoCausalLM.from_hf_hub(name="databricks/dolly-v2-3b", revision="main")
+
+fsspec filesystem
+^^^^^^^^^^^^^^^^^
+
+Curated Transformers also supports loading models from `fsspec`_ filesystems. This
+makes it possible to load local models or loading models from cloud services
+without using any local storage. A model can be downloaded from an fsspec filesystem
+using the ``from_fsspec`` method.
+
+.. _fsspec: https://filesystem-spec.readthedocs.io
+
+.. code-block:: python
+
+   import torch
+   from curated_transformers.models import BERTEncoder
+   from fsspec.implementations.local import LocalFileSystem
+   from huggingface_hub import HfFileSystem
+
+   encoder = BERTEncoder.from_fsspec(
+      fs=LocalFileSystem(),
+      model_path="/srv/models/bert-base-uncased",
+      device=torch.device("cuda", index=0),
+   )
+
+   # Pass additional arguments to the specific fsspec implementation.
+   encoder = BERTEncoder.from_fsspec(
+      fs=HfFileSystem(),
+      model_path="bert-base-uncased",
+      fsspec_args={"revision": "a265f773a47193eed794233aa2a0f0bb6d3eaa63"},
+      device=torch.device("cuda", index=0),
+   )
+
 
 
 Quantization

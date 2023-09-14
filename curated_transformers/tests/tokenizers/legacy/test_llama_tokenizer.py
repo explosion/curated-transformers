@@ -15,6 +15,6 @@ def test_from_hf_hub_equals_hf_tokenizer(sample_texts):
         sample_texts,
         "openlm-research/open_llama_3b",
         LlamaTokenizer,
-        hf_use_fast=False,
+        with_hf_fast=False,
         pad_token="<unk>",
     )

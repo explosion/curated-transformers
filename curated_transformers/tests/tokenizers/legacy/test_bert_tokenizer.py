@@ -21,7 +21,7 @@ from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 @pytest.fixture
 def toy_tokenizer_from_files(test_dir):
     return BERTTokenizer.from_files(
-        vocab_path=test_dir / "toy.wordpieces",
+        vocab_file=test_dir / "toy.wordpieces",
     )
 
 

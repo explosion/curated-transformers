@@ -1,8 +1,11 @@
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
 from typing import (
+    IO,
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     Iterable,
@@ -13,6 +16,7 @@ from typing import (
 )
 
 import torch
+from fsspec import AbstractFileSystem
 from torch.nn import Module, Parameter
 
 from .._compat import has_safetensors
@@ -33,6 +37,100 @@ HFStateDictConverterT = Callable[
     [Mapping[str, torch.Tensor]], Mapping[str, torch.Tensor]
 ]
 
+PathOrFileDescriptor = Union[str, IO]
+
+
+class ModelFile(ABC):
+    """
+    Model files can be a local path or a remote path exposed as e.g. an I/O
+    stream. This is a common base class for such different types of model
+    files.
+    """
+
+    @abstractmethod
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
+        """
+        Get the model file as an I/O stream.
+
+        :param mode:
+            Mode to open the file with (see Python ``open``).
+        :param encoding:
+            Encoding to use when the file is opened as text.
+        :returns:
+            An I/O stream.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def path(self) -> Optional[str]:
+        """
+        Get the model file as a local path. If the model file is not
+        available as a local path, the value of this property is
+        ``None``.
+        """
+        ...
+
+
+class FsspecModelFile(ModelFile):
+    """
+    Model file on an fsspec filesystem.
+    """
+
+    def __init__(
+        self,
+        fs: AbstractFileSystem,
+        path: str,
+        fsspec_args: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Construct an fsspec model file representation.
+
+        :param fs:
+            The filesystem.
+        :param path:
+            The path of the model file on the filesystem.
+        :param fsspec_args:
+            Implementation-specific keyword arguments to pass to fsspec
+            filesystem operations.
+        """
+        super().__init__()
+        self._fs = fs
+        self._path = path
+        self._fsspec_args = fsspec_args
+
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
+        return self._fs.open(
+            self._path, mode=mode, encoding=encoding, **self._fsspec_args
+        )
+
+    @property
+    def path(self) -> Optional[str]:
+        return None
+
+
+class LocalModelFile(ModelFile):
+    """
+    Model file on the local host machine.
+    """
+
+    def __init__(self, path: str):
+        """
+        Construct a local model file representation.
+
+        :param path:
+            The path of the model file on the local filesystem.
+        """
+        super().__init__()
+        self._path = path
+
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
+        return open(self._path, mode=mode, encoding=encoding)
+
+    @property
+    def path(self) -> Optional[str]:
+        return self._path
+
 
 class ModelCheckpointType(Enum):
     """
@@ -46,7 +144,9 @@ class ModelCheckpointType(Enum):
     SAFE_TENSORS = 1
 
     @property
-    def loader(self) -> Callable[[Iterable[str]], Iterable[Mapping[str, torch.Tensor]]]:
+    def loader(
+        self,
+    ) -> Callable[[Iterable[ModelFile]], Iterable[Mapping[str, torch.Tensor]]]:
         checkpoint_type_to_loader = {
             ModelCheckpointType.PYTORCH_STATE_DICT: _load_pytorch_state_dicts_from_checkpoints,
             ModelCheckpointType.SAFE_TENSORS: _load_safetensor_state_dicts_from_checkpoints,
@@ -95,7 +195,7 @@ def _use_model_checkpoint_type(
 def load_model_from_checkpoints(
     model: Module,
     *,
-    filepaths: Iterable[str],
+    filepaths: Iterable[ModelFile],
     checkpoint_type: ModelCheckpointType,
     state_dict_converter: HFStateDictConverterT,
     tensor_to_param_converter: Optional[TensorToParameterConverterT] = None,
@@ -278,27 +378,38 @@ def _validate_replacement(
 
 
 def _load_safetensor_state_dicts_from_checkpoints(
-    filepaths: Iterable[str],
+    checkpoints: Iterable[ModelFile],
 ) -> Iterable[Mapping[str, torch.Tensor]]:
     if not has_safetensors:
         raise ValueError(
             "The `safetensors` library is required to load models from Safetensors checkpoints"
         )
 
-    import safetensors
+    import safetensors.torch
 
-    for path in filepaths:
-        # Map to CPU first to support all devices.
-        state_dict = safetensors.torch.load_file(path, device="cpu")
+    for checkpoint in checkpoints:
+        # Prefer to load from a path when possible. Since loading from a file
+        # temporarily puts the checkpoint in memory twice.
+        if checkpoint.path is not None:
+            # Map to CPU first to support all devices.
+            state_dict = safetensors.torch.load_file(checkpoint.path, device="cpu")
+        else:
+            with checkpoint.open() as f:
+                # This has memory overhead, since Safetensors does not have
+                # support for loading from a file object and cannot use
+                # the bytes in-place.
+                checkpoint_bytes = f.read()
+                state_dict = safetensors.torch.load(checkpoint_bytes)
         yield state_dict
 
 
 def _load_pytorch_state_dicts_from_checkpoints(
-    filepaths: Iterable[str],
+    checkpoints: Iterable[ModelFile],
 ) -> Iterable[Mapping[str, torch.Tensor]]:
-    for path in filepaths:
-        # Map to CPU first to support all devices.
-        state_dict = torch.load(
-            path, map_location=torch.device("cpu"), weights_only=True
-        )
+    for checkpoint in checkpoints:
+        with checkpoint.open() as f:
+            # Map to CPU first to support all devices.
+            state_dict = torch.load(
+                f, map_location=torch.device("cpu"), weights_only=True
+            )
         yield state_dict

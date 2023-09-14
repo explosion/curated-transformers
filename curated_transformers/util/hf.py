@@ -6,7 +6,12 @@ import huggingface_hub
 from requests import HTTPError, ReadTimeout  # type: ignore
 
 from .._compat import has_safetensors
-from .serde import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
+from .serde import (
+    _MODEL_CHECKPOINT_TYPE,
+    LocalModelFile,
+    ModelCheckpointType,
+    ModelFile,
+)
 
 HF_MODEL_CONFIG = "config.json"
 HF_MODEL_CHECKPOINT = "pytorch_model.bin"
@@ -47,39 +52,38 @@ def get_file_metadata(
     return huggingface_hub.get_hf_file_metadata(url)
 
 
-def get_hf_config_model_type(name: str, revision: str) -> str:
+def get_config_model_type(name: str, revision: str) -> str:
     """
     Get the type of a model on Hugging Face Hub.
 
-    :param filename:
-        The file to get the type of.
     :param name:
-        Model name.
+        The model to get the type of.
+    :param revision:
+        The revision of the model.
     """
-    config_filename = get_model_config_filepath(name, revision)
-    with open(config_filename, "r") as f:
-        config = json.load(f)
-        model_type = config.get("model_type")
-        if model_type is None:
-            raise ValueError("Model type not found in Hugging Face model config")
-        return model_type
+    config = get_model_config(name, revision)
+    model_type = config.get("model_type")
+    if model_type is None:
+        raise ValueError(
+            f"Model type not found in Hugging Face model config for model '{name}' ({revision})"
+        )
+    return model_type
 
 
-def get_model_config_filepath(name: str, revision: str) -> str:
+def get_model_config(name: str, revision: str) -> Dict[str, Any]:
     """
-    Return the local file path of the Hugging Face model's config.
-    If the config is not found in the cache, it is downloaded from
-    Hugging Face Hub.
+    Return the model's configuration. If the config is not found in the
+    cache, it is downloaded from Hugging Face Hub.
 
     :param name:
         Model name.
     :param revision:
         Model revision.
     :returns:
-        Absolute path to the configuration file.
+        Model configuration.
     """
     try:
-        return hf_hub_download(
+        path = hf_hub_download(
             repo_id=name, filename=HF_MODEL_CONFIG, revision=revision
         )
     except:
@@ -88,10 +92,14 @@ def get_model_config_filepath(name: str, revision: str) -> str:
             f"(revision `{revision}`) on HuggingFace Model Hub"
         )
 
+    with open(path, "r") as f:
+        config = json.load(f)
+    return config
 
-def get_model_checkpoint_filepaths(
+
+def get_model_checkpoint_files(
     name: str, revision: str
-) -> Tuple[List[str], ModelCheckpointType]:
+) -> Tuple[List[ModelFile], ModelCheckpointType]:
     """
     Return a list of local file paths to  checkpoints that belong to the Hugging
     Face model. In case of non-sharded models, a single file path is returned. In
@@ -111,7 +119,7 @@ def get_model_checkpoint_filepaths(
 
     def get_checkpoint_paths(
         checkpoint_type: ModelCheckpointType,
-    ) -> List[str]:
+    ) -> List[ModelFile]:
         # Attempt to download a non-sharded checkpoint first.
         try:
             model_filename = hf_hub_download(
@@ -124,7 +132,7 @@ def get_model_checkpoint_filepaths(
             model_filename = None
 
         if model_filename is not None:
-            return [model_filename]
+            return [LocalModelFile(model_filename)]
 
         try:
             model_index_filename = hf_hub_download(
@@ -142,7 +150,7 @@ def get_model_checkpoint_filepaths(
             index = json.load(f)
 
         weight_map = index.get(SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY)
-        if weight_map is None or not isinstance(weight_map, dict):
+        if not isinstance(weight_map, dict):
             raise ValueError(
                 f"Invalid index file in sharded {checkpoint_type.pretty_name} "
                 f"checkpoint for model `{name}`"
@@ -157,10 +165,10 @@ def get_model_checkpoint_filepaths(
             )
             filepaths.append(resolved_filename)
 
-        return sorted(filepaths)
+        return [LocalModelFile(path) for path in sorted(filepaths)]
 
     checkpoint_type = _MODEL_CHECKPOINT_TYPE.get()
-    checkpoint_paths: Optional[List[str]] = None
+    checkpoint_paths: Optional[List[ModelFile]] = None
 
     if checkpoint_type is None:
         # Precedence: Safetensors > PyTorch

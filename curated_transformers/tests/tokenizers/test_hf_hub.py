@@ -1,7 +1,11 @@
+import pytest
 from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 
 from curated_transformers.tokenizers import Tokenizer
 from curated_transformers.tokenizers.legacy import BERTTokenizer
+
+from ..compat import has_hf_transformers
+from .util import compare_tokenizer_outputs_with_hf_tokenizer
 
 
 def test_from_hf_hub_to_cache():
@@ -45,3 +49,16 @@ def test_from_hf_hub_to_cache_legacy():
             )
             != _CACHED_NO_EXIST
         )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+def test_fsspec(sample_texts):
+    # We only test one model, since using fsspec downloads the model
+    # each time.
+    compare_tokenizer_outputs_with_hf_tokenizer(
+        sample_texts,
+        "EleutherAI/gpt-neox-20b",
+        Tokenizer,
+        pad_token="</s>",
+        with_fsspec=True,
+    )

@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
-from pathlib import Path
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -54,7 +53,7 @@ class ModelFile(ABC):
         Get the model file as an I/O stream.
 
         :param mode:
-            Mode to open the file with (see Python `open`).
+            Mode to open the file with (see Python ``open``).
         :param encoding:
             Encoding to use when the file is opened as text.
         :returns:
@@ -112,7 +111,7 @@ class FsspecModelFile(ModelFile):
 
 class LocalModelFile(ModelFile):
     """
-    Local model file.
+    Model file on the local host machine.
     """
 
     def __init__(self, path: str):
@@ -397,7 +396,7 @@ def _load_safetensor_state_dicts_from_checkpoints(
         else:
             with checkpoint.open() as f:
                 # This has memory overhead, since Safetensors does not have
-                # support froh loading from a file object and cannot use
+                # support for loading from a file object and cannot use
                 # the bytes in-place.
                 checkpoint_bytes = f.read()
                 state_dict = safetensors.torch.load(checkpoint_bytes)

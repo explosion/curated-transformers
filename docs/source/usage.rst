@@ -135,7 +135,7 @@ fsspec filesystem
 Curated Transformers also supports loading models from `fsspec`_ filesystems. This
 makes it possible to load local models or loading models from cloud services
 without using any local storage. A model can be downloaded from an fsspec filesystem
-using the `from_fsspec` method.
+using the ``from_fsspec`` method.
 
 .. _fsspec: https://filesystem-spec.readthedocs.io
 

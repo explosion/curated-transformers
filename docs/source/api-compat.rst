@@ -109,4 +109,4 @@ Version 1 to 2
 
 * The factory methods of :py:class:`~curated_transformers.layers.AttentionHeads`
   add a new ``qkv_split`` argument which is mandatory in future versions.
-* The `FromHFHub` mixins will be renamed to `FromHF`.
+* The ``FromHFHub`` mixins will be renamed to ``FromHF``.

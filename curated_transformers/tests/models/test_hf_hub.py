@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from huggingface_hub import _CACHED_NO_EXIST, HfFileSystem, try_to_load_from_cache
+from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 
 from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.util.hf import get_model_checkpoint_files

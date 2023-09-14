@@ -151,13 +151,10 @@ def _resolve_tokenizer_class_fsspec(
             tokenizer_cls = _get_tokenizer_class_from_config(tokenizer_config)
 
     if tokenizer_cls is None:
-        try:
-            model_type = get_model_type_fsspec(
-                fs=fs, model_path=model_path, fsspec_args=fsspec_args
-            )
-        except:
-            pass
-        else:
+        model_type = get_model_type_fsspec(
+            fs=fs, model_path=model_path, fsspec_args=fsspec_args
+        )
+        if model_type is not None:
             tokenizer_cls = HF_MODEL_MAPPING.get(model_type, None)
 
     if tokenizer_cls is None:

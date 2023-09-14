@@ -83,7 +83,7 @@ def get_config_model_type(
     fs: AbstractFileSystem,
     model_path: str,
     fsspec_args: Optional[Dict[str, Any]] = None,
-) -> str:
+) -> Optional[str]:
     """
     Get the type of a model on an fsspec filesystem.
 
@@ -98,10 +98,7 @@ def get_config_model_type(
         The model type.
     """
     config = get_model_config(fs, model_path, fsspec_args=fsspec_args)
-    model_type = config.get("model_type")
-    if model_type is None:
-        raise ValueError("Model type not found in Hugging Face model config")
-    return model_type
+    return config.get("model_type")
 
 
 def get_tokenizer_config(

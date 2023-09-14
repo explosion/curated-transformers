@@ -36,8 +36,7 @@ def get_file_metadata(
     :param model_path:
         The path of the model on the filesystem.
     :param filename:
-        the file to get metadata for.
-        The path of the model on the filesystem.
+        The file to get metadata for.
     :param fsspec_args:
         Implementation-specific keyword arguments to pass to fsspec
         filesystem operations.

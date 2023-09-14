@@ -46,8 +46,8 @@ class FromHFHub(ABC):
         cls: Type[SelfFromHFHub],
         *,
         fs: AbstractFileSystem,
-        fsspec_args: Optional[Dict[str, Any]] = None,
         model_path: str,
+        fsspec_args: Optional[Dict[str, Any]] = None,
     ) -> SelfFromHFHub:
         """
         Construct a tokenizer and load its parameters from an fsspec filesystem.

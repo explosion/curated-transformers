@@ -64,7 +64,9 @@ def get_config_model_type(name: str, revision: str) -> str:
     config = get_model_config(name, revision)
     model_type = config.get("model_type")
     if model_type is None:
-        raise ValueError(f"Model type not found in Hugging Face model config for model '{name}' ({revision})")
+        raise ValueError(
+            f"Model type not found in Hugging Face model config for model '{name}' ({revision})"
+        )
     return model_type
 
 

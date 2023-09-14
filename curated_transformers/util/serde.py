@@ -48,7 +48,7 @@ class ModelFile(ABC):
     """
 
     @abstractmethod
-    def open(self, mode="rb", encoding=None) -> IO:
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
         """
         Get the model file as an I/O stream.
 
@@ -99,7 +99,7 @@ class FsspecModelFile(ModelFile):
         self._path = path
         self._fsspec_args = fsspec_args
 
-    def open(self, mode="rb", encoding=None) -> IO:
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
         return self._fs.open(
             self._path, mode=mode, encoding=encoding, **self._fsspec_args
         )
@@ -124,7 +124,7 @@ class LocalModelFile(ModelFile):
         super().__init__()
         self._path = path
 
-    def open(self, mode="rb", encoding=None) -> IO:
+    def open(self, mode: str = "rb", encoding: Optional[str] = None) -> IO:
         return open(self._path, mode=mode, encoding=encoding)
 
     @property

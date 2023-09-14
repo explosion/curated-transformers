@@ -42,6 +42,10 @@ class AutoModel(ABC, Generic[ModelT]):
         model_type = get_config_model_type_fsspec(
             fs, model_path, fsspec_args=fsspec_args
         )
+        if model_type is None:
+            raise ValueError(
+                "The model type is not defined in the model configuration."
+            )
         module_cls = cls._hf_model_type_to_curated.get(model_type)
         if module_cls is None:
             raise ValueError(

@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
+from fsspec import AbstractFileSystem
 from huggingface_hub.utils import EntryNotFoundError
 
+from ..util.fsspec import get_tokenizer_config as get_tokenizer_config_fsspec
 from ..util.hf import get_tokenizer_config, hf_hub_download
+from ..util.serde import FsspecModelFile, LocalModelFile, ModelFile
 
 SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
@@ -35,6 +37,30 @@ class FromHFHub(ABC):
             Model name.
         :param revision:
             Model revision.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def from_fsspec(
+        cls: Type[SelfFromHFHub],
+        *,
+        fs: AbstractFileSystem,
+        fsspec_args: Optional[Dict[str, Any]] = None,
+        model_path: str,
+    ) -> SelfFromHFHub:
+        """
+        Construct a tokenizer and load its parameters from an fsspec filesystem.
+
+        :param fs:
+            Filesystem.
+        :param model_path:
+            The model path.
+        :param fsspec_args:
+            Implementation-specific keyword arguments to pass to fsspec
+            filesystem operations.
+        :returns:
+            The tokenizer.
         """
         raise NotImplementedError
 
@@ -77,7 +103,7 @@ class LegacyFromHFHub(FromHFHub):
     def _load_from_vocab_files(
         cls: Type[SelfLegacyFromHFHub],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> SelfLegacyFromHFHub:
         """
@@ -109,12 +135,34 @@ class LegacyFromHFHub(FromHFHub):
             pass
 
     @classmethod
+    def from_fsspec(
+        cls: Type[SelfLegacyFromHFHub],
+        *,
+        fs: AbstractFileSystem,
+        model_path: str,
+        fsspec_args: Optional[Dict[str, Any]] = None,
+    ) -> SelfLegacyFromHFHub:
+        vocab_files = {}
+        for vocab_file, filename in cls.vocab_files.items():
+            vocab_files[vocab_file] = FsspecModelFile(
+                fs, f"{model_path}/{filename}", fsspec_args
+            )
+
+        tokenizer_config = get_tokenizer_config_fsspec(
+            fs=fs, model_path=model_path, fsspec_args=fsspec_args
+        )
+
+        return cls._load_from_vocab_files(
+            vocab_files=vocab_files, tokenizer_config=tokenizer_config
+        )
+
+    @classmethod
     def from_hf_hub(
         cls: Type[SelfLegacyFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfLegacyFromHFHub:
         vocab_files = {}
         for vocab_file, filename in cls.vocab_files.items():
-            vocab_files[vocab_file] = Path(
+            vocab_files[vocab_file] = LocalModelFile(
                 hf_hub_download(repo_id=name, filename=filename, revision=revision)
             )
 

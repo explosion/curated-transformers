@@ -1,9 +1,9 @@
 import unicodedata
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import WordPieceProcessor
 
+from ...util.serde import ModelFile
 from .._hf_compat import clean_up_decoded_string_like_hf, tokenize_chinese_chars_bert
 from ..chunks import (
     InputChunks,
@@ -260,7 +260,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        vocab_path: Path,
+        vocab_file: ModelFile,
         bos_piece: str = "[CLS]",
         eos_piece: str = "[SEP]",
         unk_piece: str = "[UNK]",
@@ -270,8 +270,8 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
         """
         Construct a tokenizer from the vocabulary file.
 
-        :param vocab_path:
-            Path to the vocabulary file.
+        :param vocab_file:
+            The vocabulary file.
         :param bos_piece:
             The piece to use to mark the beginning of a sequence.
         :param eos_piece:
@@ -284,7 +284,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
             Strip accents from text.
         """
         vocab: Dict[str, int] = {}
-        with open(vocab_path, encoding="utf8") as f:
+        with vocab_file.open(mode="r", encoding="utf8") as f:
             for line in f:
                 vocab[line.strip()] = len(vocab)
 
@@ -311,7 +311,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         extra_kwargs = {}
@@ -329,7 +329,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
                     strip_accents is not False and lowercase
                 )
 
-        return cls.from_files(vocab_path=vocab_files["vocab"], **extra_kwargs)
+        return cls.from_files(vocab_file=vocab_files["vocab"], **extra_kwargs)
 
     def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
         ids = []

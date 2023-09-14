@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Type, TypeVar
 
 from curated_tokenizers import ByteBPEProcessor
 
+from ...util.serde import ModelFile
 from ..hf_hub import LegacyFromHFHub
 from ..util import remove_pieces_from_sequence
 from .bbpe_tokenizer import ByteBPETokenizer
@@ -87,26 +87,26 @@ class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        vocab_path: Path,
-        merges_path: Path,
+        vocab_file: ModelFile,
+        merges_file: ModelFile,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
         """
         Construct a tokenizer from vocabulary and merge files.
 
-        :param vocab_path:
-            Path to the vocabulary file.
-        :param merges_path:
-            Path to the merges file.
+        :param vocab_file:
+            The vocabulary file.
+        :param merges_file:
+            The merges file.
         :param bos_piece:
             The piece to use to mark the beginning of a sequence.
         :param eos_piece:
             The piece to use to mark the end of a sequence.
         """
-        processor = ByteBPEProcessor.load_from_files(
-            vocab=vocab_path, merges=merges_path
-        )
+        with vocab_file.open(mode="r", encoding="utf-8") as vocab:
+            with merges_file.open(mode="r", encoding="utf-8") as merges:
+                processor = ByteBPEProcessor.load_from_files(vocab=vocab, merges=merges)
         return cls(
             # This is a bit annoying, but we want to avoid these extremely
             # overloaded constructors.
@@ -124,11 +124,11 @@ class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         return cls.from_files(
-            vocab_path=vocab_files["vocab"], merges_path=vocab_files["merges"]
+            vocab_file=vocab_files["vocab"], merges_file=vocab_files["merges"]
         )
 
 

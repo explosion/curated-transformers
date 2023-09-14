@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
+from ...util.serde import ModelFile
 from ..hf_hub import LegacyFromHFHub
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .legacy_tokenizer import AddBosEosPreEncoder
@@ -112,22 +112,23 @@ class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        model_path: Path,
+        model_file: ModelFile,
     ) -> Self:
         """
         Construct a XLM-R tokenizer from a SentencePiece model.
 
-        :param model_path:
-            Path to the SentencePiece model file.
+        :param model_file:
+            The SentencePiece model file.
         """
-        processor = SentencePieceProcessor.from_file(str(model_path))
+        with model_file.open() as f:
+            processor = SentencePieceProcessor.from_file(f)
         return cls(processor=processor)
 
     @classmethod
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
-        return cls.from_files(model_path=vocab_files["model"])
+        return cls.from_files(model_file=vocab_files["model"])

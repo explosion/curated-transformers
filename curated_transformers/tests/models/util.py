@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Callable, Dict, List, Tuple, Type, Union
 
 import torch
+from huggingface_hub import HfFileSystem
 from torch import Tensor
 from torch.nn import Module
 
@@ -198,12 +199,18 @@ def assert_encoder_output_equals_hf(
     model_name: str,
     torch_device: torch.device,
     *,
-    atol=1e-5,
-    rtol=1e-5,
+    atol: float = 1e-5,
+    rtol: float = 1e-5,
     jit_method: JITMethod = JITMethod.Disable,
-    with_torch_sdp=False,
+    with_fsspec: bool = False,
+    with_torch_sdp: bool = False,
 ):
-    orig_model = model_class.from_hf_hub(name=model_name, device=torch_device)
+    if with_fsspec:
+        orig_model = model_class.from_fsspec(
+            fs=HfFileSystem(), model_path=model_name, device=torch_device
+        )
+    else:
+        orig_model = model_class.from_hf_hub(name=model_name, device=torch_device)
     orig_model.eval()
 
     for _, param in orig_model.state_dict().items():

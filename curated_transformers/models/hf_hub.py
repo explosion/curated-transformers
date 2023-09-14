@@ -1,4 +1,3 @@
-import json
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -14,12 +13,17 @@ from typing import (
 )
 
 import torch
+from fsspec import AbstractFileSystem
 from torch import Tensor
 
 from ..quantization import prepare_module_for_quantization
 from ..quantization.bnb.config import BitsAndBytesConfig
-from ..util.hf import get_model_checkpoint_filepaths, get_model_config_filepath
-from ..util.serde import load_model_from_checkpoints
+from ..util.fsspec import (
+    get_model_checkpoint_files as get_model_checkpoint_files_fsspec,
+)
+from ..util.fsspec import get_model_config as get_model_config_fsspec
+from ..util.hf import get_model_checkpoint_files, get_model_config
+from ..util.serde import ModelCheckpointType, ModelFile, load_model_from_checkpoints
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")
@@ -89,8 +93,46 @@ class FromHFHub(ABC):
         :param revision:
             Model revision.
         """
-        _ = get_model_config_filepath(name, revision)
-        _ = get_model_checkpoint_filepaths(name, revision)
+        _ = get_model_config(name, revision)
+        _ = get_model_checkpoint_files(name, revision)
+
+    @classmethod
+    def from_fsspec(
+        cls: Type[Self],
+        *,
+        fs: AbstractFileSystem,
+        model_path: str,
+        fsspec_args: Optional[Dict[str, Any]] = None,
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> Self:
+        """
+        Construct a module and load its parameters from a fsspec filesystem.
+
+        :param fs:
+            The filesystem to load the model from.
+        :param model_path:
+            The path of the model on the filesystem.
+        :param fsspec_args:
+            Implementation-specific keyword arguments to pass to fsspec
+            filesystem operations.
+        :param device:
+            Device on which the model is initialized.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Module with the parameters loaded.
+        """
+        return cls._create_and_load_model(
+            get_config=lambda: get_model_config_fsspec(
+                fs, model_path, fsspec_args=fsspec_args
+            ),
+            get_checkpoint_files=lambda: get_model_checkpoint_files_fsspec(
+                fs, model_path, fsspec_args=fsspec_args
+            ),
+            device=device,
+            quantization_config=quantization_config,
+        )
 
     @classmethod
     def from_hf_hub(
@@ -115,11 +157,39 @@ class FromHFHub(ABC):
         :returns:
             Module with the parameters loaded.
         """
-        # Download configuration and construct model.
-        config_filename = get_model_config_filepath(name, revision)
-        with open(config_filename, "r") as f:
-            config = json.load(f)
-        # Initialize the model on the torch `meta` device to avoid unnecessary allocations.
+        return cls._create_and_load_model(
+            get_config=lambda: get_model_config(name, revision),
+            get_checkpoint_files=lambda: get_model_checkpoint_files(name, revision),
+            device=device,
+            quantization_config=quantization_config,
+        )
+
+    @abstractmethod
+    def to(
+        self,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+        non_blocking: bool = False,
+    ):
+        """
+        Moves and/or casts the parameters and buffers.
+
+        This method is automatically implemented by also deriving from
+        ``torch.nn.Module``. This mixin does not derive from ``Module`` in
+        order to be an abstract base class.
+        """
+        ...
+
+    @classmethod
+    def _create_and_load_model(
+        cls: Type[Self],
+        *,
+        get_config: Callable[[], Dict[Any, str]],
+        get_checkpoint_files: Callable[[], Tuple[List[ModelFile], ModelCheckpointType]],
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> Self:
+        config = get_config()
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
 
         # Convert the model to the expected dtype.
@@ -137,9 +207,7 @@ class FromHFHub(ABC):
             tensor2param = None
 
         # Download model and convert HF parameter names to ours.
-        checkpoint_filenames, checkpoint_type = get_model_checkpoint_filepaths(
-            name, revision
-        )
+        checkpoint_filenames, checkpoint_type = get_checkpoint_files()
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,
@@ -155,22 +223,6 @@ class FromHFHub(ABC):
             model.to(device)
 
         return model
-
-    @abstractmethod
-    def to(
-        self,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
-        non_blocking: bool = False,
-    ):
-        """
-        Moves and/or casts the parameters and buffers.
-
-        This method is automatically implemented by also deriving from
-        ``torch.nn.Module``. This mixin does not derive from ``Module`` in
-        order to be an abstract base class.
-        """
-        ...
 
 
 def _process_hf_keys(

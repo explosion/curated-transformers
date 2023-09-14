@@ -5,11 +5,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union, cast
 
 import torch
+from fsspec import AbstractFileSystem
 from huggingface_hub.utils import EntryNotFoundError
 from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
 from ..layers.attention import AttentionMask
+from ..util.fsspec import get_special_tokens_map as get_special_tokens_map_fsspec
+from ..util.fsspec import get_tokenizer_config as get_tokenizer_config_fsspec
 from ..util.hf import (
     HF_TOKENIZER_CONFIG,
     SPECIAL_TOKENS_MAP,
@@ -317,7 +320,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
         Load the tokenizer from a directory with a ``tokenizer.json`` file.
 
         :param path:
-            Path to the tokenizer file.
+            Path to the tokenizer directory.
         """
         tokenizer_path = path / TOKENIZER_JSON
         config_path = path / HF_TOKENIZER_CONFIG
@@ -354,6 +357,30 @@ class Tokenizer(TokenizerBase, FromHFHub):
             _ = get_special_tokens_map(name=name, revision=revision)
         except EntryNotFoundError:
             pass
+
+    @classmethod
+    def from_fsspec(
+        cls: Type[Self],
+        *,
+        fs: AbstractFileSystem,
+        model_path: str,
+        fsspec_args: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Self:
+        tokenizer_path = f"{model_path}/tokenizer.json"
+        if not fs.exists(tokenizer_path, **kwargs):
+            raise ValueError(f"Path cannot be found: {tokenizer_path}")
+        with fs.open(tokenizer_path) as f:
+            hf_tokenizer = HFTokenizer.from_buffer(f.read())
+
+        config = get_tokenizer_config_fsspec(fs, model_path, fsspec_args)
+        special_tokens_map = get_special_tokens_map_fsspec(fs, model_path, fsspec_args)
+
+        return cls(
+            tokenizer=hf_tokenizer,
+            config=config,
+            special_tokens_map=special_tokens_map,
+        )
 
     @classmethod
     def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:

@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
+from ...util.serde import ModelFile
 from ..hf_hub import LegacyFromHFHub
 from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
@@ -53,21 +53,22 @@ class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        model_path: Path,
+        model_file: ModelFile,
         add_bos_piece: bool = True,
         add_eos_piece: bool = False,
     ) -> Self:
         """
         Construct a Llama tokenizer from a SentencePiece model.
 
-        :param model_path:
-            Path to the SentencePiece model file.
+        :param model_file:
+            The SentencePiece model file.
         :param add_bos_piece:
             Add a begin-of-sequence piece.
         :param add_eos_piece:
             Add an end-of-sequence piece.
         """
-        processor = SentencePieceProcessor.from_file(str(model_path))
+        with model_file.open() as f:
+            processor = SentencePieceProcessor.from_file(f)
         return cls(
             processor=processor,
             add_bos_piece=add_bos_piece,
@@ -78,17 +79,17 @@ class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Dict[str, Path],
+        vocab_files: Mapping[str, ModelFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         if tokenizer_config is None:
-            return cls.from_files(model_path=vocab_files["model"])
+            return cls.from_files(model_file=vocab_files["model"])
 
         add_bos_piece = tokenizer_config.get("add_bos_token", True)
         add_eos_piece = tokenizer_config.get("add_eos_token", False)
 
         return cls.from_files(
-            model_path=vocab_files["model"],
+            model_file=vocab_files["model"],
             add_bos_piece=add_bos_piece,
             add_eos_piece=add_eos_piece,
         )

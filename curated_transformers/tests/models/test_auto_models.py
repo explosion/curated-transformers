@@ -1,4 +1,5 @@
 import pytest
+from huggingface_hub import HfFileSystem
 
 from curated_transformers.models import (
     ALBERTEncoder,
@@ -22,8 +23,9 @@ from curated_transformers.models.mpt.causal_lm import MPTCausalLM
 from curated_transformers.models.mpt.decoder import MPTDecoder
 
 
-def test_auto_encoder():
-    model_encoder_map = {
+@pytest.fixture
+def model_encoder_map():
+    return {
         "explosion-testing/bert-test": BERTEncoder,
         "explosion-testing/albert-test": ALBERTEncoder,
         "explosion-testing/roberta-test": RoBERTaEncoder,
@@ -31,12 +33,25 @@ def test_auto_encoder():
         "explosion-testing/xlm-roberta-test": XLMREncoder,
     }
 
+
+def test_auto_encoder(model_encoder_map):
     for name, encoder_cls in model_encoder_map.items():
         encoder = AutoEncoder.from_hf_hub(name=name)
         assert isinstance(encoder, encoder_cls)
 
     with pytest.raises(ValueError, match="Unsupported model type"):
         AutoEncoder.from_hf_hub(name="explosion-testing/falcon-test")
+
+
+@pytest.mark.slow
+def test_auto_encoder_fsspec(model_encoder_map):
+    for name, encoder_cls in model_encoder_map.items():
+        # The default revision is 'main', but we pass it anyway to test
+        # that the function acceps fsspec_args.
+        encoder = AutoEncoder.from_fsspec(
+            fs=HfFileSystem(), model_path=name, fsspec_args={"revision": "main"}
+        )
+        assert isinstance(encoder, encoder_cls)
 
 
 def test_auto_decoder():

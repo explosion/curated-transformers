@@ -3,6 +3,7 @@ import torch
 
 from curated_transformers.tokenizers import PiecesWithIds
 from curated_transformers.tokenizers.legacy.xlmr_tokenizer import XLMRTokenizer
+from curated_transformers.util.serde import LocalModelFile
 
 from ...compat import has_hf_transformers
 from ...utils import torch_assertclose
@@ -12,7 +13,7 @@ from ..util import compare_tokenizer_outputs_with_hf_tokenizer
 @pytest.fixture
 def toy_tokenizer(test_dir):
     return XLMRTokenizer.from_files(
-        model_path=test_dir / "toy.model",
+        model_file=LocalModelFile(path=test_dir / "toy.model"),
     )
 
 

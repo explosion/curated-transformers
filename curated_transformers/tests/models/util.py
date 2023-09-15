@@ -13,6 +13,7 @@ from curated_transformers.models.module import (
     CausalLMModule,
     DecoderModule,
     EncoderModule,
+    TransformerModule,
 )
 from curated_transformers.models.output import ModelOutput, ModelOutputWithCache
 
@@ -147,6 +148,7 @@ def assert_decoder_output_equals_hf(
     with_mask: bool = True,
     jit_method: JITMethod = JITMethod.Disable,
     with_torch_sdp=False,
+    check_config=True,
 ):
     orig_model = model_class.from_hf_hub(
         name=model_name, revision=model_revision, device=torch_device
@@ -193,6 +195,9 @@ def assert_decoder_output_equals_hf(
             orig_model, hf_model, torch_device, atol, rtol, jit_method
         )
 
+    if check_config:
+        assert_model_config(model, Y)
+
 
 def assert_encoder_output_equals_hf(
     model_class: Type[FromHFHub],
@@ -204,6 +209,7 @@ def assert_encoder_output_equals_hf(
     jit_method: JITMethod = JITMethod.Disable,
     with_fsspec: bool = False,
     with_torch_sdp: bool = False,
+    check_config=True,
 ):
     if with_fsspec:
         orig_model = model_class.from_fsspec(
@@ -239,6 +245,9 @@ def assert_encoder_output_equals_hf(
     assert_with_mask_output_equals_hf(
         orig_model, hf_model, torch_device, atol, rtol, jit_method
     )
+
+    if check_config:
+        assert_model_config(model, Y)
 
 
 def assert_decoder_with_cache_output_equals_hf(
@@ -347,3 +356,11 @@ def assert_decoder_with_positions_equals_hf(
         Y_hf = hf_model(X, position_ids=positions).last_hidden_state
 
     torch_assertclose(Y, Y_hf, atol=atol, rtol=rtol)
+
+
+def assert_model_config(model: TransformerModule, model_output: Tensor):
+    assert isinstance(model, TransformerModule)
+    config = model.config
+
+    hidden_width = model_output.size(-1)
+    assert config.layer.feedforward.hidden_width == hidden_width

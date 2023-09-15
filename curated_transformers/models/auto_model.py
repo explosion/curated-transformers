@@ -11,6 +11,7 @@ from ..util.hf import get_config_model_type
 from .albert import ALBERTEncoder
 from .bert import BERTEncoder
 from .camembert import CamemBERTEncoder
+from .config import ConfigDataclass
 from .falcon import FalconCausalLM, FalconDecoder
 from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from .hf_hub import FromHFHub
@@ -184,7 +185,7 @@ class AutoModel(ABC, Generic[ModelT]):
         module_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
 
-class AutoEncoder(AutoModel[EncoderModule[Any]]):
+class AutoEncoder(AutoModel[EncoderModule[ConfigDataclass]]):
     """
     Encoder model loaded from the Hugging Face Model Hub.
     """
@@ -206,7 +207,7 @@ class AutoEncoder(AutoModel[EncoderModule[Any]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> EncoderModule:
+    ) -> EncoderModule[ConfigDataclass]:
         encoder = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -221,7 +222,7 @@ class AutoEncoder(AutoModel[EncoderModule[Any]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> EncoderModule:
+    ) -> EncoderModule[ConfigDataclass]:
         encoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )
@@ -229,7 +230,7 @@ class AutoEncoder(AutoModel[EncoderModule[Any]]):
         return encoder
 
 
-class AutoDecoder(AutoModel[DecoderModule[Any, KeyValueCache]]):
+class AutoDecoder(AutoModel[DecoderModule[ConfigDataclass, KeyValueCache]]):
     """
     Decoder module loaded from the Hugging Face Model Hub.
     """
@@ -252,7 +253,7 @@ class AutoDecoder(AutoModel[DecoderModule[Any, KeyValueCache]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule[Any, KeyValueCache]:
+    ) -> DecoderModule[ConfigDataclass, KeyValueCache]:
         decoder = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -267,7 +268,7 @@ class AutoDecoder(AutoModel[DecoderModule[Any, KeyValueCache]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule[Any, KeyValueCache]:
+    ) -> DecoderModule[ConfigDataclass, KeyValueCache]:
         decoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )
@@ -275,7 +276,7 @@ class AutoDecoder(AutoModel[DecoderModule[Any, KeyValueCache]]):
         return decoder
 
 
-class AutoCausalLM(AutoModel[CausalLMModule[Any, KeyValueCache]]):
+class AutoCausalLM(AutoModel[CausalLMModule[ConfigDataclass, KeyValueCache]]):
     """
     Causal LM model loaded from the Hugging Face Model Hub.
     """
@@ -298,7 +299,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[Any, KeyValueCache]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[Any, KeyValueCache]:
+    ) -> CausalLMModule[ConfigDataclass, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -313,7 +314,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[Any, KeyValueCache]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[Any, KeyValueCache]:
+    ) -> CausalLMModule[ConfigDataclass, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )

@@ -1,7 +1,15 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import ClassVar, Optional, Protocol
 
 from ..layers.activations import Activation
+
+
+class ConfigDataclass(Protocol):
+    """
+    Protocol that describes a config data class.
+    """
+
+    __dataclass_fields__: ClassVar[dict]
 
 
 @dataclass

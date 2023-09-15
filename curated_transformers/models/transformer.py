@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Generic, List, Optional
 
 import torch
 from torch import Tensor
@@ -6,11 +6,11 @@ from torch.nn import Module, ModuleList
 
 from ..layers.attention import AttentionMask
 from ..layers.cache import KeyValueCache
-from .module import CausalLMModule, DecoderModule, EncoderModule
+from .module import CausalLMModule, ConfigT, DecoderModule, EncoderModule
 from .output import CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
 
-class TransformerDecoder(DecoderModule):
+class TransformerDecoder(Generic[ConfigT], DecoderModule[ConfigT, KeyValueCache]):
     """
     Transformer decoder (`Vaswani et al., 2017`_) base class.
 
@@ -64,7 +64,7 @@ class TransformerDecoder(DecoderModule):
         )
 
 
-class TransformerCausalLM(CausalLMModule[KeyValueCache]):
+class TransformerCausalLM(Generic[ConfigT], CausalLMModule[ConfigT, KeyValueCache]):
     """
     Transformer causal LM (`Vaswani et al., 2017`_) base class.
 
@@ -100,7 +100,7 @@ class TransformerCausalLM(CausalLMModule[KeyValueCache]):
         )
 
 
-class TransformerEncoder(EncoderModule):
+class TransformerEncoder(Generic[ConfigT], EncoderModule[ConfigT]):
     """
     Transformer encoder (`Vaswani et al., 2017`_) base class.
 

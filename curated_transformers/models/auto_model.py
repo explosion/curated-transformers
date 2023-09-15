@@ -184,7 +184,7 @@ class AutoModel(ABC, Generic[ModelT]):
         module_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
 
-class AutoEncoder(AutoModel[EncoderModule]):
+class AutoEncoder(AutoModel[EncoderModule[Any]]):
     """
     Encoder model loaded from the Hugging Face Model Hub.
     """
@@ -229,7 +229,7 @@ class AutoEncoder(AutoModel[EncoderModule]):
         return encoder
 
 
-class AutoDecoder(AutoModel[DecoderModule]):
+class AutoDecoder(AutoModel[DecoderModule[Any, KeyValueCache]]):
     """
     Decoder module loaded from the Hugging Face Model Hub.
     """
@@ -252,7 +252,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule:
+    ) -> DecoderModule[Any, KeyValueCache]:
         decoder = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -267,7 +267,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule:
+    ) -> DecoderModule[Any, KeyValueCache]:
         decoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )
@@ -275,7 +275,7 @@ class AutoDecoder(AutoModel[DecoderModule]):
         return decoder
 
 
-class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
+class AutoCausalLM(AutoModel[CausalLMModule[Any, KeyValueCache]]):
     """
     Causal LM model loaded from the Hugging Face Model Hub.
     """
@@ -298,7 +298,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[KeyValueCache]:
+    ) -> CausalLMModule[Any, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -313,7 +313,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[KeyValueCache]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[KeyValueCache]:
+    ) -> CausalLMModule[Any, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )

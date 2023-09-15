@@ -1,4 +1,4 @@
-from typing import Generic, Iterator, List, Optional, Tuple
+from typing import Any, Generic, Iterator, List, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -17,9 +17,9 @@ class Generator(Generic[CacheT]):
     Generator base class for causal language models.
     """
 
-    model: CausalLMModule[CacheT]
+    model: CausalLMModule[Any, CacheT]
 
-    def __init__(self, model: CausalLMModule[CacheT]):
+    def __init__(self, model: CausalLMModule[Any, CacheT]):
         """
         Construct a generator.
 

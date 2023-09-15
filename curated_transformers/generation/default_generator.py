@@ -1,10 +1,11 @@
 import dataclasses
-from typing import List, Optional, Type, TypeVar
+from typing import Any, Generic, List, Optional, Type, TypeVar
 
 import torch
 
 from ..models.auto_model import AutoCausalLM
 from ..models.module import CausalLMModule
+from ..models.output import CacheT
 from ..quantization.bnb.config import BitsAndBytesConfig
 from ..tokenizers.auto_tokenizer import AutoTokenizer
 from ..tokenizers.chunks import InputChunks, TextChunk
@@ -19,7 +20,7 @@ from .string_generator import StringGenerator
 Self = TypeVar("Self", bound="DefaultGenerator")
 
 
-class DefaultGenerator(GeneratorWrapper, FromHFHub):
+class DefaultGenerator(Generic[CacheT], GeneratorWrapper, FromHFHub):
     """
     Generator wrapper for models that do not need specific prompting.
     """
@@ -27,7 +28,7 @@ class DefaultGenerator(GeneratorWrapper, FromHFHub):
     def __init__(
         self,
         tokenizer: TokenizerBase,
-        causal_lm: CausalLMModule,
+        causal_lm: CausalLMModule[Any, CacheT],
         default_config: Optional[GeneratorConfig] = None,
     ):
         """

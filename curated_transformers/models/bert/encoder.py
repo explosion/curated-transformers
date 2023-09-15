@@ -24,7 +24,7 @@ from .config import BERTConfig
 Self = TypeVar("Self", bound="BERTEncoder")
 
 
-class BERTEncoder(TransformerEncoder, FromHFHub):
+class BERTEncoder(TransformerEncoder[BERTConfig], FromHFHub):
     """
     BERT (`Devlin et al., 2018`_) encoder.
 
@@ -42,7 +42,7 @@ class BERTEncoder(TransformerEncoder, FromHFHub):
         :returns:
             The encoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = TransformerEmbeddings(
             dropouts=EmbeddingDropouts(

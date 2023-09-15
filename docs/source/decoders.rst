@@ -7,10 +7,12 @@ Base Classes
 .. autoclass:: curated_transformers.models.DecoderModule
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.TransformerDecoder
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 Architectures
 -------------

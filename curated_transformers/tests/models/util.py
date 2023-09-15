@@ -195,7 +195,7 @@ def assert_decoder_output_equals_hf(
             orig_model, hf_model, torch_device, atol, rtol, jit_method
         )
 
-    if check_config:
+    if check_config and jit_method == JITMethod.Disable:
         assert_model_config(model, Y)
 
 
@@ -246,7 +246,7 @@ def assert_encoder_output_equals_hf(
         orig_model, hf_model, torch_device, atol, rtol, jit_method
     )
 
-    if check_config:
+    if check_config and jit_method == JITMethod.Disable:
         assert_model_config(model, Y)
 
 

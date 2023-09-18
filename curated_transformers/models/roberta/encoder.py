@@ -24,7 +24,7 @@ from .embeddings import RoBERTaEmbeddings
 Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 
-class RoBERTaEncoder(TransformerEncoder, FromHFHub):
+class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub):
     """
     RoBERTa (`Liu et al., 2019`_) encoder.
 
@@ -42,7 +42,7 @@ class RoBERTaEncoder(TransformerEncoder, FromHFHub):
         :returns:
             The encoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = RoBERTaEmbeddings(
             dropouts=EmbeddingDropouts(

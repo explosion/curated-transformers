@@ -29,7 +29,7 @@ from .config import MPTConfig
 Self = TypeVar("Self", bound="MPTDecoder")
 
 
-class MPTDecoder(TransformerDecoder, FromHFHub):
+class MPTDecoder(TransformerDecoder[MPTConfig], FromHFHub):
     """
     `MosaicML MPT`_ decoder.
 
@@ -49,7 +49,7 @@ class MPTDecoder(TransformerDecoder, FromHFHub):
         :returns:
             The decoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = TransformerEmbeddings(
             dropouts=EmbeddingDropouts(

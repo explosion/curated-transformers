@@ -15,7 +15,7 @@ from .decoder import LlamaDecoder
 Self = TypeVar("Self", bound="LlamaCausalLM")
 
 
-class LlamaCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
+class LlamaCausalLM(TransformerCausalLM[LlamaConfig], FromHFHub, Quantizable):
     """
     Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) causal language model.
 
@@ -36,7 +36,7 @@ class LlamaCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         :returns:
             The causal LM.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.decoder = LlamaDecoder(config, device=device)
         self.output_embeddings = Linear(

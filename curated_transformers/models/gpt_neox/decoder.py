@@ -25,7 +25,7 @@ from .config import GPTNeoXConfig
 Self = TypeVar("Self", bound="GPTNeoXDecoder")
 
 
-class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
+class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
     """
     GPT-NeoX (`Black et al., 2022`_) decoder.
 
@@ -45,7 +45,7 @@ class GPTNeoXDecoder(TransformerDecoder, FromHFHub):
         :returns:
             The decoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = TransformerEmbeddings(
             dropouts=EmbeddingDropouts(

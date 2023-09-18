@@ -15,7 +15,7 @@ from .decoder import FalconDecoder
 Self = TypeVar("Self", bound="FalconCausalLM")
 
 
-class FalconCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
+class FalconCausalLM(TransformerCausalLM[FalconConfig], FromHFHub, Quantizable):
     """
     Falcon (`Penedo et al., 2019`_) causal language model.
 
@@ -35,7 +35,7 @@ class FalconCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         :returns:
             The causal LM.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.decoder = FalconDecoder(config, device=device)
         self.output_embeddings = Linear(

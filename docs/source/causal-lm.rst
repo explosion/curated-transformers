@@ -7,10 +7,12 @@ Base Classes
 .. autoclass:: curated_transformers.models.CausalLMModule
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 .. autoclass:: curated_transformers.models.TransformerCausalLM
    :members:
    :show-inheritance:
+   :inherited-members: Module
 
 Architectures
 -------------

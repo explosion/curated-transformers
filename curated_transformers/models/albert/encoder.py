@@ -21,7 +21,7 @@ from .layer_group import ALBERTLayerGroup
 Self = TypeVar("Self", bound="ALBERTEncoder")
 
 
-class ALBERTEncoder(EncoderModule, FromHFHub):
+class ALBERTEncoder(EncoderModule[ALBERTConfig], FromHFHub):
     """
     ALBERT (`Lan et al., 2022`_) encoder.
 
@@ -39,7 +39,7 @@ class ALBERTEncoder(EncoderModule, FromHFHub):
         :returns:
             The encoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.max_seq_len = config.model_max_length
         self.n_hidden_layers = config.layer.n_hidden_layers

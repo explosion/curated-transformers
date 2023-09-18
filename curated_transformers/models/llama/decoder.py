@@ -26,7 +26,7 @@ from .config import LlamaConfig
 Self = TypeVar("Self", bound="LlamaDecoder")
 
 
-class LlamaDecoder(TransformerDecoder, FromHFHub):
+class LlamaDecoder(TransformerDecoder[LlamaConfig], FromHFHub):
     """
     Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) decoder.
 
@@ -47,7 +47,7 @@ class LlamaDecoder(TransformerDecoder, FromHFHub):
         :returns:
             The decoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = TransformerEmbeddings(
             dropouts=EmbeddingDropouts(

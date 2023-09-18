@@ -31,7 +31,7 @@ from .layer import OldFalconDecoderLayer
 Self = TypeVar("Self", bound="FalconDecoder")
 
 
-class FalconDecoder(TransformerDecoder, FromHFHub):
+class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub):
     """
     Falcon (`Penedo et al., 2019`_) decoder.
 
@@ -51,7 +51,7 @@ class FalconDecoder(TransformerDecoder, FromHFHub):
         :returns:
             The decoder.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.embeddings = TransformerEmbeddings(
             dropouts=EmbeddingDropouts(

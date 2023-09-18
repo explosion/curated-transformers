@@ -1,17 +1,43 @@
 from abc import abstractmethod
-from typing import Generic, List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 from torch import Tensor
 from torch.nn import Module
 
 from ..layers.attention import AttentionMask
+from .config import ConfigDataclass
 from .output import CacheT, CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
+ConfigT = TypeVar("ConfigT", bound=ConfigDataclass)
 
-class CausalLMModule(Generic[CacheT], Module):
+
+class TransformerModule(Generic[ConfigT], Module):
+    """
+    Base class for transformer modules.
+    """
+
+    _config: ConfigT
+
+    def __init__(self, config: ConfigT):
+        super().__init__()
+
+        self._config = config
+
+    @property
+    def config(self) -> ConfigT:
+        """
+        Returns the model's configuration.
+        """
+        return self._config
+
+
+class CausalLMModule(Generic[ConfigT, CacheT], TransformerModule[ConfigT]):
     """
     Base class for causal language model modules.
     """
+
+    def __init__(self, config: ConfigT):
+        super().__init__(config)
 
     @abstractmethod
     def forward(
@@ -51,10 +77,13 @@ class CausalLMModule(Generic[CacheT], Module):
         raise NotImplementedError
 
 
-class DecoderModule(Generic[CacheT], Module):
+class DecoderModule(Generic[ConfigT, CacheT], TransformerModule[ConfigT]):
     """
     Base class for decoder modules.
     """
+
+    def __init__(self, config: ConfigT):
+        super().__init__(config)
 
     @abstractmethod
     def forward(
@@ -94,10 +123,13 @@ class DecoderModule(Generic[CacheT], Module):
         raise NotImplementedError
 
 
-class EncoderModule(Module):
+class EncoderModule(Generic[ConfigT], TransformerModule[ConfigT]):
     """
     Base class for encoder modules.
     """
+
+    def __init__(self, config: ConfigT):
+        super().__init__(config)
 
     @abstractmethod
     def forward(

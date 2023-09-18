@@ -15,7 +15,7 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
+class GPTNeoXCausalLM(TransformerCausalLM[GPTNeoXConfig], FromHFHub, Quantizable):
     """
     GPT-NeoX (`Black et al., 2022`_) causal language model.
 
@@ -35,7 +35,7 @@ class GPTNeoXCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         :returns:
             The causal LM.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.decoder = GPTNeoXDecoder(config, device=device)
         self.output_embeddings = Linear(

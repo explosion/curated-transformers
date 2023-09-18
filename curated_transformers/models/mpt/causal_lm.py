@@ -19,7 +19,7 @@ from .decoder import MPTDecoder
 Self = TypeVar("Self", bound="MPTCausalLM")
 
 
-class MPTCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
+class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub, Quantizable):
     """
     `MosaicML MPT`_ causal language model.
 
@@ -39,7 +39,7 @@ class MPTCausalLM(TransformerCausalLM, FromHFHub, Quantizable):
         :returns:
             The causal LM.
         """
-        super().__init__()
+        super().__init__(config)
 
         self.decoder = MPTDecoder(config, device=device)
 

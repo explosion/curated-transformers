@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -11,16 +14,13 @@ from ..config import (
 
 
 @dataclass
-class LlamaConfig:
+class LlamaConfig(TransformerConfig):
     """
     Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) model configuration.
 
     .. _Touvron et al., 2023 [a]: https://arxiv.org/abs/2302.13971
     .. _Touvron et al., 2023 [b]: https://arxiv.org/abs/2307.09288
     """
-
-    embedding: TransformerEmbeddingLayerConfig
-    layer: TransformerLayerConfig
 
     def __init__(
         self,
@@ -100,3 +100,4 @@ class LlamaConfig:
             layer_norm_eps=rms_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
+        self.dtype = torch.float16

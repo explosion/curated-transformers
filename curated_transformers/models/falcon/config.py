@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -11,15 +14,13 @@ from ..config import (
 
 
 @dataclass
-class FalconConfig:
+class FalconConfig(TransformerConfig):
     """
     Falcon (`Penedo et al., 2019`_) model configuration.
 
     .. _Penedo et al., 2019: https://arxiv.org/abs/2306.01116
     """
 
-    embedding: TransformerEmbeddingLayerConfig
-    layer: TransformerLayerConfig
     new_decoder_architecture: bool
 
     def __init__(
@@ -108,4 +109,5 @@ class FalconConfig:
             layer_norm_eps=layer_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
+        self.dtype = torch.bfloat16
         self.new_decoder_architecture = new_decoder_architecture

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import torch
+
 from ..bert import BERTConfig
 
 
@@ -61,5 +63,5 @@ class RoBERTaConfig(BERTConfig):
             n_pieces=n_pieces,
             **kwargs
         )
-
+        self.dtype = torch.float32
         self.padding_id = padding_id

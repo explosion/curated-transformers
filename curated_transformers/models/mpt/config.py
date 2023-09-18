@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -10,15 +13,12 @@ from ..config import (
 
 
 @dataclass
-class MPTConfig:
+class MPTConfig(TransformerConfig):
     """
     `MosaicML MPT`_ model configuration.
 
     .. _MosaicML MPT: https://www.mosaicml.com/blog/mpt-7b
     """
-
-    embedding: TransformerEmbeddingLayerConfig
-    layer: TransformerLayerConfig
 
     def __init__(
         self,
@@ -94,3 +94,4 @@ class MPTConfig:
             layer_norm_eps=layer_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
+        self.dtype = torch.bfloat16

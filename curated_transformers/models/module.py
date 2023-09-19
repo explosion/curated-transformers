@@ -1,14 +1,14 @@
 from abc import abstractmethod
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, List, Optional, TypeVar
 
 from torch import Tensor
 from torch.nn import Module
 
 from ..layers.attention import AttentionMask
-from .config import ConfigDataclass, TransformerConfig
+from .config import TransformerConfig
 from .output import CacheT, CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
-ConfigT = TypeVar("ConfigT", bound=Union[ConfigDataclass, TransformerConfig])
+ConfigT = TypeVar("ConfigT", bound=TransformerConfig)
 
 
 class TransformerModule(Generic[ConfigT], Module):

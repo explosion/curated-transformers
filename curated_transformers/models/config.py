@@ -1,17 +1,9 @@
 from dataclasses import dataclass
-from typing import ClassVar, Optional, Protocol
+from typing import Optional
 
 import torch
 
 from ..layers.activations import Activation
-
-
-class ConfigDataclass(Protocol):
-    """
-    Protocol that describes a config data class.
-    """
-
-    __dataclass_fields__: ClassVar[dict]
 
 
 @dataclass

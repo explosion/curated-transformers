@@ -151,3 +151,6 @@ These dataclasses encapsulate the configurable parameters of the Transformer mod
 
 .. autoclass:: curated_transformers.models.TransformerLayerConfig
    :members:
+
+.. autoclass:: curated_transformers.models.TransformerConfig
+   :members:

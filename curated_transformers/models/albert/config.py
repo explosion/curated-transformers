@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -35,7 +38,7 @@ class ALBERTLayerConfig(TransformerLayerConfig):
 
 
 @dataclass
-class ALBERTConfig:
+class ALBERTConfig(TransformerConfig):
     """
     ALBERT (`Lan et al., 2022`_) model configuration.
 
@@ -129,4 +132,5 @@ class ALBERTConfig:
             n_layers_per_group=n_layers_per_group,
             n_hidden_groups=n_hidden_groups,
         )
+        self.dtype = torch.float32
         self.model_max_length = model_max_length

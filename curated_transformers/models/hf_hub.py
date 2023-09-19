@@ -24,6 +24,7 @@ from ..util.fsspec import (
 from ..util.fsspec import get_model_config as get_model_config_fsspec
 from ..util.hf import get_model_checkpoint_files, get_model_config
 from ..util.serde import ModelCheckpointType, ModelFile, load_model_from_checkpoints
+from .module import TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")
@@ -193,12 +194,15 @@ class FromHFHub(ABC):
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
 
         # Convert the model to the expected dtype.
-        dtype_str = config.get("torch_dtype")
-        if dtype_str is not None:
-            dtype = getattr(torch, dtype_str, None)
-            if dtype is None or not isinstance(dtype, torch.dtype):
-                raise ValueError(f"Invalid torch dtype `{dtype_str}`")
-            model.to(dtype=dtype)
+        assert isinstance(model, TransformerModule)
+        dtype: torch.dtype = model.config.dtype
+        serialized_dtype_str = config.get("torch_dtype")
+        if serialized_dtype_str is not None:
+            serialized_dtype = getattr(torch, serialized_dtype_str, None)
+            if not isinstance(serialized_dtype, torch.dtype):
+                raise ValueError(f"Invalid torch dtype `{serialized_dtype_str}`")
+            dtype = serialized_dtype
+        model.to(dtype=dtype)
 
         # Prepare for quantization.
         if quantization_config is not None:

@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -10,15 +13,13 @@ from ..config import (
 
 
 @dataclass
-class BERTConfig:
+class BERTConfig(TransformerConfig):
     """
     BERT (`Devlin et al., 2018`_) model configuration.
 
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    embedding: TransformerEmbeddingLayerConfig
-    layer: TransformerLayerConfig
     model_max_length: int
 
     def __init__(
@@ -98,4 +99,5 @@ class BERTConfig:
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
+        self.dtype = torch.float32
         self.model_max_length = model_max_length

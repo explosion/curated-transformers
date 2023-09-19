@@ -5,6 +5,7 @@ from .camembert import CamemBERTEncoder
 from .config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -52,6 +53,7 @@ __all__ = [
     "RoBERTaEncoder",
     "RotaryEmbeddingConfig",
     "TransformerAttentionLayerConfig",
+    "TransformerConfig",
     "TransformerCausalLM",
     "TransformerDecoder",
     "TransformerEmbeddingLayerConfig",

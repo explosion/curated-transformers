@@ -5,10 +5,10 @@ from torch import Tensor
 from torch.nn import Module
 
 from ..layers.attention import AttentionMask
-from .config import ConfigDataclass
+from .config import TransformerConfig
 from .output import CacheT, CausalLMOutputWithCache, ModelOutput, ModelOutputWithCache
 
-ConfigT = TypeVar("ConfigT", bound=ConfigDataclass)
+ConfigT = TypeVar("ConfigT", bound=TransformerConfig)
 
 
 class TransformerModule(Generic[ConfigT], Module):

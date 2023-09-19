@@ -11,7 +11,7 @@ from ..util.hf import get_config_model_type
 from .albert import ALBERTEncoder
 from .bert import BERTEncoder
 from .camembert import CamemBERTEncoder
-from .config import ConfigDataclass
+from .config import TransformerConfig
 from .falcon import FalconCausalLM, FalconDecoder
 from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from .hf_hub import FromHFHub
@@ -185,7 +185,7 @@ class AutoModel(ABC, Generic[ModelT]):
         module_cls.from_hf_hub_to_cache(name=name, revision=revision)
 
 
-class AutoEncoder(AutoModel[EncoderModule[ConfigDataclass]]):
+class AutoEncoder(AutoModel[EncoderModule[TransformerConfig]]):
     """
     Encoder model loaded from the Hugging Face Model Hub.
     """
@@ -207,7 +207,7 @@ class AutoEncoder(AutoModel[EncoderModule[ConfigDataclass]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> EncoderModule[ConfigDataclass]:
+    ) -> EncoderModule[TransformerConfig]:
         encoder = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -222,7 +222,7 @@ class AutoEncoder(AutoModel[EncoderModule[ConfigDataclass]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> EncoderModule[ConfigDataclass]:
+    ) -> EncoderModule[TransformerConfig]:
         encoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )
@@ -230,7 +230,7 @@ class AutoEncoder(AutoModel[EncoderModule[ConfigDataclass]]):
         return encoder
 
 
-class AutoDecoder(AutoModel[DecoderModule[ConfigDataclass, KeyValueCache]]):
+class AutoDecoder(AutoModel[DecoderModule[TransformerConfig, KeyValueCache]]):
     """
     Decoder module loaded from the Hugging Face Model Hub.
     """
@@ -253,7 +253,7 @@ class AutoDecoder(AutoModel[DecoderModule[ConfigDataclass, KeyValueCache]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule[ConfigDataclass, KeyValueCache]:
+    ) -> DecoderModule[TransformerConfig, KeyValueCache]:
         decoder = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -268,7 +268,7 @@ class AutoDecoder(AutoModel[DecoderModule[ConfigDataclass, KeyValueCache]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule[ConfigDataclass, KeyValueCache]:
+    ) -> DecoderModule[TransformerConfig, KeyValueCache]:
         decoder = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )
@@ -276,7 +276,7 @@ class AutoDecoder(AutoModel[DecoderModule[ConfigDataclass, KeyValueCache]]):
         return decoder
 
 
-class AutoCausalLM(AutoModel[CausalLMModule[ConfigDataclass, KeyValueCache]]):
+class AutoCausalLM(AutoModel[CausalLMModule[TransformerConfig, KeyValueCache]]):
     """
     Causal LM model loaded from the Hugging Face Model Hub.
     """
@@ -299,7 +299,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[ConfigDataclass, KeyValueCache]]):
         fsspec_args: Optional[Dict[str, Any]] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[ConfigDataclass, KeyValueCache]:
+    ) -> CausalLMModule[TransformerConfig, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_fsspec(
             fs, model_path, fsspec_args, device, quantization_config
         )
@@ -314,7 +314,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[ConfigDataclass, KeyValueCache]]):
         revision: str = "main",
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[ConfigDataclass, KeyValueCache]:
+    ) -> CausalLMModule[TransformerConfig, KeyValueCache]:
         causal_lm = cls._instantiate_model_from_hf_hub(
             name, revision, device, quantization_config
         )

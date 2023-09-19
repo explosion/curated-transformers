@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+import torch
+
 from ...layers.activations import Activation
 from ..config import (
     RotaryEmbeddingConfig,
     TransformerAttentionLayerConfig,
+    TransformerConfig,
     TransformerEmbeddingLayerConfig,
     TransformerFeedForwardLayerConfig,
     TransformerLayerConfig,
@@ -11,15 +14,12 @@ from ..config import (
 
 
 @dataclass
-class GPTNeoXConfig:
+class GPTNeoXConfig(TransformerConfig):
     """
     GPT-NeoX (`Black et al., 2022`_) model configuration.
 
     .. _Black et al., 2022: https://arxiv.org/abs/2204.06745
     """
-
-    embedding: TransformerEmbeddingLayerConfig
-    layer: TransformerLayerConfig
 
     def __init__(
         self,
@@ -103,3 +103,4 @@ class GPTNeoXConfig:
             layer_norm_eps=layer_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
+        self.dtype = torch.float16

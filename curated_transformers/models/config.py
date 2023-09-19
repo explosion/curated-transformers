@@ -1,15 +1,9 @@
 from dataclasses import dataclass
-from typing import ClassVar, Optional, Protocol
+from typing import Optional
+
+import torch
 
 from ..layers.activations import Activation
-
-
-class ConfigDataclass(Protocol):
-    """
-    Protocol that describes a config data class.
-    """
-
-    __dataclass_fields__: ClassVar[dict]
 
 
 @dataclass
@@ -136,3 +130,22 @@ class TransformerLayerConfig:
     feedforward: TransformerFeedForwardLayerConfig
     layer_norm_eps: float
     n_hidden_layers: int
+
+
+@dataclass
+class TransformerConfig:
+    """
+    Configuration options for a transformer model.
+
+    :param embedding:
+        Embedding layer config.
+    :param layer:
+        Transformer hidden layer config.
+    :param dtype:
+        Default data type used by the model's
+        parameters.
+    """
+
+    embedding: TransformerEmbeddingLayerConfig
+    layer: TransformerLayerConfig
+    dtype: torch.dtype

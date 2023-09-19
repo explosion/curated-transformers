@@ -1,17 +1,45 @@
-import re
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
-
-from torch import Tensor
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ..hf_hub import _process_hf_keys
-from ..module import DecoderModule
+from ...util.string import StringTransform, StrLStrip, StrSub, StrSubInv
+from ..hf_hub.conversion import process_hf_keys
 from .config import LlamaConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
+# Order-dependent.
+COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    # Attention blocks.
+    StrSubInv((r".self_attn", ".mha")),
+    StrSubInv((r".q_proj", ".query")),
+    StrSubInv((r".k_proj", ".key")),
+    StrSubInv((r".v_proj", ".value")),
+    StrSubInv((r".o_proj", ".output")),
+    # Pointwise feedforward
+    StrSubInv((r".mlp", ".ffn")),
+    StrSubInv((r".up_proj", ".intermediate")),
+    StrSubInv((r"ffn.down_proj", "ffn.output")),
+    StrSubInv((r".gate_proj", ".gate")),
+    # RMS norms
+    StrSubInv((r".input_layernorm", ".attn_input_layer_norm")),
+    StrSubInv((r".post_attention_layernorm", ".ffn_input_layer_norm")),
+    StrSub(
+        (r"^(decoder\.)?norm\.", "\\1output_layer_norm."),
+        (r"^(decoder\.)?output_layer_norm\.", "\\1norm."),
+    ),
+    # Embeddings
+    StrSubInv((r"embed_tokens.", "embeddings.piece_embeddings.")),
+    StrSubInv((r"lm_head.", "output_embeddings.")),
+]
+
+DECODER_HF_PARAM_KEY_TRANSFORMS = [
+    StrLStrip("model.", reversible=False)
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
+CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
+    StrSubInv((r"model.", "decoder."))
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_act": ("activation", Activation),
@@ -25,7 +53,7 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 
 
 def convert_hf_config(hf_config: Any) -> LlamaConfig:
-    kwargs = _process_hf_keys(
+    kwargs = process_hf_keys(
         "Llama", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
 
@@ -37,43 +65,3 @@ def convert_hf_config(hf_config: Any) -> LlamaConfig:
         rotary_embedding_fraction=1.0,
         **kwargs,
     )
-
-
-def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    """Convert state dict from HF paramater naming to ours.
-    The function is insensitive to prefixes, to allow loading
-    both the decoder and the full LM."""
-    if issubclass(cls, DecoderModule):
-        stripped_params = {re.sub(r"^model\.", "", k): v for k, v in params.items()}
-    else:
-        stripped_params = {
-            re.sub(r"^model\.", "decoder.", k): v for k, v in params.items()
-        }
-
-    out = {}
-    for name, parameter in stripped_params.items():
-        # Attention
-        name = re.sub(r"\.self_attn", r".mha", name)
-        name = re.sub(r"\.q_proj", r".query", name)
-        name = re.sub(r"\.k_proj", r".key", name)
-        name = re.sub(r"\.v_proj", r".value", name)
-        name = re.sub(r"\.o_proj", r".output", name)
-
-        # Pointwise feedforward
-        name = re.sub(r"\.mlp", r".ffn", name)
-        name = re.sub(r"\.up_proj", r".intermediate", name)
-        name = re.sub(r"\.down_proj", r".output", name)
-        name = re.sub(r"\.gate_proj", r".gate", name)
-
-        # RMS norms
-        name = re.sub(r"\.input_layernorm", r".attn_input_layer_norm", name)
-        name = re.sub(r"\.post_attention_layernorm", r".ffn_input_layer_norm", name)
-        name = re.sub(r"^(decoder\.)?norm\.", r"\1output_layer_norm.", name)
-
-        # Embeddings
-        name = re.sub(r"embed_tokens\.", r"embeddings.piece_embeddings.", name)
-        name = re.sub(r"lm_head\.", r"output_embeddings.", name)
-
-        out[name] = parameter
-
-    return out

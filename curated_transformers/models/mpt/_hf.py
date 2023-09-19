@@ -1,15 +1,37 @@
-import re
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
-from torch import Tensor, dropout, layer_norm
-
-from ..hf_hub import _process_hf_keys
-from ..module import DecoderModule
+from ...util.string import StringTransform, StrLStrip, StrSubInv
+from ..hf_hub.conversion import process_hf_keys
 from .config import MPTConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
+
+# Order-dependent.
+COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    StrSubInv((r"transformer", "decoder")),
+    StrSubInv((r"blocks", "layers")),
+    # Attention blocks.
+    StrSubInv((r".attn", ".mha")),
+    StrSubInv((r".Wqkv", ".input")),
+    StrSubInv((r".out_proj", ".output")),
+    # Pointwise feedforward.
+    StrSubInv((r".up_proj", ".intermediate")),
+    StrSubInv((r"ffn.down_proj", "ffn.output")),
+    # Layer norms.
+    StrSubInv((r".norm_1", ".attn_input_layer_norm")),
+    StrSubInv((r".norm_2", ".ffn_input_layer_norm")),
+    StrSubInv((r"norm_f.", "output_layer_norm.")),
+    # Embeddings.
+    StrSubInv((r"wte.", "embeddings.piece_embeddings.")),
+]
+
+
+DECODER_HF_PARAM_KEY_TRANSFORMS = [
+    StrLStrip("transformer.", reversible=False)
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
+CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "d_model": "hidden_width",
@@ -22,7 +44,7 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 
 
 def convert_hf_config(hf_config: Any) -> MPTConfig:
-    kwargs = _process_hf_keys("MPT", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS)
+    kwargs = process_hf_keys("MPT", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS)
 
     no_bias = hf_config.get("no_bias")
     if no_bias is None:
@@ -42,49 +64,3 @@ def convert_hf_config(hf_config: Any) -> MPTConfig:
         layer_norm_eps=layer_norm_eps,
         use_bias=not no_bias,
     )
-
-
-def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    """Convert state dict from HF paramater naming to ours.
-    The function is insensitive to prefixes, to allow loading
-    both the decoder and the full LM."""
-    if issubclass(cls, DecoderModule):
-        stripped_params = {
-            re.sub(r"^transformer\.", "", k): v
-            for k, v in params.items()
-            # The decoder does not the output embeddings, avoid unexpected key.
-            if k != "lm_head.weight"
-        }
-    else:
-        # Rewrap as dict if necessay to make MyPy happy.
-        stripped_params = dict(params)
-
-    out = {}
-    for name, parameter in stripped_params.items():
-        # Input and output embeddings are tied in MPT.
-        if "lm_head" in name:
-            continue
-
-        name = name.replace("transformer", "decoder")
-        name = name.replace("blocks", "layers")
-
-        # Attention
-        name = re.sub(r"\.attn", r".mha", name)
-        name = re.sub(r"\.Wqkv", r".input", name)
-        name = re.sub(r"\.out_proj", r".output", name)
-
-        # Pointwise feedforward
-        name = re.sub(r"\.up_proj", r".intermediate", name)
-        name = re.sub(r"\.down_proj", r".output", name)
-
-        # Layer norms
-        name = re.sub(r"\.norm_1", r".attn_input_layer_norm", name)
-        name = re.sub(r"\.norm_2", r".ffn_input_layer_norm", name)
-        name = re.sub(r"norm_f\.", r"output_layer_norm.", name)
-
-        # Embeddings
-        name = re.sub(r"wte\.", r"embeddings.piece_embeddings.", name)
-
-        out[name] = parameter
-
-    return out

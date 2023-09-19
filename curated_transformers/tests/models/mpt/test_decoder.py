@@ -4,7 +4,11 @@ from curated_transformers.models.mpt.decoder import MPTDecoder
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
-from ..util import JITMethod, assert_decoder_output_equals_hf
+from ..util import (
+    JITMethod,
+    assert_decoder_output_equals_hf,
+    assert_model_hf_serialization_roundtrip,
+)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
@@ -55,4 +59,12 @@ def test_decoder_with_torchscript_trace(torch_device, with_torch_sdp):
         with_positions=False,
         jit_method=JITMethod.TorchScriptTrace,
         with_torch_sdp=with_torch_sdp,
+    )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_decoder_hf_serializtion_roundtrip(torch_device):
+    assert_model_hf_serialization_roundtrip(
+        MPTDecoder, "explosion-testing/mpt-test", torch_device
     )

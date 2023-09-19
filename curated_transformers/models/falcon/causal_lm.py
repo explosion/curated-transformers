@@ -6,8 +6,9 @@ from torch.nn import Linear
 
 from ...quantization.quantizable import Quantizable
 from ..hf_hub import FromHFHub
+from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerCausalLM
-from ._hf import convert_hf_config, convert_hf_state_dict
+from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, convert_hf_config
 from .config import FalconConfig
 from .decoder import FalconDecoder
 
@@ -46,8 +47,16 @@ class FalconCausalLM(TransformerCausalLM[FalconConfig], FromHFHub, Quantizable):
         )
 
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
-        return convert_hf_state_dict(cls, params)
+    def state_dict_from_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_from_hf(params, CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS)
+
+    @classmethod
+    def state_dict_to_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_to_hf(params, CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
     def from_hf_config(

@@ -11,9 +11,10 @@ from ...layers.transformer import (
     TransformerEmbeddings,
 )
 from ..hf_hub import FromHFHub
+from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..module import EncoderModule
 from ..output import ModelOutput
-from ._hf import convert_hf_config, convert_hf_state_dict
+from ._hf import HF_PARAM_KEY_TRANSFORMS, convert_hf_config
 from .config import ALBERTConfig
 from .layer_group import ALBERTLayerGroup
 
@@ -99,8 +100,16 @@ class ALBERTEncoder(EncoderModule[ALBERTConfig], FromHFHub):
         return ModelOutput(all_outputs=[embeddings, *layer_outputs])
 
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
-        return convert_hf_state_dict(params)
+    def state_dict_from_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_from_hf(params, HF_PARAM_KEY_TRANSFORMS)
+
+    @classmethod
+    def state_dict_to_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_to_hf(params, HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
     def from_hf_config(

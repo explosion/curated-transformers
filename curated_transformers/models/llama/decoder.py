@@ -18,8 +18,9 @@ from ...layers.transformer import (
     TransformerLayerNorms,
 )
 from ..hf_hub import FromHFHub
+from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
-from ._hf import convert_hf_config, convert_hf_state_dict
+from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, convert_hf_config
 from .config import LlamaConfig
 
 # Only provided as typing.Self in Python 3.11+.
@@ -120,8 +121,16 @@ class LlamaDecoder(TransformerDecoder[LlamaConfig], FromHFHub):
         )
 
     @classmethod
-    def convert_hf_state_dict(cls, params: Mapping[str, Tensor]):
-        return convert_hf_state_dict(cls, params)
+    def state_dict_from_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_from_hf(params, DECODER_HF_PARAM_KEY_TRANSFORMS)
+
+    @classmethod
+    def state_dict_to_hf(
+        cls: Type[Self], params: Mapping[str, Tensor]
+    ) -> Mapping[str, Tensor]:
+        return state_dict_to_hf(params, DECODER_HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
     def from_hf_config(

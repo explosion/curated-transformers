@@ -1,28 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
 from torch import Tensor
 
-from ..quantization import prepare_module_for_quantization
-from ..quantization.bnb.config import BitsAndBytesConfig
-from ..repository.fsspec import FsspecArgs, FsspecRepository
-from ..repository.hf_hub import HfHubRepository
-from ..repository.repository import ModelRepository, Repository
-from ..util.serde import load_model_from_checkpoints
-from .module import TransformerModule
+from ...quantization import prepare_module_for_quantization
+from ...quantization.bnb.config import BitsAndBytesConfig
+from ...repository.fsspec import FsspecArgs, FsspecRepository
+from ...repository.hf_hub import HfHubRepository
+from ...repository.repository import ModelRepository, Repository
+from ...util.serde import load_model_from_checkpoints
+from ..module import TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")
@@ -38,10 +27,17 @@ class FromHFHub(ABC):
     """
 
     @classmethod
-    @abstractmethod
     def convert_hf_state_dict(
         cls, params: Mapping[str, Tensor]
     ) -> Mapping[str, Tensor]:
+        """
+        Alias for :meth:`.state_dict_from_hf`.
+        """
+        return cls.state_dict_from_hf(params)
+
+    @classmethod
+    @abstractmethod
+    def state_dict_from_hf(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         """
         Convert a state dict of a Hugging Face model to a valid
         state dict for the module.
@@ -51,7 +47,21 @@ class FromHFHub(ABC):
         :returns:
             The converted state dict.
         """
-        raise NotImplementedError
+        ...
+
+    @classmethod
+    @abstractmethod
+    def state_dict_to_hf(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
+        """
+        Convert the state dict of the module to a compatible
+        Hugging Face model's format.
+
+        :param params:
+            The state dict to convert.
+        :returns:
+            The converted state dict.
+        """
+        ...
 
     @classmethod
     @abstractmethod
@@ -72,7 +82,7 @@ class FromHFHub(ABC):
         :returns:
             Module constructed using the configuration.
         """
-        raise NotImplementedError
+        ...
 
     @classmethod
     def from_hf_hub_to_cache(
@@ -232,53 +242,3 @@ class FromHFHub(ABC):
             model.to(device)
 
         return model
-
-
-def _process_hf_keys(
-    model_name: str,
-    hf_config: Dict[str, Any],
-    hf_to_curated: Dict[str, Union[str, Tuple[str, Callable]]],
-    extra_keys: List[str] = [],
-) -> Dict[str, Any]:
-    """
-    Convert Hugging Face configuration keys to keyword arguments for
-    Curated Transformers configuration classes.
-
-    :param model_name:
-        Model name. Only used in exception messages.
-    :param hf_config:
-        Hugging Face model configuration.
-    :param hf_to_curated:
-        Dictionay that maps Hugging Face configuration keys to keyword
-        arguments for a Curated Transformers configuration class. If a value
-        is a tuple, the first tuple element is the name of the keyword
-        argument class and the second tuple element is a conversion function.
-    :param extra_keys:
-        Optional keys for which the Hugging Face configuration key and the
-        keyword argument of the Curated Transformers configuration class is
-        the same.
-    :returns:
-        Dictionary with keyword arguments.
-    """
-    missing_keys = tuple(
-        sorted(set(hf_to_curated.keys()).difference(set(hf_config.keys())))
-    )
-    if len(missing_keys) != 0:
-        raise ValueError(
-            f"Missing keys in Hugging Face {model_name} model config: {missing_keys}"
-        )
-
-    kwargs = {}
-
-    for hf, curated in hf_to_curated.items():
-        if isinstance(curated, tuple):
-            curated, ctor = curated
-        else:
-            ctor = lambda x: x
-
-        kwargs[curated] = ctor(hf_config[hf])
-
-    # Handle config options that are not set in all models.
-    kwargs.update({k: hf_config[k] for k in extra_keys if k in hf_config})
-
-    return kwargs

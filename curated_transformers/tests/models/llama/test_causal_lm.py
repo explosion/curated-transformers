@@ -4,7 +4,11 @@ from curated_transformers.models.llama.causal_lm import LlamaCausalLM
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
-from ..util import JITMethod, assert_causal_lm_output_equals_hf
+from ..util import (
+    JITMethod,
+    assert_causal_lm_output_equals_hf,
+    assert_model_hf_serialization_roundtrip,
+)
 
 LLAMA_TEST_MODELS = [
     "trl-internal-testing/tiny-random-LlamaForCausalLM",
@@ -55,3 +59,10 @@ def test_causal_lm_with_torchscript_trace(torch_device, model, with_torch_sdp):
         jit_method=JITMethod.TorchScriptTrace,
         with_torch_sdp=with_torch_sdp,
     )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.parametrize("model", LLAMA_TEST_MODELS)
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_causal_lm_hf_serializtion_roundtrip(model, torch_device):
+    assert_model_hf_serialization_roundtrip(LlamaCausalLM, model, torch_device)

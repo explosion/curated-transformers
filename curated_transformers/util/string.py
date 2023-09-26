@@ -118,6 +118,23 @@ class StringReplace(StringTransform):
         :param replacement:
             The replacement string.
         """
+        super().__init__(reversible)
+        self.replacee = replacee
+        self.replacement = replacement
+
+    def _apply(self, string: str) -> str:
+        if string == self.replacee:
+            return self.replacement
+        else:
+            return string
+
+    def _revert(self, string: str) -> str:
+        if string == self.replacement:
+            return self.replacee
+        else:
+            return string
+
+
 class StringRemovePrefix(StringSubRegEx):
     """
     Strips a prefix from a given string.

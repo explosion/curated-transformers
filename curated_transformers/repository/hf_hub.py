@@ -28,8 +28,6 @@ class HfHubRepository(Repository):
         """
         self.name = name
         self.revision = revision
-        self._model_config = None
-        self._tokenizer_config = None
 
     def file(self, path: str) -> RepositoryFile:
         try:

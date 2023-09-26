@@ -34,6 +34,8 @@ class Repository(ABC):
             The file.
         :raises FileNotFoundError:
             When the file cannot be found.
+        :raises OSError:
+            When the file cannot be opened.
         """
         ...
 
@@ -79,6 +81,12 @@ class ModelRepository(Repository):
     _model_config: Optional[Dict[str, Any]]
 
     def __init__(self, repo: Repository):
+        """
+        Construct a model repository wrapper.
+
+        :param repo:
+            The repository to wrap.
+        """
         self.repo = repo
         self._model_config = None
 
@@ -205,6 +213,12 @@ class TokenizerRepository(Repository):
     _tokenizer_config: Optional[Dict[str, Any]]
 
     def __init__(self, repo: Repository):
+        """
+        Construct a tokenizer repository wrapper.
+
+        :param repo:
+            The repository to wrap.
+        """
         self.repo = repo
         self._tokenizer_config = None
 
@@ -220,6 +234,8 @@ class TokenizerRepository(Repository):
 
         :returns:
             The model type.
+        :raises OSError:
+            When the model config cannot be opened.
         """
         model_config = self.json_file(HF_MODEL_CONFIG)
         return model_config["model_type"]

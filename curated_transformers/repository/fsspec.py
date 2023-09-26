@@ -27,7 +27,9 @@ class FsspecArgs:
 
 class FsspecFile(RepositoryFile):
     """
-    Repository file on an fsspec filesystem.
+    Repository file on an `fsspec`_ filesystem.
+
+    .. _fsspec: https://filesystem-spec.readthedocs.io/en/latest/
     """
 
     def __init__(
@@ -85,15 +87,15 @@ class FsspecRepository(Repository):
     def __init__(
         self,
         fs: AbstractFileSystem,
-        model_path: str,
+        path: str,
         fsspec_args: Optional[FsspecArgs] = None,
     ):
         self.fs = fs
-        self.model_path = model_path
+        self.repo_path = path
         self.fsspec_args = FsspecArgs() if fsspec_args is None else fsspec_args
 
     def file(self, path: str) -> RepositoryFile:
-        full_path = f"{self.model_path}/{path}"
+        full_path = f"{self.repo_path}/{path}"
         if not self.fs.exists(full_path, **self.fsspec_args.kwargs):
             raise FileNotFoundError(f"Cannot find file in repository: {path}")
         return FsspecFile(self.fs, full_path, self.fsspec_args)
@@ -105,4 +107,4 @@ class FsspecRepository(Repository):
 
     @property
     def _protocol(self) -> str:
-        return self.fs.unstrip_protocol(self.model_path)
+        return self.fs.unstrip_protocol(self.repo_path)

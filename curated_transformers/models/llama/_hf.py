@@ -1,7 +1,12 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import StringTransform, StrLStrip, StrSub, StrSubInv
+from ...util.string import (
+    StringRemovePrefix,
+    StringSubInvertible,
+    StringSubRegEx,
+    StringTransform,
+)
 from ..hf_hub.conversion import process_hf_keys
 from .config import LlamaConfig
 
@@ -12,33 +17,33 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     # Attention blocks.
-    StrSubInv((r".self_attn", ".mha")),
-    StrSubInv((r".q_proj", ".query")),
-    StrSubInv((r".k_proj", ".key")),
-    StrSubInv((r".v_proj", ".value")),
-    StrSubInv((r".o_proj", ".output")),
+    StringSubInvertible((r".self_attn", ".mha")),
+    StringSubInvertible((r".q_proj", ".query")),
+    StringSubInvertible((r".k_proj", ".key")),
+    StringSubInvertible((r".v_proj", ".value")),
+    StringSubInvertible((r".o_proj", ".output")),
     # Pointwise feedforward
-    StrSubInv((r".mlp", ".ffn")),
-    StrSubInv((r".up_proj", ".intermediate")),
-    StrSubInv((r"ffn.down_proj", "ffn.output")),
-    StrSubInv((r".gate_proj", ".gate")),
+    StringSubInvertible((r".mlp", ".ffn")),
+    StringSubInvertible((r".up_proj", ".intermediate")),
+    StringSubInvertible((r"ffn.down_proj", "ffn.output")),
+    StringSubInvertible((r".gate_proj", ".gate")),
     # RMS norms
-    StrSubInv((r".input_layernorm", ".attn_input_layer_norm")),
-    StrSubInv((r".post_attention_layernorm", ".ffn_input_layer_norm")),
-    StrSub(
+    StringSubInvertible((r".input_layernorm", ".attn_input_layer_norm")),
+    StringSubInvertible((r".post_attention_layernorm", ".ffn_input_layer_norm")),
+    StringSubRegEx(
         (r"^(decoder\.)?norm\.", "\\1output_layer_norm."),
         (r"^(decoder\.)?output_layer_norm\.", "\\1norm."),
     ),
     # Embeddings
-    StrSubInv((r"embed_tokens.", "embeddings.piece_embeddings.")),
-    StrSubInv((r"lm_head.", "output_embeddings.")),
+    StringSubInvertible((r"embed_tokens.", "embeddings.piece_embeddings.")),
+    StringSubInvertible((r"lm_head.", "output_embeddings.")),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StrLStrip("model.", reversible=False)
+    StringRemovePrefix("model.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
-    StrSubInv((r"model.", "decoder."))
+    StringSubInvertible((r"model.", "decoder."))
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {

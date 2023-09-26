@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import StringTransform, StrLStrip, StrSubInv
+from ...util.string import StringRemovePrefix, StringSubInvertible, StringTransform
 from ..hf_hub.conversion import process_hf_keys
 from .config import GPTNeoXConfig
 
@@ -11,26 +11,26 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StrSubInv((r"gpt_neox", "decoder")),
+    StringSubInvertible((r"gpt_neox", "decoder")),
     # Attention blocks.
-    StrSubInv((r".attention", ".mha")),
-    StrSubInv((r".mha.query_key_value", ".mha.input")),
-    StrSubInv((r".mha.dense", ".mha.output")),
+    StringSubInvertible((r".attention", ".mha")),
+    StringSubInvertible((r".mha.query_key_value", ".mha.input")),
+    StringSubInvertible((r".mha.dense", ".mha.output")),
     # Pointwise feedforward.
-    StrSubInv((r".mlp", ".ffn")),
-    StrSubInv((r".dense_h_to_4h", ".intermediate")),
-    StrSubInv((r".ffn.dense_4h_to_h", ".ffn.output")),
+    StringSubInvertible((r".mlp", ".ffn")),
+    StringSubInvertible((r".dense_h_to_4h", ".intermediate")),
+    StringSubInvertible((r".ffn.dense_4h_to_h", ".ffn.output")),
     # Layer norms.
-    StrSubInv((r".input_layernorm", ".attn_input_layer_norm")),
-    StrSubInv((r".post_attention_layernorm", ".ffn_input_layer_norm")),
-    StrSubInv((r"final_layer_norm.", "output_layer_norm.")),
+    StringSubInvertible((r".input_layernorm", ".attn_input_layer_norm")),
+    StringSubInvertible((r".post_attention_layernorm", ".ffn_input_layer_norm")),
+    StringSubInvertible((r"final_layer_norm.", "output_layer_norm.")),
     # Embeddings.
-    StrSubInv((r"embed_in.", "embeddings.piece_embeddings.")),
-    StrSubInv((r"embed_out.", "output_embeddings.")),
+    StringSubInvertible((r"embed_in.", "embeddings.piece_embeddings.")),
+    StringSubInvertible((r"embed_out.", "output_embeddings.")),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StrLStrip("gpt_neox.", reversible=False)
+    StringRemovePrefix("gpt_neox.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 

@@ -1,6 +1,11 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from ...util.string import StringTransform, StrLStrip, StrSub, StrSubInv
+from ...util.string import (
+    StringRemovePrefix,
+    StringSubInvertible,
+    StringSubRegEx,
+    StringTransform,
+)
 from ..hf_hub.conversion import process_hf_keys
 from .config import FalconConfig
 
@@ -11,32 +16,32 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StrSub((r"^h\.", "layers."), (r"^layers\.", "h.")),
-    StrSubInv((r"decoder.h.", "decoder.layers.")),
+    StringSubRegEx((r"^h\.", "layers."), (r"^layers\.", "h.")),
+    StringSubInvertible((r"decoder.h.", "decoder.layers.")),
     # Attention blocks.
-    StrSubInv((r".self_attention", ".mha")),
-    StrSubInv((r".mha.query_key_value", ".mha.input")),
-    StrSubInv((r".mha.dense", ".mha.output")),
+    StringSubInvertible((r".self_attention", ".mha")),
+    StringSubInvertible((r".mha.query_key_value", ".mha.input")),
+    StringSubInvertible((r".mha.dense", ".mha.output")),
     # Pointwise feedforward.
-    StrSubInv((r".mlp", ".ffn")),
-    StrSubInv((r".dense_h_to_4h", ".intermediate")),
-    StrSubInv((r".ffn.dense_4h_to_h", ".ffn.output")),
+    StringSubInvertible((r".mlp", ".ffn")),
+    StringSubInvertible((r".dense_h_to_4h", ".intermediate")),
+    StringSubInvertible((r".ffn.dense_4h_to_h", ".ffn.output")),
     # Layer norms.
-    StrSubInv((r".input_layernorm", ".attn_layer_norm")),
-    StrSubInv((r".ln_attn", ".attn_input_layer_norm")),
-    StrSubInv((r".post_attention_layernorm", ".ffn_layer_norm")),
-    StrSubInv((r".ln_mlp", ".ffn_input_layer_norm")),
-    StrSubInv((r"ln_f.", "output_layer_norm.")),
+    StringSubInvertible((r".input_layernorm", ".attn_layer_norm")),
+    StringSubInvertible((r".ln_attn", ".attn_input_layer_norm")),
+    StringSubInvertible((r".post_attention_layernorm", ".ffn_layer_norm")),
+    StringSubInvertible((r".ln_mlp", ".ffn_input_layer_norm")),
+    StringSubInvertible((r"ln_f.", "output_layer_norm.")),
     # Embeddings.
-    StrSubInv((r"word_embeddings.", "embeddings.piece_embeddings.")),
-    StrSubInv((r"lm_head.", "output_embeddings.")),
+    StringSubInvertible((r"word_embeddings.", "embeddings.piece_embeddings.")),
+    StringSubInvertible((r"lm_head.", "output_embeddings.")),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StrLStrip("transformer.", reversible=False)
+    StringRemovePrefix("transformer.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
-    StrSubInv((r"transformer.", "decoder.")),
+    StringSubInvertible((r"transformer.", "decoder.")),
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callable]]] = {

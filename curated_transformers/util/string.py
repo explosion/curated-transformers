@@ -46,9 +46,10 @@ class StringTransform(ABC):
             return string
 
 
-class StrSub(StringTransform):
+class StringSubRegEx(StringTransform):
     """
-    Substitute a substring with another string.
+    Substitute a substring with another string using
+    regular expressions.
     """
 
     def __init__(self, forward: Tuple[str, str], backward: Optional[Tuple[str, str]]):
@@ -81,7 +82,7 @@ class StrSub(StringTransform):
         return re.sub(self.backward[0], self.backward[1], string)
 
 
-class StrSubInv(StrSub):
+class StringSubInvertible(StringSubRegEx):
     """
     A substitution whose backward transformation can be
     automatically derived from the forward transformation.
@@ -102,7 +103,7 @@ class StrSubInv(StrSub):
         )
 
 
-class StrRepl(StrSub):
+class StringReplace(StringTransform):
     """
     Replaces an entire string with another.
     """
@@ -116,13 +117,7 @@ class StrRepl(StrSub):
         :param replacement:
             The replacement string.
         """
-        super().__init__(
-            forward=(f"^{re.escape(replacee)}$", replacement),
-            backward=(f"^{re.escape(replacement)}$", replacee) if reversible else None,
-        )
-
-
-class StrLStrip(StrSub):
+class StringRemovePrefix(StringSubRegEx):
     """
     Strips a prefix from a given string.
     """

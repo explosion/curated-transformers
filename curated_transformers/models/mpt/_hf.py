@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from ...util.string import StringTransform, StrLStrip, StrSubInv
+from ...util.string import StringRemovePrefix, StringSubInvertible, StringTransform
 from ..hf_hub.conversion import process_hf_keys
 from .config import MPTConfig
 
@@ -10,26 +10,26 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StrSubInv((r"transformer", "decoder")),
-    StrSubInv((r"blocks", "layers")),
+    StringSubInvertible((r"transformer", "decoder")),
+    StringSubInvertible((r"blocks", "layers")),
     # Attention blocks.
-    StrSubInv((r".attn", ".mha")),
-    StrSubInv((r".Wqkv", ".input")),
-    StrSubInv((r".out_proj", ".output")),
+    StringSubInvertible((r".attn", ".mha")),
+    StringSubInvertible((r".Wqkv", ".input")),
+    StringSubInvertible((r".out_proj", ".output")),
     # Pointwise feedforward.
-    StrSubInv((r".up_proj", ".intermediate")),
-    StrSubInv((r"ffn.down_proj", "ffn.output")),
+    StringSubInvertible((r".up_proj", ".intermediate")),
+    StringSubInvertible((r"ffn.down_proj", "ffn.output")),
     # Layer norms.
-    StrSubInv((r".norm_1", ".attn_input_layer_norm")),
-    StrSubInv((r".norm_2", ".ffn_input_layer_norm")),
-    StrSubInv((r"norm_f.", "output_layer_norm.")),
+    StringSubInvertible((r".norm_1", ".attn_input_layer_norm")),
+    StringSubInvertible((r".norm_2", ".ffn_input_layer_norm")),
+    StringSubInvertible((r"norm_f.", "output_layer_norm.")),
     # Embeddings.
-    StrSubInv((r"wte.", "embeddings.piece_embeddings.")),
+    StringSubInvertible((r"wte.", "embeddings.piece_embeddings.")),
 ]
 
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StrLStrip("transformer.", reversible=False)
+    StringRemovePrefix("transformer.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 

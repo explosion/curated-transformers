@@ -78,7 +78,8 @@ class StringSubRegEx(StringTransform):
         return re.sub(self.forward[0], self.forward[1], string)
 
     def _revert(self, string: str) -> str:
-        assert self.backward is not None
+        if self.backward is None:
+            raise ValueError("Attempting to revert an irreversible string transform")
         return re.sub(self.backward[0], self.backward[1], string)
 
 

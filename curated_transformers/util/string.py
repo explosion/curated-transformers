@@ -46,6 +46,79 @@ class StringTransform(ABC):
             return string
 
 
+class StringTransformations:
+    """
+    Provides factory methods for different string transformations.
+    """
+
+    @staticmethod
+    def regex_sub(
+        forward: Tuple[str, str], backward: Optional[Tuple[str, str]]
+    ) -> StringTransform:
+        """
+        Factory method to construct a string substitution transform
+        using regular expressions.
+
+        :param forward:
+            Tuple where the first string is a RegEx pattern
+            and the second the replacement.
+
+            This operation is performed when the :meth:`.apply`
+            method is invoked.
+        :param backward:
+            Optional tuple where the first string is a RegEx pattern
+            and the second the replacement.
+
+            This operation is performed when the :meth:`.revert`
+            method is invoked. If ``None``, it is a no-op.
+        """
+        return StringSubRegEx(forward, backward)
+
+    @staticmethod
+    def regex_sub_invertible(forward: Tuple[str, str]) -> StringTransform:
+        """
+        Factory method to construct a string substitution transform
+        using regular expressions whose backward transformation can
+        be automatically derived from the forward transformation.
+
+        :param forward:
+            Tuple where the first string is string to match
+            and the second the replacement, neither of which
+            can contain RegEx meta-characters.
+        """
+        return StringSubInvertible(forward)
+
+    @staticmethod
+    def replace(
+        replacee: str, replacement: str, *, reversible: bool = True
+    ) -> StringTransform:
+        """
+        Factory method to construct a string replacement transform.
+
+        :param replacee:
+            The full string to be replaced.
+        :param replacement:
+            The replacement string.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
+        """
+        return StringReplace(replacee, replacement, reversible=reversible)
+
+    @staticmethod
+    def remove_prefix(prefix: str, *, reversible: bool = True) -> StringTransform:
+        """
+        Factory method to construct a string prefix removal transform.
+
+        :param prefix:
+            Prefix to be removed.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
+        """
+        return StringRemovePrefix(prefix, reversible=reversible)
+
+
 class StringSubRegEx(StringTransform):
     """
     Substitute a substring with another string using
@@ -117,6 +190,9 @@ class StringReplace(StringTransform):
             The full string to be replaced.
         :param replacement:
             The replacement string.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
         """
         super().__init__(reversible)
         self.replacee = replacee
@@ -145,7 +221,10 @@ class StringRemovePrefix(StringTransform):
         Construct a reversible left strip.
 
         :param prefix:
-            Prefix to be stripped.
+            Prefix to be removed.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
         """
 
         super().__init__(reversible)

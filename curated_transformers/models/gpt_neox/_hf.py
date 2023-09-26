@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import StringRemovePrefix, StringSubInvertible, StringTransform
+from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import process_hf_keys
 from .config import GPTNeoXConfig
 
@@ -11,26 +11,34 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StringSubInvertible((r"gpt_neox", "decoder")),
+    StringTransformations.regex_sub_invertible((r"gpt_neox", "decoder")),
     # Attention blocks.
-    StringSubInvertible((r".attention", ".mha")),
-    StringSubInvertible((r".mha.query_key_value", ".mha.input")),
-    StringSubInvertible((r".mha.dense", ".mha.output")),
+    StringTransformations.regex_sub_invertible((r".attention", ".mha")),
+    StringTransformations.regex_sub_invertible((r".mha.query_key_value", ".mha.input")),
+    StringTransformations.regex_sub_invertible((r".mha.dense", ".mha.output")),
     # Pointwise feedforward.
-    StringSubInvertible((r".mlp", ".ffn")),
-    StringSubInvertible((r".dense_h_to_4h", ".intermediate")),
-    StringSubInvertible((r".ffn.dense_4h_to_h", ".ffn.output")),
+    StringTransformations.regex_sub_invertible((r".mlp", ".ffn")),
+    StringTransformations.regex_sub_invertible((r".dense_h_to_4h", ".intermediate")),
+    StringTransformations.regex_sub_invertible((r".ffn.dense_4h_to_h", ".ffn.output")),
     # Layer norms.
-    StringSubInvertible((r".input_layernorm", ".attn_input_layer_norm")),
-    StringSubInvertible((r".post_attention_layernorm", ".ffn_input_layer_norm")),
-    StringSubInvertible((r"final_layer_norm.", "output_layer_norm.")),
+    StringTransformations.regex_sub_invertible(
+        (r".input_layernorm", ".attn_input_layer_norm")
+    ),
+    StringTransformations.regex_sub_invertible(
+        (r".post_attention_layernorm", ".ffn_input_layer_norm")
+    ),
+    StringTransformations.regex_sub_invertible(
+        (r"final_layer_norm.", "output_layer_norm.")
+    ),
     # Embeddings.
-    StringSubInvertible((r"embed_in.", "embeddings.piece_embeddings.")),
-    StringSubInvertible((r"embed_out.", "output_embeddings.")),
+    StringTransformations.regex_sub_invertible(
+        (r"embed_in.", "embeddings.piece_embeddings.")
+    ),
+    StringTransformations.regex_sub_invertible((r"embed_out.", "output_embeddings.")),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StringRemovePrefix("gpt_neox.", reversible=False)
+    StringTransformations.remove_prefix("gpt_neox.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 

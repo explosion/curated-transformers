@@ -1,12 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import (
-    StringRemovePrefix,
-    StringSubInvertible,
-    StringSubRegEx,
-    StringTransform,
-)
+from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import process_hf_keys
 from .config import LlamaConfig
 
@@ -17,33 +12,39 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     # Attention blocks.
-    StringSubInvertible((r".self_attn", ".mha")),
-    StringSubInvertible((r".q_proj", ".query")),
-    StringSubInvertible((r".k_proj", ".key")),
-    StringSubInvertible((r".v_proj", ".value")),
-    StringSubInvertible((r".o_proj", ".output")),
+    StringTransformations.regex_sub_invertible((r".self_attn", ".mha")),
+    StringTransformations.regex_sub_invertible((r".q_proj", ".query")),
+    StringTransformations.regex_sub_invertible((r".k_proj", ".key")),
+    StringTransformations.regex_sub_invertible((r".v_proj", ".value")),
+    StringTransformations.regex_sub_invertible((r".o_proj", ".output")),
     # Pointwise feedforward
-    StringSubInvertible((r".mlp", ".ffn")),
-    StringSubInvertible((r".up_proj", ".intermediate")),
-    StringSubInvertible((r"ffn.down_proj", "ffn.output")),
-    StringSubInvertible((r".gate_proj", ".gate")),
+    StringTransformations.regex_sub_invertible((r".mlp", ".ffn")),
+    StringTransformations.regex_sub_invertible((r".up_proj", ".intermediate")),
+    StringTransformations.regex_sub_invertible((r"ffn.down_proj", "ffn.output")),
+    StringTransformations.regex_sub_invertible((r".gate_proj", ".gate")),
     # RMS norms
-    StringSubInvertible((r".input_layernorm", ".attn_input_layer_norm")),
-    StringSubInvertible((r".post_attention_layernorm", ".ffn_input_layer_norm")),
-    StringSubRegEx(
+    StringTransformations.regex_sub_invertible(
+        (r".input_layernorm", ".attn_input_layer_norm")
+    ),
+    StringTransformations.regex_sub_invertible(
+        (r".post_attention_layernorm", ".ffn_input_layer_norm")
+    ),
+    StringTransformations.regex_sub(
         (r"^(decoder\.)?norm\.", "\\1output_layer_norm."),
         (r"^(decoder\.)?output_layer_norm\.", "\\1norm."),
     ),
     # Embeddings
-    StringSubInvertible((r"embed_tokens.", "embeddings.piece_embeddings.")),
-    StringSubInvertible((r"lm_head.", "output_embeddings.")),
+    StringTransformations.regex_sub_invertible(
+        (r"embed_tokens.", "embeddings.piece_embeddings.")
+    ),
+    StringTransformations.regex_sub_invertible((r"lm_head.", "output_embeddings.")),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StringRemovePrefix("model.", reversible=False)
+    StringTransformations.remove_prefix("model.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
-    StringSubInvertible((r"model.", "decoder."))
+    StringTransformations.regex_sub_invertible((r"model.", "decoder."))
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {

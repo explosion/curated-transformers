@@ -1,57 +1,57 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import (
-    StringRemovePrefix,
-    StringReplace,
-    StringSubInvertible,
-    StringSubRegEx,
-    StringTransform,
-)
+from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import process_hf_keys
 from .config import RoBERTaConfig
 
 # Order-dependent.
 HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     # Prefixes.
-    StringRemovePrefix("roberta.", reversible=False),
-    StringSubRegEx(
+    StringTransformations.remove_prefix("roberta.", reversible=False),
+    StringTransformations.regex_sub(
         (r"^encoder\.(layer\.)", "\\1"),
         (r"^(layer\.)", "encoder.\\1"),
     ),
     # Layers.
-    StringSubRegEx((r"^layer", "layers"), (r"^layers", "layer")),
+    StringTransformations.regex_sub((r"^layer", "layers"), (r"^layers", "layer")),
     # Attention blocks.
-    StringSubRegEx(
+    StringTransformations.regex_sub(
         (r"\.attention\.self\.(query|key|value)", ".mha.\\1"),
         (r"\.mha\.(query|key|value)", ".attention.self.\\1"),
     ),
-    StringSubInvertible((r".attention.output.dense", ".mha.output")),
-    StringSubInvertible((r".attention.output.LayerNorm", ".attn_residual_layer_norm")),
+    StringTransformations.regex_sub_invertible(
+        (r".attention.output.dense", ".mha.output")
+    ),
+    StringTransformations.regex_sub_invertible(
+        (r".attention.output.LayerNorm", ".attn_residual_layer_norm")
+    ),
     # Pointwise feed-forward layers.
-    StringSubInvertible((r".intermediate.dense", ".ffn.intermediate")),
-    StringSubRegEx(
+    StringTransformations.regex_sub_invertible(
+        (r".intermediate.dense", ".ffn.intermediate")
+    ),
+    StringTransformations.regex_sub(
         (r"(\.\d+)\.output\.LayerNorm", "\\1.ffn_residual_layer_norm"),
         (r"(\.\d+)\.ffn_residual_layer_norm", "\\1.output.LayerNorm"),
     ),
-    StringSubRegEx(
+    StringTransformations.regex_sub(
         (r"(\.\d+)\.output\.dense", "\\1.ffn.output"),
         (r"(\.\d+)\.ffn\.output", "\\1.output.dense"),
     ),
     # Embeddings.
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.word_embeddings.weight", "embeddings.piece_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.token_type_embeddings.weight", "embeddings.type_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.position_embeddings.weight", "embeddings.position_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.LayerNorm.weight", "embeddings.embed_output_layer_norm.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.LayerNorm.bias", "embeddings.embed_output_layer_norm.bias"
     ),
 ]

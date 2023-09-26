@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, Mapping, Tuple, Union
 
 from torch import Tensor
 
-from ...util.string import StringTransform
+from ...util.string import StringTransform, StringTransformations
 
 
 def process_hf_keys(

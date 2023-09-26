@@ -1,57 +1,59 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ...util.string import (
-    StringRemovePrefix,
-    StringReplace,
-    StringSubInvertible,
-    StringSubRegEx,
-    StringTransform,
-)
+from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import process_hf_keys
 from .config import ALBERTConfig
 
 # Order-dependent.
 HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     # Prefixes.
-    StringRemovePrefix("albert.", reversible=False),
-    StringSubRegEx(
+    StringTransformations.remove_prefix("albert.", reversible=False),
+    StringTransformations.regex_sub(
         (r"^encoder\.(embedding_|albert_layer)", "\\1"),
         (r"^(embedding_|albert_layer)", "encoder.\\1"),
     ),
     # Layer groups
-    StringSubRegEx(
+    StringTransformations.regex_sub(
         (r"^albert_layer_groups\.", "groups."), (r"^groups\.", "albert_layer_groups.")
     ),
     # Inner layers.
-    StringSubInvertible((".albert_layers.", ".group_layers.")),
+    StringTransformations.regex_sub_invertible((".albert_layers.", ".group_layers.")),
     # Attention blocks.
-    StringSubInvertible((".attention.", ".mha.")),
-    StringSubInvertible((".mha.LayerNorm", ".attn_residual_layer_norm")),
-    StringSubInvertible((".mha.dense", ".mha.output")),
+    StringTransformations.regex_sub_invertible((".attention.", ".mha.")),
+    StringTransformations.regex_sub_invertible(
+        (".mha.LayerNorm", ".attn_residual_layer_norm")
+    ),
+    StringTransformations.regex_sub_invertible((".mha.dense", ".mha.output")),
     # Pointwise feed-forward layers.
-    StringSubInvertible((".ffn.", ".ffn.intermediate.")),
-    StringSubInvertible((".ffn_output.", ".ffn.output.")),
-    StringSubInvertible((".full_layer_layer_norm.", ".ffn_residual_layer_norm.")),
+    StringTransformations.regex_sub_invertible((".ffn.", ".ffn.intermediate.")),
+    StringTransformations.regex_sub_invertible((".ffn_output.", ".ffn.output.")),
+    StringTransformations.regex_sub_invertible(
+        (".full_layer_layer_norm.", ".ffn_residual_layer_norm.")
+    ),
     # Embeddings.
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.word_embeddings.weight", "embeddings.piece_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.token_type_embeddings.weight", "embeddings.type_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.position_embeddings.weight", "embeddings.position_embeddings.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.LayerNorm.weight", "embeddings.embed_output_layer_norm.weight"
     ),
-    StringReplace(
+    StringTransformations.replace(
         "embeddings.LayerNorm.bias", "embeddings.embed_output_layer_norm.bias"
     ),
     # Embedding projection.
-    StringReplace("embedding_hidden_mapping_in.weight", "embeddings.projection.weight"),
-    StringReplace("embedding_hidden_mapping_in.bias", "embeddings.projection.bias"),
+    StringTransformations.replace(
+        "embedding_hidden_mapping_in.weight", "embeddings.projection.weight"
+    ),
+    StringTransformations.replace(
+        "embedding_hidden_mapping_in.bias", "embeddings.projection.bias"
+    ),
 ]
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {

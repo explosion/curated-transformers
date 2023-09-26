@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from ...util.string import StringRemovePrefix, StringSubInvertible, StringTransform
+from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import process_hf_keys
 from .config import MPTConfig
 
@@ -10,26 +10,28 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StringSubInvertible((r"transformer", "decoder")),
-    StringSubInvertible((r"blocks", "layers")),
+    StringTransformations.regex_sub_invertible((r"transformer", "decoder")),
+    StringTransformations.regex_sub_invertible((r"blocks", "layers")),
     # Attention blocks.
-    StringSubInvertible((r".attn", ".mha")),
-    StringSubInvertible((r".Wqkv", ".input")),
-    StringSubInvertible((r".out_proj", ".output")),
+    StringTransformations.regex_sub_invertible((r".attn", ".mha")),
+    StringTransformations.regex_sub_invertible((r".Wqkv", ".input")),
+    StringTransformations.regex_sub_invertible((r".out_proj", ".output")),
     # Pointwise feedforward.
-    StringSubInvertible((r".up_proj", ".intermediate")),
-    StringSubInvertible((r"ffn.down_proj", "ffn.output")),
+    StringTransformations.regex_sub_invertible((r".up_proj", ".intermediate")),
+    StringTransformations.regex_sub_invertible((r"ffn.down_proj", "ffn.output")),
     # Layer norms.
-    StringSubInvertible((r".norm_1", ".attn_input_layer_norm")),
-    StringSubInvertible((r".norm_2", ".ffn_input_layer_norm")),
-    StringSubInvertible((r"norm_f.", "output_layer_norm.")),
+    StringTransformations.regex_sub_invertible((r".norm_1", ".attn_input_layer_norm")),
+    StringTransformations.regex_sub_invertible((r".norm_2", ".ffn_input_layer_norm")),
+    StringTransformations.regex_sub_invertible((r"norm_f.", "output_layer_norm.")),
     # Embeddings.
-    StringSubInvertible((r"wte.", "embeddings.piece_embeddings.")),
+    StringTransformations.regex_sub_invertible(
+        (r"wte.", "embeddings.piece_embeddings.")
+    ),
 ]
 
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
-    StringRemovePrefix("transformer.", reversible=False)
+    StringTransformations.remove_prefix("transformer.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 

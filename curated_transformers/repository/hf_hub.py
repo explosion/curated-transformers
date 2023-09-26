@@ -15,7 +15,7 @@ from .repository import Repository
 
 class HfHubRepository(Repository):
     """
-    Hugging Face hub repository.
+    Hugging Face Hub repository.
     """
 
     def __init__(self, name: str, *, revision: str = "main"):

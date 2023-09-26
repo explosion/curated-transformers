@@ -114,7 +114,7 @@ class ModelRepository(Repository):
                 index = self.json_file(index_filename)
             except (FileNotFoundError, JSONDecodeError, OSError) as e:
                 raise OSError(
-                    f"Index file for checkpoint type {checkpoint_type.pretty_name} "
+                    f"Index file for sharded checkpoint type {checkpoint_type.pretty_name} "
                     f"could not be loaded `{self.pretty_path(index_filename)}`"
                 ) from e
 
@@ -131,7 +131,7 @@ class ModelRepository(Repository):
                     checkpoint_paths.append(self.file(filename))
                 except FileNotFoundError:
                     raise OSError(
-                        f"File for checkpoint type {checkpoint_type.pretty_name} "
+                        f"File for sharded checkpoint type {checkpoint_type.pretty_name} "
                         f"could not be found at `{self.pretty_path(index_filename)}`"
                     )
 

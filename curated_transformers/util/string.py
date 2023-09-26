@@ -147,6 +147,8 @@ class StringRemovePrefix(StringSubRegEx):
         :param prefix:
             Prefix to be stripped.
         """
+        # TODO: Should be replaced with `removeprefix` once
+        # Python 3.9 is the minimum requirement.
         super().__init__(
             forward=(f"^{re.escape(prefix)}", ""),
             backward=(r"^(.)", f"{prefix}\\1") if reversible else None,

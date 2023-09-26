@@ -87,6 +87,7 @@ class ModelRepository(Repository):
         :param repo:
             The repository to wrap.
         """
+        super().__init__()
         self.repo = repo
         self._model_config = None
 
@@ -219,6 +220,7 @@ class TokenizerRepository(Repository):
         :param repo:
             The repository to wrap.
         """
+        super().__init__()
         self.repo = repo
         self._tokenizer_config = None
 

@@ -90,6 +90,7 @@ class FsspecRepository(Repository):
         path: str,
         fsspec_args: Optional[FsspecArgs] = None,
     ):
+        super().__init__()
         self.fs = fs
         self.repo_path = path
         self.fsspec_args = FsspecArgs() if fsspec_args is None else fsspec_args

@@ -26,6 +26,7 @@ class HfHubRepository(Repository):
             Source repository revision. Can either be a branch name
             or a SHA hash of a commit.
         """
+        super().__init__()
         self.name = name
         self.revision = revision
 

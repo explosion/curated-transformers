@@ -94,7 +94,7 @@ class AutoModel(ABC, Generic[ModelT]):
         return cls.from_repo(
             repo=FsspecRepository(
                 fs,
-                model_path=model_path,
+                path=model_path,
                 fsspec_args=fsspec_args,
             ),
             device=device,

@@ -135,7 +135,7 @@ class StringReplace(StringTransform):
             return string
 
 
-class StringRemovePrefix(StringSubRegEx):
+class StringRemovePrefix(StringTransform):
     """
     Strips a prefix from a given string.
     """
@@ -147,9 +147,14 @@ class StringRemovePrefix(StringSubRegEx):
         :param prefix:
             Prefix to be stripped.
         """
+
+        super().__init__(reversible)
+        self.prefix = prefix
+
+    def _apply(self, string: str) -> str:
         # TODO: Should be replaced with `removeprefix` once
         # Python 3.9 is the minimum requirement.
-        super().__init__(
-            forward=(f"^{re.escape(prefix)}", ""),
-            backward=(r"^(.)", f"{prefix}\\1") if reversible else None,
-        )
+        return re.sub(f"^{re.escape(self.prefix)}", "", string)
+
+    def _revert(self, string: str) -> str:
+        return f"{self.prefix}{string}"

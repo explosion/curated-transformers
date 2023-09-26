@@ -20,7 +20,7 @@ def process_hf_keys(
     :param hf_config:
         Hugging Face model configuration.
     :param hf_to_curated:
-        Dictionay that maps Hugging Face configuration keys to keyword
+        Dictionary that maps Hugging Face configuration keys to keyword
         arguments for a Curated Transformers configuration class. If a value
         is a tuple, the first tuple element is the name of the keyword
         argument class and the second tuple element is a conversion function.

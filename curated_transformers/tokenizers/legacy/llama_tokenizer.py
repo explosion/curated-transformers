@@ -2,7 +2,7 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
-from ...util.serde import ModelFile
+from ...repository.file import RepositoryFile
 from ..hf_hub import LegacyFromHFHub
 from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
@@ -53,7 +53,7 @@ class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        model_file: ModelFile,
+        model_file: RepositoryFile,
         add_bos_piece: bool = True,
         add_eos_piece: bool = False,
     ) -> Self:
@@ -79,7 +79,7 @@ class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Mapping[str, ModelFile],
+        vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         if tokenizer_config is None:

@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import WordPieceProcessor
 
-from ...util.serde import ModelFile
+from ...repository.file import RepositoryFile
 from .._hf_compat import clean_up_decoded_string_like_hf, tokenize_chinese_chars_bert
 from ..chunks import (
     InputChunks,
@@ -260,7 +260,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        vocab_file: ModelFile,
+        vocab_file: RepositoryFile,
         bos_piece: str = "[CLS]",
         eos_piece: str = "[SEP]",
         unk_piece: str = "[UNK]",
@@ -311,7 +311,7 @@ class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Mapping[str, ModelFile],
+        vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         extra_kwargs = {}

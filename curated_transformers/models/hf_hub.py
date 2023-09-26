@@ -18,12 +18,10 @@ from torch import Tensor
 
 from ..quantization import prepare_module_for_quantization
 from ..quantization.bnb.config import BitsAndBytesConfig
-from ..util.fsspec import (
-    get_model_checkpoint_files as get_model_checkpoint_files_fsspec,
-)
-from ..util.fsspec import get_model_config as get_model_config_fsspec
-from ..util.hf import get_model_checkpoint_files, get_model_config
-from ..util.serde import ModelCheckpointType, ModelFile, load_model_from_checkpoints
+from ..repository.fsspec import FsspecArgs, FsspecRepository
+from ..repository.hf_hub import HfHubRepository
+from ..repository.repository import ModelRepository, Repository
+from ..util.serde import load_model_from_checkpoints
 from .module import TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.
@@ -94,8 +92,9 @@ class FromHFHub(ABC):
         :param revision:
             Model revision.
         """
-        _ = get_model_config(name, revision)
-        _ = get_model_checkpoint_files(name, revision)
+        repo = ModelRepository(HfHubRepository(name=name, revision=revision))
+        repo.model_config()
+        repo.model_checkpoints()
 
     @classmethod
     def from_fsspec(
@@ -103,7 +102,7 @@ class FromHFHub(ABC):
         *,
         fs: AbstractFileSystem,
         model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        fsspec_args: Optional[FsspecArgs] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
@@ -124,13 +123,8 @@ class FromHFHub(ABC):
         :returns:
             Module with the parameters loaded.
         """
-        return cls._create_and_load_model(
-            get_config=lambda: get_model_config_fsspec(
-                fs, model_path, fsspec_args=fsspec_args
-            ),
-            get_checkpoint_files=lambda: get_model_checkpoint_files_fsspec(
-                fs, model_path, fsspec_args=fsspec_args
-            ),
+        return cls.from_repo(
+            repo=FsspecRepository(fs, model_path, fsspec_args),
             device=device,
             quantization_config=quantization_config,
         )
@@ -158,9 +152,8 @@ class FromHFHub(ABC):
         :returns:
             Module with the parameters loaded.
         """
-        return cls._create_and_load_model(
-            get_config=lambda: get_model_config(name, revision),
-            get_checkpoint_files=lambda: get_model_checkpoint_files(name, revision),
+        return cls.from_repo(
+            repo=HfHubRepository(name=name, revision=revision),
             device=device,
             quantization_config=quantization_config,
         )
@@ -182,15 +175,27 @@ class FromHFHub(ABC):
         ...
 
     @classmethod
-    def _create_and_load_model(
+    def from_repo(
         cls: Type[Self],
         *,
-        get_config: Callable[[], Dict[Any, str]],
-        get_checkpoint_files: Callable[[], Tuple[List[ModelFile], ModelCheckpointType]],
+        repo: Repository,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> Self:
-        config = get_config()
+        """
+        Construct and load a model from a repository.
+
+        :param repository:
+            The repository to load from.
+        :param device:
+            Device on which to initialize the model.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Loaded model.
+        """
+        model_repo = ModelRepository(repo)
+        config = model_repo.model_config()
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
 
         # Convert the model to the expected dtype.
@@ -211,7 +216,7 @@ class FromHFHub(ABC):
             tensor2param = None
 
         # Download model and convert HF parameter names to ours.
-        checkpoint_filenames, checkpoint_type = get_checkpoint_files()
+        checkpoint_filenames, checkpoint_type = model_repo.model_checkpoints()
         load_model_from_checkpoints(
             model,  # type:ignore
             filepaths=checkpoint_filenames,

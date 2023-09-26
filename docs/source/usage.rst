@@ -143,6 +143,7 @@ using the ``from_fsspec`` method.
 
    import torch
    from curated_transformers.models import BERTEncoder
+   from curated_transformers.repository import FsspecArgs
    from fsspec.implementations.local import LocalFileSystem
    from huggingface_hub import HfFileSystem
 
@@ -156,7 +157,7 @@ using the ``from_fsspec`` method.
    encoder = BERTEncoder.from_fsspec(
       fs=HfFileSystem(),
       model_path="bert-base-uncased",
-      fsspec_args={"revision": "a265f773a47193eed794233aa2a0f0bb6d3eaa63"},
+      fsspec_args=FsspecArgs(revision= "a265f773a47193eed794233aa2a0f0bb6d3eaa63"),
       device=torch.device("cuda", index=0),
    )
 

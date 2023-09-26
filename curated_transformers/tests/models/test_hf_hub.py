@@ -4,7 +4,8 @@ import pytest
 from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 
 from curated_transformers.models.bert.encoder import BERTEncoder
-from curated_transformers.util.hf import get_model_checkpoint_files
+from curated_transformers.repository.hf_hub import HfHubRepository
+from curated_transformers.repository.repository import ModelRepository
 from curated_transformers.util.serde import (
     ModelCheckpointType,
     _use_model_checkpoint_type,
@@ -54,10 +55,11 @@ def test_checkpoint_type_without_safetensors():
     # By default, we expect the torch checkpoint to be loaded
     # even if the safetensor checkpoints are present
     # (as long as the library is not installed).
-    ckp_paths, ckp_type = get_model_checkpoint_files(
-        "explosion-testing/safetensors-test", revision="main"
-    )
+    ckp_paths, ckp_type = ModelRepository(
+        HfHubRepository("explosion-testing/safetensors-test", revision="main")
+    ).model_checkpoints()
     assert len(ckp_paths) == 1
+    assert ckp_paths[0].path is not None
     assert Path(ckp_paths[0].path).suffix == ".bin"
     assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
 
@@ -70,9 +72,10 @@ def test_checkpoint_type_without_safetensors():
 def test_checkpoint_type_with_safetensors():
     # Since the safetensors library is installed, we should be
     # loading from those checkpoints.
-    ckp_paths, ckp_type = get_model_checkpoint_files(
-        "explosion-testing/safetensors-test", revision="main"
+    repo = ModelRepository(
+        HfHubRepository("explosion-testing/safetensors-test", revision="main")
     )
+    ckp_paths, ckp_type = repo.model_checkpoints()
     assert len(ckp_paths) == 1
     assert Path(ckp_paths[0].path).suffix == ".safetensors"
     assert ckp_type == ModelCheckpointType.SAFE_TENSORS
@@ -83,9 +86,12 @@ def test_checkpoint_type_with_safetensors():
 @pytest.mark.skipif(not has_safetensors, reason="requires huggingface safetensors")
 def test_forced_checkpoint_type():
     with _use_model_checkpoint_type(ModelCheckpointType.PYTORCH_STATE_DICT):
-        ckp_paths, ckp_type = get_model_checkpoint_files(
-            "explosion-testing/safetensors-sharded-test", revision="main"
+        repo = ModelRepository(
+            HfHubRepository(
+                "explosion-testing/safetensors-sharded-test", revision="main"
+            )
         )
+        ckp_paths, ckp_type = repo.model_checkpoints()
         assert len(ckp_paths) == 3
         assert all(Path(p.path).suffix == ".bin" for p in ckp_paths)
         assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
@@ -93,9 +99,7 @@ def test_forced_checkpoint_type():
         encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 
     with _use_model_checkpoint_type(ModelCheckpointType.SAFE_TENSORS):
-        ckp_paths, ckp_type = get_model_checkpoint_files(
-            "explosion-testing/safetensors-sharded-test", revision="main"
-        )
+        ckp_paths, ckp_type = repo.model_checkpoints()
         assert len(ckp_paths) == 3
         assert all(Path(p.path).suffix == ".safetensors" for p in ckp_paths)
         assert ckp_type == ModelCheckpointType.SAFE_TENSORS

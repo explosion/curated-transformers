@@ -2,7 +2,7 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 from curated_tokenizers import SentencePieceProcessor
 
-from ...util.serde import ModelFile
+from ...repository.file import RepositoryFile
 from ..hf_hub import LegacyFromHFHub
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .legacy_tokenizer import AddBosEosPreEncoder
@@ -111,7 +111,7 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        model_file: ModelFile,
+        model_file: RepositoryFile,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
@@ -137,7 +137,7 @@ class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Mapping[str, ModelFile],
+        vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         return cls.from_files(model_file=vocab_files["model"])

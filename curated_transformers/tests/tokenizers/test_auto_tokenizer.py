@@ -1,6 +1,7 @@
 import pytest
 from huggingface_hub import HfFileSystem
 
+from curated_transformers.repository.fsspec import FsspecArgs
 from curated_transformers.tokenizers import AutoTokenizer
 
 _MODELS = [
@@ -24,7 +25,7 @@ def test_auto_tokenizer(model_revision):
 def test_auto_tokenizer_fsspec(model_revision):
     name, revision = model_revision
     AutoTokenizer.from_fsspec(
-        fs=HfFileSystem(), model_path=name, fsspec_args={"revision": revision}
+        fs=HfFileSystem(), model_path=name, fsspec_args=FsspecArgs(revision=revision)
     )
     AutoTokenizer.from_hf_hub(name=name, revision=revision)
 

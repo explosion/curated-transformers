@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Optional, Type, TypeVar
+from typing import Dict, Generic, Optional, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
 
 from ..layers.cache import KeyValueCache
 from ..quantization.bnb.config import BitsAndBytesConfig
-from ..util.fsspec import get_config_model_type as get_config_model_type_fsspec
-from ..util.hf import get_config_model_type
+from ..repository.fsspec import FsspecArgs, FsspecRepository
+from ..repository.hf_hub import HfHubRepository
+from ..repository.repository import ModelRepository, Repository
 from .albert import ALBERTEncoder
 from .bert import BERTEncoder
 from .camembert import CamemBERTEncoder
@@ -34,35 +35,11 @@ class AutoModel(ABC, Generic[ModelT]):
     _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {}
 
     @classmethod
-    def _resolve_model_cls_fsspec(
-        cls,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
-    ) -> Type[FromHFHub]:
-        model_type = get_config_model_type_fsspec(
-            fs, model_path, fsspec_args=fsspec_args
-        )
-        if model_type is None:
-            raise ValueError(
-                "The model type is not defined in the model configuration."
-            )
-        module_cls = cls._hf_model_type_to_curated.get(model_type)
-        if module_cls is None:
-            raise ValueError(
-                f"Unsupported model type `{model_type}` for {cls.__name__}. "
-                f"Supported model types: {tuple(cls._hf_model_type_to_curated.keys())}"
-            )
-        assert issubclass(module_cls, FromHFHub)
-        return module_cls
-
-    @classmethod
     def _resolve_model_cls(
         cls,
-        name: str,
-        revision: str,
+        repo: ModelRepository,
     ) -> Type[FromHFHub]:
-        model_type = get_config_model_type(name, revision)
+        model_type = repo.model_type()
         module_cls = cls._hf_model_type_to_curated.get(model_type)
         if module_cls is None:
             raise ValueError(
@@ -73,36 +50,15 @@ class AutoModel(ABC, Generic[ModelT]):
         return module_cls
 
     @classmethod
-    def _instantiate_model_from_fsspec(
+    def _instantiate_model(
         cls,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]],
+        repo: Repository,
         device: Optional[torch.device],
         quantization_config: Optional[BitsAndBytesConfig],
     ) -> FromHFHub:
-        module_cls = cls._resolve_model_cls_fsspec(fs, model_path)
-        module = module_cls.from_fsspec(
-            fs=fs,
-            model_path=model_path,
-            fsspec_args=fsspec_args,
-            device=device,
-            quantization_config=quantization_config,
-        )
-        return module
-
-    @classmethod
-    def _instantiate_model_from_hf_hub(
-        cls,
-        name: str,
-        revision: str,
-        device: Optional[torch.device],
-        quantization_config: Optional[BitsAndBytesConfig],
-    ) -> FromHFHub:
-        module_cls = cls._resolve_model_cls(name, revision)
-        module = module_cls.from_hf_hub(
-            name=name,
-            revision=revision,
+        module_cls = cls._resolve_model_cls(ModelRepository(repo))
+        module = module_cls.from_repo(
+            repo=repo,
             device=device,
             quantization_config=quantization_config,
         )
@@ -114,7 +70,7 @@ class AutoModel(ABC, Generic[ModelT]):
         *,
         fs: AbstractFileSystem,
         model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        fsspec_args: Optional[FsspecArgs] = None,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> ModelT:
@@ -135,10 +91,17 @@ class AutoModel(ABC, Generic[ModelT]):
         :returns:
             Module with the parameters loaded.
         """
-        raise NotImplementedError
+        return cls.from_repo(
+            repo=FsspecRepository(
+                fs,
+                model_path=model_path,
+                fsspec_args=fsspec_args,
+            ),
+            device=device,
+            quantization_config=quantization_config,
+        )
 
     @classmethod
-    @abstractmethod
     def from_hf_hub(
         cls,
         *,
@@ -161,6 +124,34 @@ class AutoModel(ABC, Generic[ModelT]):
         :returns:
             Loaded model or generator.
         """
+        return cls.from_repo(
+            repo=HfHubRepository(name=name, revision=revision),
+            device=device,
+            quantization_config=quantization_config,
+        )
+
+    @classmethod
+    @abstractmethod
+    def from_repo(
+        cls,
+        *,
+        repo: Repository,
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> ModelT:
+        """
+        Construct and load a model or a generator from a repository.
+
+        :param repository:
+            The repository to load from.
+        :param device:
+            Device on which to initialize the model.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Loaded model or generator.
+        """
+
         raise NotImplementedError
 
     @classmethod
@@ -181,8 +172,9 @@ class AutoModel(ABC, Generic[ModelT]):
         :param revision:
             Model revision.
         """
-        module_cls = cls._resolve_model_cls(name, revision)
-        module_cls.from_hf_hub_to_cache(name=name, revision=revision)
+        repo = ModelRepository(HfHubRepository(name=name, revision=revision))
+        repo.model_config()
+        repo.model_checkpoints()
 
 
 class AutoEncoder(AutoModel[EncoderModule[TransformerConfig]]):
@@ -199,33 +191,14 @@ class AutoEncoder(AutoModel[EncoderModule[TransformerConfig]]):
     }
 
     @classmethod
-    def from_fsspec(
+    def from_repo(
         cls,
         *,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        repo: Repository,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> EncoderModule[TransformerConfig]:
-        encoder = cls._instantiate_model_from_fsspec(
-            fs, model_path, fsspec_args, device, quantization_config
-        )
-        assert isinstance(encoder, EncoderModule)
-        return encoder
-
-    @classmethod
-    def from_hf_hub(
-        cls,
-        *,
-        name: str,
-        revision: str = "main",
-        device: Optional[torch.device] = None,
-        quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> EncoderModule[TransformerConfig]:
-        encoder = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config
-        )
+        encoder = cls._instantiate_model(repo, device, quantization_config)
         assert isinstance(encoder, EncoderModule)
         return encoder
 
@@ -245,33 +218,14 @@ class AutoDecoder(AutoModel[DecoderModule[TransformerConfig, KeyValueCache]]):
     }
 
     @classmethod
-    def from_fsspec(
+    def from_repo(
         cls,
         *,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        repo: Repository,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> DecoderModule[TransformerConfig, KeyValueCache]:
-        decoder = cls._instantiate_model_from_fsspec(
-            fs, model_path, fsspec_args, device, quantization_config
-        )
-        assert isinstance(decoder, DecoderModule)
-        return decoder
-
-    @classmethod
-    def from_hf_hub(
-        cls,
-        *,
-        name: str,
-        revision: str = "main",
-        device: Optional[torch.device] = None,
-        quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> DecoderModule[TransformerConfig, KeyValueCache]:
-        decoder = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config
-        )
+        decoder = cls._instantiate_model(repo, device, quantization_config)
         assert isinstance(decoder, DecoderModule)
         return decoder
 
@@ -291,32 +245,13 @@ class AutoCausalLM(AutoModel[CausalLMModule[TransformerConfig, KeyValueCache]]):
     }
 
     @classmethod
-    def from_fsspec(
+    def from_repo(
         cls,
         *,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        repo: Repository,
         device: Optional[torch.device] = None,
         quantization_config: Optional[BitsAndBytesConfig] = None,
     ) -> CausalLMModule[TransformerConfig, KeyValueCache]:
-        causal_lm = cls._instantiate_model_from_fsspec(
-            fs, model_path, fsspec_args, device, quantization_config
-        )
-        assert isinstance(causal_lm, CausalLMModule)
-        return causal_lm
-
-    @classmethod
-    def from_hf_hub(
-        cls,
-        *,
-        name: str,
-        revision: str = "main",
-        device: Optional[torch.device] = None,
-        quantization_config: Optional[BitsAndBytesConfig] = None,
-    ) -> CausalLMModule[TransformerConfig, KeyValueCache]:
-        causal_lm = cls._instantiate_model_from_hf_hub(
-            name, revision, device, quantization_config
-        )
+        causal_lm = cls._instantiate_model(repo, device, quantization_config)
         assert isinstance(causal_lm, CausalLMModule)
         return causal_lm

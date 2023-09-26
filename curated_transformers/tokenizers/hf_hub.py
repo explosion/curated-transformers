@@ -4,9 +4,10 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 from fsspec import AbstractFileSystem
 from huggingface_hub.utils import EntryNotFoundError
 
-from ..util.fsspec import get_tokenizer_config as get_tokenizer_config_fsspec
-from ..util.hf import get_tokenizer_config, hf_hub_download
-from ..util.serde import FsspecModelFile, LocalModelFile, ModelFile
+from ..repository.file import RepositoryFile
+from ..repository.fsspec import FsspecArgs, FsspecRepository
+from ..repository.hf_hub import HfHubRepository
+from ..repository.repository import Repository, TokenizerRepository
 
 SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
 
@@ -41,13 +42,12 @@ class FromHFHub(ABC):
         raise NotImplementedError
 
     @classmethod
-    @abstractmethod
     def from_fsspec(
         cls: Type[SelfFromHFHub],
         *,
         fs: AbstractFileSystem,
         model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        fsspec_args: Optional[FsspecArgs] = None,
     ) -> SelfFromHFHub:
         """
         Construct a tokenizer and load its parameters from an fsspec filesystem.
@@ -62,10 +62,11 @@ class FromHFHub(ABC):
         :returns:
             The tokenizer.
         """
-        raise NotImplementedError
+        return cls.from_repo(
+            repo=FsspecRepository(fs, model_path, fsspec_args),
+        )
 
     @classmethod
-    @abstractmethod
     def from_hf_hub(
         cls: Type[SelfFromHFHub], *, name: str, revision: str = "main"
     ) -> SelfFromHFHub:
@@ -79,7 +80,25 @@ class FromHFHub(ABC):
         :returns:
             The tokenizer.
         """
-        raise NotImplementedError
+        return cls.from_repo(
+            repo=HfHubRepository(name=name, revision=revision),
+        )
+
+    @classmethod
+    @abstractmethod
+    def from_repo(
+        cls: Type[SelfFromHFHub],
+        repo: Repository,
+    ) -> SelfFromHFHub:
+        """
+        Construct and load a tokenizer from a repository.
+
+        :param repository:
+            The repository to load from.
+        :returns:
+            Loaded tokenizer.
+        """
+        ...
 
 
 SelfLegacyFromHFHub = TypeVar("SelfLegacyFromHFHub", bound="LegacyFromHFHub")
@@ -103,7 +122,7 @@ class LegacyFromHFHub(FromHFHub):
     def _load_from_vocab_files(
         cls: Type[SelfLegacyFromHFHub],
         *,
-        vocab_files: Mapping[str, ModelFile],
+        vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> SelfLegacyFromHFHub:
         """
@@ -126,50 +145,28 @@ class LegacyFromHFHub(FromHFHub):
         name: str,
         revision: str = "main",
     ):
+        repo = TokenizerRepository(HfHubRepository(name, revision=revision))
         for _, filename in cls.vocab_files.items():
-            _ = hf_hub_download(repo_id=name, filename=filename, revision=revision)
+            _ = repo.file(filename)
 
         try:
-            _ = get_tokenizer_config(name=name, revision=revision)
+            _ = repo.tokenizer_config()
         except EntryNotFoundError:
             pass
 
     @classmethod
-    def from_fsspec(
+    def from_repo(
         cls: Type[SelfLegacyFromHFHub],
-        *,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
+        repo: Repository,
     ) -> SelfLegacyFromHFHub:
+        repo = TokenizerRepository(repo)
         vocab_files = {}
         for vocab_file, filename in cls.vocab_files.items():
-            vocab_files[vocab_file] = FsspecModelFile(
-                fs, f"{model_path}/{filename}", fsspec_args
-            )
+            vocab_files[vocab_file] = repo.file(filename)
 
-        tokenizer_config = get_tokenizer_config_fsspec(
-            fs=fs, model_path=model_path, fsspec_args=fsspec_args
-        )
-
-        return cls._load_from_vocab_files(
-            vocab_files=vocab_files, tokenizer_config=tokenizer_config
-        )
-
-    @classmethod
-    def from_hf_hub(
-        cls: Type[SelfLegacyFromHFHub], *, name: str, revision: str = "main"
-    ) -> SelfLegacyFromHFHub:
-        vocab_files = {}
-        for vocab_file, filename in cls.vocab_files.items():
-            vocab_files[vocab_file] = LocalModelFile(
-                hf_hub_download(repo_id=name, filename=filename, revision=revision)
-            )
-
-        # Try to get the tokenizer configuration.
         try:
-            tokenizer_config = get_tokenizer_config(name=name, revision=revision)
-        except EntryNotFoundError:
+            tokenizer_config = repo.tokenizer_config()
+        except OSError:
             tokenizer_config = None
 
         return cls._load_from_vocab_files(

@@ -5,23 +5,15 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union, cast
 
 import torch
-from fsspec import AbstractFileSystem
-from huggingface_hub.utils import EntryNotFoundError
+from fsspec.implementations.local import LocalFileSystem
+from huggingface_hub import Repository
 from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
 from ..layers.attention import AttentionMask
-from ..util.fsspec import get_special_tokens_map as get_special_tokens_map_fsspec
-from ..util.fsspec import get_tokenizer_config as get_tokenizer_config_fsspec
-from ..util.hf import (
-    HF_TOKENIZER_CONFIG,
-    SPECIAL_TOKENS_MAP,
-    TOKENIZER_JSON,
-    get_special_piece,
-    get_special_tokens_map,
-    get_tokenizer_config,
-    hf_hub_download,
-)
+from ..repository.fsspec import FsspecRepository
+from ..repository.hf_hub import HfHubRepository
+from ..repository.repository import Repository, TokenizerRepository
 from ._hf_compat import clean_up_decoded_string_like_hf
 from .chunks import InputChunks, MergedSpecialPieceChunk
 from .hf_hub import FromHFHub
@@ -322,23 +314,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
         :param path:
             Path to the tokenizer directory.
         """
-        tokenizer_path = path / TOKENIZER_JSON
-        config_path = path / HF_TOKENIZER_CONFIG
-        special_tokens_map_path = path / SPECIAL_TOKENS_MAP
-        hf_tokenizer = HFTokenizer.from_file(str(tokenizer_path))
-        config = None
-        if config_path.is_file():
-            with open(config_path, encoding="utf-8") as f:
-                config = json.load(f)
-        special_tokens_map = None
-        if special_tokens_map_path.is_file():
-            with open(special_tokens_map_path, encoding="utf-8") as f:
-                special_tokens_map = json.load(f)
-        return cls(
-            tokenizer=hf_tokenizer,
-            config=config,
-            special_tokens_map=special_tokens_map,
-        )
+        return cls.from_repo(FsspecRepository(LocalFileSystem(), str(path)))
 
     @classmethod
     def from_hf_hub_to_cache(
@@ -347,59 +323,35 @@ class Tokenizer(TokenizerBase, FromHFHub):
         name: str,
         revision: str = "main",
     ):
-        _ = hf_hub_download(repo_id=name, filename=TOKENIZER_JSON, revision=revision)
+        repo = TokenizerRepository(HfHubRepository(name, revision=revision))
+        repo.tokenizer_json()
 
         try:
-            _ = get_tokenizer_config(name=name, revision=revision)
-        except EntryNotFoundError:
+            _ = repo.tokenizer_config()
+        except:
             pass
         try:
-            _ = get_special_tokens_map(name=name, revision=revision)
-        except EntryNotFoundError:
+            _ = repo.special_tokens_map()
+        except:
             pass
 
     @classmethod
-    def from_fsspec(
-        cls: Type[Self],
-        *,
-        fs: AbstractFileSystem,
-        model_path: str,
-        fsspec_args: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ) -> Self:
-        tokenizer_path = f"{model_path}/tokenizer.json"
-        if not fs.exists(tokenizer_path, **kwargs):
-            raise ValueError(f"Path cannot be found: {tokenizer_path}")
-        with fs.open(tokenizer_path) as f:
-            hf_tokenizer = HFTokenizer.from_buffer(f.read())
-
-        config = get_tokenizer_config_fsspec(fs, model_path, fsspec_args)
-        special_tokens_map = get_special_tokens_map_fsspec(fs, model_path, fsspec_args)
-
-        return cls(
-            tokenizer=hf_tokenizer,
-            config=config,
-            special_tokens_map=special_tokens_map,
-        )
-
-    @classmethod
-    def from_hf_hub(cls: Type[Self], *, name: str, revision: str = "main") -> Self:
-        # We cannot directly use `HFTokenizer.from_pretrained`` to instantiate the HF
-        # tokenizer as it doesn't fetch the serialized files using the `huggingface_hub`
-        # library, which prevents us from being able to download models that require
-        # authentication.
-        tokenizer_path = hf_hub_download(
-            repo_id=name, filename=TOKENIZER_JSON, revision=revision
-        )
-        hf_tokenizer = HFTokenizer.from_file(tokenizer_path)
+    def from_repo(cls: Type[Self], repo: Repository) -> Self:
+        repo = TokenizerRepository(repo)
+        tokenizer_file = repo.tokenizer_json()
+        if tokenizer_file.path is not None:
+            hf_tokenizer = HFTokenizer.from_file(tokenizer_file.path)
+        else:
+            with tokenizer_file.open() as f:
+                hf_tokenizer = HFTokenizer.from_buffer(f.read())
 
         try:
-            config = get_tokenizer_config(name=name, revision=revision)
-        except EntryNotFoundError:
+            config = repo.tokenizer_config()
+        except OSError:
             config = None
         try:
-            special_tokens_map = get_special_tokens_map(name=name, revision=revision)
-        except EntryNotFoundError:
+            special_tokens_map = repo.special_tokens_map()
+        except:
             special_tokens_map = None
         return cls(
             tokenizer=hf_tokenizer,
@@ -439,3 +391,23 @@ class Tokenizer(TokenizerBase, FromHFHub):
 
     def piece_to_id(self, piece: str) -> Optional[int]:
         return self.tokenizer.token_to_id(piece)
+
+
+def get_special_piece(
+    special_tokens_map: Dict[str, Any], piece_name: str
+) -> Optional[str]:
+    """
+    Get a special piece from the special tokens map or the tokenizer
+    configuration.
+
+    :param special_tokens_map:
+        The special tokens map.
+    :param piece_name:
+        The piece to look up.
+    :returns:
+        The piece or ``None`` if this particular piece was not defined.
+    """
+    piece = special_tokens_map.get(piece_name)
+    if isinstance(piece, dict):
+        piece = piece.get("content")
+    return piece

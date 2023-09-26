@@ -69,6 +69,7 @@ class Repository(ABC):
         :returns:
             The path representation.
         """
+        ...
 
 
 class ModelRepository(Repository):

@@ -351,7 +351,7 @@ class Tokenizer(TokenizerBase, FromHFHub):
             config = None
         try:
             special_tokens_map = repo.special_tokens_map()
-        except:
+        except OSError:
             special_tokens_map = None
         return cls(
             tokenizer=hf_tokenizer,

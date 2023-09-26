@@ -20,16 +20,12 @@ HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
         (r"\.attention\.self\.(query|key|value)", ".mha.\\1"),
         (r"\.mha\.(query|key|value)", ".attention.self.\\1"),
     ),
-    StringTransformations.regex_sub_invertible(
-        (r".attention.output.dense", ".mha.output")
-    ),
-    StringTransformations.regex_sub_invertible(
-        (r".attention.output.LayerNorm", ".attn_residual_layer_norm")
+    StringTransformations.sub(".attention.output.dense", ".mha.output"),
+    StringTransformations.sub(
+        r".attention.output.LayerNorm", ".attn_residual_layer_norm"
     ),
     # Pointwise feed-forward layers.
-    StringTransformations.regex_sub_invertible(
-        (r".intermediate.dense", ".ffn.intermediate")
-    ),
+    StringTransformations.sub(".intermediate.dense", ".ffn.intermediate"),
     StringTransformations.regex_sub(
         (r"(\.\d+)\.output\.LayerNorm", "\\1.ffn_residual_layer_norm"),
         (r"(\.\d+)\.ffn_residual_layer_norm", "\\1.output.LayerNorm"),

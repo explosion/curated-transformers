@@ -18,19 +18,15 @@ HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
         (r"^albert_layer_groups\.", "groups."), (r"^groups\.", "albert_layer_groups.")
     ),
     # Inner layers.
-    StringTransformations.regex_sub_invertible((".albert_layers.", ".group_layers.")),
+    StringTransformations.sub(".albert_layers.", ".group_layers."),
     # Attention blocks.
-    StringTransformations.regex_sub_invertible((".attention.", ".mha.")),
-    StringTransformations.regex_sub_invertible(
-        (".mha.LayerNorm", ".attn_residual_layer_norm")
-    ),
-    StringTransformations.regex_sub_invertible((".mha.dense", ".mha.output")),
+    StringTransformations.sub(".attention.", ".mha."),
+    StringTransformations.sub(".mha.LayerNorm", ".attn_residual_layer_norm"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
     # Pointwise feed-forward layers.
-    StringTransformations.regex_sub_invertible((".ffn.", ".ffn.intermediate.")),
-    StringTransformations.regex_sub_invertible((".ffn_output.", ".ffn.output.")),
-    StringTransformations.regex_sub_invertible(
-        (".full_layer_layer_norm.", ".ffn_residual_layer_norm.")
-    ),
+    StringTransformations.sub(".ffn.", ".ffn.intermediate."),
+    StringTransformations.sub(".ffn_output.", ".ffn.output."),
+    StringTransformations.sub(".full_layer_layer_norm.", ".ffn_residual_layer_norm."),
     # Embeddings.
     StringTransformations.replace(
         "embeddings.word_embeddings.weight", "embeddings.piece_embeddings.weight"

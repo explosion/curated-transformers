@@ -75,25 +75,28 @@ class StringTransformations:
         return StringSubRegEx(forward, backward)
 
     @staticmethod
-    def regex_sub_invertible(forward: Tuple[str, str]) -> StringTransform:
+    def sub(
+        substring: str, replacement: str, *, reversible: bool = True
+    ) -> StringTransform:
         """
-        Factory method to construct a string substitution transform
-        using regular expressions whose backward transformation can
-        be automatically derived from the forward transformation.
+        Factory method to construct a string substitution transform.
 
-        :param forward:
-            Tuple where the first string is string to match
-            and the second the replacement, neither of which
-            can contain RegEx meta-characters.
+        :param substring:
+            The substring to be replaced.
+        :param replacement:
+            The replacement string.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
         """
-        return StringSubInvertible(forward)
+        return StringSub(substring, replacement, reversible=reversible)
 
     @staticmethod
     def replace(
         replacee: str, replacement: str, *, reversible: bool = True
     ) -> StringTransform:
         """
-        Factory method to construct a string replacement transform.
+        Factory method to construct a full string replacement transform.
 
         :param replacee:
             The full string to be replaced.
@@ -156,25 +159,32 @@ class StringSubRegEx(StringTransform):
         return re.sub(self.backward[0], self.backward[1], string)
 
 
-class StringSubInvertible(StringSubRegEx):
+class StringSub(StringTransform):
     """
-    A substitution whose backward transformation can be
-    automatically derived from the forward transformation.
+    Substitute a substring with another string.
     """
 
-    def __init__(self, forward: Tuple[str, str]):
+    def __init__(self, substring: str, replacement: str, *, reversible: bool = True):
         """
-        Construct a reversible (and invertible) substitution.
+        Construct a reversible substitution.
 
-        :param forward:
-            Tuple where the first string is string to match
-            and the second the replacement, neither of which
-            can contain RegEx meta-characters.
+        :param substring:
+            The substring to be replaced.
+        :param replacement:
+            The replacement string.
+        :param reversible:
+            If the reverse transformation is to
+            be performed.
         """
-        super().__init__(
-            forward=(f"{re.escape(forward[0])}", forward[1]),
-            backward=(f"{re.escape(forward[1])}", forward[0]),
-        )
+        super().__init__(reversible)
+        self.substring = substring
+        self.replacement = replacement
+
+    def _apply(self, string: str) -> str:
+        return string.replace(self.substring, self.replacement)
+
+    def _revert(self, string: str) -> str:
+        return string.replace(self.replacement, self.substring)
 
 
 class StringReplace(StringTransform):

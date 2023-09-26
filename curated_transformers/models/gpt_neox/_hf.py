@@ -11,30 +11,22 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
-    StringTransformations.regex_sub_invertible((r"gpt_neox", "decoder")),
+    StringTransformations.sub("gpt_neox", "decoder"),
     # Attention blocks.
-    StringTransformations.regex_sub_invertible((r".attention", ".mha")),
-    StringTransformations.regex_sub_invertible((r".mha.query_key_value", ".mha.input")),
-    StringTransformations.regex_sub_invertible((r".mha.dense", ".mha.output")),
+    StringTransformations.sub(".attention", ".mha"),
+    StringTransformations.sub(".mha.query_key_value", ".mha.input"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
     # Pointwise feedforward.
-    StringTransformations.regex_sub_invertible((r".mlp", ".ffn")),
-    StringTransformations.regex_sub_invertible((r".dense_h_to_4h", ".intermediate")),
-    StringTransformations.regex_sub_invertible((r".ffn.dense_4h_to_h", ".ffn.output")),
+    StringTransformations.sub(".mlp", ".ffn"),
+    StringTransformations.sub(".dense_h_to_4h", ".intermediate"),
+    StringTransformations.sub(".ffn.dense_4h_to_h", ".ffn.output"),
     # Layer norms.
-    StringTransformations.regex_sub_invertible(
-        (r".input_layernorm", ".attn_input_layer_norm")
-    ),
-    StringTransformations.regex_sub_invertible(
-        (r".post_attention_layernorm", ".ffn_input_layer_norm")
-    ),
-    StringTransformations.regex_sub_invertible(
-        (r"final_layer_norm.", "output_layer_norm.")
-    ),
+    StringTransformations.sub(".input_layernorm", ".attn_input_layer_norm"),
+    StringTransformations.sub(".post_attention_layernorm", ".ffn_input_layer_norm"),
+    StringTransformations.sub("final_layer_norm.", "output_layer_norm."),
     # Embeddings.
-    StringTransformations.regex_sub_invertible(
-        (r"embed_in.", "embeddings.piece_embeddings.")
-    ),
-    StringTransformations.regex_sub_invertible((r"embed_out.", "output_embeddings.")),
+    StringTransformations.sub("embed_in.", "embeddings.piece_embeddings."),
+    StringTransformations.sub("embed_out.", "output_embeddings."),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [

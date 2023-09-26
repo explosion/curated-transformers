@@ -12,37 +12,31 @@ EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     StringTransformations.regex_sub((r"^h\.", "layers."), (r"^layers\.", "h.")),
-    StringTransformations.regex_sub_invertible((r"decoder.h.", "decoder.layers.")),
+    StringTransformations.sub("decoder.h.", "decoder.layers."),
     # Attention blocks.
-    StringTransformations.regex_sub_invertible((r".self_attention", ".mha")),
-    StringTransformations.regex_sub_invertible((r".mha.query_key_value", ".mha.input")),
-    StringTransformations.regex_sub_invertible((r".mha.dense", ".mha.output")),
+    StringTransformations.sub(".self_attention", ".mha"),
+    StringTransformations.sub(".mha.query_key_value", ".mha.input"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
     # Pointwise feedforward.
-    StringTransformations.regex_sub_invertible((r".mlp", ".ffn")),
-    StringTransformations.regex_sub_invertible((r".dense_h_to_4h", ".intermediate")),
-    StringTransformations.regex_sub_invertible((r".ffn.dense_4h_to_h", ".ffn.output")),
+    StringTransformations.sub(".mlp", ".ffn"),
+    StringTransformations.sub(".dense_h_to_4h", ".intermediate"),
+    StringTransformations.sub(".ffn.dense_4h_to_h", ".ffn.output"),
     # Layer norms.
-    StringTransformations.regex_sub_invertible(
-        (r".input_layernorm", ".attn_layer_norm")
-    ),
-    StringTransformations.regex_sub_invertible((r".ln_attn", ".attn_input_layer_norm")),
-    StringTransformations.regex_sub_invertible(
-        (r".post_attention_layernorm", ".ffn_layer_norm")
-    ),
-    StringTransformations.regex_sub_invertible((r".ln_mlp", ".ffn_input_layer_norm")),
-    StringTransformations.regex_sub_invertible((r"ln_f.", "output_layer_norm.")),
+    StringTransformations.sub(".input_layernorm", ".attn_layer_norm"),
+    StringTransformations.sub(".ln_attn", ".attn_input_layer_norm"),
+    StringTransformations.sub(".post_attention_layernorm", ".ffn_layer_norm"),
+    StringTransformations.sub(".ln_mlp", ".ffn_input_layer_norm"),
+    StringTransformations.sub("ln_f.", "output_layer_norm."),
     # Embeddings.
-    StringTransformations.regex_sub_invertible(
-        (r"word_embeddings.", "embeddings.piece_embeddings.")
-    ),
-    StringTransformations.regex_sub_invertible((r"lm_head.", "output_embeddings.")),
+    StringTransformations.sub("word_embeddings.", "embeddings.piece_embeddings."),
+    StringTransformations.sub("lm_head.", "output_embeddings."),
 ]
 
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
     StringTransformations.remove_prefix("transformer.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
-    StringTransformations.regex_sub_invertible((r"transformer.", "decoder.")),
+    StringTransformations.sub("transformer.", "decoder."),
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callable]]] = {

@@ -6,7 +6,6 @@ import pytest
 
 from curated_transformers.tokenizers import Tokenizer
 from curated_transformers.tokenizers.chunks import InputChunks, TextChunk
-from curated_transformers.util.hf import TOKENIZER_JSON
 
 from ..compat import has_hf_transformers, transformers
 from ..utils import torch_assertclose
@@ -91,7 +90,7 @@ def test_from_dir(toy_tokenizer, toy_tokenizer_path, sample_texts):
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_from_json(toy_tokenizer_path, sample_texts):
-    with open(toy_tokenizer_path / TOKENIZER_JSON, encoding="utf-8") as f:
+    with open(toy_tokenizer_path / "tokenizer.json", encoding="utf-8") as f:
         tokenizer = Tokenizer.from_json(f.read())
     hf_tokenizer = transformers.RobertaTokenizerFast.from_pretrained(
         str(toy_tokenizer_path)

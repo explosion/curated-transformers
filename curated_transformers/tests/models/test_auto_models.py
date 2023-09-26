@@ -21,6 +21,7 @@ from curated_transformers.models.llama.causal_lm import LlamaCausalLM
 from curated_transformers.models.llama.decoder import LlamaDecoder
 from curated_transformers.models.mpt.causal_lm import MPTCausalLM
 from curated_transformers.models.mpt.decoder import MPTDecoder
+from curated_transformers.repository.fsspec import FsspecArgs
 
 
 @pytest.fixture
@@ -49,7 +50,7 @@ def test_auto_encoder_fsspec(model_encoder_map):
         # The default revision is 'main', but we pass it anyway to test
         # that the function acceps fsspec_args.
         encoder = AutoEncoder.from_fsspec(
-            fs=HfFileSystem(), model_path=name, fsspec_args={"revision": "main"}
+            fs=HfFileSystem(), model_path=name, fsspec_args=FsspecArgs(revision="main")
         )
         assert isinstance(encoder, encoder_cls)
 

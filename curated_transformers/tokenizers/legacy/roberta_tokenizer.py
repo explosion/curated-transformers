@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Type, Ty
 
 from curated_tokenizers import ByteBPEProcessor
 
-from ...util.serde import ModelFile
+from ...repository.file import RepositoryFile
 from ..hf_hub import LegacyFromHFHub
 from ..util import remove_pieces_from_sequence
 from .bbpe_tokenizer import ByteBPETokenizer
@@ -87,8 +87,8 @@ class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     def from_files(
         cls: Type[Self],
         *,
-        vocab_file: ModelFile,
-        merges_file: ModelFile,
+        vocab_file: RepositoryFile,
+        merges_file: RepositoryFile,
         bos_piece: str = "<s>",
         eos_piece: str = "</s>",
     ) -> Self:
@@ -124,7 +124,7 @@ class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
     def _load_from_vocab_files(
         cls: Type[Self],
         *,
-        vocab_files: Mapping[str, ModelFile],
+        vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
     ) -> Self:
         return cls.from_files(

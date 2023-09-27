@@ -52,12 +52,12 @@ class HFConfigKeys:
     ROTARY_EMB_BASE = HFConfigKey(
         "rotary_emb_base",
         "rotary_embedding_base",
-        conv_rotary_embedding_base,
+        lambda c: HFConfigKeys.conv_rotary_embedding_base(c),
     )
     ROTARY_PCT = HFConfigKey(
         "rotary_pct",
         "rotary_embedding_fraction",
-        conv_rotary_embedding_fraction,
+        lambda c: HFConfigKeys.conv_rotary_embedding_fraction(c),
     )
 
 

@@ -208,52 +208,62 @@ class CommonHFKeys:
     ATTENTION_PROBS_DROPOUT_PROB = HFConfigKey(
         "attention_probs_dropout_prob",
         "attention_probs_dropout_prob",
-        CommonCuratedToHFConverters.attention_dropout,
+        lambda c: CommonCuratedToHFConverters.attention_dropout(c),
     )
     EMBEDDING_SIZE = HFConfigKey(
-        "embedding_size", "embedding_width", CommonCuratedToHFConverters.embedding_width
+        "embedding_size",
+        "embedding_width",
+        lambda c: CommonCuratedToHFConverters.embedding_width(c),
     )
     HIDDEN_ACT = HFConfigKey(
         "hidden_act",
         ("activation", Activation),
-        CommonCuratedToHFConverters.activation,
+        lambda c: CommonCuratedToHFConverters.activation(c),
     )
     HIDDEN_SIZE = HFConfigKey(
-        "hidden_size", "hidden_width", CommonCuratedToHFConverters.hidden_width
+        "hidden_size",
+        "hidden_width",
+        lambda c: CommonCuratedToHFConverters.hidden_width(c),
     )
     INTERMEDIATE_SIZE = HFConfigKey(
         "intermediate_size",
         "intermediate_width",
-        CommonCuratedToHFConverters.intermediate_width,
+        lambda c: CommonCuratedToHFConverters.intermediate_width(c),
     )
     LAYER_NORM_EPS = HFConfigKey(
-        "layer_norm_eps", "layer_norm_eps", CommonCuratedToHFConverters.layer_norm_eps
+        "layer_norm_eps",
+        "layer_norm_eps",
+        lambda c: CommonCuratedToHFConverters.layer_norm_eps(c),
     )
     MAX_POSITION_EMBEDDINGS = HFConfigKey(
         "max_position_embeddings",
         "n_positions",
-        CommonCuratedToHFConverters.n_positions,
+        lambda c: CommonCuratedToHFConverters.n_positions(c),
     )
     TYPE_VOCAB_SIZE = HFConfigKey(
-        "type_vocab_size", "n_types", CommonCuratedToHFConverters.n_types
+        "type_vocab_size",
+        "n_types",
+        lambda c: CommonCuratedToHFConverters.n_types(c),
     )
     VOCAB_SIZE = HFConfigKey(
-        "vocab_size", "n_pieces", CommonCuratedToHFConverters.n_pieces
+        "vocab_size",
+        "n_pieces",
+        lambda c: CommonCuratedToHFConverters.n_pieces(c),
     )
     NUM_ATTENTION_HEADS_UNIFORM = HFConfigKey(
         "num_attention_heads",
         "n_attention_heads",
-        CommonCuratedToHFConverters.n_attention_heads_uniform,
+        lambda c: CommonCuratedToHFConverters.n_attention_heads_uniform(c),
     )
     NUM_HIDDEN_LAYERS = HFConfigKey(
         "num_hidden_layers",
         "n_hidden_layers",
-        CommonCuratedToHFConverters.n_hidden_layers,
+        lambda c: CommonCuratedToHFConverters.n_hidden_layers(c),
     )
     HIDDEN_DROPOUT_PROB = HFConfigKey(
         "hidden_dropout_prob",
         "hidden_dropout_prob",
-        CommonCuratedToHFConverters.hidden_dropout,
+        lambda c: CommonCuratedToHFConverters.hidden_dropout(c),
     )
 
 

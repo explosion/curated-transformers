@@ -71,10 +71,12 @@ class HFConfigKeys:
     INNER_GROUP_NUM = HFConfigKey(
         "inner_group_num",
         "n_layers_per_group",
-        conv_n_layers_per_group,
+        lambda c: HFConfigKeys.conv_n_layers_per_group(c),
     )
     NUM_HIDDEN_GROUPS = HFConfigKey(
-        "num_hidden_groups", "n_hidden_groups", conv_n_hidden_groups
+        "num_hidden_groups",
+        "n_hidden_groups",
+        lambda c: HFConfigKeys.conv_n_hidden_groups(c),
     )
 
 

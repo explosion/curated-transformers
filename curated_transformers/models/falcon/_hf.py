@@ -80,60 +80,62 @@ class HFConfigKeys:
 
     # Used by Refined Web Model.
     N_LAYER = HFConfigKey(
-        "n_layer", "n_hidden_layers", CommonCuratedToHFConverters.n_hidden_layers
+        "n_layer",
+        "n_hidden_layers",
+        lambda c: CommonCuratedToHFConverters.n_hidden_layers(c),
     )
     N_HEAD = HFConfigKey(
         "n_head",
         "n_query_heads",
-        conv_n_attention_query_heads,
+        lambda c: HFConfigKeys.conv_n_attention_query_heads(c),
     )
     N_HEAD_KV = HFConfigKey(
         "n_head_kv",
         "n_key_value_heads",
-        conv_n_attention_keyvalue_heads,
+        lambda c: HFConfigKeys.conv_n_attention_keyvalue_heads(c),
     )
     # Used by Falcon.
     NUM_HEAD_KV = HFConfigKey(
         "num_head_kv",
         "n_key_value_heads",
-        conv_n_attention_keyvalue_heads,
+        lambda c: HFConfigKeys.conv_n_attention_keyvalue_heads(c),
     )
     NUM_ATTENTION_HEADS = HFConfigKey(
         "num_attention_heads",
         "n_query_heads",
-        conv_n_attention_query_heads,
+        lambda c: HFConfigKeys.conv_n_attention_query_heads(c),
     )
     # Used by both.
     LAYER_NORM_EPSILON = HFConfigKey(
         "layer_norm_epsilon",
         "layer_norm_eps",
-        CommonCuratedToHFConverters.layer_norm_eps,
+        lambda c: CommonCuratedToHFConverters.layer_norm_eps(c),
     )
     BIAS = HFConfigKey(
         "bias",
         "use_bias",
-        conv_use_bias,
+        lambda c: HFConfigKeys.conv_use_bias(c),
     )
     ALIBI = HFConfigKey(
         "alibi",
         "use_alibi",
-        conv_use_alibi,
+        lambda c: HFConfigKeys.conv_use_alibi(c),
     )
     PARALLEL_ATTN = HFConfigKey(
         "parallel_attn",
         "use_parallel_attention",
-        conv_use_parallel_attention,
+        lambda c: HFConfigKeys.conv_use_parallel_attention(c),
     )
     NEW_DECODER_ARCHITECTURE = HFConfigKey(
         "new_decoder_architecture",
         "new_decoder_architecture",
-        conv_new_decoder_architecture,
+        lambda c: HFConfigKeys.conv_new_decoder_architecture(c),
     )
     # The following keys are not directly converted to kwargs.
     MULTI_QUERY = HFConfigKey(
         "multi_query",
         "multi_query",
-        conv_stub,
+        lambda c: HFConfigKeys.conv_stub(c),
     )
 
 

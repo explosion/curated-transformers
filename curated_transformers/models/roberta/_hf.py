@@ -64,7 +64,11 @@ class HFConfigKeys:
     def conv_padding_id(config: RoBERTaConfig) -> int:
         return config.padding_id
 
-    PAD_TOKEN_ID = HFConfigKey("pad_token_id", "padding_id", conv_padding_id)
+    PAD_TOKEN_ID = HFConfigKey(
+        "pad_token_id",
+        "padding_id",
+        lambda c: HFConfigKeys.conv_padding_id(c),
+    )
 
 
 HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [

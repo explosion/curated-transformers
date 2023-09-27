@@ -62,17 +62,17 @@ class HFConfigKeys:
     NUM_ATTENTION_HEADS = HFConfigKey(
         "num_attention_heads",
         "n_query_heads",
-        conv_n_attention_query_heads,
+        lambda c: HFConfigKeys.conv_n_attention_query_heads(c),
     )
     RMS_NORM_EPS = HFConfigKey(
         "rms_norm_eps",
         "rms_norm_eps",
-        CommonCuratedToHFConverters.layer_norm_eps,
+        lambda c: CommonCuratedToHFConverters.layer_norm_eps(c),
     )
     NUM_KEY_VALUE_HEADS = HFConfigKey(
         "num_key_value_heads",
         "n_key_value_heads",
-        conv_n_attention_keyvalue_heads,
+        lambda c: HFConfigKeys.conv_n_attention_keyvalue_heads(c),
     )
 
 

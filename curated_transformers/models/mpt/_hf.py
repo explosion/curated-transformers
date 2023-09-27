@@ -59,31 +59,37 @@ class HFConfigKeys:
     D_MODEL = HFConfigKey(
         "d_model",
         "hidden_width",
-        CommonCuratedToHFConverters.hidden_width,
+        lambda c: CommonCuratedToHFConverters.hidden_width(c),
     )
     EXPANSION_RATIO = HFConfigKey(
         "expansion_ratio",
         "intermediate_width_multiplier",
-        conv_intermediate_width_multiplier,
+        lambda c: HFConfigKeys.conv_intermediate_width_multiplier(c),
     )
-    MAX_SEQ_LEN = HFConfigKey("max_seq_len", "model_max_length", conv_model_max_length)
+    MAX_SEQ_LEN = HFConfigKey(
+        "max_seq_len",
+        "model_max_length",
+        lambda c: HFConfigKeys.conv_model_max_length(c),
+    )
     N_LAYERS = HFConfigKey(
-        "n_layers", "n_hidden_layers", CommonCuratedToHFConverters.n_hidden_layers
+        "n_layers",
+        "n_hidden_layers",
+        lambda c: CommonCuratedToHFConverters.n_hidden_layers(c),
     )
     N_HEADS = HFConfigKey(
         "n_heads",
         "n_attention_heads",
-        CommonCuratedToHFConverters.n_attention_heads_uniform,
+        lambda c: CommonCuratedToHFConverters.n_attention_heads_uniform(c),
     )
     NO_BIAS = HFConfigKey(
         "no_bias",
         ("use_bias", lambda v: not v),
-        conv_use_bias,
+        lambda c: HFConfigKeys.conv_use_bias(c),
     )
     LAYER_NORM_EPSILON = HFConfigKey(
         "layer_norm_epsilon",
         "layer_norm_eps",
-        CommonCuratedToHFConverters.layer_norm_eps,
+        lambda c: CommonCuratedToHFConverters.layer_norm_eps(c),
     )
 
 

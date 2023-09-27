@@ -208,6 +208,8 @@ class CommonHFKeys:
     ATTENTION_PROBS_DROPOUT_PROB = HFConfigKey(
         "attention_probs_dropout_prob",
         "attention_probs_dropout_prob",
+        # Workaround for Python 3.8 limitation that doesn't allow
+        # passing/calling static methods as without a class bound.
         lambda c: CommonCuratedToHFConverters.attention_dropout(c),
     )
     EMBEDDING_SIZE = HFConfigKey(

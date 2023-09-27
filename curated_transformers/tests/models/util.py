@@ -2,10 +2,6 @@ from enum import Enum
 from typing import Callable, Dict, List, Set, Tuple, Type, Union
 
 import torch
-from huggingface_hub import HfFileSystem
-from torch import Tensor
-from torch.nn import Module
-
 from curated_transformers.layers.attention import AttentionMask, enable_torch_sdp
 from curated_transformers.layers.cache import KeyValueCache
 from curated_transformers.models.hf_hub import FromHFHub
@@ -16,7 +12,11 @@ from curated_transformers.models.module import (
     TransformerModule,
 )
 from curated_transformers.models.output import ModelOutput, ModelOutputWithCache
-from curated_transformers.util.hf import get_model_config
+from curated_transformers.repository.hf_hub import HfHubRepository
+from curated_transformers.repository.repository import ModelRepository
+from huggingface_hub import HfFileSystem
+from torch import Tensor
+from torch.nn import Module
 
 from ..compat import transformers
 from ..utils import torch_assertclose
@@ -408,7 +408,9 @@ def assert_model_hf_serialization_roundtrip(
         assert name in hf_model_statedict.keys(), f"{name} not found in HF state dict"
         torch_assertclose(orig_model_hf_statedict[name], hf_model_statedict[name])
 
-    hf_config = get_model_config(model_name, revision=model_revision)
+    hf_config = ModelRepository(
+        HfHubRepository(name=model_name, revision=model_revision)
+    ).model_config()
     orig_model_hf_config = orig_model.config_to_hf(orig_model.config)
 
     # These won't be the same anyway, so we can skip them.

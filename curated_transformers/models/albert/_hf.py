@@ -1,25 +1,56 @@
-import re
-from types import MappingProxyType
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
-
-from torch import Tensor
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ..hf_hub import _process_hf_keys
+from ...util.string import StringTransform, StringTransformations
+from ..hf_hub.conversion import process_hf_keys
 from .config import ALBERTConfig
 
-HF_KEY_TO_CURATED_KEY = MappingProxyType(
-    {
-        "embeddings.word_embeddings.weight": "embeddings.piece_embeddings.weight",
-        "embeddings.token_type_embeddings.weight": "embeddings.type_embeddings.weight",
-        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
-        "embeddings.LayerNorm.weight": "embeddings.embed_output_layer_norm.weight",
-        "embeddings.LayerNorm.bias": "embeddings.embed_output_layer_norm.bias",
-        # Embedding projection
-        "encoder.embedding_hidden_mapping_in.weight": "embeddings.projection.weight",
-        "encoder.embedding_hidden_mapping_in.bias": "embeddings.projection.bias",
-    }
-)
+# Order-dependent.
+HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    # Prefixes.
+    StringTransformations.remove_prefix("albert.", reversible=False),
+    StringTransformations.regex_sub(
+        (r"^encoder\.(embedding_|albert_layer)", "\\1"),
+        (r"^(embedding_|albert_layer)", "encoder.\\1"),
+    ),
+    # Layer groups
+    StringTransformations.regex_sub(
+        (r"^albert_layer_groups\.", "groups."), (r"^groups\.", "albert_layer_groups.")
+    ),
+    # Inner layers.
+    StringTransformations.sub(".albert_layers.", ".group_layers."),
+    # Attention blocks.
+    StringTransformations.sub(".attention.", ".mha."),
+    StringTransformations.sub(".mha.LayerNorm", ".attn_residual_layer_norm"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
+    # Pointwise feed-forward layers.
+    StringTransformations.sub(".ffn.", ".ffn.intermediate."),
+    StringTransformations.sub(".ffn_output.", ".ffn.output."),
+    StringTransformations.sub(".full_layer_layer_norm.", ".ffn_residual_layer_norm."),
+    # Embeddings.
+    StringTransformations.replace(
+        "embeddings.word_embeddings.weight", "embeddings.piece_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.token_type_embeddings.weight", "embeddings.type_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.position_embeddings.weight", "embeddings.position_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.LayerNorm.weight", "embeddings.embed_output_layer_norm.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.LayerNorm.bias", "embeddings.embed_output_layer_norm.bias"
+    ),
+    # Embedding projection.
+    StringTransformations.replace(
+        "embedding_hidden_mapping_in.weight", "embeddings.projection.weight"
+    ),
+    StringTransformations.replace(
+        "embedding_hidden_mapping_in.bias", "embeddings.projection.bias"
+    ),
+]
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "attention_probs_dropout_prob": "attention_probs_dropout_prob",
@@ -40,55 +71,5 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 
 
 def convert_hf_config(hf_config: Any) -> ALBERTConfig:
-    kwargs = _process_hf_keys("ALBERT", hf_config, HF_CONFIG_KEY_MAPPING)
+    kwargs = process_hf_keys("ALBERT", hf_config, HF_CONFIG_KEY_MAPPING)
     return ALBERTConfig(model_max_length=hf_config["max_position_embeddings"], **kwargs)
-
-
-def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    # Strip the `albert` prefix from ALBERT model parameters.
-    stripped_params = {re.sub(r"^albert\.", "", k): v for k, v in params.items()}
-
-    # The ALBERT encoder parameters have the following form:
-    #
-    # encoder.albert_layer_groups.{hidden_group}.albert_layers.{inner_layer}.{param_name}
-    #
-    # hidden_group is in [0, n_hidden_group)
-    # inner_layer is in [0, n_layers_per_group)
-
-    out = {}
-    for name, parameter in stripped_params.items():
-        if "encoder.albert_layer" not in name:
-            continue
-
-        # TODO: Make these substitutions less ugly.
-
-        # Remove the prefix and rename.
-        name = re.sub(r"^encoder\.", "", name)
-
-        # Layer groups
-        name = re.sub(r"^albert_layer_groups\.", "groups.", name)
-
-        # Inner layers.
-        name = re.sub(r"\.albert_layers\.", ".group_layers.", name)
-
-        # Attention blocks.
-        name = re.sub(r"\.attention\.", ".mha.", name)
-        name = re.sub(r"\.mha\.LayerNorm", r".attn_residual_layer_norm", name)
-        name = re.sub(r"\.mha\.dense\.", r".mha.output.", name)
-
-        # Pointwise feed-forward layers.
-        name = re.sub(r"\.ffn\.", r".ffn.intermediate.", name)
-        name = re.sub(r"\.ffn_output\.", r".ffn.output.", name)
-        name = re.sub(
-            r"\.full_layer_layer_norm\.",
-            r".ffn_residual_layer_norm.",
-            name,
-        )
-
-        out[name] = parameter
-
-    for hf_name, curated_name in HF_KEY_TO_CURATED_KEY.items():
-        if hf_name in stripped_params:
-            out[curated_name] = stripped_params[hf_name]
-
-    return out

@@ -1,15 +1,43 @@
-import re
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
-from torch import Tensor
-
-from ..hf_hub import _process_hf_keys
-from ..module import DecoderModule
+from ...util.string import StringTransform, StringTransformations
+from ..hf_hub.conversion import process_hf_keys
 from .config import FalconConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
+
+
+# Order-dependent.
+COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    StringTransformations.regex_sub((r"^h\.", "layers."), (r"^layers\.", "h.")),
+    StringTransformations.sub("decoder.h.", "decoder.layers."),
+    # Attention blocks.
+    StringTransformations.sub(".self_attention", ".mha"),
+    StringTransformations.sub(".mha.query_key_value", ".mha.input"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
+    # Pointwise feedforward.
+    StringTransformations.sub(".mlp", ".ffn"),
+    StringTransformations.sub(".dense_h_to_4h", ".intermediate"),
+    StringTransformations.sub(".ffn.dense_4h_to_h", ".ffn.output"),
+    # Layer norms.
+    StringTransformations.sub(".input_layernorm", ".attn_layer_norm"),
+    StringTransformations.sub(".ln_attn", ".attn_input_layer_norm"),
+    StringTransformations.sub(".post_attention_layernorm", ".ffn_layer_norm"),
+    StringTransformations.sub(".ln_mlp", ".ffn_input_layer_norm"),
+    StringTransformations.sub("ln_f.", "output_layer_norm."),
+    # Embeddings.
+    StringTransformations.sub("word_embeddings.", "embeddings.piece_embeddings."),
+    StringTransformations.sub("lm_head.", "output_embeddings."),
+]
+
+DECODER_HF_PARAM_KEY_TRANSFORMS = [
+    StringTransformations.remove_prefix("transformer.", reversible=False)
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
+CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
+    StringTransformations.sub("transformer.", "decoder."),
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_size": "hidden_width",
@@ -45,7 +73,7 @@ def convert_hf_config(hf_config: Any) -> FalconConfig:
 
 
 def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
-    kwargs = _process_hf_keys(
+    kwargs = process_hf_keys(
         "Falcon", hf_config, HF_CONFIG_KEY_MAPPING_REFINED_WEB_MODEL, EXTRA_KWARG_KEYS
     )
 
@@ -79,7 +107,7 @@ def _convert_hf_config_refined_web_model(hf_config: Any) -> FalconConfig:
 
 
 def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
-    kwargs = _process_hf_keys(
+    kwargs = process_hf_keys(
         "Falcon", hf_config, HF_CONFIG_KEY_MAPPING_FALCON, EXTRA_KWARG_KEYS
     )
 
@@ -104,53 +132,3 @@ def _convert_hf_config_falcon(hf_config: Any) -> FalconConfig:
         rotary_embedding_fraction=1.0,
         **kwargs,
     )
-
-
-def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    """
-    Convert state dict from HF paramater naming to ours.
-    The function is insensitive to prefixes, to allow loading
-    both the decoder and the full LM.
-    """
-    if issubclass(cls, DecoderModule):
-        stripped_params = {
-            re.sub(r"^transformer\.", "", k): v for k, v in params.items()
-        }
-    else:
-        stripped_params = {
-            re.sub(r"^transformer\.", "decoder.", k): v for k, v in params.items()
-        }
-
-    out = {}
-    for name, parameter in stripped_params.items():
-        # These parameters are all created on-the-fly.
-        if "rotary_emb" in name or "attention.bias" in name or "masked_bias" in name:
-            continue
-
-        name = re.sub(r"^h\.", "layers.", name)
-        name = re.sub(r"decoder\.h\.", "decoder.layers.", name)
-
-        # Attention
-        name = re.sub(r"\.self_attention", r".mha", name)
-        name = re.sub(r"\.query_key_value", r".input", name)
-        name = re.sub(r"\.mha\.dense", r".mha.output", name)
-
-        # Pointwise feedforward
-        name = re.sub(r"\.mlp", r".ffn", name)
-        name = re.sub(r"\.dense_h_to_4h", r".intermediate", name)
-        name = re.sub(r"\.dense_4h_to_h", r".output", name)
-
-        # Layer norms
-        name = re.sub(r"\.input_layernorm", r".attn_layer_norm", name)
-        name = re.sub(r"\.ln_attn", r".attn_input_layer_norm", name)
-        name = re.sub(r"\.post_attention_layernorm", r".ffn_layer_norm", name)
-        name = re.sub(r"\.ln_mlp", r".ffn_input_layer_norm", name)
-        name = re.sub(r"ln_f\.", r"output_layer_norm.", name)
-
-        # Embeddings
-        name = re.sub(r"word_embeddings\.", r"embeddings.piece_embeddings.", name)
-        name = re.sub(r"lm_head\.", r"output_embeddings.", name)
-
-        out[name] = parameter
-
-    return out

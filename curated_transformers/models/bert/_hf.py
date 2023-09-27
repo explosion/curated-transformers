@@ -1,23 +1,59 @@
-import re
-from types import MappingProxyType
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
-
-from torch import Tensor
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ..hf_hub import _process_hf_keys
+from ...util.string import StringTransform, StringTransformations
+from ..hf_hub.conversion import process_hf_keys
 from .config import BERTConfig
 
-HF_KEY_TO_CURATED_KEY = MappingProxyType(
-    {
-        "embeddings.word_embeddings.weight": "embeddings.piece_embeddings.weight",
-        "embeddings.token_type_embeddings.weight": "embeddings.type_embeddings.weight",
-        "embeddings.position_embeddings.weight": "embeddings.position_embeddings.weight",
-        "embeddings.LayerNorm.weight": "embeddings.embed_output_layer_norm.weight",
-        "embeddings.LayerNorm.bias": "embeddings.embed_output_layer_norm.bias",
-    }
-)
-
+# Order-dependent.
+HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    # Old HF parameter names (one-way transforms).
+    StringTransformations.regex_sub((r"\.gamma$", ".weight"), backward=None),
+    StringTransformations.regex_sub((r"\.beta$", ".bias"), backward=None),
+    # Prefixes.
+    StringTransformations.remove_prefix("bert.", reversible=False),
+    StringTransformations.regex_sub(
+        (r"^encoder\.(layer\.)", "\\1"),
+        (r"^(layer\.)", "encoder.\\1"),
+    ),
+    # Layers.
+    StringTransformations.regex_sub((r"^layer", "layers"), (r"^layers", "layer")),
+    # Attention blocks.
+    StringTransformations.regex_sub(
+        (r"\.attention\.self\.(query|key|value)", ".mha.\\1"),
+        (r"\.mha\.(query|key|value)", ".attention.self.\\1"),
+    ),
+    StringTransformations.sub(".attention.output.dense", ".mha.output"),
+    StringTransformations.sub(
+        r".attention.output.LayerNorm", ".attn_residual_layer_norm"
+    ),
+    # Pointwise feed-forward layers.
+    StringTransformations.sub(".intermediate.dense", ".ffn.intermediate"),
+    StringTransformations.regex_sub(
+        (r"(\.\d+)\.output\.LayerNorm", "\\1.ffn_residual_layer_norm"),
+        (r"(\.\d+)\.ffn_residual_layer_norm", "\\1.output.LayerNorm"),
+    ),
+    StringTransformations.regex_sub(
+        (r"(\.\d+)\.output\.dense", "\\1.ffn.output"),
+        (r"(\.\d+)\.ffn\.output", "\\1.output.dense"),
+    ),
+    # Embeddings.
+    StringTransformations.replace(
+        "embeddings.word_embeddings.weight", "embeddings.piece_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.token_type_embeddings.weight", "embeddings.type_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.position_embeddings.weight", "embeddings.position_embeddings.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.LayerNorm.weight", "embeddings.embed_output_layer_norm.weight"
+    ),
+    StringTransformations.replace(
+        "embeddings.LayerNorm.bias", "embeddings.embed_output_layer_norm.bias"
+    ),
+]
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "attention_probs_dropout_prob": "attention_probs_dropout_prob",
@@ -35,61 +71,10 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 
 
 def convert_hf_config(hf_config: Any) -> BERTConfig:
-    kwargs = _process_hf_keys("BERT", hf_config, HF_CONFIG_KEY_MAPPING)
+    kwargs = process_hf_keys("BERT", hf_config, HF_CONFIG_KEY_MAPPING)
 
     return BERTConfig(
         embedding_width=hf_config["hidden_size"],
         model_max_length=hf_config["max_position_embeddings"],
         **kwargs,
     )
-
-
-def convert_hf_state_dict(params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    out = {}
-
-    renamed_params = _rename_old_hf_names(params)
-
-    # Strip the `bert` prefix from BERT model parameters.
-    stripped_params = {re.sub(r"^bert\.", "", k): v for k, v in renamed_params.items()}
-
-    for name, parameter in stripped_params.items():
-        if "encoder.layer." not in name:
-            continue
-
-        # TODO: Make these substitutions less ugly.
-
-        # Remove the prefix and rename the internal 'layers' variable.
-        name = re.sub(r"^encoder\.", "", name)
-        name = re.sub(r"^layer", "layers", name)
-
-        # The HF model has one more level of indirection for the output layers in their
-        # attention heads and the feed-forward network layers.
-        name = re.sub(r"\.attention\.self\.(query|key|value)", r".mha.\1", name)
-        name = re.sub(r"\.attention\.(output)\.dense", r".mha.\1", name)
-        name = re.sub(
-            r"\.attention\.output\.LayerNorm", r".attn_residual_layer_norm", name
-        )
-        name = re.sub(r"\.(intermediate)\.dense", r".ffn.\1", name)
-        name = re.sub(
-            r"(\.\d+)\.output\.LayerNorm", r"\1.ffn_residual_layer_norm", name
-        )
-        name = re.sub(r"(\.\d+)\.(output)\.dense", r"\1.ffn.\2", name)
-
-        out[name] = parameter
-
-    for hf_name, curated_name in HF_KEY_TO_CURATED_KEY.items():
-        if hf_name in stripped_params:
-            out[curated_name] = stripped_params[hf_name]
-
-    return out
-
-
-def _rename_old_hf_names(
-    params: Mapping[str, Tensor],
-) -> Mapping[str, Tensor]:
-    out = {}
-    for name, parameter in params.items():
-        name = re.sub(r"\.gamma$", ".weight", name)
-        name = re.sub(r"\.beta$", ".bias", name)
-        out[name] = parameter
-    return out

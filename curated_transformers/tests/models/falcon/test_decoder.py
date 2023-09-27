@@ -7,7 +7,11 @@ from curated_transformers.models.falcon.decoder import FalconDecoder
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
 from ...utils import torch_assertclose
-from ..util import JITMethod, assert_decoder_output_equals_hf
+from ..util import (
+    JITMethod,
+    assert_decoder_output_equals_hf,
+    assert_model_hf_serialization_roundtrip,
+)
 
 N_PIECES = 1024
 
@@ -142,3 +146,17 @@ def test_decoder_with_cache(torch_device, model_revision):
         ).last_hidden_layer_state
 
     torch_assertclose(Y, Y_no_cache[:, 10:, :])
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+@pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
+def test_decoder_hf_serializtion_roundtrip(torch_device, model_revision):
+    model, revision = model_revision
+    assert_model_hf_serialization_roundtrip(
+        FalconDecoder,
+        model,
+        torch_device,
+        model_revision=revision,
+        trust_remote_code=True,
+    )

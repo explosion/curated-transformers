@@ -1,16 +1,38 @@
-import re
-from typing import Any, Callable, Dict, Mapping, Tuple, Union
-
-from torch import Tensor
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from ...layers.activations import Activation
-from ..hf_hub import _process_hf_keys
-from ..module import DecoderModule
+from ...util.string import StringTransform, StringTransformations
+from ..hf_hub.conversion import process_hf_keys
 from .config import GPTNeoXConfig
 
 ATTENTION_DROPOUT = "attention_probs_dropout_prob"
 HIDDEN_DROPOUT = "hidden_dropout_prob"
 EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
+
+# Order-dependent.
+COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
+    StringTransformations.sub("gpt_neox", "decoder"),
+    # Attention blocks.
+    StringTransformations.sub(".attention", ".mha"),
+    StringTransformations.sub(".mha.query_key_value", ".mha.input"),
+    StringTransformations.sub(".mha.dense", ".mha.output"),
+    # Pointwise feedforward.
+    StringTransformations.sub(".mlp", ".ffn"),
+    StringTransformations.sub(".dense_h_to_4h", ".intermediate"),
+    StringTransformations.sub(".ffn.dense_4h_to_h", ".ffn.output"),
+    # Layer norms.
+    StringTransformations.sub(".input_layernorm", ".attn_input_layer_norm"),
+    StringTransformations.sub(".post_attention_layernorm", ".ffn_input_layer_norm"),
+    StringTransformations.sub("final_layer_norm.", "output_layer_norm."),
+    # Embeddings.
+    StringTransformations.sub("embed_in.", "embeddings.piece_embeddings."),
+    StringTransformations.sub("embed_out.", "output_embeddings."),
+]
+
+DECODER_HF_PARAM_KEY_TRANSFORMS = [
+    StringTransformations.remove_prefix("gpt_neox.", reversible=False)
+] + COMMON_HF_PARAM_KEY_TRANSFORMS
+CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 
 HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
     "hidden_act": ("activation", Activation),
@@ -27,57 +49,10 @@ HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
 
 
 def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
-    kwargs = _process_hf_keys(
+    kwargs = process_hf_keys(
         "GPT-NeoX", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
     )
     return GPTNeoXConfig(
         model_max_length=hf_config["max_position_embeddings"],
         **kwargs,
     )
-
-
-def convert_hf_state_dict(cls, params: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
-    """Convert state dict from HF paramater naming to ours.
-    The function is insensitive to prefixes, to allow loading
-    both the decoder and the full LM."""
-    if issubclass(cls, DecoderModule):
-        stripped_params = {
-            re.sub(r"^gpt_neox\.", "", k): v
-            for k, v in params.items()
-            # The decoder does not the output embeddings, avoid unexpected key.
-            if k != "embed_out.weight"
-        }
-    else:
-        # Rewrap as dict if necessay to make MyPy happy.
-        stripped_params = dict(params)
-
-    out = {}
-    for name, parameter in stripped_params.items():
-        # These parameters are all created on-the-fly.
-        if "rotary_emb" in name or "attention.bias" in name or "masked_bias" in name:
-            continue
-
-        name = name.replace("gpt_neox", "decoder")
-
-        # Attention
-        name = re.sub(r"\.attention", r".mha", name)
-        name = re.sub(r"\.query_key_value", r".input", name)
-        name = re.sub(r"\.mha\.dense", r".mha.output", name)
-
-        # Pointwise feedforward
-        name = re.sub(r"\.mlp", r".ffn", name)
-        name = re.sub(r"\.dense_h_to_4h", r".intermediate", name)
-        name = re.sub(r"\.dense_4h_to_h", r".output", name)
-
-        # Layer norms
-        name = re.sub(r"\.input_layernorm", r".attn_input_layer_norm", name)
-        name = re.sub(r"\.post_attention_layernorm", r".ffn_input_layer_norm", name)
-        name = re.sub(r"final_layer_norm\.", r"output_layer_norm.", name)
-
-        # Embeddings
-        name = re.sub(r"embed_in\.", r"embeddings.piece_embeddings.", name)
-        name = re.sub(r"embed_out\.", r"output_embeddings.", name)
-
-        out[name] = parameter
-
-    return out

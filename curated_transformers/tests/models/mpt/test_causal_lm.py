@@ -4,7 +4,11 @@ from curated_transformers.models.mpt.causal_lm import MPTCausalLM
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
-from ..util import JITMethod, assert_causal_lm_output_equals_hf
+from ..util import (
+    JITMethod,
+    assert_causal_lm_output_equals_hf,
+    assert_model_hf_serialization_roundtrip,
+)
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
@@ -45,4 +49,12 @@ def test_causal_lm_with_torchscript_trace(torch_device, with_torch_sdp):
         torch_device,
         jit_method=JITMethod.TorchScriptTrace,
         with_torch_sdp=with_torch_sdp,
+    )
+
+
+@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
+@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
+def test_causal_lm_hf_serializtion_roundtrip(torch_device):
+    assert_model_hf_serialization_roundtrip(
+        MPTCausalLM, "explosion-testing/mpt-test", torch_device
     )

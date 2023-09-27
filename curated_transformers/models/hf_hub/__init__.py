@@ -1,0 +1,1 @@
+from .mixin import FromHFHub

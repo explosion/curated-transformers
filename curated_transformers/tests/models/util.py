@@ -364,3 +364,44 @@ def assert_model_config(model: TransformerModule, model_output: Tensor):
 
     hidden_width = model_output.size(-1)
     assert config.layer.feedforward.hidden_width == hidden_width
+
+
+def assert_model_hf_serialization_roundtrip(
+    model_class: Type[FromHFHub],
+    model_name: str,
+    torch_device: torch.device,
+    *,
+    model_revision: str = "main",
+    atol: float = 1e-5,
+    rtol: float = 1e-5,
+    trust_remote_code: bool = False,
+):
+    orig_model = model_class.from_hf_hub(
+        name=model_name,
+        revision=model_revision,
+        device=torch_device,
+    )
+    orig_model.eval()
+
+    for _, param in orig_model.state_dict().items():
+        assert param.device == torch_device
+
+    auto_cls = (
+        transformers.AutoModelForCausalLM
+        if isinstance(orig_model, CausalLMModule)
+        else transformers.AutoModel
+    )
+
+    hf_model = auto_cls.from_pretrained(
+        model_name,
+        revision=model_revision,
+        trust_remote_code=trust_remote_code,
+    )
+    hf_model.to(torch_device)
+    hf_model.eval()
+
+    hf_model_statedict = hf_model.state_dict()
+    orig_model_hf_statedict = orig_model.state_dict_to_hf(orig_model.state_dict())
+    for name in orig_model_hf_statedict.keys():
+        assert name in hf_model_statedict.keys(), f"{name} not found in HF state dict"
+        torch_assertclose(orig_model_hf_statedict[name], hf_model_statedict[name])

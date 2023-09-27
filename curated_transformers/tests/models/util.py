@@ -2,6 +2,10 @@ from enum import Enum
 from typing import Callable, Dict, List, Set, Tuple, Type, Union
 
 import torch
+from huggingface_hub import HfFileSystem
+from torch import Tensor
+from torch.nn import Module
+
 from curated_transformers.layers.attention import AttentionMask, enable_torch_sdp
 from curated_transformers.layers.cache import KeyValueCache
 from curated_transformers.models.hf_hub import FromHFHub
@@ -14,9 +18,6 @@ from curated_transformers.models.module import (
 from curated_transformers.models.output import ModelOutput, ModelOutputWithCache
 from curated_transformers.repository.hf_hub import HfHubRepository
 from curated_transformers.repository.repository import ModelRepository
-from huggingface_hub import HfFileSystem
-from torch import Tensor
-from torch.nn import Module
 
 from ..compat import transformers
 from ..utils import torch_assertclose

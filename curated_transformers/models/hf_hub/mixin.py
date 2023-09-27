@@ -198,22 +198,6 @@ class FromHFHub(ABC, Generic[ConfigT]):
             quantization_config=quantization_config,
         )
 
-    @abstractmethod
-    def to(
-        self,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
-        non_blocking: bool = False,
-    ):
-        """
-        Moves and/or casts the parameters and buffers.
-
-        This method is automatically implemented by also deriving from
-        ``torch.nn.Module``. This mixin does not derive from ``Module`` in
-        order to be an abstract base class.
-        """
-        ...
-
     @classmethod
     def from_repo(
         cls: Type[Self],
@@ -237,6 +221,7 @@ class FromHFHub(ABC, Generic[ConfigT]):
         model_repo = ModelRepository(repo)
         config = model_repo.model_config()
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
+        assert isinstance(model, Module)
 
         # Convert the model to the expected dtype.
         assert isinstance(model, TransformerModule)

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Generic, List, Mapping, Optional, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
 from torch import Tensor
+from torch.nn import Module
 
 from ...quantization import prepare_module_for_quantization
 from ...quantization.bnb.config import BitsAndBytesConfig
@@ -11,13 +12,13 @@ from ...repository.fsspec import FsspecArgs, FsspecRepository
 from ...repository.hf_hub import HfHubRepository
 from ...repository.repository import ModelRepository, Repository
 from ...util.serde.load import load_model_from_checkpoints
-from ..module import TransformerModule
+from ..module import ConfigT, TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FromHFHub")
 
 
-class FromHFHub(ABC):
+class FromHFHub(ABC, Generic[ConfigT]):
     """
     Mixin class for downloading models from Hugging Face Hub.
 
@@ -60,6 +61,35 @@ class FromHFHub(ABC):
             The state dict to convert.
         :returns:
             The converted state dict.
+        """
+        ...
+
+    @classmethod
+    @abstractmethod
+    def config_from_hf(cls, hf_config: Mapping[str, Any]) -> ConfigT:
+        """
+        Convert a Hugging Face model configuration to the
+        module's configuration.
+
+        :param hf_config:
+            The Hugging Face model configuration.
+        :returns:
+            The converted Curated Transformer
+            configuration.
+        """
+        ...
+
+    @classmethod
+    @abstractmethod
+    def config_to_hf(cls, curated_config: ConfigT) -> Mapping[str, Any]:
+        """
+        Convert the module's  configuration to the a
+        Hugging Face model configuration.
+
+        :param curated_config:
+            The Curated Transformer model configuration.
+        :returns:
+            The converted Hugging Face configuration.
         """
         ...
 

@@ -8,7 +8,7 @@ from ...quantization import Quantizable
 from ..hf_hub import FromHFHub
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerCausalLM
-from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, convert_hf_config
+from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
 from .config import GPTNeoXConfig
 from .decoder import GPTNeoXDecoder
 
@@ -16,7 +16,9 @@ from .decoder import GPTNeoXDecoder
 Self = TypeVar("Self", bound="GPTNeoXCausalLM")
 
 
-class GPTNeoXCausalLM(TransformerCausalLM[GPTNeoXConfig], FromHFHub, Quantizable):
+class GPTNeoXCausalLM(
+    TransformerCausalLM[GPTNeoXConfig], FromHFHub[GPTNeoXConfig], Quantizable
+):
     """
     GPT-NeoX (`Black et al., 2022`_) causal language model.
 
@@ -59,13 +61,21 @@ class GPTNeoXCausalLM(TransformerCausalLM[GPTNeoXConfig], FromHFHub, Quantizable
         return state_dict_to_hf(params, CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
+    def config_from_hf(cls, hf_config: Mapping[str, Any]) -> GPTNeoXConfig:
+        return _config_from_hf(hf_config)
+
+    @classmethod
+    def config_to_hf(cls, curated_config: GPTNeoXConfig) -> Mapping[str, Any]:
+        return _config_to_hf(cls, curated_config)
+
+    @classmethod
     def from_hf_config(
         cls: Type[Self],
         *,
         hf_config: Any,
         device: Optional[torch.device] = None,
     ) -> Self:
-        config = convert_hf_config(hf_config)
+        config = cls.config_from_hf(hf_config)
         return cls(config, device=device)
 
     @classmethod

@@ -1,6 +1,7 @@
 import pytest
 
 from curated_transformers.models.gpt_neox.causal_lm import GPTNeoXCausalLM
+from curated_transformers.models.hf_hub.conversion import CommonHFKeys
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
@@ -59,4 +60,8 @@ def test_causal_lm_hf_serializtion_roundtrip(torch_device):
         GPTNeoXCausalLM,
         "trl-internal-testing/tiny-random-GPTNeoXForCausalLM",
         torch_device,
+        optional_hf_config_keys={
+            CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB.name,
+            CommonHFKeys.HIDDEN_DROPOUT_PROB.name,
+        },
     )

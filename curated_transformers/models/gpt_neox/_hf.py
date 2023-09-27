@@ -1,13 +1,16 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-from ...layers.activations import Activation
 from ...util.string import StringTransform, StringTransformations
-from ..hf_hub.conversion import process_hf_keys
+from ..hf_hub.conversion import (
+    CommonHFKeys,
+    HFConfigKey,
+    HFConfigKeyDefault,
+    HFSpecificConfig,
+    config_from_hf,
+    config_to_hf,
+)
+from ..module import DecoderModule
 from .config import GPTNeoXConfig
-
-ATTENTION_DROPOUT = "attention_probs_dropout_prob"
-HIDDEN_DROPOUT = "hidden_dropout_prob"
-EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
@@ -34,25 +37,65 @@ DECODER_HF_PARAM_KEY_TRANSFORMS = [
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 
-HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
-    "hidden_act": ("activation", Activation),
-    "hidden_size": "hidden_width",
-    "intermediate_size": "intermediate_width",
-    "layer_norm_eps": "layer_norm_eps",
-    "max_position_embeddings": "n_positions",
-    "num_attention_heads": "n_attention_heads",
-    "num_hidden_layers": "n_hidden_layers",
-    "rotary_emb_base": "rotary_embedding_base",
-    "rotary_pct": "rotary_embedding_fraction",
-    "vocab_size": "n_pieces",
-}
 
+class HFConfigKeys:
+    @staticmethod
+    def conv_rotary_embedding_base(config: GPTNeoXConfig) -> int:
+        assert config.layer.attention.rotary_embeddings is not None
+        return config.layer.attention.rotary_embeddings.rotary_base
 
-def convert_hf_config(hf_config: Any) -> GPTNeoXConfig:
-    kwargs = process_hf_keys(
-        "GPT-NeoX", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS
+    @staticmethod
+    def conv_rotary_embedding_fraction(config: GPTNeoXConfig) -> float:
+        assert config.layer.attention.rotary_embeddings is not None
+        return config.layer.attention.rotary_embeddings.rotary_fraction
+
+    ROTARY_EMB_BASE = HFConfigKey(
+        "rotary_emb_base",
+        "rotary_embedding_base",
+        conv_rotary_embedding_base,
     )
+    ROTARY_PCT = HFConfigKey(
+        "rotary_pct",
+        "rotary_embedding_fraction",
+        conv_rotary_embedding_fraction,
+    )
+
+
+HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [
+    (CommonHFKeys.HIDDEN_ACT, None),
+    (CommonHFKeys.HIDDEN_SIZE, None),
+    (CommonHFKeys.INTERMEDIATE_SIZE, None),
+    (CommonHFKeys.LAYER_NORM_EPS, None),
+    (CommonHFKeys.VOCAB_SIZE, None),
+    (CommonHFKeys.MAX_POSITION_EMBEDDINGS, None),
+    (CommonHFKeys.NUM_HIDDEN_LAYERS, None),
+    (CommonHFKeys.NUM_ATTENTION_HEADS_UNIFORM, None),
+    (HFConfigKeys.ROTARY_EMB_BASE, None),
+    (HFConfigKeys.ROTARY_PCT, None),
+    (CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB, HFConfigKeyDefault(0.0)),
+    (CommonHFKeys.HIDDEN_DROPOUT_PROB, HFConfigKeyDefault(0.0)),
+]
+
+HF_SPECIFIC_CONFIG_DECODER = HFSpecificConfig(
+    architectures=["GPTNeoXModel"], model_type="gpt_neox"
+)
+HF_SPECIFIC_CONFIG_CAUSAL_LM = HFSpecificConfig(
+    architectures=["GPTNeoXForCausalLM"], model_type="gpt_neox"
+)
+
+
+def _config_from_hf(hf_config: Mapping[str, Any]) -> GPTNeoXConfig:
+    kwargs = config_from_hf("GPT-NeoX", hf_config, HF_CONFIG_KEYS)
+
     return GPTNeoXConfig(
-        model_max_length=hf_config["max_position_embeddings"],
+        model_max_length=CommonHFKeys.MAX_POSITION_EMBEDDINGS.get_kwarg(kwargs),
         **kwargs,
     )
+
+
+def _config_to_hf(cls, curated_config: GPTNeoXConfig) -> Dict[str, Any]:
+    out = config_to_hf(curated_config, [k for k, _ in HF_CONFIG_KEYS])
+    if issubclass(cls, DecoderModule):
+        return HF_SPECIFIC_CONFIG_DECODER.merge(out)
+    else:
+        return HF_SPECIFIC_CONFIG_CAUSAL_LM.merge(out)

@@ -1,12 +1,17 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from ...util.string import StringTransform, StringTransformations
-from ..hf_hub.conversion import process_hf_keys
+from ..hf_hub.conversion import (
+    CommonCuratedToHFConverters,
+    CommonHFKeys,
+    HFConfigKey,
+    HFConfigKeyDefault,
+    HFSpecificConfig,
+    config_from_hf,
+    config_to_hf,
+)
+from ..module import DecoderModule
 from .config import MPTConfig
-
-ATTENTION_DROPOUT = "attention_probs_dropout_prob"
-HIDDEN_DROPOUT = "hidden_dropout_prob"
-EXTRA_KWARG_KEYS = [ATTENTION_DROPOUT, HIDDEN_DROPOUT]
 
 # Order-dependent.
 COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
@@ -27,40 +32,90 @@ COMMON_HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     StringTransformations.sub("wte.", "embeddings.piece_embeddings."),
 ]
 
-
 DECODER_HF_PARAM_KEY_TRANSFORMS = [
     StringTransformations.remove_prefix("transformer.", reversible=False)
 ] + COMMON_HF_PARAM_KEY_TRANSFORMS
 CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = COMMON_HF_PARAM_KEY_TRANSFORMS
 
-HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
-    "d_model": "hidden_width",
-    "expansion_ratio": "intermediate_width_multiplier",
-    "max_seq_len": "model_max_length",
-    "n_layers": "n_hidden_layers",
-    "n_heads": "n_attention_heads",
-    "vocab_size": "n_pieces",
-}
 
+class HFConfigKeys:
+    @staticmethod
+    def conv_intermediate_width_multiplier(config: MPTConfig) -> float:
+        return (
+            config.layer.feedforward.intermediate_width
+            / config.layer.feedforward.hidden_width
+        )
 
-def convert_hf_config(hf_config: Any) -> MPTConfig:
-    kwargs = process_hf_keys("MPT", hf_config, HF_CONFIG_KEY_MAPPING, EXTRA_KWARG_KEYS)
+    @staticmethod
+    def conv_model_max_length(config: MPTConfig) -> int:
+        return config.model_max_length
 
-    no_bias = hf_config.get("no_bias")
-    if no_bias is None:
-        raise ValueError(f"Missing keys in Hugging Face model MPT config: no_bias")
+    @staticmethod
+    def conv_use_bias(config: MPTConfig) -> int:
+        # This needs to be flipped due to how it's
+        # stored in the HF config.
+        return not config.layer.feedforward.use_bias
 
-    dropout_prob = 0.0
-    attn_config = hf_config.get("attn_config")
-    if attn_config is not None:
-        dropout_prob = attn_config.get("attn_pdrop", 0.0)
-
-    layer_norm_eps = hf_config.get("layer_norm_epsilon", 1e-5)
-
-    return MPTConfig(
-        **kwargs,
-        attention_probs_dropout_prob=dropout_prob,
-        hidden_dropout_prob=dropout_prob,
-        layer_norm_eps=layer_norm_eps,
-        use_bias=not no_bias,
+    D_MODEL = HFConfigKey(
+        "d_model",
+        "hidden_width",
+        CommonCuratedToHFConverters.hidden_width,
     )
+    EXPANSION_RATIO = HFConfigKey(
+        "expansion_ratio",
+        "intermediate_width_multiplier",
+        conv_intermediate_width_multiplier,
+    )
+    MAX_SEQ_LEN = HFConfigKey("max_seq_len", "model_max_length", conv_model_max_length)
+    N_LAYERS = HFConfigKey(
+        "n_layers", "n_hidden_layers", CommonCuratedToHFConverters.n_hidden_layers
+    )
+    N_HEADS = HFConfigKey(
+        "n_heads",
+        "n_attention_heads",
+        CommonCuratedToHFConverters.n_attention_heads_uniform,
+    )
+    NO_BIAS = HFConfigKey(
+        "no_bias",
+        ("use_bias", lambda v: not v),
+        conv_use_bias,
+    )
+    LAYER_NORM_EPSILON = HFConfigKey(
+        "layer_norm_epsilon",
+        "layer_norm_eps",
+        CommonCuratedToHFConverters.layer_norm_eps,
+    )
+
+
+HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [
+    (HFConfigKeys.D_MODEL, None),
+    (HFConfigKeys.EXPANSION_RATIO, None),
+    (HFConfigKeys.MAX_SEQ_LEN, None),
+    (HFConfigKeys.N_LAYERS, None),
+    (HFConfigKeys.N_HEADS, None),
+    (HFConfigKeys.NO_BIAS, None),
+    (CommonHFKeys.VOCAB_SIZE, None),
+    (CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB, HFConfigKeyDefault(0.0)),
+    (CommonHFKeys.HIDDEN_DROPOUT_PROB, HFConfigKeyDefault(0.0)),
+    (HFConfigKeys.LAYER_NORM_EPSILON, HFConfigKeyDefault(1e-5)),
+]
+
+HF_SPECIFIC_CONFIG_DECODER = HFSpecificConfig(
+    architectures=["MptModel"], model_type="mpt"
+)
+HF_SPECIFIC_CONFIG_CAUSAL_LM = HFSpecificConfig(
+    architectures=["MptForCausalLM"], model_type="mpt"
+)
+
+
+def _config_from_hf(hf_config: Mapping[str, Any]) -> MPTConfig:
+    kwargs = config_from_hf("MPT", hf_config, HF_CONFIG_KEYS)
+    return MPTConfig(**kwargs)
+
+
+def _config_to_hf(cls, curated_config: MPTConfig) -> Dict[str, Any]:
+    out = config_to_hf(curated_config, [k for k, _ in HF_CONFIG_KEYS])
+    if issubclass(cls, DecoderModule):
+        return HF_SPECIFIC_CONFIG_DECODER.merge(out)
+    else:
+        return HF_SPECIFIC_CONFIG_CAUSAL_LM.merge(out)

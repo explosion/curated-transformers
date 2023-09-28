@@ -6,7 +6,7 @@ from torch.nn import Module, Parameter
 
 from ..._compat import has_bitsandbytes
 from ...util.pytorch import ModuleIterator, apply_to_module
-from ...util.serde import TensorToParameterConverterT
+from ...util.serde.load import TensorToParameterConverterT
 from .config import BitsAndBytesConfig, _4BitConfig, _8BitConfig
 
 if TYPE_CHECKING:

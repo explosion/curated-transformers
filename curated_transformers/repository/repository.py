@@ -4,8 +4,8 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple
 
 from .._compat import has_safetensors
+from ..util.serde.checkpoint import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
 from ._hf import (
-    _MODEL_CHECKPOINT_TYPE,
     HF_MODEL_CONFIG,
     HF_TOKENIZER_CONFIG,
     PRIMARY_CHECKPOINT_FILENAMES,
@@ -13,7 +13,6 @@ from ._hf import (
     SHARDED_CHECKPOINT_INDEX_WEIGHTS_KEY,
     SPECIAL_TOKENS_MAP,
     TOKENIZER_JSON,
-    ModelCheckpointType,
 )
 from .file import RepositoryFile
 

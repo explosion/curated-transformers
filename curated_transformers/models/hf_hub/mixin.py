@@ -10,7 +10,7 @@ from ...quantization.bnb.config import BitsAndBytesConfig
 from ...repository.fsspec import FsspecArgs, FsspecRepository
 from ...repository.hf_hub import HfHubRepository
 from ...repository.repository import ModelRepository, Repository
-from ...util.serde import load_model_from_checkpoints
+from ...util.serde.load import load_model_from_checkpoints
 from ..module import TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.

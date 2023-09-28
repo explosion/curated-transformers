@@ -2,7 +2,7 @@ from typing import Optional
 
 from torch.nn import Module
 
-from ..util.serde import TensorToParameterConverterT
+from ..util.serde.load import TensorToParameterConverterT
 from .bnb import prepare_for_quantization as bnb_prepare_for_quantization
 from .bnb.config import BitsAndBytesConfig
 from .quantizable import Quantizable

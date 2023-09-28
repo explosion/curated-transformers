@@ -6,10 +6,8 @@ from huggingface_hub import _CACHED_NO_EXIST, try_to_load_from_cache
 from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.repository.hf_hub import HfHubRepository
 from curated_transformers.repository.repository import ModelRepository
-from curated_transformers.util.serde import (
-    ModelCheckpointType,
-    _use_model_checkpoint_type,
-)
+from curated_transformers.util.serde.checkpoint import ModelCheckpointType
+from curated_transformers.util.serde.load import _use_model_checkpoint_type
 
 from ..compat import has_hf_transformers, has_safetensors
 from ..conftest import TORCH_DEVICES

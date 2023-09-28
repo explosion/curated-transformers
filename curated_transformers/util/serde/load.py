@@ -4,9 +4,9 @@ from typing import Callable, Dict, Iterable, Mapping, Optional, Set, Union
 import torch
 from torch.nn import Module, Parameter
 
-from ..repository._hf import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
-from ..repository.file import RepositoryFile
-from .pytorch import ModuleIterator, apply_to_module
+from ...repository.file import RepositoryFile
+from ..pytorch import ModuleIterator, apply_to_module
+from .checkpoint import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
 
 # Args: Parent module, module prefix, parameter name, tensor to convert, device.
 # Returns the new paramater.

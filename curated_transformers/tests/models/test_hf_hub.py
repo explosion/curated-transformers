@@ -7,7 +7,6 @@ from curated_transformers.models.bert.encoder import BERTEncoder
 from curated_transformers.repository.hf_hub import HfHubRepository
 from curated_transformers.repository.repository import ModelRepository
 from curated_transformers.util.serde.checkpoint import ModelCheckpointType
-from curated_transformers.util.serde.load import _use_model_checkpoint_type
 
 from ..compat import has_hf_transformers, has_safetensors
 from ..conftest import TORCH_DEVICES
@@ -61,10 +60,6 @@ def test_checkpoint_type_without_safetensors():
     assert Path(ckp_paths[0].path).suffix == ".bin"
     assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
 
-    with pytest.raises(ValueError, match="`safetensors` library is required"):
-        with _use_model_checkpoint_type(ModelCheckpointType.SAFE_TENSORS):
-            BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
-
 
 @pytest.mark.skipif(not has_safetensors, reason="requires huggingface safetensors")
 def test_checkpoint_type_with_safetensors():
@@ -79,30 +74,6 @@ def test_checkpoint_type_with_safetensors():
     assert ckp_type == ModelCheckpointType.SAFE_TENSORS
 
     encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
-
-
-@pytest.mark.skipif(not has_safetensors, reason="requires huggingface safetensors")
-def test_forced_checkpoint_type():
-    with _use_model_checkpoint_type(ModelCheckpointType.PYTORCH_STATE_DICT):
-        repo = ModelRepository(
-            HfHubRepository(
-                "explosion-testing/safetensors-sharded-test", revision="main"
-            )
-        )
-        ckp_paths, ckp_type = repo.model_checkpoints()
-        assert len(ckp_paths) == 3
-        assert all(Path(p.path).suffix == ".bin" for p in ckp_paths)
-        assert ckp_type == ModelCheckpointType.PYTORCH_STATE_DICT
-
-        encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
-
-    with _use_model_checkpoint_type(ModelCheckpointType.SAFE_TENSORS):
-        ckp_paths, ckp_type = repo.model_checkpoints()
-        assert len(ckp_paths) == 3
-        assert all(Path(p.path).suffix == ".safetensors" for p in ckp_paths)
-        assert ckp_type == ModelCheckpointType.SAFE_TENSORS
-
-        encoder = BERTEncoder.from_hf_hub(name="explosion-testing/safetensors-test")
 
 
 @pytest.mark.slow

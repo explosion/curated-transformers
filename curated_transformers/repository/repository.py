@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple
 
 from .._compat import has_safetensors
-from ..util.serde.checkpoint import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
+from ..util.serde.checkpoint import ModelCheckpointType
 from ._hf import (
     HF_MODEL_CONFIG,
     HF_TOKENIZER_CONFIG,
@@ -146,21 +146,16 @@ class ModelRepository(Repository):
 
             return checkpoint_paths
 
-        checkpoint_type = _MODEL_CHECKPOINT_TYPE.get()
+        # Precedence: Safetensors > PyTorch
+        checkpoint_type = ModelCheckpointType.SAFE_TENSORS
         checkpoint_paths: Optional[List[RepositoryFile]] = None
-
-        if checkpoint_type is None:
-            # Precedence: Safetensors > PyTorch
-            if has_safetensors:
-                try:
-                    checkpoint_type = ModelCheckpointType.SAFE_TENSORS
-                    checkpoint_paths = get_checkpoint_paths(checkpoint_type)
-                except OSError:
-                    pass
-            if checkpoint_paths is None:
-                checkpoint_type = ModelCheckpointType.PYTORCH_STATE_DICT
+        if has_safetensors:
+            try:
                 checkpoint_paths = get_checkpoint_paths(checkpoint_type)
-        else:
+            except OSError:
+                pass
+        if checkpoint_paths is None:
+            checkpoint_type = ModelCheckpointType.PYTORCH_STATE_DICT
             checkpoint_paths = get_checkpoint_paths(checkpoint_type)
 
         assert checkpoint_paths is not None

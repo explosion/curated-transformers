@@ -1,9 +1,12 @@
 Repositories
 ============
 
+.. important::
+   This API is currently experimental and can change between minor releases.
+
 Models and tokenizers can be loaded from repositories using the ``from_repo``
 method. You can add your own type of repository by implementing the
-:py:class:`curated_transformers.repository.Repository` base class.
+:py:class:`~curated_transformers.repository.Repository` base class.
 
 This is an example repository that opens files on the local filesystem:
 
@@ -12,7 +15,7 @@ This is an example repository that opens files on the local filesystem:
    import os.path
    from typing import Optional
 
-   from curated_transformers.repository import Repository, RepositoryFile
+   from curated_transformers.repository import Repository, RepositoryFile, LocalFile
 
    class LocalRepository(Repository):
       def __init__(self, path: str):

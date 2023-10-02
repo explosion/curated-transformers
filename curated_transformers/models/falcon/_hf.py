@@ -51,8 +51,11 @@ CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS = [
 
 class HFConfigKeys:
     @staticmethod
-    def conv_stub(config: FalconConfig) -> None:
-        return None
+    def conv_multi_query(config: FalconConfig) -> bool:
+        return (
+            config.layer.attention.n_query_heads
+            != config.layer.attention.n_key_value_heads
+        )
 
     @staticmethod
     def conv_n_attention_query_heads(config: FalconConfig) -> int:
@@ -96,7 +99,7 @@ class HFConfigKeys:
     )
     # Used by Falcon.
     NUM_HEAD_KV = HFConfigKey(
-        "num_head_kv",
+        "num_kv_heads",
         "n_key_value_heads",
         lambda c: HFConfigKeys.conv_n_attention_keyvalue_heads(c),
     )
@@ -131,11 +134,12 @@ class HFConfigKeys:
         "new_decoder_architecture",
         lambda c: HFConfigKeys.conv_new_decoder_architecture(c),
     )
-    # The following keys are not directly converted to kwargs.
+    # The following keys are not directly converted to kwargs
+    # but still need to serialized back to the HF config.
     MULTI_QUERY = HFConfigKey(
         "multi_query",
         "multi_query",
-        lambda c: HFConfigKeys.conv_stub(c),
+        lambda c: HFConfigKeys.conv_multi_query(c),
     )
 
 

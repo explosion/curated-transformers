@@ -103,9 +103,9 @@ in the documentation. You can also find example programs that use Curated Transf
 
 You can read more about how to use Curated Transformers here:
 
-- [Overview](https://curated-transformers.readthedocs.io/en/v1.2.x/) ([Development](https://curated-transformers.readthedocs.io/en/latest/))
-- [Usage](https://curated-transformers.readthedocs.io/en/v1.2.x/usage.html) ([Development](https://curated-transformers.readthedocs.io/en/latest/usage.html))
-- [API](https://curated-transformers.readthedocs.io/en/v1.2.x/api.html) ([Development](https://curated-transformers.readthedocs.io/en/latest/api.html))
+- [Overview](https://curated-transformers.readthedocs.io/en/v1.3.x/) ([Development](https://curated-transformers.readthedocs.io/en/latest/))
+- [Usage](https://curated-transformers.readthedocs.io/en/v1.3.x/usage.html) ([Development](https://curated-transformers.readthedocs.io/en/latest/usage.html))
+- [API](https://curated-transformers.readthedocs.io/en/v1.3.x/api.html) ([Development](https://curated-transformers.readthedocs.io/en/latest/api.html))
 
 ## 🗜️ Quantization
 

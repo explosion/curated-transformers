@@ -1,6 +1,5 @@
-from contextvars import ContextVar
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping
 
 import torch
 
@@ -40,12 +39,6 @@ class ModelCheckpointType(Enum):
             return "SafeTensors"
         else:
             return ""
-
-
-# When `None`, behaviour is implementation-specific.
-_MODEL_CHECKPOINT_TYPE: ContextVar[Optional[ModelCheckpointType]] = ContextVar(
-    "model_checkpoint_type", default=None
-)
 
 
 def _load_safetensor_state_dicts_from_checkpoints(

@@ -6,7 +6,7 @@ from torch.nn import Module, Parameter
 
 from ...repository.file import RepositoryFile
 from ..pytorch import ModuleIterator, apply_to_module
-from .checkpoint import _MODEL_CHECKPOINT_TYPE, ModelCheckpointType
+from .checkpoint import ModelCheckpointType
 
 # Args: Parent module, module prefix, parameter name, tensor to convert, device.
 # Returns the new paramater.
@@ -19,29 +19,6 @@ TensorToParameterConverterT = Callable[
 HFStateDictConverterT = Callable[
     [Mapping[str, torch.Tensor]], Mapping[str, torch.Tensor]
 ]
-
-
-@contextmanager
-def _use_model_checkpoint_type(
-    model_checkpoint_type: ModelCheckpointType,
-):
-    """
-    Specifies which type of model checkpoint to use when loading a serialized model.
-
-    By default, Curated Transformers will attempt to load from the most suitable
-    checkpoint type depending on its availability. This context manager can be used
-    to override the default behaviour.
-
-    .. code-block:: python
-
-        with use_model_checkpoint_type(ModelCheckpointType.SAFETENSORS):
-            encoder = BertEncoder.from_hf_hub(name="bert-base-uncased")
-    """
-    token = _MODEL_CHECKPOINT_TYPE.set(model_checkpoint_type)
-    try:
-        yield
-    finally:
-        _MODEL_CHECKPOINT_TYPE.reset(token)
 
 
 def load_model_from_checkpoints(

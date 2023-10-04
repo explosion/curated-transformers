@@ -55,6 +55,9 @@ These modules and their helper classes implement the Transformer attention mecha
 .. autoclass:: curated_transformers.layers.KeyValueCache
    :members:
 
+.. autoclass:: curated_transformers.layers.AttentionScorer
+   :members:
+
 .. autoclass:: curated_transformers.layers.AttentionLinearBiases
    :members:
    :show-inheritance:

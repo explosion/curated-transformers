@@ -5,7 +5,13 @@ import torch
 from torch import Tensor
 from torch.nn import LayerNorm, Module, ModuleList
 
-from ...layers.attention import AttentionHeads, AttentionMask, QkvMode, SelfAttention
+from ...layers.attention import (
+    AttentionHeads,
+    AttentionMask,
+    QkvMode,
+    ScaledDotProductAttention,
+    SelfAttention,
+)
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
     EncoderLayer,
@@ -41,7 +47,10 @@ class ALBERTLayerGroup(Module):
                         attention_heads=AttentionHeads.uniform(
                             attention_config.n_query_heads
                         ),
-                        dropout_prob=attention_config.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=attention_config.dropout_prob,
+                            linear_biases=None,
+                        ),
                         hidden_width=layer_config.feedforward.hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,

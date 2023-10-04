@@ -9,6 +9,7 @@ from ...layers.attention import (
     AttentionLinearBiases,
     QkvMode,
     QkvSplitGroupedByHead,
+    ScaledDotProductAttention,
     SelfAttention,
 )
 from ...layers.feedforward import PointwiseFeedForward
@@ -86,11 +87,13 @@ class MPTDecoder(TransformerDecoder[MPTConfig], FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_biases=attention_biases,
                         attention_heads=AttentionHeads.uniform(
                             n_attention_heads, QkvSplitGroupedByHead()
                         ),
-                        dropout_prob=config.layer.attention.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=config.layer.attention.dropout_prob,
+                            linear_biases=attention_biases,
+                        ),
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                         rotary_embeds=None,

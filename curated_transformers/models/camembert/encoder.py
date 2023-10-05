@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 
@@ -25,3 +25,7 @@ class CamemBERTEncoder(RoBERTaEncoder):
             The encoder.
         """
         super().__init__(config, device=device)
+
+    @classmethod
+    def hf_model_types(cls) -> Tuple[str, ...]:
+        return ("camembert",)

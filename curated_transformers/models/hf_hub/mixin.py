@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
@@ -167,6 +167,17 @@ class FromHFHub(ABC):
             device=device,
             quantization_config=quantization_config,
         )
+
+    @classmethod
+    @abstractmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        """
+        Get the Hugging Face model types supported by this model.
+
+        :returns:
+            The supported model types.
+        """
+        ...
 
     @abstractmethod
     def to(

@@ -9,6 +9,7 @@ API
    decoders
    causal-lm
    generation
+   registries
    repositories
    tokenizers
    quantization

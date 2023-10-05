@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -45,6 +45,10 @@ class GPTNeoXCausalLM(TransformerCausalLM[GPTNeoXConfig], FromHFHub, Quantizable
             bias=False,
             device=device,
         )
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("gpt_neox",)
 
     @classmethod
     def state_dict_from_hf(

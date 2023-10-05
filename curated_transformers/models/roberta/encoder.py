@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -112,6 +112,10 @@ class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub):
                 for _ in range(config.layer.n_hidden_layers)
             ]
         )
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("roberta",)
 
     @classmethod
     def state_dict_from_hf(

@@ -176,7 +176,7 @@ class FromHFHub(ABC):
         class.
 
         :param config:
-            Model configuration.
+            Hugging Face model configuration.
         :returns:
             Whether the model is supported by this class.
         """

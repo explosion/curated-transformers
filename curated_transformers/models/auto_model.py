@@ -39,7 +39,7 @@ class AutoModel(ABC, Generic[ModelT]):
         for entrypoint, module_cls in cls._registry.get_entry_points().items():
             if not issubclass(module_cls, FromHFHub):
                 warnings.warn(
-                    f"Entry point {entrypoint} cannot load from Huggingface Hub "
+                    f"Entry point `{entrypoint}` cannot load from Hugging Face Hub "
                     "since the FromHFHub mixin is not implemented"
                 )
                 continue

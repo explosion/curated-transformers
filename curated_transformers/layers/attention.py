@@ -1,5 +1,4 @@
 import math
-import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -908,16 +907,6 @@ class SelfAttention(Module):
         if use_causal_mask:
             causal_mask = create_causal_mask(query, key)
             combined_mask = combined_mask.merge_mask(causal_mask)
-
-        if _TORCH_SDP.get() and not isinstance(
-            self.attention_scorer, ScaledDotProductAttention
-        ):
-            warn_msg = (
-                f"PyTorch SDP attention requires the `{ScaledDotProductAttention.__name__}` "
-                f"attention scorer. Currently using the `{type(self.attention_scorer).__name__}` scorer"
-            )
-            warnings.filterwarnings("once", message=warn_msg)
-            warnings.warn(message=warn_msg)
 
         attn = self.attention_scorer(
             query=query,

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 
@@ -27,5 +27,5 @@ class CamemBERTEncoder(RoBERTaEncoder):
         super().__init__(config, device=device)
 
     @classmethod
-    def hf_model_types(cls) -> Tuple[str, ...]:
-        return ("camembert",)
+    def is_supported(cls, config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "camembert"

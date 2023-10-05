@@ -15,7 +15,7 @@ from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import ModelRepository, Repository
 from .config import TransformerConfig
 from .hf_hub import FromHFHub
-from .module import CausalLMModule, DecoderModule, EncoderModule
+from .module import CausalLMModule, DecoderModule, EncoderModule, TransformerModule
 
 ModelT = TypeVar("ModelT")
 
@@ -26,6 +26,7 @@ class AutoModel(ABC, Generic[ModelT]):
     Face Model Hub.
     """
 
+    _base_cls: Type[TransformerModule]
     _registry: Registry
 
     @classmethod
@@ -33,9 +34,8 @@ class AutoModel(ABC, Generic[ModelT]):
         cls,
         repo: ModelRepository,
     ) -> Type[FromHFHub]:
-        model_type = repo.model_type()
+        config = repo.model_config()
 
-        supported_model_types = set()
         for entrypoint, module_cls in cls._registry.get_entry_points().items():
             if not issubclass(module_cls, FromHFHub):
                 warnings.warn(
@@ -44,14 +44,24 @@ class AutoModel(ABC, Generic[ModelT]):
                 )
                 continue
 
-            module_model_types = module_cls.hf_model_types()
-            if model_type in module_model_types:
+            if not issubclass(module_cls, cls._base_cls):
+                warnings.warn(
+                    f"Entry point `{entrypoint}` cannot be used by `{cls.__name__}` "
+                    f"since it does does not have `{cls._base_cls.__name__}` "
+                    "as its base class"
+                )
+                continue
+
+            if module_cls.is_supported(config):
                 return module_cls
-            supported_model_types.update(module_model_types)
+
+        entrypoints = {
+            entrypoint for entrypoint in cls._registry.get_entry_points().keys()
+        }
 
         raise ValueError(
-            f"Unsupported model type `{model_type}` for {cls.__name__}. "
-            f"Supported model types: {', '.join(sorted(supported_model_types))}"
+            f"Unsupported model type for `{cls.__name__}`. "
+            f"Registered models: {', '.join(sorted(entrypoints))}"
         )
 
     @classmethod
@@ -187,6 +197,7 @@ class AutoEncoder(AutoModel[EncoderModule[TransformerConfig]]):
     Encoder model loaded from the Hugging Face Model Hub.
     """
 
+    _base_cls = EncoderModule
     _registry: Registry = registry.encoders
 
     @classmethod
@@ -207,6 +218,7 @@ class AutoDecoder(AutoModel[DecoderModule[TransformerConfig, KeyValueCache]]):
     Decoder module loaded from the Hugging Face Model Hub.
     """
 
+    _base_cls = DecoderModule
     _registry = registry.decoders
 
     @classmethod
@@ -227,6 +239,7 @@ class AutoCausalLM(AutoModel[CausalLMModule[TransformerConfig, KeyValueCache]]):
     Causal LM model loaded from the Hugging Face Model Hub.
     """
 
+    _base_cls = CausalLMModule
     _registry: Registry = registry.causal_lms
 
     @classmethod

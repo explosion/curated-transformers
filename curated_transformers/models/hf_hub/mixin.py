@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Mapping, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
@@ -170,14 +170,17 @@ class FromHFHub(ABC):
 
     @classmethod
     @abstractmethod
-    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
         """
-        Get the Hugging Face model types supported by this model.
+        Check if the model with the given configuration is supported by this
+        class.
 
+        :param config:
+            Model configuration.
         :returns:
-            The supported model types.
+            Whether the model is supported by this class.
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def to(

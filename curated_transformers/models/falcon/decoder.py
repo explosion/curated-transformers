@@ -3,12 +3,13 @@ from typing import Any, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
-from torch.nn import Dropout, Embedding, LayerNorm, ModuleList
+from torch.nn import Dropout, LayerNorm, ModuleList
 
 from ...layers.attention import (
     AttentionHeads,
     AttentionLinearBiases,
     QkvMode,
+    ScaledDotProductAttention,
     SelfAttention,
 )
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
@@ -150,12 +151,14 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub):
         )
         return DecoderLayer(
             attention_layer=SelfAttention(
-                attention_biases=attention_biases,
                 attention_heads=AttentionHeads.key_value_broadcast(
                     n_query_heads=n_attention_heads,
                     n_key_value_heads=config.layer.attention.n_key_value_heads,
                 ),
-                dropout_prob=config.layer.attention.dropout_prob,
+                attention_scorer=ScaledDotProductAttention(
+                    dropout_prob=config.layer.attention.dropout_prob,
+                    linear_biases=attention_biases,
+                ),
                 hidden_width=hidden_width,
                 qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                 rotary_embeds=rotary_embeds,

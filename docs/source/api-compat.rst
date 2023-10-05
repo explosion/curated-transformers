@@ -112,3 +112,4 @@ Version 1 to 2
 * The ``FromHFHub`` mixins will be renamed to ``FromHF``.
 * The ``convert_hf_state_dict`` method in ``FromHFHub`` will be removed 
   in favour of ``state_dict_from_hf``.
+* The ``SelfAttention`` class will take an additional ``AttentionScorer`` argument.

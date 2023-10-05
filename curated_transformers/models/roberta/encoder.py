@@ -5,7 +5,12 @@ import torch
 from torch import Tensor
 from torch.nn import Dropout, LayerNorm
 
-from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
+from ...layers.attention import (
+    AttentionHeads,
+    QkvMode,
+    ScaledDotProductAttention,
+    SelfAttention,
+)
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
     EmbeddingDropouts,
@@ -77,7 +82,10 @@ class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub):
                         attention_heads=AttentionHeads.uniform(
                             config.layer.attention.n_query_heads
                         ),
-                        dropout_prob=config.layer.attention.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=config.layer.attention.dropout_prob,
+                            linear_biases=None,
+                        ),
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,

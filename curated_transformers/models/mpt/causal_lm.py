@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, List, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 import torch.nn.functional as F
@@ -83,6 +83,10 @@ class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub, Quantizable):
             cache=decoder_output.cache,
             logits=logits,
         )
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("mpt",)
 
     @classmethod
     def state_dict_from_hf(

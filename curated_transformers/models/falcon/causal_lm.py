@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -51,6 +51,10 @@ class FalconCausalLM(TransformerCausalLM[FalconConfig], FromHFHub, Quantizable):
         cls: Type[Self], params: Mapping[str, Tensor]
     ) -> Mapping[str, Tensor]:
         return state_dict_from_hf(params, CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS)
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("falcon", "RefinedWeb", "RefinedWebModel")
 
     @classmethod
     def state_dict_to_hf(

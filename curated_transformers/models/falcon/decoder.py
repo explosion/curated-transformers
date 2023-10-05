@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -85,6 +85,10 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub):
             config.layer.layer_norm_eps,
             device=device,
         )
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("falcon", "RefinedWeb", "RefinedWebModel")
 
     @classmethod
     def state_dict_from_hf(

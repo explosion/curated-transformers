@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -46,6 +46,10 @@ class LlamaCausalLM(TransformerCausalLM[LlamaConfig], FromHFHub, Quantizable):
             bias=False,
             device=device,
         )
+
+    @classmethod
+    def hf_model_types(cls: Type[Self]) -> Tuple[str, ...]:
+        return ("llama",)
 
     @classmethod
     def state_dict_from_hf(

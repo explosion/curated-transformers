@@ -4,7 +4,9 @@ Registries
 All models in Curated Transformers are added to a registry. Each auto class uses
 a registry to query which models are available. This mechanism allows
 third-party models to hook into the auto classes. This makes it possible to use
-construction methods such as ``AutoModel.from_hf_hub`` with third-party models.
+construction methods such as
+:py:class:`~curated_transformers.models.AutoEncoder.from_hf_hub` with third-party
+models.
 
 Third-party packages can register models in the ``options.entry_points`` section
 of ``setup.cfg``. For example, if the ``models`` module of the

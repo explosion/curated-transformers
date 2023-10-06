@@ -15,6 +15,7 @@ from ._hf import (
     TOKENIZER_JSON,
 )
 from .file import RepositoryFile
+from .transaction import TransactionContext
 
 
 class Repository(ABC):
@@ -25,16 +26,12 @@ class Repository(ABC):
     @abstractmethod
     def file(self, path: str) -> RepositoryFile:
         """
-        Get a repository file.
+        Get a lazily-loaded repository file.
 
         :param path:
             The path of the file within the repository.
         :returns:
             The file.
-        :raises FileNotFoundError:
-            When the file cannot be found.
-        :raises OSError:
-            When the file cannot be opened.
         """
         ...
 
@@ -53,8 +50,8 @@ class Repository(ABC):
         :raises json.JSONDecodeError:
             When the JSON cannot be decoded.
         """
-        f = self.file(path)
-        with f.open("r", encoding="utf-8") as f:
+        file = self.file(path)
+        with file.open("r", encoding="utf-8") as f:
             return json.load(f)
 
     @abstractmethod
@@ -67,6 +64,17 @@ class Repository(ABC):
             will be returned if ``path`` is falsy.
         :returns:
             The path representation.
+        """
+        ...
+
+    @abstractmethod
+    def transaction(self) -> TransactionContext:
+        """
+        Begins a new transaction. File operations performed on the transaction
+        context will be deferred until the transaction completes successfully.
+
+        :returns:
+            The transaction context manager.
         """
         ...
 
@@ -111,10 +119,9 @@ class ModelRepository(Repository):
             checkpoint_type: ModelCheckpointType,
         ) -> List[RepositoryFile]:
             # Attempt to download a non-sharded checkpoint first.
-            try:
-                return [self.file(PRIMARY_CHECKPOINT_FILENAMES[checkpoint_type])]
-            except:
-                pass
+            primary_ckpt = self.file(PRIMARY_CHECKPOINT_FILENAMES[checkpoint_type])
+            if primary_ckpt.exists():
+                return [primary_ckpt]
 
             # Try sharded checkpoint.
             index_filename = SHARDED_CHECKPOINT_INDEX_FILENAMES[checkpoint_type]
@@ -136,13 +143,13 @@ class ModelRepository(Repository):
 
             checkpoint_paths = []
             for filename in sorted(set(weight_map.values())):
-                try:
-                    checkpoint_paths.append(self.file(filename))
-                except FileNotFoundError:
+                ckpt = self.file(filename)
+                if not ckpt.exists():
                     raise OSError(
                         f"File for sharded checkpoint type {checkpoint_type.pretty_name} "
                         f"could not be found at `{self.pretty_path(index_filename)}`"
                     )
+                checkpoint_paths.append(ckpt)
 
             return checkpoint_paths
 
@@ -203,6 +210,9 @@ class ModelRepository(Repository):
 
     def pretty_path(self, path: Optional[str] = None) -> str:
         return self.repo.pretty_path(path)
+
+    def transaction(self) -> TransactionContext:
+        return self.repo.transaction()
 
 
 class TokenizerRepository(Repository):
@@ -295,3 +305,6 @@ class TokenizerRepository(Repository):
             The tokenizer file.
         """
         return self.repo.file(TOKENIZER_JSON)
+
+    def transaction(self) -> TransactionContext:
+        return self.repo.transaction()

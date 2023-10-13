@@ -12,12 +12,16 @@ from .config import RobertaConfig
 
 
 class RobertaEncoder(Module):
-    def __init__(self, config: RobertaConfig):
+    def __init__(self, config: RobertaConfig, embeddings: Optional[Module] = None):
         super().__init__()
 
-        self.embeddings = RobertaEmbeddings(
-            config.embedding, config.layer, padding_idx=config.padding_idx
-        )
+        if embeddings is None:
+            self.embeddings = RobertaEmbeddings(
+                config.embedding, config.layer, padding_idx=config.padding_idx
+            )
+        else:
+            self.embeddings = embeddings
+
         self.padding_idx = config.padding_idx
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(

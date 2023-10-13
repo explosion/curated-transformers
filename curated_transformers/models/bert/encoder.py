@@ -12,13 +12,14 @@ from ..output import PyTorchTransformerOutput
 
 
 class BertEncoder(Module):
-    def __init__(
-        self,
-        config: BertConfig,
-    ):
+    def __init__(self, config: BertConfig, embeddings: Optional[Module] = None):
         super().__init__()
 
-        self.embeddings = BertEmbeddings(config.embedding, config.layer)
+        if embeddings is None:
+            self.embeddings = BertEmbeddings(config.embedding, config.layer)
+        else:
+            self.embeddings = embeddings
+
         self.padding_idx = config.padding_idx
         self.max_seq_len = config.model_max_length
         self.layers = torch.nn.ModuleList(

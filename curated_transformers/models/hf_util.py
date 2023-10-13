@@ -143,12 +143,14 @@ def _convert_albert_base_state(
     out["embeddings.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
+    if "embeddings.token_type_embeddings.weight" in stripped_params:
+        out["embeddings.token_type_embeddings.weight"] = stripped_params[
+            "embeddings.token_type_embeddings.weight"
+        ]
+    if "embeddings.position_embeddings.weight" in stripped_params:
+        out["embeddings.position_embeddings.weight"] = stripped_params[
+            "embeddings.position_embeddings.weight"
+        ]
     out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
     out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
 
@@ -198,12 +200,14 @@ def _convert_bert_base_state(
     out["embeddings.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
+    if "embeddings.token_type_embeddings.weight" in stripped_params:
+        out["embeddings.token_type_embeddings.weight"] = stripped_params[
+            "embeddings.token_type_embeddings.weight"
+        ]
+    if "embeddings.position_embeddings.weight" in stripped_params:
+        out["embeddings.position_embeddings.weight"] = stripped_params[
+            "embeddings.position_embeddings.weight"
+        ]
     out["embeddings.layer_norm.weight"] = stripped_params["embeddings.LayerNorm.weight"]
     out["embeddings.layer_norm.bias"] = stripped_params["embeddings.LayerNorm.bias"]
 
@@ -245,12 +249,14 @@ def _convert_roberta_base_state(
     out["embeddings.inner.word_embeddings.weight"] = stripped_params[
         "embeddings.word_embeddings.weight"
     ]
-    out["embeddings.inner.token_type_embeddings.weight"] = stripped_params[
-        "embeddings.token_type_embeddings.weight"
-    ]
-    out["embeddings.inner.position_embeddings.weight"] = stripped_params[
-        "embeddings.position_embeddings.weight"
-    ]
+    if "embeddings.token_type_embeddings.weight" in stripped_params:
+        out["embeddings.inner.token_type_embeddings.weight"] = stripped_params[
+            "embeddings.token_type_embeddings.weight"
+        ]
+    if "embeddings.position_embeddings.weight" in stripped_params:
+        out["embeddings.inner.position_embeddings.weight"] = stripped_params[
+            "embeddings.position_embeddings.weight"
+        ]
     out["embeddings.inner.layer_norm.weight"] = stripped_params[
         "embeddings.LayerNorm.weight"
     ]

@@ -6,7 +6,7 @@ from torch.nn import Module
 
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class SinusoidalPositionalEmbedding(Module):
-    def __init__(self, dim: int, max_len: int, *, normalize=True):
+    def __init__(self, dim: int, max_len: int, *, normalize: bool = True):
         super().__init__()
 
         position = torch.arange(max_len).unsqueeze(1)
@@ -16,16 +16,16 @@ class SinusoidalPositionalEmbedding(Module):
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
-        if normalize == True:
-            l2 = torch.norm(pe, dim=-1)
+        if normalize:
+            l2 = torch.linalg.vector_norm(pe, dim=-1)
             pe /= l2.unsqueeze(-1)
 
-        self.pe = pe
-        self.pe.requires_grad = False
+        pe.requires_grad = False
+        self.register_buffer("pe", pe, persistent=False)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         """
         Shapes:
             x - (batch, seq_len)
         """
-        return self.pe[x.size(1), :]
+        return self.pe[: input.size(1), :]

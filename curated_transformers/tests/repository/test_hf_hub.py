@@ -1,4 +1,5 @@
 import pytest
+
 from curated_transformers.repository import HfHubRepository
 
 TEST_LINES = ["Line 1", "Line 2 🐍", "🤖" "\n\n", ""]

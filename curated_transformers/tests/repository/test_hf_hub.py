@@ -1,11 +1,10 @@
 import pytest
-
 from curated_transformers.repository import HfHubRepository
 
 TEST_LINES = ["Line 1", "Line 2 🐍", "🤖" "\n\n", ""]
 
 
-@pytest.mark.slow
+@pytest.mark.upload_test
 def test_hf_hub_upload_txt():
     repo = HfHubRepository("explosion-testing/hf-upload-test")
 
@@ -20,7 +19,7 @@ def test_hf_hub_upload_txt():
         assert str_read == str_to_write
 
 
-@pytest.mark.slow
+@pytest.mark.upload_test
 def test_hf_hub_upload_binary():
     repo = HfHubRepository("explosion-testing/hf-upload-test")
 
@@ -35,7 +34,7 @@ def test_hf_hub_upload_binary():
         assert bytes_read == bytes_to_write
 
 
-@pytest.mark.slow
+@pytest.mark.upload_test
 def test_hf_hub_transactions():
     repo = HfHubRepository("explosion-testing/hf-upload-test")
 

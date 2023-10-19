@@ -15,6 +15,11 @@ def pytest_addoption(parser):
             help="include tests that require `transformers` development version",
         )
         parser.addoption("--slow", action="store_true", help="include slow tests")
+        parser.addoption(
+            "--upload-tests",
+            action="store_true",
+            help="include tests that upload test artifacts to remote repos",
+        )
     # Options are already added, e.g. if conftest is copied in a build pipeline
     # and runs twice
     except ValueError:
@@ -26,6 +31,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers",
         "hf-head: include tests that require `transformers` development version",
+    )
+    config.addinivalue_line(
+        "markers", "upload-tests: tests that upload test artifacts to remote repos"
     )
 
 
@@ -40,7 +48,7 @@ def pytest_runtest_setup(item):
         return item.config.getoption(f"--{opt}", False)
 
     # Integration of boolean flags
-    for opt in ["slow"]:
+    for opt in ["slow", "upload-tests"]:
         if opt in item.keywords and not getopt(opt.replace("_", "-")):
             pytest.skip(f"need --{opt} option to run")
 

@@ -162,9 +162,11 @@ class HfHubTransactionContext(TransactionContext):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if exc_type is None:
-            self._upload_temp_files()
-        self._release_temp_files()
+        try:
+            if exc_type is None:
+                self._upload_temp_files()
+        finally:
+            self._release_temp_files()
 
     def _upload_temp_files(self):
         if len(self._file_mappings) == 0:
@@ -194,9 +196,11 @@ class HfHubTransactionContext(TransactionContext):
 
     def _release_temp_files(self):
         for temp_file in self._file_mappings.values():
-            if not temp_file.closed:
-                temp_file.close()
-            os.remove(temp_file.name)
+            try:
+                if not temp_file.closed:
+                    temp_file.close()
+            finally:
+                os.remove(temp_file.name)
 
 
 class UploadStagingBuffer(IO):
@@ -303,9 +307,11 @@ class UploadStagingBuffer(IO):
         return self._temp_file
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if exc_type is not None:
-            self._upload()
-        os.remove(self._temp_file.name)
+        try:
+            if exc_type is not None:
+                self._upload()
+        finally:
+            os.remove(self._temp_file.name)
 
 
 def hf_hub_download(repo_id: str, filename: str, revision: str) -> str:

@@ -39,9 +39,9 @@ def pytest_runtest_setup(item):
         return item.config.getoption(f"--{opt}", False)
 
     # Integration of boolean flags
-    for opt in ["slow", "upload_tests"]:
+    for opt in ["upload_tests", "slow"]:
         if opt in item.keywords and not getopt(opt.replace("_", "-")):
-            pytest.skip(f"need --{opt} option to run")
+            pytest.skip(f"need --{opt.replace('_', '-')} option to run")
 
 
 @pytest.fixture

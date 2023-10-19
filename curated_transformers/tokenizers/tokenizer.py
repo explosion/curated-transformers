@@ -338,21 +338,18 @@ class Tokenizer(TokenizerBase, FromHFHub):
 
     @classmethod
     def from_repo(cls: Type[Self], repo: Repository) -> Self:
-        def validate_tokenizer_file(tokenizer_file: RepositoryFile):
-            # Since repository files are loaded lazily, we need to
-            # open them to check their validity. Will throw if invalid.
+        def initialize_hf_tokenizer(tokenizer_file: RepositoryFile) -> HFTokenizer:
             with tokenizer_file.open(mode="rb") as f:
-                pass
+                # We have to open the file once before checking the local
+                # file's existence (since the repo files are loaded lazily).
+                if tokenizer_file.path is not None:
+                    return HFTokenizer.from_file(tokenizer_file.path)
+                else:
+                    return HFTokenizer.from_buffer(f.read())
 
         repo = TokenizerRepository(repo)
         tokenizer_file = repo.tokenizer_json()
-        validate_tokenizer_file(tokenizer_file)
-
-        if tokenizer_file.path is not None:
-            hf_tokenizer = HFTokenizer.from_file(tokenizer_file.path)
-        else:
-            with tokenizer_file.open() as f:
-                hf_tokenizer = HFTokenizer.from_buffer(f.read())
+        hf_tokenizer = initialize_hf_tokenizer(tokenizer_file)
 
         try:
             config = repo.tokenizer_config()

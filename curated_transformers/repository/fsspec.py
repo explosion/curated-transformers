@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from typing import IO, Any, Dict, Optional
 
@@ -145,6 +146,7 @@ class FsspecTransactionContext(TransactionContext):
         return self._repo
 
     def __enter__(self):
+        warnings.warn("Transaction support is currently not implemented for fsspec")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):

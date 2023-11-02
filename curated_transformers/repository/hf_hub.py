@@ -186,7 +186,7 @@ class HfHubTransactionContext(TransactionContext):
         commit_message = f"Uploading files:\n{filenames}"
 
         api = HfApi()
-        commit_info = api.create_commit(
+        _ = api.create_commit(
             repo_id=self._repo.name,
             revision=self._repo.revision,
             operations=commit_ops,

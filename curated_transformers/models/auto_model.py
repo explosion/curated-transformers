@@ -1,27 +1,21 @@
+import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Optional, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
 import torch
+from catalogue import Registry
 from fsspec import AbstractFileSystem
+
+from curated_transformers import registry
 
 from ..layers.cache import KeyValueCache
 from ..quantization.bnb.config import BitsAndBytesConfig
 from ..repository.fsspec import FsspecArgs, FsspecRepository
 from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import ModelRepository, Repository
-from .albert import ALBERTEncoder
-from .bert import BERTEncoder
-from .camembert import CamemBERTEncoder
 from .config import TransformerConfig
-from .falcon import FalconCausalLM, FalconDecoder
-from .gpt_neox import GPTNeoXCausalLM, GPTNeoXDecoder
 from .hf_hub import FromHFHub
-from .llama import LlamaCausalLM, LlamaDecoder
-from .module import CausalLMModule, DecoderModule, EncoderModule
-from .mpt.causal_lm import MPTCausalLM
-from .mpt.decoder import MPTDecoder
-from .roberta import RoBERTaEncoder
-from .xlm_roberta import XLMREncoder
+from .module import CausalLMModule, DecoderModule, EncoderModule, TransformerModule
 
 ModelT = TypeVar("ModelT")
 
@@ -32,22 +26,43 @@ class AutoModel(ABC, Generic[ModelT]):
     Face Model Hub.
     """
 
-    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {}
+    _base_cls: Type[TransformerModule]
+    _registry: Registry
 
     @classmethod
     def _resolve_model_cls(
         cls,
         repo: ModelRepository,
     ) -> Type[FromHFHub]:
-        model_type = repo.model_type()
-        module_cls = cls._hf_model_type_to_curated.get(model_type)
-        if module_cls is None:
-            raise ValueError(
-                f"Unsupported model type `{model_type}` for {cls.__name__}. "
-                f"Supported model types: {tuple(cls._hf_model_type_to_curated.keys())}"
-            )
-        assert issubclass(module_cls, FromHFHub)
-        return module_cls
+        config = repo.model_config()
+
+        for entrypoint, module_cls in cls._registry.get_entry_points().items():
+            if not issubclass(module_cls, FromHFHub):
+                warnings.warn(
+                    f"Entry point `{entrypoint}` cannot load from Hugging Face Hub "
+                    "since the FromHFHub mixin is not implemented"
+                )
+                continue
+
+            if not issubclass(module_cls, cls._base_cls):
+                warnings.warn(
+                    f"Entry point `{entrypoint}` cannot be used by `{cls.__name__}` "
+                    f"since it does does not have `{cls._base_cls.__name__}` "
+                    "as its base class"
+                )
+                continue
+
+            if module_cls.is_supported(config):
+                return module_cls
+
+        entrypoints = {
+            entrypoint for entrypoint in cls._registry.get_entry_points().keys()
+        }
+
+        raise ValueError(
+            f"Unsupported model type for `{cls.__name__}`. "
+            f"Registered models: {', '.join(sorted(entrypoints))}"
+        )
 
     @classmethod
     def _instantiate_model(
@@ -182,13 +197,8 @@ class AutoEncoder(AutoModel[EncoderModule[TransformerConfig]]):
     Encoder model loaded from the Hugging Face Model Hub.
     """
 
-    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
-        "bert": BERTEncoder,
-        "albert": ALBERTEncoder,
-        "camembert": CamemBERTEncoder,
-        "roberta": RoBERTaEncoder,
-        "xlm-roberta": XLMREncoder,
-    }
+    _base_cls = EncoderModule
+    _registry: Registry = registry.encoders
 
     @classmethod
     def from_repo(
@@ -208,14 +218,8 @@ class AutoDecoder(AutoModel[DecoderModule[TransformerConfig, KeyValueCache]]):
     Decoder module loaded from the Hugging Face Model Hub.
     """
 
-    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
-        "falcon": FalconDecoder,
-        "gpt_neox": GPTNeoXDecoder,
-        "llama": LlamaDecoder,
-        "mpt": MPTDecoder,
-        "RefinedWeb": FalconDecoder,
-        "RefinedWebModel": FalconDecoder,
-    }
+    _base_cls = DecoderModule
+    _registry = registry.decoders
 
     @classmethod
     def from_repo(
@@ -235,14 +239,8 @@ class AutoCausalLM(AutoModel[CausalLMModule[TransformerConfig, KeyValueCache]]):
     Causal LM model loaded from the Hugging Face Model Hub.
     """
 
-    _hf_model_type_to_curated: Dict[str, Type[FromHFHub]] = {
-        "falcon": FalconCausalLM,
-        "gpt_neox": GPTNeoXCausalLM,
-        "llama": LlamaCausalLM,
-        "mpt": MPTCausalLM,
-        "RefinedWeb": FalconCausalLM,
-        "RefinedWebModel": FalconCausalLM,
-    }
+    _base_cls = CausalLMModule
+    _registry: Registry = registry.causal_lms
 
     @classmethod
     def from_repo(

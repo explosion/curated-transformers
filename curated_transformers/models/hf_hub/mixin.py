@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, Mapping, Optional, Type, TypeVar
 
 import torch
 from fsspec import AbstractFileSystem
@@ -197,6 +197,20 @@ class FromHFHub(ABC, Generic[ConfigT]):
             device=device,
             quantization_config=quantization_config,
         )
+
+    @classmethod
+    @abstractmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        """
+        Check if the model with the given configuration is supported by this
+        class.
+
+        :param config:
+            Hugging Face model configuration.
+        :returns:
+            Whether the model is supported by this class.
+        """
+        raise NotImplementedError
 
     @classmethod
     def from_repo(

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -9,6 +9,7 @@ from ...layers.attention import (
     AttentionHeads,
     AttentionLinearBiases,
     QkvMode,
+    ScaledDotProductAttention,
     SelfAttention,
 )
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
@@ -87,6 +88,10 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub[FalconConfig]):
         )
 
     @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") in ("falcon", "RefinedWeb", "RefinedWebModel")
+
+    @classmethod
     def state_dict_from_hf(
         cls: Type[Self], params: Mapping[str, Tensor]
     ) -> Mapping[str, Tensor]:
@@ -158,12 +163,14 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub[FalconConfig]):
         )
         return DecoderLayer(
             attention_layer=SelfAttention(
-                attention_biases=attention_biases,
                 attention_heads=AttentionHeads.key_value_broadcast(
                     n_query_heads=n_attention_heads,
                     n_key_value_heads=config.layer.attention.n_key_value_heads,
                 ),
-                dropout_prob=config.layer.attention.dropout_prob,
+                attention_scorer=ScaledDotProductAttention(
+                    dropout_prob=config.layer.attention.dropout_prob,
+                    linear_biases=attention_biases,
+                ),
                 hidden_width=hidden_width,
                 qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                 rotary_embeds=rotary_embeds,

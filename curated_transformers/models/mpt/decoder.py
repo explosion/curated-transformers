@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -9,6 +9,7 @@ from ...layers.attention import (
     AttentionLinearBiases,
     QkvMode,
     QkvSplitGroupedByHead,
+    ScaledDotProductAttention,
     SelfAttention,
 )
 from ...layers.feedforward import PointwiseFeedForward
@@ -86,11 +87,13 @@ class MPTDecoder(TransformerDecoder[MPTConfig], FromHFHub[MPTConfig]):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_biases=attention_biases,
                         attention_heads=AttentionHeads.uniform(
                             n_attention_heads, QkvSplitGroupedByHead()
                         ),
-                        dropout_prob=config.layer.attention.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=config.layer.attention.dropout_prob,
+                            linear_biases=attention_biases,
+                        ),
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.MERGED_SPLIT_AFTER,
                         rotary_embeds=None,
@@ -119,6 +122,10 @@ class MPTDecoder(TransformerDecoder[MPTConfig], FromHFHub[MPTConfig]):
         )
 
         self.output_layer_norm = layer_norm()
+
+    @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "mpt"
 
     @classmethod
     def state_dict_from_hf(

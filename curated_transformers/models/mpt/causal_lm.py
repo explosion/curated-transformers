@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 import torch.nn.functional as F
@@ -83,6 +83,10 @@ class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub[MPTConfig], Quantiza
             cache=decoder_output.cache,
             logits=logits,
         )
+
+    @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "mpt"
 
     @classmethod
     def state_dict_from_hf(

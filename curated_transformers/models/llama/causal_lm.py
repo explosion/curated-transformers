@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Set, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -48,6 +48,10 @@ class LlamaCausalLM(
             bias=False,
             device=device,
         )
+
+    @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "llama"
 
     @classmethod
     def state_dict_from_hf(

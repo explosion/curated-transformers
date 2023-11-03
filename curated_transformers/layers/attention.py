@@ -9,7 +9,7 @@ from typing import Dict, Optional, Tuple, Type, Union
 import torch
 import torch.nn.functional as F
 from torch import Tensor
-from torch.nn import Linear, Module
+from torch.nn import Dropout, Linear, Module
 
 from ..semver import Default, FutureMandatory
 from ..util.dataclass import DataclassAsDict
@@ -633,7 +633,51 @@ class AttentionLinearBiases(Module):
         return attention_scores + biases
 
 
-class ScaledDotProductAttention(Module):
+class AttentionScorer(Module, ABC):
+    """
+    Base class of attention scoring implementations.
+    """
+
+    @abstractmethod
+    def forward(
+        self,
+        *,
+        query: Tensor,
+        key: Tensor,
+        value: Tensor,
+        attention_mask: AttentionMask,
+    ) -> Tensor:
+        """
+        Apply attention scores to the given key, query and value.
+
+        Sequence elements that are marked with ``False`` in the attention mask
+        are ignored by the attention mechanism (if a mask is provided).
+
+        :param query:
+            Query tensor.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        :param key:
+            Key tensor.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        :param value:
+            Value tensor.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        :param attention_mask:
+
+            Attention mask. Sequence elements for which the corresponding mask
+            element is set to ``False`` are ignored in attention.
+        :returns:
+            Attention values.
+
+            *Shape:* ``(batch_size, heads, seq_len, width)``
+        """
+        ...
+
+
+class ScaledDotProductAttention(AttentionScorer):
     """
     Scaled dot-product attention (`Vaswani et al., 2017`_).
 
@@ -658,7 +702,7 @@ class ScaledDotProductAttention(Module):
         """
         super().__init__()
 
-        self.dropout = torch.nn.Dropout(p=dropout_prob)
+        self.dropout = Dropout(p=dropout_prob)
         self.linear_biases = linear_biases
 
     def forward(
@@ -669,45 +713,39 @@ class ScaledDotProductAttention(Module):
         value: Tensor,
         attention_mask: AttentionMask,
     ) -> Tensor:
-        """
-        Apply attention layer to the given key, query and value.
+        if _TORCH_SDP.get():
+            attn_mask = attention_mask.logit_mask(query.dtype)
 
-        Sequence elements that are marked with `False` in the attention mask
-        are ignored by the attention mechanism (if a mask is provided).
+            # Add AliBi to the logit mask
+            if self.linear_biases is not None:
+                biases = self.linear_biases.calculate_biases(key.size(-2)).to(
+                    dtype=query.dtype, device=query.device
+                )
+                bool_mask = attention_mask.bool_mask
+                attn_mask = torch.where(bool_mask, biases, attn_mask)
 
-        :param query:
-            Query tensor.
+            # We can't pass a bool mask, because it is currently broken:
+            # https://github.com/pytorch/pytorch/issues/103749
+            return F.scaled_dot_product_attention(
+                query=query,
+                key=key,
+                value=value,
+                attn_mask=attn_mask,
+                dropout_p=self.dropout_prob if self.training else 0.0,
+            )
+        else:
+            width = key.shape[-1]
+            attn_scores = query @ key.transpose(-2, -1)
+            attn_scores /= math.sqrt(width)
 
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param key:
-            Key tensor.
+            if self.linear_biases is not None:
+                attn_scores = self.linear_biases(attention_scores=attn_scores)
 
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param value:
-            Value tensor.
+            attn_scores = attention_mask.apply_logit_mask(attn_scores)
+            attn_weights = attn_scores.softmax(dim=-1)
+            attn_values = self.dropout(attn_weights @ value)
 
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        :param attention_mask:
-
-            Attention mask. Sequence elements for which the corresponding mask
-            element is set to ``False`` are ignored in attention.
-        :returns:
-            Attention values.
-
-            *Shape:* ``(batch_size, heads, seq_len, width)``
-        """
-        model_width = key.shape[-1]
-        attn_scores = query @ key.transpose(-2, -1)
-        attn_scores /= math.sqrt(model_width)
-
-        if self.linear_biases is not None:
-            attn_scores = self.linear_biases(attention_scores=attn_scores)
-
-        attn_scores = attention_mask.apply_logit_mask(attn_scores)
-        attn_weights = attn_scores.softmax(dim=-1)
-        attn_values = self.dropout(attn_weights @ value)
-
-        return attn_values
+            return attn_values
 
 
 class SelfAttention(Module):
@@ -723,11 +761,10 @@ class SelfAttention(Module):
         self,
         *,
         attention_heads: AttentionHeads,
-        dropout_prob: float,
+        attention_scorer: AttentionScorer,
         hidden_width: int,
         qkv_mode: QkvMode,
         rotary_embeds: Optional[QueryKeyRotaryEmbeddings] = None,
-        attention_biases: Optional[AttentionLinearBiases] = None,
         use_bias: bool,
         device: Optional[torch.device] = None,
     ):
@@ -737,12 +774,10 @@ class SelfAttention(Module):
 
         :param attention_heads:
             Attention head configuration.
-        :param dropout_prob:
-            Dropout to apply between the self-attention and output layers.
+        :param attention_scorer:
+            Attention scorer used to calculate the attention values.
         :param hidden_width:
             Hidden width of the layer.
-        :param attention_biases:
-            ALiBi biases. ALiBi will not be used when set to ``None``.
         :param qkv_mode:
             Handling mode for query, key and value.
         :param rotary_embeds:
@@ -756,7 +791,6 @@ class SelfAttention(Module):
 
         super().__init__()
 
-        self.dropout_prob = dropout_prob
         self.attention_heads = attention_heads
         if hidden_width % attention_heads._n_query_heads != 0:
             raise ValueError(
@@ -766,13 +800,10 @@ class SelfAttention(Module):
 
         self.head_width = hidden_width // attention_heads._n_query_heads
         self.qkv_mode = qkv_mode
-        self.use_alibi = attention_biases is not None
 
         self.rotary_embeds = rotary_embeds
 
-        self.attention = ScaledDotProductAttention(
-            dropout_prob=dropout_prob, linear_biases=attention_biases
-        )
+        self.attention_scorer = attention_scorer
 
         if (
             qkv_mode == QkvMode.MERGED_SPLIT_BEFORE
@@ -877,34 +908,12 @@ class SelfAttention(Module):
             causal_mask = create_causal_mask(query, key)
             combined_mask = combined_mask.merge_mask(causal_mask)
 
-        if _TORCH_SDP.get():
-            attn_mask = combined_mask.logit_mask(query.dtype)
-
-            # Add AliBi to the logit mask
-            if self.use_alibi:
-                assert self.attention.linear_biases is not None
-                biases = self.attention.linear_biases.calculate_biases(key.size(-2)).to(
-                    dtype=query.dtype, device=query.device
-                )
-                bool_mask = combined_mask.bool_mask
-                attn_mask = torch.where(bool_mask, biases, attn_mask)
-
-            # We can't pass a bool mask, because it is currently broken:
-            # https://github.com/pytorch/pytorch/issues/103749
-            attn = F.scaled_dot_product_attention(
-                query=query,
-                key=key,
-                value=value,
-                attn_mask=attn_mask,
-                dropout_p=self.dropout_prob if self.training else 0.0,
-            )
-        else:
-            attn = self.attention(
-                query=query,
-                key=key,
-                value=value,
-                attention_mask=combined_mask,
-            )
+        attn = self.attention_scorer(
+            query=query,
+            key=key,
+            value=value,
+            attention_mask=combined_mask,
+        )
 
         attn = combine_heads(attn)
 

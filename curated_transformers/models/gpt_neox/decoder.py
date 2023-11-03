@@ -1,11 +1,16 @@
 from functools import partial
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Dropout, LayerNorm, ModuleList
 
-from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
+from ...layers.attention import (
+    AttentionHeads,
+    QkvMode,
+    ScaledDotProductAttention,
+    SelfAttention,
+)
 from ...layers.embeddings import QueryKeyRotaryEmbeddings
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
@@ -78,7 +83,10 @@ class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
                 DecoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(n_attention_heads),
-                        dropout_prob=config.layer.attention.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=config.layer.attention.dropout_prob,
+                            linear_biases=None,
+                        ),
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.MERGED_SPLIT_BEFORE,
                         rotary_embeds=QueryKeyRotaryEmbeddings(
@@ -113,6 +121,10 @@ class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
         self.output_layer_norm = LayerNorm(
             hidden_width, config.layer.layer_norm_eps, device=device
         )
+
+    @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "gpt_neox"
 
     @classmethod
     def state_dict_from_hf(

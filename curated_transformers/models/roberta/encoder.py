@@ -1,11 +1,16 @@
 from functools import partial
-from typing import Any, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
 from torch.nn import Dropout, LayerNorm
 
-from ...layers.attention import AttentionHeads, QkvMode, SelfAttention
+from ...layers.attention import (
+    AttentionHeads,
+    QkvMode,
+    ScaledDotProductAttention,
+    SelfAttention,
+)
 from ...layers.feedforward import PointwiseFeedForward
 from ...layers.transformer import (
     EmbeddingDropouts,
@@ -77,7 +82,10 @@ class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub[RoBERTaConfig]
                         attention_heads=AttentionHeads.uniform(
                             config.layer.attention.n_query_heads
                         ),
-                        dropout_prob=config.layer.attention.dropout_prob,
+                        attention_scorer=ScaledDotProductAttention(
+                            dropout_prob=config.layer.attention.dropout_prob,
+                            linear_biases=None,
+                        ),
                         hidden_width=hidden_width,
                         qkv_mode=QkvMode.SEPARATE,
                         rotary_embeds=None,
@@ -104,6 +112,10 @@ class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub[RoBERTaConfig]
                 for _ in range(config.layer.n_hidden_layers)
             ]
         )
+
+    @classmethod
+    def is_supported(cls: Type[Self], config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "roberta"
 
     @classmethod
     def state_dict_from_hf(

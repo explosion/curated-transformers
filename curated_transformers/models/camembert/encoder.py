@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import torch
 
@@ -26,6 +26,10 @@ class CamemBERTEncoder(RoBERTaEncoder):
             The encoder.
         """
         super().__init__(config, device=device)
+
+    @classmethod
+    def is_supported(cls, config: Dict[str, Any]) -> bool:
+        return config.get("model_type") == "camembert"
 
     @classmethod
     def config_from_hf(cls, hf_config: Mapping[str, Any]) -> RoBERTaConfig:

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Dict, List, Tuple, Type, Union
+from typing import Callable, Dict, List, Set, Tuple, Type, Union
 
 import torch
 from huggingface_hub import HfFileSystem
@@ -16,6 +16,8 @@ from curated_transformers.models.module import (
     TransformerModule,
 )
 from curated_transformers.models.output import ModelOutput, ModelOutputWithCache
+from curated_transformers.repository.hf_hub import HfHubRepository
+from curated_transformers.repository.repository import ModelRepository
 
 from ..compat import transformers
 from ..utils import torch_assertclose
@@ -375,6 +377,7 @@ def assert_model_hf_serialization_roundtrip(
     atol: float = 1e-5,
     rtol: float = 1e-5,
     trust_remote_code: bool = False,
+    optional_hf_config_keys: Set[str] = set(),
 ):
     orig_model = model_class.from_hf_hub(
         name=model_name,
@@ -405,3 +408,21 @@ def assert_model_hf_serialization_roundtrip(
     for name in orig_model_hf_statedict.keys():
         assert name in hf_model_statedict.keys(), f"{name} not found in HF state dict"
         torch_assertclose(orig_model_hf_statedict[name], hf_model_statedict[name])
+
+    hf_config = ModelRepository(
+        HfHubRepository(name=model_name, revision=model_revision)
+    ).model_config()
+    orig_model_hf_config = orig_model.config_to_hf(orig_model.config)
+
+    # These won't be the same anyway, so we can skip them.
+    ignored_keys = ("architectures", "transformers_version")
+
+    for k, v in orig_model_hf_config.items():
+        if k in ignored_keys:
+            continue
+        elif k in optional_hf_config_keys and k not in hf_config:
+            continue
+        assert k in hf_config, f"Key '{k}' is missing in the Hugging Face model config"
+        assert (
+            hf_config[k] == v
+        ), f"Key '{k}' value '{v}' is different in the Hugging Face model config ('{hf_config[k]}')"

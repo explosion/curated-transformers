@@ -1,8 +1,14 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-from ...layers.activations import Activation
 from ...util.string import StringTransform, StringTransformations
-from ..hf_hub.conversion import process_hf_keys
+from ..hf_hub.conversion import (
+    CommonHFKeys,
+    HFConfigKey,
+    HFConfigKeyDefault,
+    HFSpecificConfig,
+    config_from_hf,
+    config_to_hf,
+)
 from .config import BERTConfig
 
 # Order-dependent.
@@ -55,26 +61,32 @@ HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [
     ),
 ]
 
-HF_CONFIG_KEY_MAPPING: Dict[str, Union[str, Tuple[str, Callable]]] = {
-    "attention_probs_dropout_prob": "attention_probs_dropout_prob",
-    "hidden_act": ("activation", Activation),
-    "hidden_dropout_prob": "hidden_dropout_prob",
-    "hidden_size": "hidden_width",
-    "intermediate_size": "intermediate_width",
-    "layer_norm_eps": "layer_norm_eps",
-    "max_position_embeddings": "n_positions",
-    "num_attention_heads": "n_attention_heads",
-    "num_hidden_layers": "n_hidden_layers",
-    "type_vocab_size": "n_types",
-    "vocab_size": "n_pieces",
-}
+HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [
+    (CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB, None),
+    (CommonHFKeys.HIDDEN_DROPOUT_PROB, None),
+    (CommonHFKeys.HIDDEN_SIZE, None),
+    (CommonHFKeys.HIDDEN_ACT, None),
+    (CommonHFKeys.INTERMEDIATE_SIZE, None),
+    (CommonHFKeys.LAYER_NORM_EPS, None),
+    (CommonHFKeys.NUM_ATTENTION_HEADS_UNIFORM, None),
+    (CommonHFKeys.NUM_HIDDEN_LAYERS, None),
+    (CommonHFKeys.VOCAB_SIZE, None),
+    (CommonHFKeys.TYPE_VOCAB_SIZE, None),
+    (CommonHFKeys.MAX_POSITION_EMBEDDINGS, None),
+]
+
+HF_SPECIFIC_CONFIG = HFSpecificConfig(architectures=["BertModel"], model_type="bert")
 
 
-def convert_hf_config(hf_config: Any) -> BERTConfig:
-    kwargs = process_hf_keys("BERT", hf_config, HF_CONFIG_KEY_MAPPING)
-
+def _config_from_hf(hf_config: Mapping[str, Any]) -> BERTConfig:
+    kwargs = config_from_hf("BERT", hf_config, HF_CONFIG_KEYS)
     return BERTConfig(
-        embedding_width=hf_config["hidden_size"],
-        model_max_length=hf_config["max_position_embeddings"],
+        embedding_width=CommonHFKeys.HIDDEN_SIZE.get_kwarg(kwargs),
+        model_max_length=CommonHFKeys.MAX_POSITION_EMBEDDINGS.get_kwarg(kwargs),
         **kwargs,
     )
+
+
+def _config_to_hf(curated_config: BERTConfig) -> Dict[str, Any]:
+    out = config_to_hf(curated_config, [k for k, _ in HF_CONFIG_KEYS])
+    return HF_SPECIFIC_CONFIG.merge(out)

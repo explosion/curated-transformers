@@ -25,7 +25,7 @@ from ...layers.transformer import (
 from ..hf_hub import FromHFHub
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
-from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, convert_hf_config
+from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
 from .config import FalconConfig
 from .layer import OldFalconDecoderLayer
 
@@ -33,7 +33,7 @@ from .layer import OldFalconDecoderLayer
 Self = TypeVar("Self", bound="FalconDecoder")
 
 
-class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub):
+class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub[FalconConfig]):
     """
     Falcon (`Penedo et al., 2019`_) decoder.
 
@@ -104,13 +104,21 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub):
         return state_dict_to_hf(params, DECODER_HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
+    def config_from_hf(cls, hf_config: Mapping[str, Any]) -> FalconConfig:
+        return _config_from_hf(hf_config)
+
+    @classmethod
+    def config_to_hf(cls, curated_config: FalconConfig) -> Mapping[str, Any]:
+        return _config_to_hf(cls, curated_config)
+
+    @classmethod
     def from_hf_config(
         cls: Type[Self],
         *,
         hf_config: Any,
         device: Optional[torch.device] = None,
     ) -> Self:
-        config = convert_hf_config(hf_config)
+        config = cls.config_from_hf(hf_config)
         return cls(config, device=device)
 
     def _create_old_decoder_architecture_layer(

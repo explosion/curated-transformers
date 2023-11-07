@@ -12,7 +12,7 @@ from ..hf_hub import FromHFHub
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..output import CausalLMOutputWithCache
 from ..transformer import TransformerCausalLM
-from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, convert_hf_config
+from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
 from .config import MPTConfig
 from .decoder import MPTDecoder
 
@@ -20,7 +20,7 @@ from .decoder import MPTDecoder
 Self = TypeVar("Self", bound="MPTCausalLM")
 
 
-class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub, Quantizable):
+class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub[MPTConfig], Quantizable):
     """
     `MosaicML MPT`_ causal language model.
 
@@ -101,13 +101,21 @@ class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub, Quantizable):
         return state_dict_to_hf(params, CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS)
 
     @classmethod
+    def config_from_hf(cls, hf_config: Mapping[str, Any]) -> MPTConfig:
+        return _config_from_hf(hf_config)
+
+    @classmethod
+    def config_to_hf(cls, curated_config: MPTConfig) -> Mapping[str, Any]:
+        return _config_to_hf(cls, curated_config)
+
+    @classmethod
     def from_hf_config(
         cls: Type[Self],
         *,
         hf_config: Any,
         device: Optional[torch.device] = None,
     ) -> Self:
-        config = convert_hf_config(hf_config)
+        config = cls.config_from_hf(hf_config)
         return cls(config, device=device)
 
     @classmethod

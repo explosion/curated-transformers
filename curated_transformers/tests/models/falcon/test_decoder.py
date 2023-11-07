@@ -2,7 +2,9 @@ import pytest
 import torch
 
 from curated_transformers.layers.attention import AttentionMask
+from curated_transformers.models.falcon._hf import HFConfigKeys
 from curated_transformers.models.falcon.decoder import FalconDecoder
+from curated_transformers.models.hf_hub.conversion import CommonHFKeys
 
 from ...compat import has_hf_transformers, has_torch_compile
 from ...conftest import TORCH_DEVICES
@@ -150,13 +152,21 @@ def test_decoder_with_cache(torch_device, model_revision):
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-@pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
-def test_decoder_hf_serializtion_roundtrip(torch_device, model_revision):
-    model, revision = model_revision
+def test_decoder_hf_serializtion_roundtrip(torch_device):
+    # We only support round-trip serialization for the non-RWM models.
     assert_model_hf_serialization_roundtrip(
         FalconDecoder,
-        model,
+        "explosion-testing/falcon-test",
         torch_device,
-        model_revision=revision,
+        model_revision="24ff3d5fd83b4d174888356f20e61349f6cbf467",
         trust_remote_code=True,
+        optional_hf_config_keys={
+            HFConfigKeys.N_HEAD_KV.name,
+            HFConfigKeys.NUM_HEAD_KV.name,
+            HFConfigKeys.MULTI_QUERY.name,
+            HFConfigKeys.N_HEAD_KV.name,
+            HFConfigKeys.NEW_DECODER_ARCHITECTURE.name,
+            CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB.name,
+            CommonHFKeys.HIDDEN_DROPOUT_PROB.name,
+        },
     )

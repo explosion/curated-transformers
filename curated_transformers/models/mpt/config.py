@@ -95,3 +95,4 @@ class MPTConfig(TransformerConfig):
             n_hidden_layers=n_hidden_layers,
         )
         self.dtype = torch.bfloat16
+        self.model_max_length = model_max_length

@@ -1,9 +1,10 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional
 
 import torch
 
 from ..roberta.config import RoBERTaConfig
 from ..roberta.encoder import RoBERTaEncoder
+from ._hf import _config_from_hf, _config_to_hf
 
 
 class CamemBERTEncoder(RoBERTaEncoder):
@@ -29,3 +30,11 @@ class CamemBERTEncoder(RoBERTaEncoder):
     @classmethod
     def is_supported(cls, config: Dict[str, Any]) -> bool:
         return config.get("model_type") == "camembert"
+
+    @classmethod
+    def config_from_hf(cls, hf_config: Mapping[str, Any]) -> RoBERTaConfig:
+        return _config_from_hf(hf_config)
+
+    @classmethod
+    def config_to_hf(cls, curated_config: RoBERTaConfig) -> Mapping[str, Any]:
+        return _config_to_hf(curated_config)

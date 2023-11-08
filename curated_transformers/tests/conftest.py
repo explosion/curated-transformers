@@ -9,12 +9,12 @@ GPU_TESTS_ENABLED = False
 
 def pytest_addoption(parser):
     try:
-        parser.addoption(
-            "--hf-head",
-            action="store_true",
-            help="include tests that require `transformers` development version",
-        )
         parser.addoption("--slow", action="store_true", help="include slow tests")
+        parser.addoption(
+            "--upload-tests",
+            action="store_true",
+            help="include tests that upload test artifacts to remote repos",
+        )
     # Options are already added, e.g. if conftest is copied in a build pipeline
     # and runs twice
     except ValueError:
@@ -24,8 +24,7 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: include slow tests")
     config.addinivalue_line(
-        "markers",
-        "hf-head: include tests that require `transformers` development version",
+        "markers", "upload-tests: tests that upload test artifacts to remote repos"
     )
 
 
@@ -40,9 +39,9 @@ def pytest_runtest_setup(item):
         return item.config.getoption(f"--{opt}", False)
 
     # Integration of boolean flags
-    for opt in ["slow"]:
+    for opt in ["upload_tests", "slow"]:
         if opt in item.keywords and not getopt(opt.replace("_", "-")):
-            pytest.skip(f"need --{opt} option to run")
+            pytest.skip(f"need --{opt.replace('_', '-')} option to run")
 
 
 @pytest.fixture

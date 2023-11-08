@@ -11,6 +11,7 @@ from tokenizers import Tokenizer as HFTokenizer
 from torch import Tensor
 
 from ..layers.attention import AttentionMask
+from ..repository.file import RepositoryFile
 from ..repository.fsspec import FsspecRepository
 from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import Repository, TokenizerRepository
@@ -337,13 +338,18 @@ class Tokenizer(TokenizerBase, FromHFHub):
 
     @classmethod
     def from_repo(cls: Type[Self], repo: Repository) -> Self:
+        def initialize_hf_tokenizer(tokenizer_file: RepositoryFile) -> HFTokenizer:
+            with tokenizer_file.open(mode="rb") as f:
+                # We have to open the file once before checking the local
+                # file's existence (since the repo files are loaded lazily).
+                if tokenizer_file.path is not None:
+                    return HFTokenizer.from_file(tokenizer_file.path)
+                else:
+                    return HFTokenizer.from_buffer(f.read())
+
         repo = TokenizerRepository(repo)
         tokenizer_file = repo.tokenizer_json()
-        if tokenizer_file.path is not None:
-            hf_tokenizer = HFTokenizer.from_file(tokenizer_file.path)
-        else:
-            with tokenizer_file.open() as f:
-                hf_tokenizer = HFTokenizer.from_buffer(f.read())
+        hf_tokenizer = initialize_hf_tokenizer(tokenizer_file)
 
         try:
             config = repo.tokenizer_config()

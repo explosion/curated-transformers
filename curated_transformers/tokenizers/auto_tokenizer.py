@@ -139,19 +139,16 @@ def _get_tokenizer_class_from_config(
 def _resolve_tokenizer_class(
     repo: TokenizerRepository,
 ) -> Type[FromHFHub]:
+    tokenizer_file = repo.tokenizer_json()
+    if tokenizer_file.exists():
+        return Tokenizer
+
     cls: Optional[Type[FromHFHub]] = None
     try:
-        repo.tokenizer_json()
-        cls = Tokenizer
+        tokenizer_config = repo.tokenizer_config()
+        cls = _get_tokenizer_class_from_config(tokenizer_config)
     except:
         pass
-
-    if cls is None:
-        try:
-            tokenizer_config = repo.tokenizer_config()
-            cls = _get_tokenizer_class_from_config(tokenizer_config)
-        except:
-            pass
 
     if cls is None:
         try:

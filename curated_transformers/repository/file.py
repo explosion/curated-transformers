@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from typing import IO, Optional
 
@@ -22,6 +23,8 @@ class RepositoryFile(ABC):
             Encoding to use when the file is opened as text.
         :returns:
             An I/O stream.
+        :raises FileNotFoundError:
+            When the file cannot be found.
         :raises OSError:
             When the file cannot be opened.
         """
@@ -37,6 +40,14 @@ class RepositoryFile(ABC):
             The repository file. If the file is not available as a local
             path, the value of this property is ``None``. In these cases
             ``open`` can be used to get the file as a file-like object.
+        """
+        ...
+
+    @abstractmethod
+    def exists(self) -> bool:
+        """
+        Returns if the file exists. This can cause the file
+        to be cached locally.
         """
         ...
 
@@ -63,3 +74,6 @@ class LocalFile(RepositoryFile):
     @property
     def path(self) -> Optional[str]:
         return self._path
+
+    def exists(self) -> bool:
+        return os.path.isfile(self._path)

@@ -39,6 +39,10 @@ Base Classes
    :members:
    :show-inheritance:
 
+.. autoclass:: curated_transformers.repository.TransactionContext
+   :members:
+   :show-inheritance:   
+
 Repositories
 ------------
 
@@ -58,5 +62,9 @@ Repository Files
    :show-inheritance:
 
 .. autoclass:: curated_transformers.repository.LocalFile
+   :members:
+   :show-inheritance:
+
+.. autoclass:: curated_transformers.repository.HfHubFile
    :members:
    :show-inheritance:

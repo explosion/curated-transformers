@@ -2,9 +2,13 @@
 
 # -- Project information
 
+import curated_transformers
+
 project = "Curated Transformers"
 copyright = "2021-2023, ExplosionAI GmbH"
 author = "ExplosionAI GmbH"
+version = curated_transformers.__version__
+release = curated_transformers.__version__
 
 # -- General configuration
 

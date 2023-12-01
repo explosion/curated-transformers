@@ -1,5 +1,13 @@
+import importlib.metadata
+
 import catalogue
 from catalogue import Registry
+
+__version__: str
+try:
+    __version__ = importlib.metadata.version("curated-transformers")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "unknown"
 
 
 class registry(object):

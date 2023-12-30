@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict, Mapping, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -37,7 +37,12 @@ class BERTEncoder(TransformerEncoder[BERTConfig], FromHFHub[BERTConfig]):
     .. _Devlin et al., 2018 : https://arxiv.org/abs/1810.04805
     """
 
-    def __init__(self, config: BERTConfig, *, device: Optional[torch.device] = None):
+    def __init__(
+        self,
+        config: BERTConfig,
+        *,
+        device: Optional[torch.device] = None,
+    ):
         """
         Construct a BERT encoder.
 

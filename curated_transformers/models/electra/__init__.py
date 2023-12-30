@@ -1,2 +1,1 @@
-from .config import BERTConfig
-from .encoder import BERTEncoder
+from .encoder import ELECTRAEncoder

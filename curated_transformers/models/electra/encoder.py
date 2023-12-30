@@ -1,6 +1,5 @@
-from typing import Any, Dict, Mapping, Optional, Type, TypeVar
+from typing import Any, Dict, Mapping, Type, TypeVar
 
-import torch
 from torch import Tensor
 
 from ..bert import BERTConfig as ELECTRAConfig
@@ -42,13 +41,3 @@ class ELECTRAEncoder(BERTEncoder):
     @classmethod
     def config_to_hf(cls, curated_config: ELECTRAConfig) -> Mapping[str, Any]:
         return _config_to_hf(curated_config)
-
-    @classmethod
-    def from_hf_config(
-        cls: Type[Self],
-        *,
-        hf_config: Any,
-        device: Optional[torch.device] = None,
-    ) -> Self:
-        config: ELECTRAConfig = cls.config_from_hf(hf_config)
-        return cls(config, device=device)

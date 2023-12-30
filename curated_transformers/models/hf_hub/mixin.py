@@ -233,7 +233,7 @@ class FromHFHub(ABC, Generic[ConfigT]):
             Loaded model.
         """
         model_repo = ModelRepository(repo)
-        config: Dict[str, Any] = model_repo.model_config()
+        config = model_repo.model_config()
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
         assert isinstance(model, Module)
 

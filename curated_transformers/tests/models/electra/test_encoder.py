@@ -23,7 +23,7 @@ from ..util import (
 def test_encoder(model_name: str, torch_device, with_torch_sdp):
     assert_encoder_output_equals_hf(
         ELECTRAEncoder,
-        "jonfd/electra-small-nordic",
+        model_name,
         torch_device,
         with_torch_sdp=with_torch_sdp,
     )

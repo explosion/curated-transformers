@@ -743,10 +743,10 @@ class ScaledDotProductAttention(AttentionScorer):
                 dropout_p=self.dropout_prob if self.training else 0.0,
             )
 
-            # Torch SDP returns NaNs for pieces where every is masked out.
-            # These errort propagate, because zero attention times NaN is
-            # NaN. Since the representations of these tokens don't matter
-            # anyway, we will just zero them out.
+            # Torch SDP returns NaNs for pieces where every is piece masked out.
+            # These errors propagate because zero attention times NaN is NaN.
+            # Since the representations of these pieces don't matter anyway, we
+            # will just zero them out.
             #
             # One issue is that values have shape
             #
@@ -757,7 +757,8 @@ class ScaledDotProductAttention(AttentionScorer):
             # [batch_len, 1, query_len, key_len]
             #
             # So we can only do this when we have attention masks where
-            # the query length it not specified:
+            # the query length it not specified, which are typically 'pure'
+            # attention masks (not causal maskes or combined masks):
             #
             # [batch_len, 1, 1, key_len]
             #

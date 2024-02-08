@@ -137,9 +137,9 @@ class HfHubTransactionContext(TransactionContext):
         """
         super().__init__()
         self._repo = repo
-        self._file_mappings: Dict[
-            str, IO
-        ] = {}  # Maps remote file paths to local temporary files
+        self._file_mappings: Dict[str, IO] = (
+            {}
+        )  # Maps remote file paths to local temporary files
 
     def open(self, path: str, mode: str, encoding: Optional[str] = None) -> IO:
         if path in self._file_mappings:

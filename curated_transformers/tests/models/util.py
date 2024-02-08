@@ -60,9 +60,7 @@ class JITMethod(Enum):
     TorchCompile = 1
     TorchScriptTrace = 2
 
-    def convert(
-        self, model: Module, with_torch_sdp: bool, *args
-    ) -> Tuple[
+    def convert(self, model: Module, with_torch_sdp: bool, *args) -> Tuple[
         Union[Module, torch.ScriptModule],
         Callable[[Union[ModelOutput, Dict[str, torch.Tensor]]], Tensor],
     ]:

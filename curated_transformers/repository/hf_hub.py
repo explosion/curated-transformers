@@ -1,7 +1,7 @@
 import os
 import warnings
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, AnyStr, Dict, Iterator, List, Optional
+from typing import IO, Any, AnyStr, Dict, Iterator, List, Optional, Union
 
 import huggingface_hub
 from huggingface_hub import CommitOperationAdd, HfApi
@@ -11,6 +11,7 @@ from huggingface_hub.utils import (
     RevisionNotFoundError,
 )
 from requests import HTTPError, ReadTimeout  # type: ignore
+from typing_extensions import Buffer
 
 from ..repository.file import LocalFile, RepositoryFile
 from .repository import Repository
@@ -137,9 +138,9 @@ class HfHubTransactionContext(TransactionContext):
         """
         super().__init__()
         self._repo = repo
-        self._file_mappings: Dict[
-            str, IO
-        ] = {}  # Maps remote file paths to local temporary files
+        self._file_mappings: Dict[str, IO] = (
+            {}
+        )  # Maps remote file paths to local temporary files
 
     def open(self, path: str, mode: str, encoding: Optional[str] = None) -> IO:
         if path in self._file_mappings:
@@ -297,7 +298,7 @@ class UploadStagingBuffer(IO):
     def writable(self) -> bool:
         return self._temp_file.writable()
 
-    def write(self, s: AnyStr) -> int:
+    def write(self, s: Union[Any, Buffer, str]) -> int:
         return self._temp_file.write(s)
 
     def writelines(self, lines: List[AnyStr]) -> None:  # type:ignore

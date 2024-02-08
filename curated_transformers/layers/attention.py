@@ -646,6 +646,7 @@ class AttentionScorer(Module, ABC):
         key: Tensor,
         value: Tensor,
         attention_mask: AttentionMask,
+        use_causal_mask: bool,
     ) -> Tensor:
         """
         Apply attention scores to the given key, query and value.
@@ -669,6 +670,8 @@ class AttentionScorer(Module, ABC):
 
             Attention mask. Sequence elements for which the corresponding mask
             element is set to ``False`` are ignored in attention.
+        :param use_causal_mask:
+            Mask out succeeding sequence elements when ``True``.
         :returns:
             Attention values.
 
@@ -712,26 +715,60 @@ class ScaledDotProductAttention(AttentionScorer):
         key: Tensor,
         value: Tensor,
         attention_mask: AttentionMask,
+        use_causal_mask: bool,
     ) -> Tensor:
+        combined_mask = attention_mask
+        if use_causal_mask:
+            causal_mask = create_causal_mask(query, key)
+            combined_mask = combined_mask.merge_mask(causal_mask)
+
         if _TORCH_SDP.get():
-            attn_mask = attention_mask.logit_mask(query.dtype)
+            logit_mask = combined_mask.logit_mask(query.dtype)
 
             # Add AliBi to the logit mask
             if self.linear_biases is not None:
                 biases = self.linear_biases.calculate_biases(key.size(-2)).to(
                     dtype=query.dtype, device=query.device
                 )
-                bool_mask = attention_mask.bool_mask
-                attn_mask = torch.where(bool_mask, biases, attn_mask)
+                bool_mask = combined_mask.bool_mask
+                logit_mask = torch.where(bool_mask, biases, logit_mask)
 
             # We can't pass a bool mask, because it is currently broken:
             # https://github.com/pytorch/pytorch/issues/103749
-            return F.scaled_dot_product_attention(
+            attn_values = F.scaled_dot_product_attention(
                 query=query,
                 key=key,
                 value=value,
-                attn_mask=attn_mask,
+                attn_mask=logit_mask,
                 dropout_p=self.dropout_prob if self.training else 0.0,
+            )
+
+            # Torch SDP returns NaNs for pieces where every is piece masked out.
+            # These errors propagate because zero attention times NaN is NaN.
+            # Since the representations of these pieces don't matter anyway, we
+            # will just zero them out.
+            #
+            # One issue is that values have shape
+            #
+            # [batch_len, n_heads, key_len, hidden_size]
+            #
+            # whereas masks have the shape
+            #
+            # [batch_len, 1, query_len, key_len]
+            #
+            # So we can only do this when we have attention masks where
+            # the query length it not specified, which are typically 'pure'
+            # attention masks (not causal maskes or combined masks):
+            #
+            # [batch_len, 1, 1, key_len]
+            #
+            # Doing this properly requires a redesign of our AttentionMask
+            # class.
+            assert (
+                attention_mask.bool_mask.size(-2) == 1
+            ), "Torch SDP does not support attention masks with non-broadcastable query length yet"
+            return torch.where(
+                attention_mask.bool_mask.transpose(-1, -2), attn_values, 0.0
             )
         else:
             width = key.shape[-1]
@@ -741,7 +778,7 @@ class ScaledDotProductAttention(AttentionScorer):
             if self.linear_biases is not None:
                 attn_scores = self.linear_biases(attention_scores=attn_scores)
 
-            attn_scores = attention_mask.apply_logit_mask(attn_scores)
+            attn_scores = combined_mask.apply_logit_mask(attn_scores)
             attn_weights = attn_scores.softmax(dim=-1)
             attn_values = self.dropout(attn_weights @ value)
 
@@ -903,16 +940,12 @@ class SelfAttention(Module):
             key = torch.cat([cache_k, key], dim=-2)
             value = torch.cat([cache_v, value], dim=-2)
 
-        combined_mask = attention_mask
-        if use_causal_mask:
-            causal_mask = create_causal_mask(query, key)
-            combined_mask = combined_mask.merge_mask(causal_mask)
-
         attn = self.attention_scorer(
             query=query,
             key=key,
             value=value,
-            attention_mask=combined_mask,
+            attention_mask=attention_mask,
+            use_causal_mask=use_causal_mask,
         )
 
         attn = combine_heads(attn)

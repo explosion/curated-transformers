@@ -126,7 +126,7 @@ def default_tensor_to_parameter_converter(
     old_param = module._parameters[parameter_name]
     assert old_param is not None
     _validate_replacement(old_param, tensor, module_prefix)
-    return Parameter(tensor, requires_grad=old_param.requires_grad).to(device=device)  # type: ignore
+    return Parameter(tensor.to(device=device), requires_grad=old_param.requires_grad)  # type: ignore
 
 
 def _emplace_module_state_dict(

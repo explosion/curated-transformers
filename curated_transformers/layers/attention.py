@@ -764,7 +764,9 @@ class ScaledDotProductAttention(AttentionScorer):
             #
             # Doing this properly requires a redesign of our AttentionMask
             # class.
-            assert attention_mask.bool_mask.size(-2) == 1, "Torch SDP does not support attention masks with non-broadcastable query length yet"
+            assert (
+                attention_mask.bool_mask.size(-2) == 1
+            ), "Torch SDP does not support attention masks with non-broadcastable query length yet"
             return torch.where(
                 attention_mask.bool_mask.transpose(-1, -2), attn_values, 0.0
             )

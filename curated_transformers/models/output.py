@@ -4,13 +4,12 @@ from typing import Generic, List, Optional, TypeVar
 from torch import Tensor
 
 from ..layers.cache import CacheProtocol
-from ..util.dataclass import DataclassAsTuple
 
 CacheT = TypeVar("CacheT", bound=CacheProtocol)
 
 
 @dataclass
-class ModelOutput(DataclassAsTuple):
+class ModelOutput:
     """
     Base class for model outputs.
 

@@ -100,27 +100,6 @@ def test_decoder_with_torch_compile(torch_device, model_revision, with_torch_sdp
     )
 
 
-@pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-@pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)
-@pytest.mark.parametrize("with_torch_sdp", [False, True])
-def test_decoder_with_torchscript_trace(torch_device, model_revision, with_torch_sdp):
-    model, revision = model_revision
-    assert_decoder_output_equals_hf(
-        FalconDecoder,
-        model,
-        torch_device,
-        model_revision=revision,
-        trust_remote_code=True,
-        with_cache=False,
-        with_mask=False,
-        with_positions=False,
-        jit_method=JITMethod.TorchScriptTrace,
-        with_torch_sdp=with_torch_sdp,
-    )
-
-
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 @pytest.mark.parametrize("model_revision", FALCON_TEST_MODELS)

@@ -1,7 +1,7 @@
 curated-tokenizers>=0.9.1,<1.0.0
 huggingface-hub>=0.14
 tokenizers>=0.13.3
-torch>=1.12.0
+torch>=1.12.0,<2.1.0
 
 # Development dependencies
 mypy>=0.990,<1.1.0; platform_machine != "aarch64"

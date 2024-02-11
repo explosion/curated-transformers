@@ -70,9 +70,11 @@ class OldFalconDecoderLayer(Module):
                 n_key_value_heads=attention_config.n_key_value_heads,
             ),
             rotary_embeds=rotary_embeds,
-            qkv_mode=QkvMode.MERGED_SPLIT_AFTER
-            if attention_config.n_key_value_heads == 1
-            else QkvMode.MERGED_SPLIT_BEFORE,
+            qkv_mode=(
+                QkvMode.MERGED_SPLIT_AFTER
+                if attention_config.n_key_value_heads == 1
+                else QkvMode.MERGED_SPLIT_BEFORE
+            ),
             use_bias=attention_config.use_bias,
             device=device,
         )

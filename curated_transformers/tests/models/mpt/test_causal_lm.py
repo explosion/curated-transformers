@@ -40,20 +40,6 @@ def test_causal_lm_with_torch_compile(torch_device, with_torch_sdp):
     )
 
 
-@pytest.mark.slow
-@pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
-@pytest.mark.parametrize("torch_device", TORCH_DEVICES)
-@pytest.mark.parametrize("with_torch_sdp", [False, True])
-def test_causal_lm_with_torchscript_trace(torch_device, with_torch_sdp):
-    assert_causal_lm_output_equals_hf(
-        MPTCausalLM,
-        "explosion-testing/mpt-test",
-        torch_device,
-        jit_method=JITMethod.TorchScriptTrace,
-        with_torch_sdp=with_torch_sdp,
-    )
-
-
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 @pytest.mark.parametrize("torch_device", TORCH_DEVICES)
 def test_causal_lm_hf_serializtion_roundtrip(torch_device):

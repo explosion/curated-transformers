@@ -12,7 +12,6 @@ from torch import Tensor
 from torch.nn import Dropout, Linear, Module
 
 from ..semver import Default, FutureMandatory
-from ..util.dataclass import DataclassAsDict
 from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings
 
@@ -47,7 +46,7 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
 
 
 @dataclass
-class AttentionMask(DataclassAsDict):
+class AttentionMask:
     """
     Mask for attention calculation. Sequence elements for which the
     corresponding mask element is set to ``False`` are ignored during
@@ -73,33 +72,6 @@ class AttentionMask(DataclassAsDict):
                 "The attention mask must be a tensor of shape [batch, key_len] or "
                 "[batch_len, heads, query_len, key_len]"
             )
-
-        self.__post_init__()
-
-    @classmethod
-    def jit_rewrap(
-        cls: Type["AttentionMask"],
-        attention_mask: Union["AttentionMask", Dict[str, Tensor]],
-    ) -> "AttentionMask":
-        """
-        Rewrap TorchScript dictionary conversion of an attention mask
-        as an ``AttentionMask``.
-
-        :param attention_mask:
-            The attention mask or its dictionary representation. If the
-            value is an ``AttentionMask``, the value will be returned as-is.
-        :returns:
-            The attention mask.
-        """
-        if isinstance(attention_mask, AttentionMask):
-            return attention_mask
-
-        bool_mask = attention_mask.get("bool_mask")
-        if bool_mask is None:
-            raise ValueError(
-                "Attention mask is not of the `AttentionMask` type, nor a dict with 'bool_mask'."
-            )
-        return AttentionMask(bool_mask=bool_mask)
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
         """
@@ -919,10 +891,6 @@ class SelfAttention(Module):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
-        # The attention mask is converted to a dict for traced models. Rewrap as
-        # AttentionMask to get validation and utility methods.
-        attention_mask = AttentionMask.jit_rewrap(attention_mask)
-
         query, key, value = self._query_key_value(input)
 
         if self.rotary_embeds is not None:
@@ -930,9 +898,6 @@ class SelfAttention(Module):
                 query=query, key=key, cache=cache, positions=positions
             )
 
-        # The key-value is converted to a dict for traced models. Rewrap as
-        # KeyValueCache to get validation and utility methods.
-        cache = KeyValueCache.jit_rewrap(cache)
         if cache is not None:
             cache_k = cache.key
             cache_v = cache.value
@@ -953,7 +918,7 @@ class SelfAttention(Module):
         output = self.output(attn)
 
         if store_cache:
-            return output, KeyValueCache(key, value)
+            return output, KeyValueCache(key=key, value=value)
         else:
             return output, None
 

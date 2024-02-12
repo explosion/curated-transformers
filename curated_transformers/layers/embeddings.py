@@ -278,10 +278,6 @@ class QueryKeyRotaryEmbeddings(Module):
         head_width = self.head_width
         rotary_width = self.rotary_width
 
-        # The key-value is converted to a dict for traced models. Rewrap as
-        # KeyValueCache to get validation and utility methods.
-        cache = KeyValueCache.jit_rewrap(cache)
-
         # If a cache was provided, but no positions, assume that the
         # positions of the current batch continue from the cache.
         if cache is not None and positions is None:

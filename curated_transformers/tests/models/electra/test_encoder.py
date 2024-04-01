@@ -4,9 +4,7 @@ from curated_transformers.models.electra.encoder import ELECTRAEncoder
 
 from ...compat import has_hf_transformers
 from ...conftest import TORCH_DEVICES
-from ..util import (
-    assert_encoder_output_equals_hf,
-)
+from ..util import assert_encoder_output_equals_hf
 
 
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")

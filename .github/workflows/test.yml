@@ -23,8 +23,8 @@ jobs:
           python -m black curated_transformers examples --check
       - name: isort
         run: |
-          python -m pip install isort -c requirements.txt
-          python -m isort curated_transformers examples --check
+          python -m pip install isort -c requirepython -m isort curated_transformers examples --checkments.txt
+          
       - name: flake8
         run: |
           python -m pip install flake8==5.0.4

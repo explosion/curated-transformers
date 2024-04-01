@@ -1,8 +1,6 @@
 import pytest
 
-from curated_transformers.tokenizers.legacy.bert_tokenizer import (
-    BERTTokenizer,
-)
+from curated_transformers.tokenizers.legacy.bert_tokenizer import BERTTokenizer
 
 from ...compat import has_hf_transformers
 from ..util import compare_tokenizer_outputs_with_hf_tokenizer

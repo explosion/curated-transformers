@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from ...util.string import StringTransform, StringTransformations
+from ..bert import BERTConfig as ELECTRAConfig
 from ..hf_hub.conversion import (
     CommonHFKeys,
     HFConfigKey,
@@ -9,7 +10,6 @@ from ..hf_hub.conversion import (
     config_from_hf,
     config_to_hf,
 )
-from ..bert import BERTConfig as ELECTRAConfig
 
 # Order-dependent.
 HF_PARAM_KEY_TRANSFORMS: List[StringTransform] = [

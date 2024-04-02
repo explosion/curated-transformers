@@ -4,8 +4,6 @@ from typing import Optional, Protocol, Tuple, Type, TypeVar, Union
 import torch
 from torch import Tensor
 
-from ..util.dataclass import DataclassAsTuple
-
 CacheProtocolSelf = TypeVar("CacheProtocolSelf", bound="CacheProtocol")
 
 
@@ -27,7 +25,7 @@ class CacheProtocol(Protocol):
 
 
 @dataclass
-class KeyValueCache(DataclassAsTuple):
+class KeyValueCache:
     """
     Cache type for layers that cache keys and values.
 
@@ -52,41 +50,4 @@ class KeyValueCache(DataclassAsTuple):
         if mask.dtype != torch.bool:
             raise ValueError(f"Cache mask dtype must be bool, was: {mask.dtype}.")
 
-        return KeyValueCache(self.key[mask], self.value[mask])
-
-    @classmethod
-    def jit_rewrap(
-        cls: Type["KeyValueCache"],
-        key_value_cache: Optional[Union["KeyValueCache", Tuple[Tensor, Tensor]]],
-    ) -> Optional["KeyValueCache"]:
-        """
-        Rewrap TorchScript dictionary conversion of a key-value cache.
-
-        :param key_value_cache:
-            The key-value cache or its dictionary representation. If the
-            value is a ``KeyValueCache`` or ``None``, it will be
-            returned as-is.
-        :returns:
-            The key-value cache.
-        """
-        if key_value_cache is None or isinstance(key_value_cache, KeyValueCache):
-            return key_value_cache
-
-        if (
-            not isinstance(key_value_cache, tuple)
-            or len(key_value_cache) != 2
-            or not all(isinstance(item, Tensor) for item in key_value_cache)
-        ):
-            raise ValueError(
-                f"Key-value cache is not of the `KeyValueCache` type, nor `Tuple[Tensor, Tensor]`: `{type(key_value_cache).__name__}`"
-            )
-
-        key_cache = key_value_cache[0]
-        value_cache = key_value_cache[1]
-
-        if key_cache.shape != value_cache.shape:
-            raise ValueError(
-                f"Key cache ({key_cache.shape}) and value cache ({value_cache.shape}) must have same shapes."
-            )
-
-        return cls(key_cache, value_cache)
+        return KeyValueCache(key=self.key[mask], value=self.value[mask])

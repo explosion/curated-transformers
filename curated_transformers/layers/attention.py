@@ -12,7 +12,6 @@ from torch import Tensor
 from torch.nn import Dropout, Linear, Module
 
 from ..semver import Default, FutureMandatory
-from ..util.dataclass import DataclassAsDict
 from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings
 
@@ -47,7 +46,7 @@ def enable_torch_sdp(use_torch_sdp: bool = True):
 
 
 @dataclass
-class AttentionMask(DataclassAsDict):
+class AttentionMask:
     """
     Mask for attention calculation. Sequence elements for which the
     corresponding mask element is set to ``False`` are ignored during
@@ -73,33 +72,6 @@ class AttentionMask(DataclassAsDict):
                 "The attention mask must be a tensor of shape [batch, key_len] or "
                 "[batch_len, heads, query_len, key_len]"
             )
-
-        self.__post_init__()
-
-    @classmethod
-    def jit_rewrap(
-        cls: Type["AttentionMask"],
-        attention_mask: Union["AttentionMask", Dict[str, Tensor]],
-    ) -> "AttentionMask":
-        """
-        Rewrap TorchScript dictionary conversion of an attention mask
-        as an ``AttentionMask``.
-
-        :param attention_mask:
-            The attention mask or its dictionary representation. If the
-            value is an ``AttentionMask``, the value will be returned as-is.
-        :returns:
-            The attention mask.
-        """
-        if isinstance(attention_mask, AttentionMask):
-            return attention_mask
-
-        bool_mask = attention_mask.get("bool_mask")
-        if bool_mask is None:
-            raise ValueError(
-                "Attention mask is not of the `AttentionMask` type, nor a dict with 'bool_mask'."
-            )
-        return AttentionMask(bool_mask=bool_mask)
 
     def apply_logit_mask(self, input: Tensor) -> Tensor:
         """
@@ -646,6 +618,7 @@ class AttentionScorer(Module, ABC):
         key: Tensor,
         value: Tensor,
         attention_mask: AttentionMask,
+        use_causal_mask: bool,
     ) -> Tensor:
         """
         Apply attention scores to the given key, query and value.
@@ -669,6 +642,8 @@ class AttentionScorer(Module, ABC):
 
             Attention mask. Sequence elements for which the corresponding mask
             element is set to ``False`` are ignored in attention.
+        :param use_causal_mask:
+            Mask out succeeding sequence elements when ``True``.
         :returns:
             Attention values.
 
@@ -712,26 +687,60 @@ class ScaledDotProductAttention(AttentionScorer):
         key: Tensor,
         value: Tensor,
         attention_mask: AttentionMask,
+        use_causal_mask: bool,
     ) -> Tensor:
+        combined_mask = attention_mask
+        if use_causal_mask:
+            causal_mask = create_causal_mask(query, key)
+            combined_mask = combined_mask.merge_mask(causal_mask)
+
         if _TORCH_SDP.get():
-            attn_mask = attention_mask.logit_mask(query.dtype)
+            logit_mask = combined_mask.logit_mask(query.dtype)
 
             # Add AliBi to the logit mask
             if self.linear_biases is not None:
                 biases = self.linear_biases.calculate_biases(key.size(-2)).to(
                     dtype=query.dtype, device=query.device
                 )
-                bool_mask = attention_mask.bool_mask
-                attn_mask = torch.where(bool_mask, biases, attn_mask)
+                bool_mask = combined_mask.bool_mask
+                logit_mask = torch.where(bool_mask, biases, logit_mask)
 
             # We can't pass a bool mask, because it is currently broken:
             # https://github.com/pytorch/pytorch/issues/103749
-            return F.scaled_dot_product_attention(
+            attn_values = F.scaled_dot_product_attention(
                 query=query,
                 key=key,
                 value=value,
-                attn_mask=attn_mask,
+                attn_mask=logit_mask,
                 dropout_p=self.dropout_prob if self.training else 0.0,
+            )
+
+            # Torch SDP returns NaNs for pieces where every is piece masked out.
+            # These errors propagate because zero attention times NaN is NaN.
+            # Since the representations of these pieces don't matter anyway, we
+            # will just zero them out.
+            #
+            # One issue is that values have shape
+            #
+            # [batch_len, n_heads, key_len, hidden_size]
+            #
+            # whereas masks have the shape
+            #
+            # [batch_len, 1, query_len, key_len]
+            #
+            # So we can only do this when we have attention masks where
+            # the query length it not specified, which are typically 'pure'
+            # attention masks (not causal maskes or combined masks):
+            #
+            # [batch_len, 1, 1, key_len]
+            #
+            # Doing this properly requires a redesign of our AttentionMask
+            # class.
+            assert (
+                attention_mask.bool_mask.size(-2) == 1
+            ), "Torch SDP does not support attention masks with non-broadcastable query length yet"
+            return torch.where(
+                attention_mask.bool_mask.transpose(-1, -2), attn_values, 0.0
             )
         else:
             width = key.shape[-1]
@@ -741,7 +750,7 @@ class ScaledDotProductAttention(AttentionScorer):
             if self.linear_biases is not None:
                 attn_scores = self.linear_biases(attention_scores=attn_scores)
 
-            attn_scores = attention_mask.apply_logit_mask(attn_scores)
+            attn_scores = combined_mask.apply_logit_mask(attn_scores)
             attn_weights = attn_scores.softmax(dim=-1)
             attn_values = self.dropout(attn_weights @ value)
 
@@ -882,10 +891,6 @@ class SelfAttention(Module):
 
             *Shape:* ``(batch_size, seq_len, width)``
         """
-        # The attention mask is converted to a dict for traced models. Rewrap as
-        # AttentionMask to get validation and utility methods.
-        attention_mask = AttentionMask.jit_rewrap(attention_mask)
-
         query, key, value = self._query_key_value(input)
 
         if self.rotary_embeds is not None:
@@ -893,9 +898,6 @@ class SelfAttention(Module):
                 query=query, key=key, cache=cache, positions=positions
             )
 
-        # The key-value is converted to a dict for traced models. Rewrap as
-        # KeyValueCache to get validation and utility methods.
-        cache = KeyValueCache.jit_rewrap(cache)
         if cache is not None:
             cache_k = cache.key
             cache_v = cache.value
@@ -903,16 +905,12 @@ class SelfAttention(Module):
             key = torch.cat([cache_k, key], dim=-2)
             value = torch.cat([cache_v, value], dim=-2)
 
-        combined_mask = attention_mask
-        if use_causal_mask:
-            causal_mask = create_causal_mask(query, key)
-            combined_mask = combined_mask.merge_mask(causal_mask)
-
         attn = self.attention_scorer(
             query=query,
             key=key,
             value=value,
-            attention_mask=combined_mask,
+            attention_mask=attention_mask,
+            use_causal_mask=use_causal_mask,
         )
 
         attn = combine_heads(attn)
@@ -920,7 +918,7 @@ class SelfAttention(Module):
         output = self.output(attn)
 
         if store_cache:
-            return output, KeyValueCache(key, value)
+            return output, KeyValueCache(key=key, value=value)
         else:
             return output, None
 

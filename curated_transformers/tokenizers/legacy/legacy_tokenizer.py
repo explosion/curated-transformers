@@ -155,12 +155,10 @@ class LegacyTokenizer(TokenizerBase):
     @abstractmethod
     def _decode(
         self, input: Iterable[Iterable[int]], skip_special_pieces: bool
-    ) -> List[str]:
-        ...
+    ) -> List[str]: ...
 
     @abstractmethod
-    def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds:
-        ...
+    def _encode(self, input: Iterable[MergedInputChunks]) -> PiecesWithIds: ...
 
 
 class AddBosEosPreEncoder(PreEncoder):

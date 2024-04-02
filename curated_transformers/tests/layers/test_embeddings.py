@@ -24,7 +24,8 @@ def test_rotary_embeddings_against_hf(device):
 
     X = torch.rand(16, 12, 64, 768, device=device)
     Y = re(X)
-    hf_re_cos, hf_re_sin = hf_re(X, seq_len=X.shape[-2])
+    positions = torch.arange(X.shape[2], device=device).view([1, -1])
+    hf_re_cos, hf_re_sin = hf_re(X, positions)
     Y_hf = hf_re_cos * X + hf_re_sin * rotate_half(X)
 
     torch_assertclose(Y, Y_hf)

@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m pip install isort -c requirements.txt
           python -m isort curated_transformers examples --check
+          
       - name: flake8
         run: |
           python -m pip install flake8==5.0.4

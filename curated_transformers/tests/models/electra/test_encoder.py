@@ -12,11 +12,7 @@ from ..util import assert_encoder_output_equals_hf
 @pytest.mark.parametrize("with_torch_sdp", [False, True])
 @pytest.mark.parametrize(
     "model_name",
-    [
-        "jonfd/electra-small-nordic",
-        "Maltehb/aelaectra-danish-electra-small-cased",
-        "google/electra-small-discriminator",
-    ],
+    ["explosion-testing/electra-test"],
 )
 def test_encoder(model_name: str, torch_device, with_torch_sdp):
     assert_encoder_output_equals_hf(

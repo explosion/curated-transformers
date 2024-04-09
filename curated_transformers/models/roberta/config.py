@@ -16,6 +16,7 @@ class RoBERTaConfig(BERTConfig):
     def __init__(
         self,
         *args,
+        dtype: torch.dtype = torch.float32,
         layer_norm_eps=1e-05,
         n_positions=514,
         padding_id=1,
@@ -24,6 +25,8 @@ class RoBERTaConfig(BERTConfig):
         **kwargs
     ):
         """
+        :param dtype:
+            Data type to use for model parameters.
         :param embedding_width:
             Width of the embedding representations.
         :param hidden_width:
@@ -63,5 +66,5 @@ class RoBERTaConfig(BERTConfig):
             n_pieces=n_pieces,
             **kwargs
         )
-        self.dtype = torch.float32
+        self.dtype = dtype
         self.padding_id = padding_id

@@ -27,6 +27,7 @@ class FalconConfig(TransformerConfig):
         self,
         *,
         attention_probs_dropout_prob: float = 0.0,
+        dtype: torch.dtype = torch.bfloat16,
         hidden_dropout_prob: float = 0.0,
         hidden_width: int = 2560,
         layer_norm_eps: float = 1e-5,
@@ -44,6 +45,8 @@ class FalconConfig(TransformerConfig):
         """
         :param attention_probs_dropout_prob:
             Dropout to apply after attention.
+        :param dtype:
+            Data type to use for model parameters.
         :param hidden_dropout_prob:
             Dropout to apply to the hidden and embedding layers.
         :param hidden_width:
@@ -109,5 +112,5 @@ class FalconConfig(TransformerConfig):
             layer_norm_eps=layer_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
-        self.dtype = torch.bfloat16
+        self.dtype = dtype
         self.new_decoder_architecture = new_decoder_architecture

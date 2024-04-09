@@ -50,6 +50,7 @@ class ALBERTConfig(TransformerConfig):
     def __init__(
         self,
         *,
+        dtype: torch.dtype = torch.float32,
         embedding_width: int = 128,
         hidden_width: int = 768,
         n_layers_per_group: int = 1,
@@ -67,6 +68,8 @@ class ALBERTConfig(TransformerConfig):
         layer_norm_eps: float = 1e-12,
     ):
         """
+        :param dtype:
+            Data type to use for model parameters.
         :param embedding_width:
             Width of the embedding representations.
         :param hidden_width:
@@ -132,5 +135,5 @@ class ALBERTConfig(TransformerConfig):
             n_layers_per_group=n_layers_per_group,
             n_hidden_groups=n_hidden_groups,
         )
-        self.dtype = torch.float32
+        self.dtype = dtype
         self.model_max_length = model_max_length

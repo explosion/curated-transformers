@@ -169,6 +169,38 @@ class FromHFHub(ABC, Generic[ConfigT]):
             quantization_config=quantization_config,
         )
 
+    def from_fsspec_(
+        self: Self,
+        *,
+        fs: AbstractFileSystem,
+        model_path: str,
+        fsspec_args: Optional[FsspecArgs] = None,
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> Self:
+        """
+        Load parameters from a fsspec filestytem in-place into the model.
+
+        :param fs:
+            The filesystem to load the model from.
+        :param model_path:
+            The path of the model on the filesystem.
+        :param fsspec_args:
+            Implementation-specific keyword arguments to pass to fsspec
+            filesystem operations.
+        :param device:
+            Device on which the model is initialized.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Module with the parameters loaded.
+        """
+        return self.from_repo_(
+            repo=FsspecRepository(fs, model_path, fsspec_args),
+            device=device,
+            quantization_config=quantization_config,
+        )
+
     @classmethod
     def from_hf_hub(
         cls: Type[Self],
@@ -193,6 +225,34 @@ class FromHFHub(ABC, Generic[ConfigT]):
             Module with the parameters loaded.
         """
         return cls.from_repo(
+            repo=HfHubRepository(name=name, revision=revision),
+            device=device,
+            quantization_config=quantization_config,
+        )
+
+    def from_hf_hub_(
+        self: Self,
+        *,
+        name: str,
+        revision: str = "main",
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> Self:
+        """
+        Load parameters from Hugging Face Hub in-place into the model.
+
+        :param name:
+            Model name.
+        :param revision:
+            Model revision.
+        :param device:
+            Device on which the model is initialized.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Module with the parameters loaded.
+        """
+        return self.from_repo_(
             repo=HfHubRepository(name=name, revision=revision),
             device=device,
             quantization_config=quantization_config,
@@ -237,30 +297,49 @@ class FromHFHub(ABC, Generic[ConfigT]):
         model = cls.from_hf_config(hf_config=config, device=torch.device("meta"))
         assert isinstance(model, Module)
 
+        return model.from_repo_(
+            repo=repo, device=device, quantization_config=quantization_config
+        )
+
+    def from_repo_(
+        self: Self,
+        *,
+        repo: Repository,
+        device: Optional[torch.device] = None,
+        quantization_config: Optional[BitsAndBytesConfig] = None,
+    ) -> Self:
+        """
+        Load parameters from a repository in-place into the model.
+
+        :param repository:
+            The repository to load from.
+        :param device:
+            Device on which to initialize the model.
+        :param quantization_config:
+            Configuration for loading quantized weights.
+        :returns:
+            Loaded model.
+        """
+        model_repo = ModelRepository(repo)
+
         # Convert the model to the expected dtype.
-        assert isinstance(model, TransformerModule)
-        dtype: torch.dtype = model.config.dtype
-        serialized_dtype_str = config.get("torch_dtype")
-        if serialized_dtype_str is not None:
-            serialized_dtype = getattr(torch, serialized_dtype_str, None)
-            if not isinstance(serialized_dtype, torch.dtype):
-                raise ValueError(f"Invalid torch dtype `{serialized_dtype_str}`")
-            dtype = serialized_dtype
-        model.to(dtype=dtype)
+        assert isinstance(self, TransformerModule)
+        dtype: torch.dtype = self.config.dtype
+        self.to(dtype=dtype)
 
         # Prepare for quantization.
         if quantization_config is not None:
-            tensor2param = prepare_module_for_quantization(model, quantization_config)  # type: ignore
+            tensor2param = prepare_module_for_quantization(self, quantization_config)  # type: ignore
         else:
             tensor2param = None
 
         # Download model and convert HF parameter names to ours.
         checkpoint_filenames, checkpoint_type = model_repo.model_checkpoints()
         load_model_from_checkpoints(
-            model,  # type:ignore
+            self,  # type:ignore
             filepaths=checkpoint_filenames,
             checkpoint_type=checkpoint_type,
-            state_dict_converter=cls.convert_hf_state_dict,
+            state_dict_converter=type(self).convert_hf_state_dict,
             tensor_to_param_converter=tensor2param,
             device=device,
         )
@@ -268,6 +347,6 @@ class FromHFHub(ABC, Generic[ConfigT]):
         # Ensure that any non-persistent buffers are also moved to
         # the correct device.
         if device is not None:
-            model.to(device)
+            self.to(device)
 
-        return model
+        return self

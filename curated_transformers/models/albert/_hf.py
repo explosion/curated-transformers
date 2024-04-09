@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+import torch
+
 from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import (
     CommonHFKeys,
@@ -82,6 +84,7 @@ class HFConfigKeys:
 
 HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [
     (CommonHFKeys.ATTENTION_PROBS_DROPOUT_PROB, None),
+    (CommonHFKeys.DTYPE, HFConfigKeyDefault("float32")),
     (CommonHFKeys.EMBEDDING_SIZE, None),
     (CommonHFKeys.HIDDEN_DROPOUT_PROB, None),
     (CommonHFKeys.HIDDEN_SIZE, None),

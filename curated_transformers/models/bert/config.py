@@ -25,6 +25,7 @@ class BERTConfig(TransformerConfig):
     def __init__(
         self,
         *,
+        dtype: torch.dtype = torch.float32,
         embedding_width: int = 768,
         hidden_width: int = 768,
         intermediate_width: int = 3072,
@@ -40,6 +41,8 @@ class BERTConfig(TransformerConfig):
         layer_norm_eps: float = 1e-12,
     ):
         """
+        :param dtype:
+            Data type to use for model parameters.
         :param embedding_width:
             Width of the embedding representations.
         :param hidden_width:
@@ -99,5 +102,5 @@ class BERTConfig(TransformerConfig):
             layer_norm_eps=layer_norm_eps,
             dropout_prob=hidden_dropout_prob,
         )
-        self.dtype = torch.float32
+        self.dtype = dtype
         self.model_max_length = model_max_length

@@ -25,6 +25,7 @@ class MPTConfig(TransformerConfig):
         *,
         attention_probs_dropout_prob: float = 0.0,
         activation: Activation = Activation.GELU,
+        dtype: torch.dtype = torch.bfloat16,
         hidden_dropout_prob: float = 0.0,
         hidden_width: int = 4096,
         intermediate_width_multiplier: int = 4,
@@ -40,6 +41,8 @@ class MPTConfig(TransformerConfig):
             Dropout to apply after attention.
         :param activation:
             Activation used by the pointwise feed-forward layers.
+        :param dtype:
+            Data type to use for model parameters.
         :param hidden_dropout_prob:
             Dropout to apply to the hidden and embedding layers.
         :param hidden_width:
@@ -94,5 +97,5 @@ class MPTConfig(TransformerConfig):
             layer_norm_eps=layer_norm_eps,
             n_hidden_layers=n_hidden_layers,
         )
-        self.dtype = torch.bfloat16
+        self.dtype = dtype
         self.model_max_length = model_max_length

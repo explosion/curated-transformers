@@ -2,6 +2,7 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
+import torch
 from torch import Tensor
 
 from ...layers import Activation
@@ -164,6 +165,10 @@ class CommonCuratedToHFConverters:
         return config.layer.feedforward.activation.value
 
     @staticmethod
+    def dtype(config: TransformerConfig) -> str:
+        return str(torch.float32).split(".")[1]
+
+    @staticmethod
     def embedding_width(config: TransformerConfig) -> int:
         return config.embedding.embedding_width
 
@@ -200,6 +205,20 @@ class CommonCuratedToHFConverters:
         return config.embedding.n_positions
 
 
+class CommonHFToCuratedConverters:
+    """
+    Common functions to convert Hugging Face config
+    values to a compatible Curated config format.
+    """
+
+    @staticmethod
+    def dtype(serialized_dtype_str: str) -> Optional[torch.dtype]:
+        serialized_dtype = getattr(torch, serialized_dtype_str, None)
+        if not isinstance(serialized_dtype, torch.dtype):
+            raise ValueError(f"Invalid torch dtype `{serialized_dtype_str}`")
+        return serialized_dtype
+
+
 class CommonHFKeys:
     """
     Common Hugging Face config keys.
@@ -211,6 +230,11 @@ class CommonHFKeys:
         # Workaround for Python 3.8 limitation that doesn't allow
         # passing/calling static methods as without a class bound.
         lambda c: CommonCuratedToHFConverters.attention_dropout(c),
+    )
+    DTYPE = HFConfigKey(
+        "torch_dtype",
+        ("dtype", lambda h: CommonHFToCuratedConverters.dtype(h)),
+        lambda c: CommonCuratedToHFConverters.dtype(c),
     )
     EMBEDDING_SIZE = HFConfigKey(
         "embedding_size",

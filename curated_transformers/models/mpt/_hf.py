@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+import torch
+
 from ...util.string import StringTransform, StringTransformations
 from ..hf_hub.conversion import (
     CommonCuratedToHFConverters,
@@ -94,6 +96,7 @@ class HFConfigKeys:
 
 
 HF_CONFIG_KEYS: List[Tuple[HFConfigKey, Optional[HFConfigKeyDefault]]] = [
+    (CommonHFKeys.DTYPE, HFConfigKeyDefault("bfloat16")),
     (HFConfigKeys.D_MODEL, None),
     (HFConfigKeys.EXPANSION_RATIO, None),
     (HFConfigKeys.MAX_SEQ_LEN, None),

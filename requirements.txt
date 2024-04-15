@@ -1,5 +1,5 @@
 catalogue>=2.0.4,<2.1.0
-curated-tokenizers>=2.0.0.dev0,<3.0.0
+curated-tokenizers>=2.0.0,<3.0.0
 huggingface-hub>=0.14
 tokenizers>=0.13.3
 torch>=1.12.0

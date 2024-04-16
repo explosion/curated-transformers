@@ -7,13 +7,13 @@ from ..quantization.bnb.config import BitsAndBytesConfig
 from .dolly_v2 import DollyV2Generator
 from .falcon import FalconGenerator
 from .generator_wrapper import GeneratorWrapper
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .llama import LlamaGenerator
 from .mpt import MPTGenerator
 
 # For the time being, we enable support for a generator on a case-by-case basis.
 # In the future we might defer all unknown generators to DefaultGenerator.
-GENERATOR_MAP: Dict[str, Type[FromHFHub]] = {
+GENERATOR_MAP: Dict[str, Type[FromHF]] = {
     "dolly-v2": DollyV2Generator,
     "falcon": FalconGenerator,
     "llama": LlamaGenerator,
@@ -70,7 +70,7 @@ class AutoGenerator(AutoModel[GeneratorWrapper]):
         return generator
 
 
-def _resolve_generator_class(name: str) -> Type[FromHFHub]:
+def _resolve_generator_class(name: str) -> Type[FromHF]:
     for substring, generator_cls in GENERATOR_MAP.items():
         if substring in name.lower():
             return generator_cls

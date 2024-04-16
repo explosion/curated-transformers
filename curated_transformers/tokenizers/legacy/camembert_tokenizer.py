@@ -3,7 +3,7 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 from curated_tokenizers import SentencePieceProcessor
 
 from ...repository.file import RepositoryFile
-from ..hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHF
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
@@ -65,7 +65,7 @@ class CamemBERTPreDecoder(FairSeqPreDecoder):
             return piece_id - _CAMEMBERT_FAIRSEQ_OFFSET
 
 
-class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class CamemBERTTokenizer(SentencePieceTokenizer, LegacyFromHF):
     """
     Legacy tokenizer for CamemBERT (`Martin et al., 2020`_) models.
 

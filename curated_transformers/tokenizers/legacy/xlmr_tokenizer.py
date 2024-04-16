@@ -3,7 +3,7 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 from curated_tokenizers import SentencePieceProcessor
 
 from ...repository.file import RepositoryFile
-from ..hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHF
 from ._fairseq import FAIRSEQ_PIECE_IDS, FairSeqPostEncoder, FairSeqPreDecoder
 from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
@@ -73,7 +73,7 @@ class XLMRPreDecoder(FairSeqPreDecoder):
             return piece_id - _XLMR_FAIRSEQ_OFFSET
 
 
-class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class XLMRTokenizer(SentencePieceTokenizer, LegacyFromHF):
     """
     Legacy tokenizer for XLM-RoBERTa (`Conneau et al., 2019`_) models.
 

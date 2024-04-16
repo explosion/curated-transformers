@@ -23,7 +23,7 @@ from ...layers.transformer import (
     TransformerEmbeddings,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
 from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -34,7 +34,7 @@ from .layer import OldFalconDecoderLayer
 Self = TypeVar("Self", bound="FalconDecoder")
 
 
-class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub[FalconConfig]):
+class FalconDecoder(TransformerDecoder[FalconConfig], FromHF[FalconConfig]):
     """
     Falcon (`Penedo et al., 2019`_) decoder.
 

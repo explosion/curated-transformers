@@ -14,7 +14,7 @@ from ..repository.fsspec import FsspecArgs, FsspecRepository
 from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import ModelRepository, Repository
 from .config import TransformerConfig
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .module import CausalLMModule, DecoderModule, EncoderModule, TransformerModule
 
 ModelT = TypeVar("ModelT")
@@ -33,14 +33,14 @@ class AutoModel(ABC, Generic[ModelT]):
     def _resolve_model_cls(
         cls,
         repo: ModelRepository,
-    ) -> Type[FromHFHub]:
+    ) -> Type[FromHF]:
         config = repo.model_config()
 
         for entrypoint, module_cls in cls._registry.get_entry_points().items():
-            if not issubclass(module_cls, FromHFHub):
+            if not issubclass(module_cls, FromHF):
                 warnings.warn(
                     f"Entry point `{entrypoint}` cannot load from Hugging Face Hub "
-                    "since the FromHFHub mixin is not implemented"
+                    "since the FromHF mixin is not implemented"
                 )
                 continue
 
@@ -70,7 +70,7 @@ class AutoModel(ABC, Generic[ModelT]):
         repo: Repository,
         device: Optional[torch.device],
         quantization_config: Optional[BitsAndBytesConfig],
-    ) -> FromHFHub:
+    ) -> FromHF:
         module_cls = cls._resolve_model_cls(ModelRepository(repo))
         module = module_cls.from_repo(
             repo=repo,

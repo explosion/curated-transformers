@@ -23,7 +23,7 @@ from ...layers.transformer import (
     TransformerEmbeddings,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
 from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -33,7 +33,7 @@ from .config import LlamaConfig
 Self = TypeVar("Self", bound="LlamaDecoder")
 
 
-class LlamaDecoder(TransformerDecoder[LlamaConfig], FromHFHub[LlamaConfig]):
+class LlamaDecoder(TransformerDecoder[LlamaConfig], FromHF[LlamaConfig]):
     """
     Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) decoder.
 

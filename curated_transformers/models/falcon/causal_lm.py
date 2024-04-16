@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn import Linear
 
 from ...quantization.quantizable import Quantizable
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerCausalLM
 from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -17,7 +17,7 @@ Self = TypeVar("Self", bound="FalconCausalLM")
 
 
 class FalconCausalLM(
-    TransformerCausalLM[FalconConfig], FromHFHub[FalconConfig], Quantizable
+    TransformerCausalLM[FalconConfig], FromHF[FalconConfig], Quantizable
 ):
     """
     Falcon (`Penedo et al., 2019`_) causal language model.

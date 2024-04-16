@@ -4,13 +4,13 @@ from ..models.falcon import FalconCausalLM
 from ..tokenizers.chunks import InputChunks, TextChunk
 from ..tokenizers.tokenizer import Tokenizer
 from .default_generator import DefaultGenerator
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="FalconGenerator")
 
 
-class FalconGenerator(DefaultGenerator, FromHFHub):
+class FalconGenerator(DefaultGenerator, FromHF):
     """
     Generator for Falcon model variants.
     """

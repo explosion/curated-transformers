@@ -6,10 +6,10 @@ import torch
 from ..quantization.bnb.config import BitsAndBytesConfig
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="FromHFHub")
+Self = TypeVar("Self", bound="FromHF")
 
 
-class FromHFHub(ABC):
+class FromHF(ABC):
     """
     Mixin class for downloading generators from Hugging Face Hub.
 

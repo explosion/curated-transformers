@@ -17,7 +17,7 @@ from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import Repository, TokenizerRepository
 from ._hf_compat import clean_up_decoded_string_like_hf
 from .chunks import InputChunks, MergedSpecialPieceChunk
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="Tokenizer")
@@ -176,7 +176,7 @@ class TokenizerBase(ABC):
         ...
 
 
-class Tokenizer(TokenizerBase, FromHFHub):
+class Tokenizer(TokenizerBase, FromHF):
     """
     Wraps the tokenizers from the ``tokenizers`` package. It supports a
     wide range of piece tokenizers, including word piece, byte pair encoding, and

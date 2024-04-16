@@ -10,7 +10,7 @@ from ...layers.transformer import (
     EmbeddingLayerNorms,
     TransformerEmbeddings,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..module import EncoderModule
 from ..output import ModelOutput
@@ -22,7 +22,7 @@ from .layer_group import ALBERTLayerGroup
 Self = TypeVar("Self", bound="ALBERTEncoder")
 
 
-class ALBERTEncoder(EncoderModule[ALBERTConfig], FromHFHub[ALBERTConfig]):
+class ALBERTEncoder(EncoderModule[ALBERTConfig], FromHF[ALBERTConfig]):
     """
     ALBERT (`Lan et al., 2022`_) encoder.
 

@@ -15,10 +15,10 @@ from ...util.serde.load import load_model_from_checkpoints
 from ..module import ConfigT, TransformerModule
 
 # Only provided as typing.Self in Python 3.11+.
-Self = TypeVar("Self", bound="FromHFHub")
+Self = TypeVar("Self", bound="FromHF")
 
 
-class FromHFHub(ABC, Generic[ConfigT]):
+class FromHF(ABC, Generic[ConfigT]):
     """
     Mixin class for downloading models from Hugging Face Hub.
 

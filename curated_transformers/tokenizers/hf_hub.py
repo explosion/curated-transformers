@@ -9,10 +9,10 @@ from ..repository.fsspec import FsspecArgs, FsspecRepository
 from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import Repository, TokenizerRepository
 
-SelfFromHFHub = TypeVar("SelfFromHFHub", bound="FromHFHub")
+SelfFromHF = TypeVar("SelfFromHF", bound="FromHF")
 
 
-class FromHFHub(ABC):
+class FromHF(ABC):
     """
     Mixin class for downloading tokenizers from Hugging Face Hub.
 
@@ -23,7 +23,7 @@ class FromHFHub(ABC):
     @classmethod
     @abstractmethod
     def from_hf_hub_to_cache(
-        cls: Type[SelfFromHFHub],
+        cls: Type[SelfFromHF],
         *,
         name: str,
         revision: str = "main",
@@ -43,12 +43,12 @@ class FromHFHub(ABC):
 
     @classmethod
     def from_fsspec(
-        cls: Type[SelfFromHFHub],
+        cls: Type[SelfFromHF],
         *,
         fs: AbstractFileSystem,
         model_path: str,
         fsspec_args: Optional[FsspecArgs] = None,
-    ) -> SelfFromHFHub:
+    ) -> SelfFromHF:
         """
         Construct a tokenizer and load its parameters from an fsspec filesystem.
 
@@ -68,8 +68,8 @@ class FromHFHub(ABC):
 
     @classmethod
     def from_hf_hub(
-        cls: Type[SelfFromHFHub], *, name: str, revision: str = "main"
-    ) -> SelfFromHFHub:
+        cls: Type[SelfFromHF], *, name: str, revision: str = "main"
+    ) -> SelfFromHF:
         """
         Construct a tokenizer and load its parameters from Hugging Face Hub.
 
@@ -87,9 +87,9 @@ class FromHFHub(ABC):
     @classmethod
     @abstractmethod
     def from_repo(
-        cls: Type[SelfFromHFHub],
+        cls: Type[SelfFromHF],
         repo: Repository,
-    ) -> SelfFromHFHub:
+    ) -> SelfFromHF:
         """
         Construct and load a tokenizer from a repository.
 
@@ -101,12 +101,12 @@ class FromHFHub(ABC):
         ...
 
 
-SelfLegacyFromHFHub = TypeVar("SelfLegacyFromHFHub", bound="LegacyFromHFHub")
+SelfLegacyFromHF = TypeVar("SelfLegacyFromHF", bound="LegacyFromHF")
 
 
-class LegacyFromHFHub(FromHFHub):
+class LegacyFromHF(FromHF):
     """
-    Subclass of :class:`.FromHFHub` for legacy tokenizers. This subclass
+    Subclass of :class:`.FromHF` for legacy tokenizers. This subclass
     implements the ``from_hf_hub`` method and provides through the abstract
     ``_load_from_vocab_files`` method:
 
@@ -120,11 +120,11 @@ class LegacyFromHFHub(FromHFHub):
     @classmethod
     @abstractmethod
     def _load_from_vocab_files(
-        cls: Type[SelfLegacyFromHFHub],
+        cls: Type[SelfLegacyFromHF],
         *,
         vocab_files: Mapping[str, RepositoryFile],
         tokenizer_config: Optional[Dict[str, Any]],
-    ) -> SelfLegacyFromHFHub:
+    ) -> SelfLegacyFromHF:
         """
         Construct a tokenizer from its vocabulary files and optional
         configuration.
@@ -140,7 +140,7 @@ class LegacyFromHFHub(FromHFHub):
 
     @classmethod
     def from_hf_hub_to_cache(
-        cls: Type[SelfLegacyFromHFHub],
+        cls: Type[SelfLegacyFromHF],
         *,
         name: str,
         revision: str = "main",
@@ -156,9 +156,9 @@ class LegacyFromHFHub(FromHFHub):
 
     @classmethod
     def from_repo(
-        cls: Type[SelfLegacyFromHFHub],
+        cls: Type[SelfLegacyFromHF],
         repo: Repository,
-    ) -> SelfLegacyFromHFHub:
+    ) -> SelfLegacyFromHF:
         repo = TokenizerRepository(repo)
         vocab_files = {}
         for vocab_file, filename in cls.vocab_files.items():

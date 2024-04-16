@@ -1,1 +1,1 @@
-from .mixin import FromHFHub
+from .mixin import FromHF

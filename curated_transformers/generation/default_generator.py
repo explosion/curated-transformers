@@ -13,14 +13,14 @@ from ..tokenizers.tokenizer import TokenizerBase
 from .config import GeneratorConfig, SampleGeneratorConfig
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .string_generator import StringGenerator
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="DefaultGenerator")
 
 
-class DefaultGenerator(Generic[CacheT], GeneratorWrapper, FromHFHub):
+class DefaultGenerator(Generic[CacheT], GeneratorWrapper, FromHF):
     """
     Generator wrapper for models that do not need specific prompting.
     """

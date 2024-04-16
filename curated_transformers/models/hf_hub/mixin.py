@@ -22,19 +22,10 @@ class FromHF(ABC, Generic[ConfigT]):
     """
     Mixin class for downloading models from Hugging Face Hub.
 
-    A module using this mixin can implement the ``convert_hf_state_dict``
-    and ``from_hf_config`` methods. The mixin will then provide the
-    ``from_hf_hub`` method to download a model from the Hugging Face Hub.
+    Implementation of the mixin's abstract methods will provide various ``from_``
+    methods to load a model, including the ``from_hf_hub`` method to download a
+    model from the Hugging Face Hub.
     """
-
-    @classmethod
-    def convert_hf_state_dict(
-        cls, params: Mapping[str, Tensor]
-    ) -> Mapping[str, Tensor]:
-        """
-        Alias for :meth:`.state_dict_from_hf`.
-        """
-        return cls.state_dict_from_hf(params)
 
     @classmethod
     @abstractmethod
@@ -339,7 +330,7 @@ class FromHF(ABC, Generic[ConfigT]):
             self,  # type:ignore
             filepaths=checkpoint_filenames,
             checkpoint_type=checkpoint_type,
-            state_dict_converter=type(self).convert_hf_state_dict,
+            state_dict_converter=type(self).state_dict_from_hf,
             tensor_to_param_converter=tensor2param,
             device=device,
         )

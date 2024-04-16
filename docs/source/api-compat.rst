@@ -110,6 +110,6 @@ Version 1 to 2
 * The factory methods of :py:class:`~curated_transformers.layers.AttentionHeads`
   add a new ``qkv_split`` argument which is mandatory in future versions.
 * The ``FromHFHub`` mixins are be renamed to ``FromHF``.
-* The ``convert_hf_state_dict`` method in ``FromHF`` will be removed 
+* The ``convert_hf_state_dict`` method in ``FromHF`` is be removed 
   in favour of ``state_dict_from_hf``.
-* The ``SelfAttention`` class will take an additional ``AttentionScorer`` argument.
+* The ``SelfAttention`` class takes an additional ``AttentionScorer`` argument.

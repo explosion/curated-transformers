@@ -8,6 +8,7 @@ from torch.nn import Dropout, ModuleList
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -73,6 +74,7 @@ class LlamaDecoder(TransformerDecoder[LlamaConfig], FromHFHub[LlamaConfig]):
         attention_heads = AttentionHeads.key_value_broadcast(
             n_query_heads=n_query_heads,
             n_key_value_heads=config.layer.attention.n_key_value_heads,
+            qkv_split=QkvSplitGroupedByKVHeads(),
         )
         layer_norm = partial(
             RMSNorm,

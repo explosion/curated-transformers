@@ -10,6 +10,7 @@ from ...layers.attention import (
     AttentionMask,
     KeyValueCache,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -71,6 +72,7 @@ class OldFalconDecoderLayer(Module):
             attention_heads=AttentionHeads.key_value_broadcast(
                 n_query_heads=attention_config.n_query_heads,
                 n_key_value_heads=attention_config.n_key_value_heads,
+                qkv_split=QkvSplitGroupedByKVHeads(),
             ),
             rotary_embeds=rotary_embeds,
             qkv_mode=(

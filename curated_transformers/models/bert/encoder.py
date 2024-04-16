@@ -8,6 +8,7 @@ from torch.nn import Dropout, LayerNorm
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -85,7 +86,8 @@ class BERTEncoder(TransformerEncoder[BERTConfig], FromHFHub[BERTConfig]):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.layer.attention.n_query_heads
+                            config.layer.attention.n_query_heads,
+                            QkvSplitGroupedByKVHeads(),
                         ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=config.layer.attention.dropout_prob,

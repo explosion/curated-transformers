@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Dropout, Linear, Module
 
-from ..semver import Default, FutureMandatory
 from .cache import KeyValueCache
 from .embeddings import QueryKeyRotaryEmbeddings
 
@@ -346,7 +345,7 @@ class AttentionHeads:
         *,
         n_query_heads: int,
         n_key_value_heads: int,
-        qkv_split: FutureMandatory[QkvSplit] = Default,
+        qkv_split: QkvSplit,
     ):
         """
         Construct an attention head configuration. This constructor must
@@ -366,16 +365,13 @@ class AttentionHeads:
         """
         self._n_query_heads = n_query_heads
         self._n_key_value_heads = n_key_value_heads
-
-        qkv_split = QkvSplitGroupedByKVHeads() if qkv_split is Default else qkv_split
-        assert isinstance(qkv_split, QkvSplit)
         self._qkv_split = qkv_split
 
     @classmethod
     def uniform(
         cls,
         n_attention_heads: int,
-        qkv_split: FutureMandatory[QkvSplit] = Default,
+        qkv_split: QkvSplit,
     ) -> "AttentionHeads":
         """
         Construct a head configuration where query, key, and value have the
@@ -398,7 +394,7 @@ class AttentionHeads:
     def multi_query(
         cls,
         n_query_heads: int,
-        qkv_split: FutureMandatory[QkvSplit] = Default,
+        qkv_split: QkvSplit,
     ) -> "AttentionHeads":
         """
         Construct a multi-query attention configuration: key has one head,
@@ -425,7 +421,7 @@ class AttentionHeads:
         *,
         n_query_heads: int,
         n_key_value_heads: int,
-        qkv_split: FutureMandatory[QkvSplit] = Default,
+        qkv_split: QkvSplit,
     ) -> "AttentionHeads":
         """
         Construct a head configuration where query has a larger number

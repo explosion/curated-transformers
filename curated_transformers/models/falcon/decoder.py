@@ -9,6 +9,7 @@ from ...layers.attention import (
     AttentionHeads,
     AttentionLinearBiases,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -166,6 +167,7 @@ class FalconDecoder(TransformerDecoder[FalconConfig], FromHFHub[FalconConfig]):
                 attention_heads=AttentionHeads.key_value_broadcast(
                     n_query_heads=n_attention_heads,
                     n_key_value_heads=config.layer.attention.n_key_value_heads,
+                    qkv_split=QkvSplitGroupedByKVHeads(),
                 ),
                 attention_scorer=ScaledDotProductAttention(
                     dropout_prob=config.layer.attention.dropout_prob,

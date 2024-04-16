@@ -8,6 +8,7 @@ from torch.nn import Dropout, LayerNorm, ModuleList
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -82,7 +83,10 @@ class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_heads=AttentionHeads.uniform(n_attention_heads),
+                        attention_heads=AttentionHeads.uniform(
+                            n_attention_heads,
+                            QkvSplitGroupedByKVHeads(),
+                        ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=config.layer.attention.dropout_prob,
                             linear_biases=None,

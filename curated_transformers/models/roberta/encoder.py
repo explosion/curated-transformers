@@ -8,6 +8,7 @@ from torch.nn import Dropout, LayerNorm
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -19,7 +20,7 @@ from ...layers.transformer import (
     TransformerDropouts,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerEncoder
 from ._hf import HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -30,7 +31,7 @@ from .embeddings import RoBERTaEmbeddings
 Self = TypeVar("Self", bound="RoBERTaEncoder")
 
 
-class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub[RoBERTaConfig]):
+class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHF[RoBERTaConfig]):
     """
     RoBERTa (`Liu et al., 2019`_) encoder.
 
@@ -80,7 +81,8 @@ class RoBERTaEncoder(TransformerEncoder[RoBERTaConfig], FromHFHub[RoBERTaConfig]
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.layer.attention.n_query_heads
+                            config.layer.attention.n_query_heads,
+                            QkvSplitGroupedByKVHeads(),
                         ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=config.layer.attention.dropout_prob,

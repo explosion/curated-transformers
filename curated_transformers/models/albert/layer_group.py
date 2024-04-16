@@ -9,6 +9,7 @@ from ...layers.attention import (
     AttentionHeads,
     AttentionMask,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -45,7 +46,8 @@ class ALBERTLayerGroup(Module):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            attention_config.n_query_heads
+                            attention_config.n_query_heads,
+                            QkvSplitGroupedByKVHeads(),
                         ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=attention_config.dropout_prob,

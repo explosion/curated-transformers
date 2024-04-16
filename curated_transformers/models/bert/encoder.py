@@ -8,6 +8,7 @@ from torch.nn import Dropout, LayerNorm
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -20,7 +21,7 @@ from ...layers.transformer import (
     TransformerEmbeddings,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerEncoder
 from ._hf import HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -30,7 +31,7 @@ from .config import BERTConfig
 Self = TypeVar("Self", bound="BERTEncoder")
 
 
-class BERTEncoder(TransformerEncoder[BERTConfig], FromHFHub[BERTConfig]):
+class BERTEncoder(TransformerEncoder[BERTConfig], FromHF[BERTConfig]):
     """
     BERT (`Devlin et al., 2018`_) encoder.
 
@@ -85,7 +86,8 @@ class BERTEncoder(TransformerEncoder[BERTConfig], FromHFHub[BERTConfig]):
                 EncoderLayer(
                     attention_layer=SelfAttention(
                         attention_heads=AttentionHeads.uniform(
-                            config.layer.attention.n_query_heads
+                            config.layer.attention.n_query_heads,
+                            QkvSplitGroupedByKVHeads(),
                         ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=config.layer.attention.dropout_prob,

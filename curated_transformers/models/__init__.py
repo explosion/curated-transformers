@@ -12,7 +12,7 @@ from .config import (
 )
 from .falcon import FalconCausalLM, FalconConfig, FalconDecoder
 from .gpt_neox import GPTNeoXCausalLM, GPTNeoXConfig, GPTNeoXDecoder
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .llama import LlamaCausalLM, LlamaConfig, LlamaDecoder
 from .module import CausalLMModule, DecoderModule, EncoderModule
 from .mpt import MPTCausalLM, MPTConfig, MPTDecoder
@@ -37,7 +37,7 @@ __all__ = [
     "FalconCausalLM",
     "FalconConfig",
     "FalconDecoder",
-    "FromHFHub",
+    "FromHF",
     "GPTNeoXCausalLM",
     "GPTNeoXConfig",
     "GPTNeoXDecoder",

@@ -5,7 +5,7 @@ from fsspec import AbstractFileSystem
 from ..repository.fsspec import FsspecArgs, FsspecRepository
 from ..repository.hf_hub import HfHubRepository
 from ..repository.repository import Repository, TokenizerRepository
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .legacy.bert_tokenizer import BERTTokenizer
 from .legacy.camembert_tokenizer import CamemBERTTokenizer
 from .legacy.llama_tokenizer import LlamaTokenizer
@@ -13,7 +13,7 @@ from .legacy.roberta_tokenizer import RoBERTaTokenizer
 from .legacy.xlmr_tokenizer import XLMRTokenizer
 from .tokenizer import Tokenizer, TokenizerBase
 
-HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
+HF_TOKENIZER_MAPPING: Dict[str, Type[FromHF]] = {
     "BertTokenizer": BERTTokenizer,
     "BertTokenizerFast": BERTTokenizer,
     "CamembertTokenizer": CamemBERTTokenizer,
@@ -26,7 +26,7 @@ HF_TOKENIZER_MAPPING: Dict[str, Type[FromHFHub]] = {
     "XLMRobertaTokenizerFast": XLMRTokenizer,
 }
 
-HF_MODEL_MAPPING: Dict[str, Type[FromHFHub]] = {
+HF_MODEL_MAPPING: Dict[str, Type[FromHF]] = {
     "bert": BERTTokenizer,
     "camembert": CamemBERTTokenizer,
     "llama": LlamaTokenizer,
@@ -40,7 +40,7 @@ class AutoTokenizer:
     Tokenizer loaded from the Hugging Face Model Hub.
     """
 
-    # NOTE: We do not inherit from FromHFHub, because its from_hf_hub method
+    # NOTE: We do not inherit from FromHF, because its from_hf_hub method
     #       requires that the return type is Self.
 
     @classmethod
@@ -122,7 +122,7 @@ class AutoTokenizer:
 
 def _get_tokenizer_class_from_config(
     tokenizer_config: Dict[str, Any]
-) -> Optional[Type[FromHFHub]]:
+) -> Optional[Type[FromHF]]:
     """
     Infer the tokenizer class from the tokenizer configuration.
 
@@ -138,12 +138,12 @@ def _get_tokenizer_class_from_config(
 
 def _resolve_tokenizer_class(
     repo: TokenizerRepository,
-) -> Type[FromHFHub]:
+) -> Type[FromHF]:
     tokenizer_file = repo.tokenizer_json()
     if tokenizer_file.exists():
         return Tokenizer
 
-    cls: Optional[Type[FromHFHub]] = None
+    cls: Optional[Type[FromHF]] = None
     try:
         tokenizer_config = repo.tokenizer_config()
         cls = _get_tokenizer_class_from_config(tokenizer_config)

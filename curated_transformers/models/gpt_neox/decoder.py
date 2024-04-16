@@ -8,6 +8,7 @@ from torch.nn import Dropout, LayerNorm, ModuleList
 from ...layers.attention import (
     AttentionHeads,
     QkvMode,
+    QkvSplitGroupedByKVHeads,
     ScaledDotProductAttention,
     SelfAttention,
 )
@@ -21,7 +22,7 @@ from ...layers.transformer import (
     TransformerEmbeddings,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
 from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -31,7 +32,7 @@ from .config import GPTNeoXConfig
 Self = TypeVar("Self", bound="GPTNeoXDecoder")
 
 
-class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
+class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHF):
     """
     GPT-NeoX (`Black et al., 2022`_) decoder.
 
@@ -82,7 +83,10 @@ class GPTNeoXDecoder(TransformerDecoder[GPTNeoXConfig], FromHFHub):
             [
                 DecoderLayer(
                     attention_layer=SelfAttention(
-                        attention_heads=AttentionHeads.uniform(n_attention_heads),
+                        attention_heads=AttentionHeads.uniform(
+                            n_attention_heads,
+                            QkvSplitGroupedByKVHeads(),
+                        ),
                         attention_scorer=ScaledDotProductAttention(
                             dropout_prob=config.layer.attention.dropout_prob,
                             linear_biases=None,

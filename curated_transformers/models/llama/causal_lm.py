@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn import Linear
 
 from ...quantization import Quantizable
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerCausalLM
 from ._hf import CAUSAL_LM_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -16,9 +16,7 @@ from .decoder import LlamaDecoder
 Self = TypeVar("Self", bound="LlamaCausalLM")
 
 
-class LlamaCausalLM(
-    TransformerCausalLM[LlamaConfig], FromHFHub[LlamaConfig], Quantizable
-):
+class LlamaCausalLM(TransformerCausalLM[LlamaConfig], FromHF[LlamaConfig], Quantizable):
     """
     Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) causal language model.
 

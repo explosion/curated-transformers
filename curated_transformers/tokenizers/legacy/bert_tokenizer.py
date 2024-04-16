@@ -12,7 +12,7 @@ from ..chunks import (
     SpecialPieceChunk,
     TextChunk,
 )
-from ..hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHF
 from ..tokenizer import PiecesWithIds
 from ..util import remove_pieces_from_sequence
 from .legacy_tokenizer import (
@@ -192,7 +192,7 @@ class BERTNormalizer(Normalizer):
         return chunks
 
 
-class BERTTokenizer(WordPieceTokenizer, LegacyFromHFHub):
+class BERTTokenizer(WordPieceTokenizer, LegacyFromHF):
     """
     Legacy tokenizer for BERT (`Devlin et al., 2018`_) models.
 

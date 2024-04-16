@@ -3,7 +3,7 @@ from typing import Any, Dict, Mapping, Optional, Type, TypeVar
 from curated_tokenizers import SentencePieceProcessor
 
 from ...repository.file import RepositoryFile
-from ..hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHF
 from .legacy_tokenizer import AddBosEosPreEncoder
 from .sentencepiece_tokenizer import SentencePieceTokenizer
 
@@ -13,7 +13,7 @@ Self = TypeVar("Self", bound="LlamaTokenizer")
 DEFAULT_BOS_PIECE = "<s>"
 
 
-class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHFHub):
+class LlamaTokenizer(SentencePieceTokenizer, LegacyFromHF):
     """
     Legacy tokenizer for Llama (`Touvron et al., 2023 [a]`_, `Touvron et al., 2023 [b]`_) models.
 

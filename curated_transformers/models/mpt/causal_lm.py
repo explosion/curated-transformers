@@ -8,7 +8,7 @@ from torch.nn import Embedding
 from ...layers.attention import AttentionMask
 from ...layers.cache import KeyValueCache
 from ...quantization import Quantizable
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..output import CausalLMOutputWithCache
 from ..transformer import TransformerCausalLM
@@ -20,7 +20,7 @@ from .decoder import MPTDecoder
 Self = TypeVar("Self", bound="MPTCausalLM")
 
 
-class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHFHub[MPTConfig], Quantizable):
+class MPTCausalLM(TransformerCausalLM[MPTConfig], FromHF[MPTConfig], Quantizable):
     """
     `MosaicML MPT`_ causal language model.
 

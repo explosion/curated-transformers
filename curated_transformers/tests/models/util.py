@@ -8,7 +8,7 @@ from torch.nn import Module
 
 from curated_transformers.layers.attention import AttentionMask, enable_torch_sdp
 from curated_transformers.layers.cache import KeyValueCache
-from curated_transformers.models.hf_hub import FromHFHub
+from curated_transformers.models.hf_hub import FromHF
 from curated_transformers.models.module import (
     CausalLMModule,
     DecoderModule,
@@ -71,7 +71,7 @@ class JITMethod(Enum):
 
 
 def assert_causal_lm_output_equals_hf(
-    model_class: Type[FromHFHub],
+    model_class: Type[FromHF],
     model_name: str,
     torch_device: torch.device,
     *,
@@ -122,7 +122,7 @@ def assert_causal_lm_output_equals_hf(
 
 
 def assert_decoder_output_equals_hf(
-    model_class: Type[FromHFHub],
+    model_class: Type[FromHF],
     model_name: str,
     torch_device: torch.device,
     *,
@@ -186,7 +186,7 @@ def assert_decoder_output_equals_hf(
 
 
 def assert_encoder_output_equals_hf(
-    model_class: Type[FromHFHub],
+    model_class: Type[FromHF],
     model_name: str,
     torch_device: torch.device,
     *,
@@ -358,7 +358,7 @@ def assert_model_config(model: TransformerModule, model_output: Tensor):
 
 
 def assert_model_hf_serialization_roundtrip(
-    model_class: Type[FromHFHub],
+    model_class: Type[FromHF],
     model_name: str,
     torch_device: torch.device,
     *,

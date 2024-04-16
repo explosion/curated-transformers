@@ -5,7 +5,7 @@ from .dolly_v2 import DollyV2Generator
 from .falcon import FalconGenerator
 from .generator import Generator
 from .generator_wrapper import GeneratorWrapper
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 from .llama import LlamaGenerator
 from .logits import (
     CompoundLogitsTransform,
@@ -32,7 +32,7 @@ __all__ = [
     "DollyV2Generator",
     "EndOfSequenceCondition",
     "FalconGenerator",
-    "FromHFHub",
+    "FromHF",
     "Generator",
     "GeneratorConfig",
     "GeneratorWrapper",

@@ -23,11 +23,11 @@ tokenizers directly from Hugging Face Hub.
 
 .. _Hugging Face Hub client: https://huggingface.co/docs/huggingface_hub/quick-start#login
 
-.. autoclass:: curated_transformers.models.FromHFHub
+.. autoclass:: curated_transformers.models.FromHF
    :members:
 
-.. autoclass:: curated_transformers.generation.FromHFHub
+.. autoclass:: curated_transformers.generation.FromHF
    :members:
 
-.. autoclass:: curated_transformers.tokenizers.FromHFHub
+.. autoclass:: curated_transformers.tokenizers.FromHF
    :members:

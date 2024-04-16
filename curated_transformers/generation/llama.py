@@ -3,13 +3,13 @@ from typing import TypeVar
 from ..models.llama import LlamaCausalLM
 from ..tokenizers.tokenizer import Tokenizer
 from .default_generator import DefaultGenerator
-from .hf_hub import FromHFHub
+from .hf_hub import FromHF
 
 # Only provided as typing.Self in Python 3.11+.
 Self = TypeVar("Self", bound="LlamaGenerator")
 
 
-class LlamaGenerator(DefaultGenerator, FromHFHub):
+class LlamaGenerator(DefaultGenerator, FromHF):
     """
     Generator for Llama and Llama 2 model variants.
     """

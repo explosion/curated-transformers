@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Type, Ty
 from curated_tokenizers import ByteBPEProcessor
 
 from ...repository.file import RepositoryFile
-from ..hf_hub import LegacyFromHFHub
+from ..hf_hub import LegacyFromHF
 from ..util import remove_pieces_from_sequence
 from .bbpe_tokenizer import ByteBPETokenizer
 from .legacy_tokenizer import AddBosEosPreEncoder, PreDecoder
@@ -37,7 +37,7 @@ class RoBERTaPreDecoder(PreDecoder):
         ]
 
 
-class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHFHub):
+class RoBERTaTokenizer(ByteBPETokenizer, LegacyFromHF):
     """
     Legacy tokenizer for RoBERTa (`Liu et al., 2019`_) models.
 

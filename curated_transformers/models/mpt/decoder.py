@@ -21,7 +21,7 @@ from ...layers.transformer import (
     TransformerEmbeddings,
     TransformerLayerNorms,
 )
-from ..hf_hub import FromHFHub
+from ..hf_hub import FromHF
 from ..hf_hub.conversion import state_dict_from_hf, state_dict_to_hf
 from ..transformer import TransformerDecoder
 from ._hf import DECODER_HF_PARAM_KEY_TRANSFORMS, _config_from_hf, _config_to_hf
@@ -31,7 +31,7 @@ from .config import MPTConfig
 Self = TypeVar("Self", bound="MPTDecoder")
 
 
-class MPTDecoder(TransformerDecoder[MPTConfig], FromHFHub[MPTConfig]):
+class MPTDecoder(TransformerDecoder[MPTConfig], FromHF[MPTConfig]):
     """
     `MosaicML MPT`_ decoder.
 

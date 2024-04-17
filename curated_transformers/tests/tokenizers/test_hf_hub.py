@@ -51,6 +51,7 @@ def test_from_hf_hub_to_cache_legacy():
         )
 
 
+@pytest.mark.xfail(reason="HfFileSystem calls safetensors with incorrect arguments")
 @pytest.mark.skipif(not has_hf_transformers, reason="requires huggingface transformers")
 def test_fsspec(sample_texts):
     # We only test one model, since using fsspec downloads the model
